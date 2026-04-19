@@ -135,10 +135,18 @@ new #[Title('Notfall-Level')] class extends Component {
                     @endif
                 </div>
 
-                <div class="flex items-center gap-1">
-                    <flux:button size="sm" variant="ghost" icon="pencil" wire:click="openEdit({{ $level->id }})" />
-                    <flux:button size="sm" variant="ghost" icon="trash" wire:click="confirmDelete({{ $level->id }})" />
-                </div>
+                <flux:dropdown align="end">
+                    <flux:button size="sm" variant="ghost" icon="ellipsis-vertical" />
+                    <flux:menu>
+                        <flux:menu.item icon="pencil" wire:click="openEdit({{ $level->id }})">
+                            {{ __('Bearbeiten') }}
+                        </flux:menu.item>
+                        <flux:menu.separator />
+                        <flux:menu.item icon="trash" variant="danger" wire:click="confirmDelete({{ $level->id }})">
+                            {{ __('Löschen') }}
+                        </flux:menu.item>
+                    </flux:menu>
+                </flux:dropdown>
             </div>
         @empty
             <div class="px-5 py-12 text-center">

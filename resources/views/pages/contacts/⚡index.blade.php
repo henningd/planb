@@ -187,10 +187,18 @@ new #[Title('Ansprechpartner')] class extends Component {
                     </div>
                 </div>
 
-                <div class="flex shrink-0 items-center gap-1">
-                    <flux:button size="sm" variant="ghost" icon="pencil" wire:click="openEdit({{ $contact->id }})" />
-                    <flux:button size="sm" variant="ghost" icon="trash" wire:click="confirmDelete({{ $contact->id }})" />
-                </div>
+                <flux:dropdown align="end">
+                    <flux:button size="sm" variant="ghost" icon="ellipsis-vertical" />
+                    <flux:menu>
+                        <flux:menu.item icon="pencil" wire:click="openEdit({{ $contact->id }})">
+                            {{ __('Bearbeiten') }}
+                        </flux:menu.item>
+                        <flux:menu.separator />
+                        <flux:menu.item icon="trash" variant="danger" wire:click="confirmDelete({{ $contact->id }})">
+                            {{ __('Löschen') }}
+                        </flux:menu.item>
+                    </flux:menu>
+                </flux:dropdown>
             </div>
         @empty
             <div class="px-5 py-12 text-center">
