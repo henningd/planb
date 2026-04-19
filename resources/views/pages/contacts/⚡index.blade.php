@@ -153,11 +153,11 @@ new #[Title('Ansprechpartner')] class extends Component {
 
     <div class="overflow-hidden rounded-xl border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-900">
         @forelse ($this->contacts as $contact)
-            <div class="flex items-center justify-between gap-4 border-b border-zinc-100 px-5 py-4 last:border-b-0 dark:border-zinc-800">
-                <div class="flex items-center gap-3">
-                    <flux:avatar :name="$contact->name" size="sm" />
-                    <div>
-                        <div class="flex items-center gap-2">
+            <div class="flex items-start justify-between gap-4 border-b border-zinc-100 px-5 py-4 last:border-b-0 dark:border-zinc-800">
+                <div class="flex min-w-0 flex-1 items-start gap-3">
+                    <flux:avatar :name="$contact->name" size="sm" class="mt-0.5 shrink-0" />
+                    <div class="min-w-0 flex-1">
+                        <div class="flex flex-wrap items-center gap-2">
                             <span class="font-medium">{{ $contact->name }}</span>
                             @if ($contact->is_primary)
                                 <flux:badge color="emerald" size="sm">{{ __('Hauptansprechpartner') }}</flux:badge>
@@ -167,15 +167,27 @@ new #[Title('Ansprechpartner')] class extends Component {
                         <flux:text class="text-sm text-zinc-500 dark:text-zinc-400">
                             {{ $contact->role ?: __('Keine Rolle hinterlegt') }}
                         </flux:text>
+
+                        @if ($contact->phone || $contact->email)
+                            <div class="mt-2 flex flex-col gap-1 text-sm text-zinc-600 dark:text-zinc-400">
+                                @if ($contact->phone)
+                                    <div class="flex items-center gap-2">
+                                        <flux:icon.phone class="h-4 w-4 text-zinc-400" />
+                                        <span>{{ $contact->phone }}</span>
+                                    </div>
+                                @endif
+                                @if ($contact->email)
+                                    <div class="flex items-center gap-2">
+                                        <flux:icon.envelope class="h-4 w-4 text-zinc-400" />
+                                        <span class="truncate">{{ $contact->email }}</span>
+                                    </div>
+                                @endif
+                            </div>
+                        @endif
                     </div>
                 </div>
 
-                <div class="hidden flex-col text-right text-sm text-zinc-600 sm:flex dark:text-zinc-400">
-                    @if ($contact->phone)<span>{{ $contact->phone }}</span>@endif
-                    @if ($contact->email)<span class="text-xs">{{ $contact->email }}</span>@endif
-                </div>
-
-                <div class="flex items-center gap-1">
+                <div class="flex shrink-0 items-center gap-1">
                     <flux:button size="sm" variant="ghost" icon="pencil" wire:click="openEdit({{ $contact->id }})" />
                     <flux:button size="sm" variant="ghost" icon="trash" wire:click="confirmDelete({{ $contact->id }})" />
                 </div>
