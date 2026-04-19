@@ -149,11 +149,11 @@ new #[Title('Dienstleister')] class extends Component {
                     <flux:dropdown align="end">
                         <flux:button size="sm" variant="ghost" icon="ellipsis-vertical" />
                         <flux:menu>
-                            <flux:menu.item icon="pencil" wire:click="openEdit({{ $provider->id }})">
+                            <flux:menu.item icon="pencil" wire:click="openEdit('{{ $provider->id }}')">
                                 {{ __('Bearbeiten') }}
                             </flux:menu.item>
                             <flux:menu.separator />
-                            <flux:menu.item icon="trash" variant="danger" wire:click="confirmDelete({{ $provider->id }})">
+                            <flux:menu.item icon="trash" variant="danger" wire:click="confirmDelete('{{ $provider->id }}')">
                                 {{ __('Löschen') }}
                             </flux:menu.item>
                         </flux:menu>

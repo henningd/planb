@@ -121,7 +121,7 @@ new #[Title('Vorfall')] class extends Component {
                     <flux:button
                         size="sm"
                         :variant="$isReported ? 'ghost' : 'primary'"
-                        wire:click="markReported({{ $obligation->id }})"
+                        wire:click="markReported('{{ $obligation->id }}')"
                     >
                         {{ $isReported ? __('Zurücksetzen') : __('Als gemeldet markieren') }}
                     </flux:button>

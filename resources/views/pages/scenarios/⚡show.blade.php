@@ -184,11 +184,11 @@ new #[Title('Szenario bearbeiten')] class extends Component {
                 <flux:dropdown align="end">
                     <flux:button size="sm" variant="ghost" icon="ellipsis-vertical" />
                     <flux:menu>
-                        <flux:menu.item icon="pencil" wire:click="openEditStep({{ $step->id }})">
+                        <flux:menu.item icon="pencil" wire:click="openEditStep('{{ $step->id }}')">
                             {{ __('Bearbeiten') }}
                         </flux:menu.item>
                         <flux:menu.separator />
-                        <flux:menu.item icon="trash" variant="danger" wire:click="confirmDeleteStep({{ $step->id }})">
+                        <flux:menu.item icon="trash" variant="danger" wire:click="confirmDeleteStep('{{ $step->id }}')">
                             {{ __('Löschen') }}
                         </flux:menu.item>
                     </flux:menu>

@@ -40,17 +40,6 @@
                     </flux:sidebar.item>
                 </flux:sidebar.group>
 
-                <flux:sidebar.group :heading="__('Zugang')" class="grid">
-                    <flux:sidebar.item
-                        icon="key"
-                        :href="auth()->user()?->currentTeam ? route('teams.edit', auth()->user()->currentTeam) : route('teams.index')"
-                        :current="request()->routeIs('teams.*')"
-                        wire:navigate
-                    >
-                        {{ __('App-Benutzer & Einladungen') }}
-                    </flux:sidebar.item>
-                </flux:sidebar.group>
-
                 <flux:sidebar.group :heading="__('Ernstfall')" class="grid">
                     <flux:sidebar.item icon="bolt" :href="route('scenarios.index')" :current="request()->routeIs('scenarios.*')" wire:navigate>
                         {{ __('Szenarien') }}
@@ -60,6 +49,17 @@
                     </flux:sidebar.item>
                     <flux:sidebar.item icon="megaphone" :href="route('incidents.index')" :current="request()->routeIs('incidents.*')" wire:navigate>
                         {{ __('Meldepflichten') }}
+                    </flux:sidebar.item>
+                </flux:sidebar.group>
+
+                <flux:sidebar.group :heading="__('Zugang')" class="grid">
+                    <flux:sidebar.item
+                        icon="key"
+                        :href="auth()->user()?->currentTeam ? route('teams.edit', auth()->user()->currentTeam) : route('teams.index')"
+                        :current="request()->routeIs('teams.*')"
+                        wire:navigate
+                    >
+                        {{ __('App-Benutzer & Einladungen') }}
                     </flux:sidebar.item>
                 </flux:sidebar.group>
 

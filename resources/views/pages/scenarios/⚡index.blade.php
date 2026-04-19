@@ -269,12 +269,12 @@ new #[Title('Szenarien')] class extends Component {
                                 {{ __('Bearbeiten') }}
                             </flux:menu.item>
                             <flux:menu.separator />
-                            <flux:menu.item icon="trash" variant="danger" wire:click="confirmDelete({{ $scenario->id }})">
+                            <flux:menu.item icon="trash" variant="danger" wire:click="confirmDelete('{{ $scenario->id }}')">
                                 {{ __('Löschen') }}
                             </flux:menu.item>
                         </flux:menu>
                     </flux:dropdown>
-                    <flux:button size="sm" variant="primary" wire:click="openStart({{ $scenario->id }})" icon="play">
+                    <flux:button size="sm" variant="primary" wire:click="openStart('{{ $scenario->id }}')" icon="play">
                         {{ __('Starten') }}
                     </flux:button>
                 </div>

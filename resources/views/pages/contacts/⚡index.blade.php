@@ -190,11 +190,11 @@ new #[Title('Ansprechpartner')] class extends Component {
                 <flux:dropdown align="end">
                     <flux:button size="sm" variant="ghost" icon="ellipsis-vertical" />
                     <flux:menu>
-                        <flux:menu.item icon="pencil" wire:click="openEdit({{ $contact->id }})">
+                        <flux:menu.item icon="pencil" wire:click="openEdit('{{ $contact->id }}')">
                             {{ __('Bearbeiten') }}
                         </flux:menu.item>
                         <flux:menu.separator />
-                        <flux:menu.item icon="trash" variant="danger" wire:click="confirmDelete({{ $contact->id }})">
+                        <flux:menu.item icon="trash" variant="danger" wire:click="confirmDelete('{{ $contact->id }}')">
                             {{ __('Löschen') }}
                         </flux:menu.item>
                     </flux:menu>

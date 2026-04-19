@@ -148,7 +148,7 @@ new #[Title('Durchlauf')] class extends Component {
                 <div class="flex items-start gap-4">
                     <button
                         type="button"
-                        wire:click="toggleStep({{ $step->id }})"
+                        wire:click="toggleStep('{{ $step->id }}')"
                         @class([
                             'mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md border-2 transition',
                             'border-emerald-500 bg-emerald-500 text-white' => $step->checked_at,
@@ -187,7 +187,7 @@ new #[Title('Durchlauf')] class extends Component {
                                 placeholder="{{ __('Notiz zu diesem Schritt…') }}"
                             />
                             <div class="mt-2 flex justify-end">
-                                <flux:button size="sm" variant="ghost" wire:click="saveNote({{ $step->id }})">
+                                <flux:button size="sm" variant="ghost" wire:click="saveNote('{{ $step->id }}')">
                                     {{ __('Notiz speichern') }}
                                 </flux:button>
                             </div>
