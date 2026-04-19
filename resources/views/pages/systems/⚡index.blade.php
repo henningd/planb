@@ -319,26 +319,29 @@ new #[Title('Systeme')] class extends Component {
 }; ?>
 
 <section class="mx-auto w-full max-w-5xl">
-    <div class="mb-6 flex items-end justify-between gap-4">
-        <div>
-            <flux:heading size="xl">{{ __('Systeme & Betriebskontinuität') }}</flux:heading>
-            <flux:subheading>
-                {{ __('Welche Systeme braucht Ihr Betrieb – und in welcher Reihenfolge müssen sie im Ernstfall zurück ans Netz?') }}
-            </flux:subheading>
-        </div>
+    <div class="mb-6">
+        <div class="flex items-start justify-between gap-4">
+            <div>
+                <flux:heading size="xl">{{ __('Systeme & Betriebskontinuität') }}</flux:heading>
+                <flux:subheading>
+                    {{ __('Welche Systeme braucht Ihr Betrieb – und in welcher Reihenfolge müssen sie im Ernstfall zurück ans Netz?') }}
+                </flux:subheading>
+            </div>
 
-        <div class="flex items-center gap-2">
-            <flux:button variant="filled" icon="sparkles" wire:click="openTemplate" :disabled="! $this->hasCompany">
-                {{ __('Vorlage laden') }}
-            </flux:button>
-            <flux:button variant="filled" icon="arrow-up-tray" wire:click="openImport" :disabled="! $this->hasCompany">
-                {{ __('Importieren') }}
-            </flux:button>
-            <flux:button variant="filled" icon="arrow-down-tray" :href="$this->hasCompany ? route('systems.export') : null" :disabled="! $this->hasCompany">
-                {{ __('Exportieren') }}
-            </flux:button>
             <flux:button variant="primary" icon="plus" wire:click="openCreate" :disabled="! $this->hasCompany">
                 {{ __('Neues System') }}
+            </flux:button>
+        </div>
+
+        <div class="mt-4 flex flex-wrap items-center gap-2">
+            <flux:button size="sm" variant="filled" icon="sparkles" wire:click="openTemplate" :disabled="! $this->hasCompany">
+                {{ __('Vorlage laden') }}
+            </flux:button>
+            <flux:button size="sm" variant="filled" icon="arrow-up-tray" wire:click="openImport" :disabled="! $this->hasCompany">
+                {{ __('Importieren') }}
+            </flux:button>
+            <flux:button size="sm" variant="filled" icon="arrow-down-tray" :href="$this->hasCompany ? route('systems.export') : null" :disabled="! $this->hasCompany">
+                {{ __('Exportieren') }}
             </flux:button>
         </div>
     </div>
