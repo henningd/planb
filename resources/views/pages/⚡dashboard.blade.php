@@ -232,23 +232,23 @@ new #[Title('Dashboard')] class extends Component {
                 <flux:heading size="base">{{ __('Schnellzugriff') }}</flux:heading>
             </div>
             <div class="flex flex-col divide-y divide-zinc-100 dark:divide-zinc-800">
-                <flux:link :href="route('company.edit')" wire:navigate class="flex items-center gap-3 px-5 py-4 text-zinc-900 hover:bg-zinc-50 dark:text-zinc-100 dark:hover:bg-zinc-800">
+                <a href="{{ route('company.edit') }}" wire:navigate class="flex items-center gap-3 px-5 py-4 text-zinc-900 no-underline hover:bg-zinc-50 dark:text-zinc-100 dark:hover:bg-zinc-800">
                     <flux:icon.building-office-2 class="h-5 w-5 text-zinc-500" />
                     <span class="flex-1 font-medium">{{ __('Firmenprofil') }}</span>
                     <flux:icon.chevron-right class="h-4 w-4 text-zinc-400" />
-                </flux:link>
-                <flux:link :href="route('contacts.index')" wire:navigate class="flex items-center gap-3 px-5 py-4 text-zinc-900 hover:bg-zinc-50 dark:text-zinc-100 dark:hover:bg-zinc-800">
+                </a>
+                <a href="{{ route('contacts.index') }}" wire:navigate class="flex items-center gap-3 px-5 py-4 text-zinc-900 no-underline hover:bg-zinc-50 dark:text-zinc-100 dark:hover:bg-zinc-800">
                     <flux:icon.users class="h-5 w-5 text-zinc-500" />
                     <span class="flex-1 font-medium">{{ __('Ansprechpartner') }}</span>
                     <flux:icon.chevron-right class="h-4 w-4 text-zinc-400" />
-                </flux:link>
-                <flux:link :href="route('emergency-levels.index')" wire:navigate class="flex items-center gap-3 px-5 py-4 text-zinc-900 hover:bg-zinc-50 dark:text-zinc-100 dark:hover:bg-zinc-800">
+                </a>
+                <a href="{{ route('emergency-levels.index') }}" wire:navigate class="flex items-center gap-3 px-5 py-4 text-zinc-900 no-underline hover:bg-zinc-50 dark:text-zinc-100 dark:hover:bg-zinc-800">
                     <flux:icon.shield-exclamation class="h-5 w-5 text-zinc-500" />
                     <span class="flex-1 font-medium">{{ __('Notfall-Level') }}</span>
                     <flux:icon.chevron-right class="h-4 w-4 text-zinc-400" />
-                </flux:link>
+                </a>
                 @if ($this->company)
-                    <a href="{{ route('handbook.print') }}" target="_blank" class="flex items-center gap-3 px-5 py-4 text-zinc-900 hover:bg-zinc-50 dark:text-zinc-100 dark:hover:bg-zinc-800">
+                    <a href="{{ route('handbook.print') }}" target="_blank" class="flex items-center gap-3 px-5 py-4 text-zinc-900 no-underline hover:bg-zinc-50 dark:text-zinc-100 dark:hover:bg-zinc-800">
                         <flux:icon.document-arrow-down class="h-5 w-5 text-zinc-500" />
                         <span class="flex-1 font-medium">{{ __('Handbuch als PDF') }}</span>
                         <flux:icon.arrow-top-right-on-square class="h-4 w-4 text-zinc-400" />
