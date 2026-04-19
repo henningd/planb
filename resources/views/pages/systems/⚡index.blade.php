@@ -334,6 +334,9 @@ new #[Title('Systeme')] class extends Component {
             <flux:button variant="filled" icon="arrow-up-tray" wire:click="openImport" :disabled="! $this->hasCompany">
                 {{ __('Importieren') }}
             </flux:button>
+            <flux:button variant="filled" icon="arrow-down-tray" :href="$this->hasCompany ? route('systems.export') : null" :disabled="! $this->hasCompany">
+                {{ __('Exportieren') }}
+            </flux:button>
             <flux:button variant="primary" icon="plus" wire:click="openCreate" :disabled="! $this->hasCompany">
                 {{ __('Neues System') }}
             </flux:button>

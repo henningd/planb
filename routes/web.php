@@ -1,7 +1,10 @@
 <?php
 
 use App\Http\Middleware\EnsureTeamMembership;
+use App\Models\ServiceProvider;
+use App\Models\System;
 use App\Support\CurrentCompany;
+use App\Support\SystemImport;
 use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Features;
 
@@ -27,6 +30,41 @@ Route::prefix('{current_team}')
         Route::livewire('incidents', 'pages::incidents.index')->name('incidents.index');
         Route::livewire('incidents/{report}', 'pages::incidents.show')->name('incidents.show');
 
+        Route::get('systems/export', function () {
+            $company = CurrentCompany::resolve();
+            abort_unless($company, 404);
+
+            $systems = System::with('priority')
+                ->orderBy('category')
+                ->orderBy('name')
+                ->get()
+                ->map(fn (System $s) => [
+                    'name' => $s->name,
+                    'description' => $s->description,
+                    'category' => $s->category->value,
+                    'priority' => $s->priority?->name,
+                    'rto_minutes' => $s->rto_minutes,
+                    'rpo_minutes' => $s->rpo_minutes,
+                ])
+                ->values()
+                ->all();
+
+            $payload = [
+                'version' => SystemImport::CURRENT_VERSION,
+                'exported_at' => now()->toIso8601String(),
+                'company' => $company->name,
+                'systems' => $systems,
+            ];
+
+            $filename = 'planb-systeme-'.$company->team->slug.'-'.now()->format('Y-m-d').'.json';
+
+            return response()->streamDownload(
+                fn () => print (json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR)),
+                $filename,
+                ['Content-Type' => 'application/json'],
+            );
+        })->name('systems.export');
+
         Route::get('handbook/print', function () {
             $company = CurrentCompany::resolve();
             abort_unless($company, 404);
@@ -42,7 +80,7 @@ Route::prefix('{current_team}')
 
             return view('handbook-print', [
                 'company' => $company,
-                'providers' => \App\Models\ServiceProvider::with('systems')->orderBy('name')->get(),
+                'providers' => ServiceProvider::with('systems')->orderBy('name')->get(),
             ]);
         })->name('handbook.print');
     });

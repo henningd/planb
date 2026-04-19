@@ -186,3 +186,77 @@ test('systems page renders and groups by category', function () {
         ->assertSee('4 Stunden')
         ->assertSee('1 Stunde');
 });
+
+test('json export returns all systems of the current tenant in versioned format', function () {
+    $user = User::factory()->create();
+    $company = Company::factory()->for($user->currentTeam)->create(['name' => 'Musterfirma']);
+
+    $priority = $company->systemPriorities()->where('sort', 1)->first();
+
+    System::withoutGlobalScope(CurrentCompanyScope::class)->create([
+        'company_id' => $company->id,
+        'name' => 'Warenwirtschaft',
+        'description' => 'ERP',
+        'category' => 'geschaeftsbetrieb',
+        'system_priority_id' => $priority->id,
+        'rto_minutes' => 240,
+        'rpo_minutes' => 60,
+    ]);
+
+    $response = $this->actingAs($user->fresh())->get(route('systems.export'));
+
+    $response->assertOk();
+    expect($response->headers->get('content-type'))->toStartWith('application/json');
+
+    $payload = json_decode($response->streamedContent(), true);
+
+    expect($payload['version'])->toBe(1)
+        ->and($payload['company'])->toBe('Musterfirma')
+        ->and($payload['systems'])->toHaveCount(1);
+
+    $exported = $payload['systems'][0];
+    expect($exported['name'])->toBe('Warenwirtschaft')
+        ->and($exported['category'])->toBe('geschaeftsbetrieb')
+        ->and($exported['priority'])->toBe('Kritisch')
+        ->and($exported['rto_minutes'])->toBe(240)
+        ->and($exported['rpo_minutes'])->toBe(60);
+});
+
+test('exported json can be re-imported without loss', function () {
+    $user = User::factory()->create();
+    $company = Company::factory()->for($user->currentTeam)->create();
+
+    $priority = $company->systemPriorities()->where('sort', 1)->first();
+
+    System::withoutGlobalScope(CurrentCompanyScope::class)->create([
+        'company_id' => $company->id,
+        'name' => 'SCADA',
+        'category' => 'basisbetrieb',
+        'system_priority_id' => $priority->id,
+        'rto_minutes' => 60,
+        'rpo_minutes' => 15,
+    ]);
+
+    $response = $this->actingAs($user->fresh())->get(route('systems.export'));
+    $json = $response->streamedContent();
+
+    // Simulate a fresh tenant importing the exported payload.
+    $otherUser = User::factory()->create();
+    Company::factory()->for($otherUser->currentTeam)->create();
+
+    Livewire\Livewire::actingAs($otherUser->fresh())
+        ->test('pages::systems.index')
+        ->set('importJson', $json)
+        ->call('import')
+        ->assertHasNoErrors();
+
+    $imported = System::withoutGlobalScope(CurrentCompanyScope::class)
+        ->where('company_id', $otherUser->currentCompany()->id)
+        ->where('name', 'SCADA')
+        ->first();
+
+    expect($imported)->not->toBeNull()
+        ->and($imported->priority?->name)->toBe('Kritisch')
+        ->and($imported->rto_minutes)->toBe(60)
+        ->and($imported->rpo_minutes)->toBe(15);
+});
