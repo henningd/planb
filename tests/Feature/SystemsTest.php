@@ -171,6 +171,7 @@ test('systems page renders and groups by category', function () {
         'system_priority_id' => $priority->id,
         'rto_minutes' => 240,
         'rpo_minutes' => 60,
+        'downtime_cost_per_hour' => 1500,
     ]);
 
     $this->actingAs($user->fresh())
@@ -184,7 +185,8 @@ test('systems page renders and groups by category', function () {
         ->assertSee('Kritisch')
         ->assertSee('Max. Ausfall')
         ->assertSee('4 Stunden')
-        ->assertSee('1 Stunde');
+        ->assertSee('1 Stunde')
+        ->assertSee('1.500 € / h');
 });
 
 test('json export returns all systems of the current tenant in versioned format', function () {
@@ -235,6 +237,7 @@ test('exported json can be re-imported without loss', function () {
         'system_priority_id' => $priority->id,
         'rto_minutes' => 60,
         'rpo_minutes' => 15,
+        'downtime_cost_per_hour' => 5000,
     ]);
 
     $response = $this->actingAs($user->fresh())->get(route('systems.export'));
@@ -258,5 +261,6 @@ test('exported json can be re-imported without loss', function () {
     expect($imported)->not->toBeNull()
         ->and($imported->priority?->name)->toBe('Kritisch')
         ->and($imported->rto_minutes)->toBe(60)
-        ->and($imported->rpo_minutes)->toBe(15);
+        ->and($imported->rpo_minutes)->toBe(15)
+        ->and($imported->downtime_cost_per_hour)->toBe(5000);
 });

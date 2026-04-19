@@ -48,6 +48,7 @@ Route::prefix('{current_team}')
                     'priority' => $s->priority?->name,
                     'rto_minutes' => $s->rto_minutes,
                     'rpo_minutes' => $s->rpo_minutes,
+                    'downtime_cost_per_hour' => $s->downtime_cost_per_hour,
                 ])
                 ->values()
                 ->all();

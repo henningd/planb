@@ -127,6 +127,14 @@ class SystemImport
                 }
             }
 
+            if (isset($item['downtime_cost_per_hour']) && $item['downtime_cost_per_hour'] !== null) {
+                if (! is_int($item['downtime_cost_per_hour']) || $item['downtime_cost_per_hour'] < 0 || $item['downtime_cost_per_hour'] > 100000000) {
+                    $errors[] = "Eintrag #{$index}: 'downtime_cost_per_hour' muss eine positive ganze Zahl (Euro) sein.";
+
+                    continue;
+                }
+            }
+
             $cleaned[] = [
                 'name' => trim($item['name']),
                 'description' => isset($item['description']) ? trim($item['description']) : null,
@@ -134,6 +142,7 @@ class SystemImport
                 'priority' => isset($item['priority']) && $item['priority'] !== '' ? trim($item['priority']) : null,
                 'rto_minutes' => $item['rto_minutes'] ?? null,
                 'rpo_minutes' => $item['rpo_minutes'] ?? null,
+                'downtime_cost_per_hour' => $item['downtime_cost_per_hour'] ?? null,
             ];
         }
 

@@ -237,6 +237,9 @@
                                         @if ($system->rpo_minutes)
                                             <div>RPO: {{ \App\Support\Duration::format($system->rpo_minutes) }}</div>
                                         @endif
+                                        @if ($system->downtime_cost_per_hour)
+                                            <div>{{ number_format($system->downtime_cost_per_hour, 0, ',', '.') }} € / h</div>
+                                        @endif
                                     </td>
                                     <td>
                                         @foreach ($system->serviceProviders as $p)

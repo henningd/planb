@@ -32,6 +32,8 @@ new #[Title('Systeme')] class extends Component {
 
     public ?int $rpo_minutes = null;
 
+    public ?int $downtime_cost_per_hour = null;
+
     /** @var array<int, string> */
     public array $service_provider_ids = [];
 
@@ -111,6 +113,7 @@ new #[Title('Systeme')] class extends Component {
         $this->system_priority_id = $system->system_priority_id;
         $this->rto_minutes = $system->rto_minutes;
         $this->rpo_minutes = $system->rpo_minutes;
+        $this->downtime_cost_per_hour = $system->downtime_cost_per_hour;
         $this->service_provider_ids = $system->serviceProviders->pluck('id')->all();
 
         Flux::modal('system-form')->show();
@@ -133,6 +136,7 @@ new #[Title('Systeme')] class extends Component {
             'system_priority_id' => ['nullable', 'uuid', 'exists:system_priorities,id'],
             'rto_minutes' => ['nullable', 'integer', 'in:'.implode(',', $validDurations)],
             'rpo_minutes' => ['nullable', 'integer', 'in:'.implode(',', $validDurations)],
+            'downtime_cost_per_hour' => ['nullable', 'integer', 'min:0', 'max:100000000'],
             'service_provider_ids' => ['array'],
             'service_provider_ids.*' => ['uuid', 'exists:service_providers,id'],
         ]);
@@ -172,7 +176,7 @@ new #[Title('Systeme')] class extends Component {
 
     protected function resetForm(): void
     {
-        $this->reset(['editingId', 'name', 'description', 'system_priority_id', 'rto_minutes', 'rpo_minutes', 'service_provider_ids']);
+        $this->reset(['editingId', 'name', 'description', 'system_priority_id', 'rto_minutes', 'rpo_minutes', 'downtime_cost_per_hour', 'service_provider_ids']);
         $this->category = SystemCategory::Basisbetrieb->value;
     }
 
@@ -251,6 +255,7 @@ new #[Title('Systeme')] class extends Component {
                         : null,
                     'rto_minutes' => $entry['rto_minutes'] ?? null,
                     'rpo_minutes' => $entry['rpo_minutes'] ?? null,
+                    'downtime_cost_per_hour' => $entry['downtime_cost_per_hour'] ?? null,
                 ]);
 
                 $imported++;
@@ -392,7 +397,7 @@ new #[Title('Systeme')] class extends Component {
                                     {{ $system->description }}
                                 </flux:text>
                             @endif
-                            @if ($system->rto_minutes || $system->rpo_minutes)
+                            @if ($system->rto_minutes || $system->rpo_minutes || $system->downtime_cost_per_hour)
                                 <div class="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-zinc-600 dark:text-zinc-400">
                                     @if ($system->rto_minutes)
                                         <div class="flex items-center gap-1.5">
@@ -404,6 +409,12 @@ new #[Title('Systeme')] class extends Component {
                                         <div class="flex items-center gap-1.5">
                                             <flux:icon.archive-box class="h-3.5 w-3.5 text-zinc-400" />
                                             <span>{{ __('Max. Datenverlust') }}: <span class="font-medium">{{ \App\Support\Duration::format($system->rpo_minutes) }}</span></span>
+                                        </div>
+                                    @endif
+                                    @if ($system->downtime_cost_per_hour)
+                                        <div class="flex items-center gap-1.5">
+                                            <flux:icon.currency-euro class="h-3.5 w-3.5 text-zinc-400" />
+                                            <span>{{ __('Ausfallkosten') }}: <span class="font-medium">{{ number_format($system->downtime_cost_per_hour, 0, ',', '.') }} € / h</span></span>
                                         </div>
                                     @endif
                                 </div>
@@ -474,6 +485,14 @@ new #[Title('Systeme')] class extends Component {
                     <flux:select.option value="{{ $priority->id }}">{{ $priority->name }}</flux:select.option>
                 @endforeach
             </flux:select>
+
+            <flux:field>
+                <flux:label>{{ __('Ausfallkosten pro Stunde') }}</flux:label>
+                <flux:description>
+                    {{ __('Geschätzter Umsatz- oder Produktivitätsverlust, wenn dieses System eine Stunde lang ausfällt. In Euro, nur ganze Zahlen.') }}
+                </flux:description>
+                <flux:input wire:model="downtime_cost_per_hour" type="number" min="0" step="1" placeholder="z. B. 250" />
+            </flux:field>
 
             <div class="grid gap-4 sm:grid-cols-2">
                 <flux:field>
