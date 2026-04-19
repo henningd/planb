@@ -38,6 +38,48 @@ test('systems are scoped per company', function () {
     expect(System::pluck('name')->all())->toBe(['Warenwirtschaft']);
 });
 
+test('industry template imports systems with mapped priorities and durations', function () {
+    $user = User::factory()->create();
+    $company = Company::factory()->for($user->currentTeam)->create();
+
+    Livewire\Livewire::actingAs($user->fresh())
+        ->test('pages::systems.index')
+        ->set('templateKey', 'handwerk')
+        ->call('loadTemplate')
+        ->assertHasNoErrors();
+
+    $systems = System::withoutGlobalScope(CurrentCompanyScope::class)
+        ->where('company_id', $company->id)
+        ->with('priority')
+        ->get();
+
+    expect($systems)->not->toBeEmpty();
+
+    $software = $systems->firstWhere('name', 'Handwerkersoftware');
+    expect($software)->not->toBeNull()
+        ->and($software->category->value)->toBe('geschaeftsbetrieb')
+        ->and($software->priority?->name)->toBe('Kritisch')
+        ->and($software->rto_minutes)->toBe(240)
+        ->and($software->rpo_minutes)->toBe(60);
+});
+
+test('re-running the template skips duplicates', function () {
+    $user = User::factory()->create();
+    Company::factory()->for($user->currentTeam)->create();
+
+    Livewire\Livewire::actingAs($user->fresh())
+        ->test('pages::systems.index')
+        ->set('templateKey', 'handwerk')
+        ->call('loadTemplate')
+        ->call('loadTemplate');
+
+    $count = System::withoutGlobalScope(CurrentCompanyScope::class)
+        ->where('name', 'Handwerkersoftware')
+        ->count();
+
+    expect($count)->toBe(1);
+});
+
 test('systems page renders and groups by category', function () {
     $user = User::factory()->create();
     $company = Company::factory()->for($user->currentTeam)->create();

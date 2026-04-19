@@ -5,9 +5,11 @@ use App\Models\ServiceProvider;
 use App\Models\System;
 use App\Models\SystemPriority;
 use App\Support\Duration;
+use App\Support\IndustryTemplates;
 use Flux\Flux;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -32,9 +34,12 @@ new #[Title('Systeme')] class extends Component {
 
     public ?int $deletingId = null;
 
+    public string $templateKey = '';
+
     public function mount(): void
     {
         $this->category = SystemCategory::Basisbetrieb->value;
+        $this->templateKey = IndustryTemplates::defaultFor(Auth::user()->currentCompany()?->industry) ?? '';
     }
 
     #[Computed]
@@ -163,6 +168,67 @@ new #[Title('Systeme')] class extends Component {
         $this->reset(['editingId', 'name', 'description', 'system_priority_id', 'rto_minutes', 'rpo_minutes', 'service_provider_ids']);
         $this->category = SystemCategory::Basisbetrieb->value;
     }
+
+    /**
+     * @return array<string, array{label: string, hint: string, count: int}>
+     */
+    public function templateCatalog(): array
+    {
+        return IndustryTemplates::catalog();
+    }
+
+    public function openTemplate(): void
+    {
+        Flux::modal('system-template')->show();
+    }
+
+    public function loadTemplate(): void
+    {
+        if (! $this->hasCompany) {
+            return;
+        }
+
+        abort_unless(IndustryTemplates::has($this->templateKey), 422);
+
+        $company = Auth::user()->currentCompany();
+        $systems = IndustryTemplates::systemsFor($this->templateKey) ?? [];
+        $priorityIdByName = $company->systemPriorities()->pluck('id', 'name');
+        $existingNames = System::pluck('name')->map(fn ($n) => mb_strtolower(trim($n)))->all();
+
+        $imported = 0;
+        $skipped = 0;
+
+        DB::transaction(function () use ($systems, $priorityIdByName, $existingNames, &$imported, &$skipped) {
+            foreach ($systems as $entry) {
+                if (in_array(mb_strtolower(trim($entry['name'])), $existingNames, true)) {
+                    $skipped++;
+
+                    continue;
+                }
+
+                System::create([
+                    'name' => $entry['name'],
+                    'description' => $entry['description'],
+                    'category' => $entry['category'],
+                    'system_priority_id' => $entry['priority'] ? ($priorityIdByName[$entry['priority']] ?? null) : null,
+                    'rto_minutes' => $entry['rto_minutes'],
+                    'rpo_minutes' => $entry['rpo_minutes'],
+                ]);
+
+                $imported++;
+            }
+        });
+
+        unset($this->systemsByCategory);
+        Flux::modal('system-template')->close();
+
+        $message = __(':count Systeme aus Vorlage geladen.', ['count' => $imported]);
+        if ($skipped > 0) {
+            $message .= ' '.__(':count bereits vorhandene übersprungen.', ['count' => $skipped]);
+        }
+
+        Flux::toast(variant: 'success', text: $message);
+    }
 }; ?>
 
 <section class="mx-auto w-full max-w-5xl">
@@ -174,9 +240,14 @@ new #[Title('Systeme')] class extends Component {
             </flux:subheading>
         </div>
 
-        <flux:button variant="primary" icon="plus" wire:click="openCreate" :disabled="! $this->hasCompany">
-            {{ __('Neues System') }}
-        </flux:button>
+        <div class="flex items-center gap-2">
+            <flux:button variant="filled" icon="sparkles" wire:click="openTemplate" :disabled="! $this->hasCompany">
+                {{ __('Vorlage laden') }}
+            </flux:button>
+            <flux:button variant="primary" icon="plus" wire:click="openCreate" :disabled="! $this->hasCompany">
+                {{ __('Neues System') }}
+            </flux:button>
+        </div>
     </div>
 
     @unless ($this->hasCompany)
@@ -370,5 +441,43 @@ new #[Title('Systeme')] class extends Component {
                 <flux:button variant="danger" wire:click="delete">{{ __('Löschen') }}</flux:button>
             </div>
         </div>
+    </flux:modal>
+
+    <flux:modal name="system-template" class="max-w-xl">
+        <form wire:submit="loadTemplate" class="space-y-5">
+            <div>
+                <flux:heading size="lg">{{ __('Vorlage laden') }}</flux:heading>
+                <flux:subheading>
+                    {{ __('Wählen Sie eine Branche – typische Systeme werden mit sinnvollen Prioritäten und RTO/RPO-Werten hinzugefügt. Bereits vorhandene Einträge werden übersprungen.') }}
+                </flux:subheading>
+            </div>
+
+            <flux:field>
+                <flux:label>{{ __('Branche') }}</flux:label>
+                <flux:select wire:model.live="templateKey" required>
+                    @foreach ($this->templateCatalog() as $key => $tpl)
+                        <flux:select.option value="{{ $key }}">
+                            {{ $tpl['label'] }} ({{ $tpl['count'] }} {{ __('Systeme') }})
+                        </flux:select.option>
+                    @endforeach
+                </flux:select>
+                @if ($templateKey && isset($this->templateCatalog()[$templateKey]))
+                    <flux:description class="mt-2">{{ $this->templateCatalog()[$templateKey]['hint'] }}</flux:description>
+                @endif
+            </flux:field>
+
+            <div class="rounded-md bg-zinc-50 p-3 text-xs text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400">
+                {{ __('Hinweis: Kategorien (Basis-, Geschäfts- und Unterstützende Systeme) und Prioritäten (Kritisch/Hoch/Normal) werden automatisch gesetzt. Sie können alles später anpassen.') }}
+            </div>
+
+            <div class="flex items-center justify-end gap-2 border-t border-zinc-100 pt-4 dark:border-zinc-800">
+                <flux:modal.close>
+                    <flux:button variant="filled">{{ __('Abbrechen') }}</flux:button>
+                </flux:modal.close>
+                <flux:button variant="primary" type="submit" icon="sparkles">
+                    {{ __('Systeme hinzufügen') }}
+                </flux:button>
+            </div>
+        </form>
     </flux:modal>
 </section>
