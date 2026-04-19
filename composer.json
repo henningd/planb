@@ -1,11 +1,14 @@
 {
     "$schema": "https://getcomposer.org/schema.json",
-    "name": "laravel/livewire-starter-kit",
+    "name": "henningd/planb",
     "type": "project",
-    "description": "The official Laravel starter kit for Livewire.",
+    "description": "PlanB – digitales Notfallhandbuch- und Krisenmanagement-Tool für KMU.",
     "keywords": [
+        "bcm",
+        "crisis-management",
+        "notfallhandbuch",
         "laravel",
-        "framework"
+        "livewire"
     ],
     "license": "MIT",
     "require": {
