@@ -24,6 +24,7 @@ Route::prefix('{current_team}')
         Route::livewire('emergency-levels', 'pages::emergency-levels.index')->name('emergency-levels.index');
         Route::livewire('systems', 'pages::systems.index')->name('systems.index');
         Route::livewire('service-providers', 'pages::service-providers.index')->name('service-providers.index');
+        Route::livewire('employees', 'pages::employees.index')->name('employees.index');
 
         Route::livewire('scenarios', 'pages::scenarios.index')->name('scenarios.index');
         Route::livewire('scenarios/{scenario}', 'pages::scenarios.show')->name('scenarios.show');

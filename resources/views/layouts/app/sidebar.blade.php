@@ -26,6 +26,9 @@
                     <flux:sidebar.item icon="users" :href="route('contacts.index')" :current="request()->routeIs('contacts.*')" wire:navigate>
                         {{ __('Ansprechpartner') }}
                     </flux:sidebar.item>
+                    <flux:sidebar.item icon="user-group" :href="route('employees.index')" :current="request()->routeIs('employees.*')" wire:navigate>
+                        {{ __('Mitarbeiter') }}
+                    </flux:sidebar.item>
                     <flux:sidebar.item icon="shield-exclamation" :href="route('emergency-levels.index')" :current="request()->routeIs('emergency-levels.*')" wire:navigate>
                         {{ __('Notfall-Level') }}
                     </flux:sidebar.item>
@@ -34,6 +37,17 @@
                     </flux:sidebar.item>
                     <flux:sidebar.item icon="wrench-screwdriver" :href="route('service-providers.index')" :current="request()->routeIs('service-providers.*')" wire:navigate>
                         {{ __('Dienstleister') }}
+                    </flux:sidebar.item>
+                </flux:sidebar.group>
+
+                <flux:sidebar.group :heading="__('Zugang')" class="grid">
+                    <flux:sidebar.item
+                        icon="key"
+                        :href="auth()->user()?->currentTeam ? route('teams.edit', auth()->user()->currentTeam) : route('teams.index')"
+                        :current="request()->routeIs('teams.*')"
+                        wire:navigate
+                    >
+                        {{ __('App-Benutzer & Einladungen') }}
                     </flux:sidebar.item>
                 </flux:sidebar.group>
 
