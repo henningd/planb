@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Concerns\BelongsToCurrentCompany;
 use Database\Factories\SystemPriorityFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -13,7 +14,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class SystemPriority extends Model
 {
     /** @use HasFactory<SystemPriorityFactory> */
-    use BelongsToCurrentCompany, HasFactory;
+    use BelongsToCurrentCompany, HasFactory, HasUuids;
 
     /**
      * @return HasMany<System, $this>

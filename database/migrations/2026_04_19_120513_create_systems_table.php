@@ -10,12 +10,12 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('systems', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('company_id')->constrained()->cascadeOnDelete();
+            $table->uuid('id')->primary();
+            $table->foreignUuid('company_id')->constrained()->cascadeOnDelete();
             $table->string('name');
             $table->text('description')->nullable();
             $table->string('category')->default(SystemCategory::Unterstuetzend->value);
-            $table->foreignId('system_priority_id')->nullable()->constrained()->nullOnDelete();
+            $table->foreignUuid('system_priority_id')->nullable()->constrained()->nullOnDelete();
             $table->timestamps();
 
             $table->index(['company_id', 'category']);

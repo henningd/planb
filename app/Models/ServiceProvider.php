@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Concerns\BelongsToCurrentCompany;
 use Database\Factories\ServiceProviderFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -13,7 +14,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 class ServiceProvider extends Model
 {
     /** @use HasFactory<ServiceProviderFactory> */
-    use BelongsToCurrentCompany, HasFactory;
+    use BelongsToCurrentCompany, HasFactory, HasUuids;
 
     /**
      * @return BelongsToMany<System, $this>

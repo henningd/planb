@@ -6,6 +6,7 @@ use App\Concerns\BelongsToCurrentCompany;
 use App\Enums\IncidentType;
 use Database\Factories\IncidentReportFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -15,7 +16,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class IncidentReport extends Model
 {
     /** @use HasFactory<IncidentReportFactory> */
-    use BelongsToCurrentCompany, HasFactory;
+    use BelongsToCurrentCompany, HasFactory, HasUuids;
 
     /**
      * @return BelongsTo<ScenarioRun, $this>

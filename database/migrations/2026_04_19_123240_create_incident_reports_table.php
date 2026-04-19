@@ -10,9 +10,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('incident_reports', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('company_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('scenario_run_id')->nullable()->constrained()->nullOnDelete();
+            $table->uuid('id')->primary();
+            $table->foreignUuid('company_id')->constrained()->cascadeOnDelete();
+            $table->foreignUuid('scenario_run_id')->nullable()->constrained()->nullOnDelete();
             $table->string('title');
             $table->string('type')->default(IncidentType::Other->value);
             $table->timestamp('occurred_at');

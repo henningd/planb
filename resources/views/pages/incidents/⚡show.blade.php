@@ -16,7 +16,7 @@ new #[Title('Vorfall')] class extends Component {
         $this->report = $report->load('obligations');
     }
 
-    public function markReported(int $obligationId): void
+    public function markReported(string $obligationId): void
     {
         $obligation = $this->report->obligations->firstWhere('id', $obligationId);
         abort_unless($obligation, 404);

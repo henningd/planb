@@ -16,7 +16,7 @@ new #[Title('Szenario bearbeiten')] class extends Component {
 
     public string $trigger = '';
 
-    public ?int $editingStepId = null;
+    public ?string $editingStepId = null;
 
     public string $stepTitle = '';
 
@@ -26,7 +26,7 @@ new #[Title('Szenario bearbeiten')] class extends Component {
 
     public int $stepSort = 1;
 
-    public ?int $deletingStepId = null;
+    public ?string $deletingStepId = null;
 
     public function mount(Scenario $scenario): void
     {
@@ -62,7 +62,7 @@ new #[Title('Szenario bearbeiten')] class extends Component {
         Flux::modal('step-form')->show();
     }
 
-    public function openEditStep(int $id): void
+    public function openEditStep(string $id): void
     {
         $step = $this->scenario->steps()->findOrFail($id);
 
@@ -104,7 +104,7 @@ new #[Title('Szenario bearbeiten')] class extends Component {
         Flux::toast(variant: 'success', text: __('Schritt gespeichert.'));
     }
 
-    public function confirmDeleteStep(int $id): void
+    public function confirmDeleteStep(string $id): void
     {
         $this->deletingStepId = $id;
         Flux::modal('step-delete')->show();

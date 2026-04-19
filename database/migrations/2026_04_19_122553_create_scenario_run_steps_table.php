@@ -9,8 +9,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('scenario_run_steps', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('scenario_run_id')->constrained()->cascadeOnDelete();
+            $table->uuid('id')->primary();
+            $table->foreignUuid('scenario_run_id')->constrained()->cascadeOnDelete();
             $table->unsignedSmallInteger('sort')->default(0);
             $table->string('title');
             $table->text('description')->nullable();

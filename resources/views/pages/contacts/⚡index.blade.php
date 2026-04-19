@@ -10,7 +10,7 @@ use Livewire\Attributes\Title;
 use Livewire\Component;
 
 new #[Title('Ansprechpartner')] class extends Component {
-    public ?int $editingId = null;
+    public ?string $editingId = null;
 
     public string $name = '';
 
@@ -24,7 +24,7 @@ new #[Title('Ansprechpartner')] class extends Component {
 
     public bool $is_primary = false;
 
-    public ?int $deletingId = null;
+    public ?string $deletingId = null;
 
     #[Computed]
     public function contacts()
@@ -50,7 +50,7 @@ new #[Title('Ansprechpartner')] class extends Component {
         Flux::modal('contact-form')->show();
     }
 
-    public function openEdit(int $id): void
+    public function openEdit(string $id): void
     {
         $contact = Contact::findOrFail($id);
 
@@ -103,7 +103,7 @@ new #[Title('Ansprechpartner')] class extends Component {
         Flux::toast(variant: 'success', text: __('Ansprechpartner gespeichert.'));
     }
 
-    public function confirmDelete(int $id): void
+    public function confirmDelete(string $id): void
     {
         $this->deletingId = $id;
         Flux::modal('contact-delete')->show();

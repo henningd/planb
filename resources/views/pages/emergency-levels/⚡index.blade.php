@@ -8,7 +8,7 @@ use Livewire\Attributes\Title;
 use Livewire\Component;
 
 new #[Title('Notfall-Level')] class extends Component {
-    public ?int $editingId = null;
+    public ?string $editingId = null;
 
     public string $name = '';
 
@@ -18,7 +18,7 @@ new #[Title('Notfall-Level')] class extends Component {
 
     public int $sort = 0;
 
-    public ?int $deletingId = null;
+    public ?string $deletingId = null;
 
     #[Computed]
     public function levels()
@@ -39,7 +39,7 @@ new #[Title('Notfall-Level')] class extends Component {
         Flux::modal('level-form')->show();
     }
 
-    public function openEdit(int $id): void
+    public function openEdit(string $id): void
     {
         $level = EmergencyLevel::findOrFail($id);
 
@@ -80,7 +80,7 @@ new #[Title('Notfall-Level')] class extends Component {
         Flux::toast(variant: 'success', text: __('Notfall-Level gespeichert.'));
     }
 
-    public function confirmDelete(int $id): void
+    public function confirmDelete(string $id): void
     {
         $this->deletingId = $id;
         Flux::modal('level-delete')->show();

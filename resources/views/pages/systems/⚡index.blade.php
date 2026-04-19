@@ -18,7 +18,7 @@ use Livewire\WithFileUploads;
 
 new #[Title('Systeme')] class extends Component {
     use WithFileUploads;
-    public ?int $editingId = null;
+    public ?string $editingId = null;
 
     public string $name = '';
 
@@ -26,16 +26,16 @@ new #[Title('Systeme')] class extends Component {
 
     public string $category = '';
 
-    public ?int $system_priority_id = null;
+    public ?string $system_priority_id = null;
 
     public ?int $rto_minutes = null;
 
     public ?int $rpo_minutes = null;
 
-    /** @var array<int> */
+    /** @var array<int, string> */
     public array $service_provider_ids = [];
 
-    public ?int $deletingId = null;
+    public ?string $deletingId = null;
 
     public string $templateKey = '';
 
@@ -100,7 +100,7 @@ new #[Title('Systeme')] class extends Component {
         Flux::modal('system-form')->show();
     }
 
-    public function openEdit(int $id): void
+    public function openEdit(string $id): void
     {
         $system = System::with('serviceProviders')->findOrFail($id);
 
@@ -130,11 +130,11 @@ new #[Title('Systeme')] class extends Component {
             'name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:2000'],
             'category' => ['required', 'in:'.collect(SystemCategory::cases())->pluck('value')->implode(',')],
-            'system_priority_id' => ['nullable', 'integer', 'exists:system_priorities,id'],
+            'system_priority_id' => ['nullable', 'uuid', 'exists:system_priorities,id'],
             'rto_minutes' => ['nullable', 'integer', 'in:'.implode(',', $validDurations)],
             'rpo_minutes' => ['nullable', 'integer', 'in:'.implode(',', $validDurations)],
             'service_provider_ids' => ['array'],
-            'service_provider_ids.*' => ['integer', 'exists:service_providers,id'],
+            'service_provider_ids.*' => ['uuid', 'exists:service_providers,id'],
         ]);
 
         $providerIds = $validated['service_provider_ids'] ?? [];
@@ -153,7 +153,7 @@ new #[Title('Systeme')] class extends Component {
         Flux::toast(variant: 'success', text: __('System gespeichert.'));
     }
 
-    public function confirmDelete(int $id): void
+    public function confirmDelete(string $id): void
     {
         $this->deletingId = $id;
         Flux::modal('system-delete')->show();

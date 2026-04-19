@@ -11,7 +11,7 @@ use Livewire\Attributes\Title;
 use Livewire\Component;
 
 new #[Title('Szenarien')] class extends Component {
-    public ?int $startingScenarioId = null;
+    public ?string $startingScenarioId = null;
 
     public string $runTitle = '';
 
@@ -23,7 +23,7 @@ new #[Title('Szenarien')] class extends Component {
 
     public string $newTrigger = '';
 
-    public ?int $deletingId = null;
+    public ?string $deletingId = null;
 
     #[Computed]
     public function scenarios()
@@ -37,7 +37,7 @@ new #[Title('Szenarien')] class extends Component {
         return Auth::user()->currentCompany() !== null;
     }
 
-    public function openStart(int $id): void
+    public function openStart(string $id): void
     {
         $scenario = Scenario::findOrFail($id);
 
@@ -78,7 +78,7 @@ new #[Title('Szenarien')] class extends Component {
         $this->redirectRoute('scenarios.show', ['scenario' => $scenario->id], navigate: true);
     }
 
-    public function confirmDelete(int $id): void
+    public function confirmDelete(string $id): void
     {
         $this->deletingId = $id;
         Flux::modal('scenario-delete')->show();

@@ -8,7 +8,7 @@ use Livewire\Attributes\Title;
 use Livewire\Component;
 
 new #[Title('Dienstleister')] class extends Component {
-    public ?int $editingId = null;
+    public ?string $editingId = null;
 
     public string $name = '';
 
@@ -24,7 +24,7 @@ new #[Title('Dienstleister')] class extends Component {
 
     public string $notes = '';
 
-    public ?int $deletingId = null;
+    public ?string $deletingId = null;
 
     #[Computed]
     public function providers()
@@ -44,7 +44,7 @@ new #[Title('Dienstleister')] class extends Component {
         Flux::modal('provider-form')->show();
     }
 
-    public function openEdit(int $id): void
+    public function openEdit(string $id): void
     {
         $provider = ServiceProvider::findOrFail($id);
 
@@ -91,7 +91,7 @@ new #[Title('Dienstleister')] class extends Component {
         Flux::toast(variant: 'success', text: __('Dienstleister gespeichert.'));
     }
 
-    public function confirmDelete(int $id): void
+    public function confirmDelete(string $id): void
     {
         $this->deletingId = $id;
         Flux::modal('provider-delete')->show();

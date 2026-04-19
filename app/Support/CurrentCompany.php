@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Auth;
  */
 class CurrentCompany
 {
-    public static function id(): ?int
+    public static function id(): ?string
     {
         return self::resolve()?->id;
     }

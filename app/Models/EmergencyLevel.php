@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Concerns\BelongsToCurrentCompany;
 use Database\Factories\EmergencyLevelFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -12,5 +13,5 @@ use Illuminate\Database\Eloquent\Model;
 class EmergencyLevel extends Model
 {
     /** @use HasFactory<EmergencyLevelFactory> */
-    use BelongsToCurrentCompany, HasFactory;
+    use BelongsToCurrentCompany, HasFactory, HasUuids;
 }

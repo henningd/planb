@@ -6,6 +6,7 @@ use App\Concerns\BelongsToCurrentCompany;
 use App\Enums\ScenarioRunMode;
 use Database\Factories\ScenarioRunFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -25,7 +26,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class ScenarioRun extends Model
 {
     /** @use HasFactory<ScenarioRunFactory> */
-    use BelongsToCurrentCompany, HasFactory;
+    use BelongsToCurrentCompany, HasFactory, HasUuids;
 
     /**
      * @return BelongsTo<Scenario, $this>

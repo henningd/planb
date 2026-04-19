@@ -38,7 +38,7 @@ new #[Title('Durchlauf')] class extends Component {
         ];
     }
 
-    public function toggleStep(int $stepId): void
+    public function toggleStep(string $stepId): void
     {
         $step = $this->run->steps->firstWhere('id', $stepId);
 
@@ -56,7 +56,7 @@ new #[Title('Durchlauf')] class extends Component {
         $this->run->load('steps');
     }
 
-    public function saveNote(int $stepId): void
+    public function saveNote(string $stepId): void
     {
         $step = $this->run->steps->firstWhere('id', $stepId);
 
