@@ -31,8 +31,13 @@ class DemoDataSeeder extends Seeder
                 'name' => 'Max Mustermann',
                 'password' => Hash::make('password'),
                 'email_verified_at' => now(),
+                'is_super_admin' => true,
             ],
         );
+
+        if (! $user->is_super_admin) {
+            $user->forceFill(['is_super_admin' => true])->save();
+        }
 
         $team = $user->teams()->first() ?? Team::create([
             'name' => "{$user->name}'s Team",

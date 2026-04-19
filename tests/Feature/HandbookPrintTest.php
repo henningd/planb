@@ -6,9 +6,12 @@ use App\Models\ServiceProvider;
 use App\Models\System;
 use App\Models\User;
 use App\Scopes\CurrentCompanyScope;
+use Database\Seeders\GlobalScenariosSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
+
+beforeEach(fn () => $this->seed(GlobalScenariosSeeder::class));
 
 test('handbook print view renders with full data', function () {
     $user = User::factory()->create();

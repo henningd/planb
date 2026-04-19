@@ -1,6 +1,8 @@
 <?php
 
+use App\Http\Middleware\EnsureSuperAdmin;
 use App\Http\Middleware\EnsureTeamMembership;
+use App\Http\Middleware\SetTeamUrlDefaults;
 use App\Models\ServiceProvider;
 use App\Models\System;
 use App\Support\CurrentCompany;
@@ -84,6 +86,16 @@ Route::prefix('{current_team}')
                 'providers' => ServiceProvider::with('systems')->orderBy('name')->get(),
             ]);
         })->name('handbook.print');
+    });
+
+Route::prefix('admin')
+    ->middleware(['auth', 'verified', SetTeamUrlDefaults::class, EnsureSuperAdmin::class])
+    ->name('admin.')
+    ->group(function () {
+        Route::livewire('/', 'pages::admin.index')->name('index');
+        Route::livewire('companies', 'pages::admin.companies.index')->name('companies.index');
+        Route::livewire('scenarios', 'pages::admin.scenarios.index')->name('scenarios.index');
+        Route::livewire('scenarios/{globalScenario}', 'pages::admin.scenarios.show')->name('scenarios.show');
     });
 
 Route::middleware(['auth'])->group(function () {

@@ -1,14 +1,18 @@
 <?php
 
 use App\Models\Company;
+use App\Models\GlobalScenario;
 use App\Models\Scenario;
 use App\Models\ScenarioRun;
 use App\Models\Team;
 use App\Models\User;
 use App\Scopes\CurrentCompanyScope;
+use Database\Seeders\GlobalScenariosSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
+
+beforeEach(fn () => $this->seed(GlobalScenariosSeeder::class));
 
 test('creating a company seeds default scenarios with steps', function () {
     $company = Company::factory()->for(Team::factory())->create();
@@ -169,6 +173,38 @@ test('scenario show page can add and delete steps', function () {
         ->call('deleteStep');
 
     expect($scenario->fresh()->steps()->count())->toBe($initialCount);
+});
+
+test('scenarios page offers template reload after the user deletes all scenarios', function () {
+    // Seed one active global scenario (the GlobalScenariosSeeder doesn't run in tests).
+    $global = GlobalScenario::create([
+        'name' => 'Standard-Ransomware',
+        'description' => 'x',
+        'trigger' => 'y',
+        'is_active' => true,
+        'sort' => 1,
+    ]);
+    $global->steps()->create([
+        'sort' => 1,
+        'title' => 'Geräte isolieren',
+        'description' => 'Netzwerk trennen',
+        'responsible' => 'IT',
+    ]);
+
+    $user = User::factory()->create();
+    $company = Company::factory()->for($user->currentTeam)->create();
+
+    // User deletes every scenario on their company.
+    $company->scenarios()->delete();
+
+    Livewire\Livewire::actingAs($user->fresh())
+        ->test('pages::scenarios.index')
+        ->call('loadTemplates')
+        ->assertHasNoErrors();
+
+    $scenario = $company->scenarios()->where('name', 'Standard-Ransomware')->first();
+    expect($scenario)->not->toBeNull()
+        ->and($scenario->steps()->count())->toBe(1);
 });
 
 test('scenario show page blocks access for other tenants', function () {

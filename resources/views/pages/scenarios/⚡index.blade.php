@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\ScenarioRunMode;
+use App\Models\GlobalScenario;
 use App\Models\Scenario;
 use App\Models\ScenarioRun;
 use Flux\Flux;
@@ -52,6 +53,58 @@ new #[Title('Szenarien')] class extends Component {
     {
         $this->reset(['newName', 'newDescription', 'newTrigger']);
         Flux::modal('scenario-create')->show();
+    }
+
+    #[Computed]
+    public function canLoadTemplates(): bool
+    {
+        return $this->hasCompany
+            && $this->scenarios->isEmpty()
+            && GlobalScenario::where('is_active', true)->exists();
+    }
+
+    public function loadTemplates(): void
+    {
+        if (! $this->hasCompany) {
+            return;
+        }
+
+        $company = Auth::user()->currentCompany();
+        $globals = GlobalScenario::where('is_active', true)->with('steps')->orderBy('sort')->get();
+
+        $imported = 0;
+
+        DB::transaction(function () use ($company, $globals, &$imported) {
+            foreach ($globals as $global) {
+                if ($company->scenarios()->where('name', $global->name)->exists()) {
+                    continue;
+                }
+
+                $scenario = $company->scenarios()->create([
+                    'name' => $global->name,
+                    'description' => $global->description,
+                    'trigger' => $global->trigger,
+                ]);
+
+                foreach ($global->steps as $step) {
+                    $scenario->steps()->create([
+                        'sort' => $step->sort,
+                        'title' => $step->title,
+                        'description' => $step->description,
+                        'responsible' => $step->responsible,
+                    ]);
+                }
+
+                $imported++;
+            }
+        });
+
+        unset($this->scenarios);
+
+        Flux::toast(
+            variant: 'success',
+            text: __(':count Vorlagen-Szenarien geladen.', ['count' => $imported]),
+        );
     }
 
     public function createScenario(): void
@@ -151,6 +204,27 @@ new #[Title('Szenarien')] class extends Component {
             {{ __('Bitte legen Sie zuerst ein Firmenprofil an.') }}
         </div>
     @endunless
+
+    @if ($this->hasCompany && $this->scenarios->isEmpty())
+        <div class="mb-6 rounded-xl border border-dashed border-indigo-300 bg-indigo-50 p-8 text-center dark:border-indigo-800 dark:bg-indigo-950/40">
+            <flux:heading size="base" class="text-indigo-900 dark:text-indigo-100">
+                {{ __('Keine Szenarien angelegt') }}
+            </flux:heading>
+            <flux:text class="mt-2 text-sm text-indigo-900/80 dark:text-indigo-200/80">
+                {{ __('Sie können mit den vorgefertigten Standard-Szenarien starten oder ein eigenes anlegen.') }}
+            </flux:text>
+            <div class="mt-4 flex items-center justify-center gap-2">
+                @if ($this->canLoadTemplates)
+                    <flux:button variant="primary" icon="sparkles" wire:click="loadTemplates">
+                        {{ __('Standard-Vorlagen laden') }}
+                    </flux:button>
+                @endif
+                <flux:button variant="filled" icon="plus" wire:click="openCreate">
+                    {{ __('Eigenes Szenario anlegen') }}
+                </flux:button>
+            </div>
+        </div>
+    @endif
 
     <div class="grid gap-4 md:grid-cols-2">
         @foreach ($this->scenarios as $scenario)

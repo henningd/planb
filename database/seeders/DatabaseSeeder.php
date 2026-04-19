@@ -8,6 +8,8 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
+        $this->call(GlobalScenariosSeeder::class);
+
         if (app()->environment('local')) {
             $this->call(DemoDataSeeder::class);
         }

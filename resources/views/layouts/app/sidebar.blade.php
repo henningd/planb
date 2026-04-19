@@ -37,6 +37,20 @@
                     </flux:sidebar.item>
                 </flux:sidebar.group>
 
+                @if (auth()->user()?->isSuperAdmin())
+                    <flux:sidebar.group :heading="__('Administration')" class="grid">
+                        <flux:sidebar.item icon="shield-check" :href="route('admin.index')" :current="request()->routeIs('admin.index')" wire:navigate>
+                            {{ __('Übersicht') }}
+                        </flux:sidebar.item>
+                        <flux:sidebar.item icon="building-office" :href="route('admin.companies.index')" :current="request()->routeIs('admin.companies.*')" wire:navigate>
+                            {{ __('Kunden') }}
+                        </flux:sidebar.item>
+                        <flux:sidebar.item icon="document-duplicate" :href="route('admin.scenarios.index')" :current="request()->routeIs('admin.scenarios.*')" wire:navigate>
+                            {{ __('Globale Szenarien') }}
+                        </flux:sidebar.item>
+                    </flux:sidebar.group>
+                @endif
+
                 <flux:sidebar.group :heading="__('Ernstfall')" class="grid">
                     <flux:sidebar.item icon="bolt" :href="route('scenarios.index')" :current="request()->routeIs('scenarios.*')" wire:navigate>
                         {{ __('Szenarien') }}
