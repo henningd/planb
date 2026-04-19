@@ -80,6 +80,84 @@ test('re-running the template skips duplicates', function () {
     expect($count)->toBe(1);
 });
 
+test('json import creates systems with validated data', function () {
+    $user = User::factory()->create();
+    $company = Company::factory()->for($user->currentTeam)->create();
+
+    $json = json_encode([
+        'version' => 1,
+        'systems' => [
+            [
+                'name' => 'SCADA',
+                'description' => 'Zentrale Parküberwachung',
+                'category' => 'basisbetrieb',
+                'priority' => 'Kritisch',
+                'rto_minutes' => 60,
+                'rpo_minutes' => 15,
+            ],
+            [
+                'name' => 'Direktvermarkter-API',
+                'category' => 'geschaeftsbetrieb',
+                'priority' => 'Kritisch',
+                'rto_minutes' => 240,
+                'rpo_minutes' => 60,
+            ],
+        ],
+    ]);
+
+    Livewire\Livewire::actingAs($user->fresh())
+        ->test('pages::systems.index')
+        ->set('importJson', $json)
+        ->call('import')
+        ->assertHasNoErrors();
+
+    $systems = System::withoutGlobalScope(CurrentCompanyScope::class)
+        ->where('company_id', $company->id)
+        ->get();
+
+    expect($systems->pluck('name')->all())->toContain('SCADA', 'Direktvermarkter-API');
+
+    $scada = $systems->firstWhere('name', 'SCADA');
+    expect($scada->priority?->name)->toBe('Kritisch')
+        ->and($scada->rto_minutes)->toBe(60)
+        ->and($scada->rpo_minutes)->toBe(15);
+});
+
+test('json import rejects unknown category', function () {
+    $user = User::factory()->create();
+    Company::factory()->for($user->currentTeam)->create();
+
+    $json = json_encode([
+        'systems' => [
+            ['name' => 'Foo', 'category' => 'unsinn'],
+        ],
+    ]);
+
+    Livewire\Livewire::actingAs($user->fresh())
+        ->test('pages::systems.index')
+        ->set('importJson', $json)
+        ->call('import')
+        ->assertHasErrors('importJson');
+});
+
+test('json import accepts a bare array without version wrapper', function () {
+    $user = User::factory()->create();
+    Company::factory()->for($user->currentTeam)->create();
+
+    $json = json_encode([
+        ['name' => 'Einfaches System', 'category' => 'unterstuetzend'],
+    ]);
+
+    Livewire\Livewire::actingAs($user->fresh())
+        ->test('pages::systems.index')
+        ->set('importJson', $json)
+        ->call('import')
+        ->assertHasNoErrors();
+
+    expect(System::withoutGlobalScope(CurrentCompanyScope::class)->where('name', 'Einfaches System')->exists())
+        ->toBeTrue();
+});
+
 test('systems page renders and groups by category', function () {
     $user = User::factory()->create();
     $company = Company::factory()->for($user->currentTeam)->create();

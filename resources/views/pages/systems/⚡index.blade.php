@@ -6,6 +6,7 @@ use App\Models\System;
 use App\Models\SystemPriority;
 use App\Support\Duration;
 use App\Support\IndustryTemplates;
+use App\Support\SystemImport;
 use Flux\Flux;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Auth;
@@ -13,8 +14,10 @@ use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Title;
 use Livewire\Component;
+use Livewire\WithFileUploads;
 
 new #[Title('Systeme')] class extends Component {
+    use WithFileUploads;
     public ?int $editingId = null;
 
     public string $name = '';
@@ -35,6 +38,10 @@ new #[Title('Systeme')] class extends Component {
     public ?int $deletingId = null;
 
     public string $templateKey = '';
+
+    public $importFile = null;
+
+    public string $importJson = '';
 
     public function mount(): void
     {
@@ -182,6 +189,86 @@ new #[Title('Systeme')] class extends Component {
         Flux::modal('system-template')->show();
     }
 
+    public function openImport(): void
+    {
+        $this->reset(['importFile', 'importJson']);
+        Flux::modal('system-import')->show();
+    }
+
+    public function import(): void
+    {
+        if (! $this->hasCompany) {
+            return;
+        }
+
+        $raw = null;
+
+        if ($this->importFile) {
+            $validated = $this->validate(
+                ['importFile' => ['file', 'mimes:json,txt', 'max:512']],
+                ['importFile.max' => __('Datei zu groß (max. 512 KB).')],
+            );
+            $raw = @file_get_contents($this->importFile->getRealPath());
+        } elseif (trim($this->importJson) !== '') {
+            $raw = $this->importJson;
+        }
+
+        if (! $raw) {
+            $this->addError('importJson', __('Bitte JSON-Datei hochladen oder Inhalt einfügen.'));
+
+            return;
+        }
+
+        $result = SystemImport::fromJson($raw);
+
+        if ($result->hasErrors()) {
+            $this->addError('importJson', $result->firstError());
+
+            return;
+        }
+
+        $company = Auth::user()->currentCompany();
+        $priorityIdByName = $company->systemPriorities()->pluck('id', 'name');
+        $existingNames = System::pluck('name')->map(fn ($n) => mb_strtolower(trim($n)))->all();
+
+        $imported = 0;
+        $skipped = 0;
+
+        DB::transaction(function () use ($result, $priorityIdByName, $existingNames, &$imported, &$skipped) {
+            foreach ($result->systems as $entry) {
+                if (in_array(mb_strtolower(trim($entry['name'])), $existingNames, true)) {
+                    $skipped++;
+
+                    continue;
+                }
+
+                System::create([
+                    'name' => $entry['name'],
+                    'description' => $entry['description'] ?? null,
+                    'category' => $entry['category'],
+                    'system_priority_id' => isset($entry['priority']) && $entry['priority']
+                        ? ($priorityIdByName[$entry['priority']] ?? null)
+                        : null,
+                    'rto_minutes' => $entry['rto_minutes'] ?? null,
+                    'rpo_minutes' => $entry['rpo_minutes'] ?? null,
+                ]);
+
+                $imported++;
+            }
+        });
+
+        unset($this->systemsByCategory);
+        Flux::modal('system-import')->close();
+        $this->reset(['importFile', 'importJson']);
+
+        $message = __(':count Systeme importiert.', ['count' => $imported]);
+        if ($skipped > 0) {
+            $message .= ' '.__(':count bereits vorhandene übersprungen.', ['count' => $skipped]);
+        }
+
+        Flux::toast(variant: 'success', text: $message);
+    }
+
     public function loadTemplate(): void
     {
         if (! $this->hasCompany) {
@@ -243,6 +330,9 @@ new #[Title('Systeme')] class extends Component {
         <div class="flex items-center gap-2">
             <flux:button variant="filled" icon="sparkles" wire:click="openTemplate" :disabled="! $this->hasCompany">
                 {{ __('Vorlage laden') }}
+            </flux:button>
+            <flux:button variant="filled" icon="arrow-up-tray" wire:click="openImport" :disabled="! $this->hasCompany">
+                {{ __('Importieren') }}
             </flux:button>
             <flux:button variant="primary" icon="plus" wire:click="openCreate" :disabled="! $this->hasCompany">
                 {{ __('Neues System') }}
@@ -441,6 +531,62 @@ new #[Title('Systeme')] class extends Component {
                 <flux:button variant="danger" wire:click="delete">{{ __('Löschen') }}</flux:button>
             </div>
         </div>
+    </flux:modal>
+
+    <flux:modal name="system-import" class="max-w-2xl">
+        <form wire:submit="import" class="space-y-5">
+            <div>
+                <flux:heading size="lg">{{ __('Systeme importieren') }}</flux:heading>
+                <flux:subheading>
+                    {{ __('JSON-Datei hochladen oder Inhalt einfügen. Bereits vorhandene Systeme (gleicher Name) werden übersprungen.') }}
+                </flux:subheading>
+            </div>
+
+            <flux:field>
+                <flux:label>{{ __('JSON-Datei') }}</flux:label>
+                <input type="file" wire:model="importFile" accept=".json,application/json,text/plain"
+                       class="block w-full text-sm file:mr-3 file:rounded-md file:border file:border-zinc-200 file:bg-white file:px-3 file:py-1.5 file:text-sm file:font-medium hover:file:bg-zinc-50 dark:file:border-zinc-700 dark:file:bg-zinc-800 dark:hover:file:bg-zinc-700">
+                @error('importFile') <flux:error>{{ $message }}</flux:error> @enderror
+            </flux:field>
+
+            <div class="relative flex items-center">
+                <div class="flex-grow border-t border-zinc-200 dark:border-zinc-700"></div>
+                <span class="mx-3 text-xs uppercase text-zinc-400">{{ __('oder') }}</span>
+                <div class="flex-grow border-t border-zinc-200 dark:border-zinc-700"></div>
+            </div>
+
+            <flux:field>
+                <flux:label>{{ __('JSON einfügen') }}</flux:label>
+                <flux:textarea
+                    wire:model="importJson"
+                    rows="6"
+                    placeholder='{&#10;  "version": 1,&#10;  "systems": [&#10;    { "name": "SCADA", "category": "basisbetrieb", "priority": "Kritisch", "rto_minutes": 60, "rpo_minutes": 15 }&#10;  ]&#10;}'
+                />
+                @error('importJson') <flux:error>{{ $message }}</flux:error> @enderror
+            </flux:field>
+
+            <div class="rounded-md bg-zinc-50 p-3 text-xs text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400">
+                <div class="mb-1 font-medium">{{ __('Erwartetes Format') }}</div>
+                <div>
+                    {{ __('Liste von Objekten mit Feldern') }}:
+                    <code class="text-[11px]">name</code>,
+                    <code class="text-[11px]">category</code> ({{ implode(', ', array_column(\App\Enums\SystemCategory::cases(), 'value')) }}),
+                    <code class="text-[11px]">priority</code> ({{ __('optional, Name der Priorität') }}),
+                    <code class="text-[11px]">rto_minutes</code>,
+                    <code class="text-[11px]">rpo_minutes</code>,
+                    <code class="text-[11px]">description</code>.
+                </div>
+            </div>
+
+            <div class="flex items-center justify-end gap-2 border-t border-zinc-100 pt-4 dark:border-zinc-800">
+                <flux:modal.close>
+                    <flux:button variant="filled">{{ __('Abbrechen') }}</flux:button>
+                </flux:modal.close>
+                <flux:button variant="primary" type="submit" icon="arrow-up-tray">
+                    {{ __('Importieren') }}
+                </flux:button>
+            </div>
+        </form>
     </flux:modal>
 
     <flux:modal name="system-template" class="max-w-xl">
