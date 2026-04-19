@@ -37,6 +37,18 @@
                     </flux:sidebar.item>
                 </flux:sidebar.group>
 
+                <flux:sidebar.group :heading="__('Ernstfall')" class="grid">
+                    <flux:sidebar.item icon="bolt" :href="route('scenarios.index')" :current="request()->routeIs('scenarios.*')" wire:navigate>
+                        {{ __('Szenarien') }}
+                    </flux:sidebar.item>
+                    <flux:sidebar.item icon="clipboard-document-check" :href="route('scenario-runs.index')" :current="request()->routeIs('scenario-runs.*')" wire:navigate>
+                        {{ __('Protokolle & Übungen') }}
+                    </flux:sidebar.item>
+                    <flux:sidebar.item icon="megaphone" :href="route('incidents.index')" :current="request()->routeIs('incidents.*')" wire:navigate>
+                        {{ __('Meldepflichten') }}
+                    </flux:sidebar.item>
+                </flux:sidebar.group>
+
                 @if (auth()->user()?->isSuperAdmin())
                     <flux:sidebar.group :heading="__('Administration')" class="grid">
                         <flux:sidebar.item icon="shield-check" :href="route('admin.index')" :current="request()->routeIs('admin.index')" wire:navigate>
@@ -50,18 +62,6 @@
                         </flux:sidebar.item>
                     </flux:sidebar.group>
                 @endif
-
-                <flux:sidebar.group :heading="__('Ernstfall')" class="grid">
-                    <flux:sidebar.item icon="bolt" :href="route('scenarios.index')" :current="request()->routeIs('scenarios.*')" wire:navigate>
-                        {{ __('Szenarien') }}
-                    </flux:sidebar.item>
-                    <flux:sidebar.item icon="clipboard-document-check" :href="route('scenario-runs.index')" :current="request()->routeIs('scenario-runs.*')" wire:navigate>
-                        {{ __('Protokolle & Übungen') }}
-                    </flux:sidebar.item>
-                    <flux:sidebar.item icon="megaphone" :href="route('incidents.index')" :current="request()->routeIs('incidents.*')" wire:navigate>
-                        {{ __('Meldepflichten') }}
-                    </flux:sidebar.item>
-                </flux:sidebar.group>
             </flux:sidebar.nav>
 
             <flux:spacer />
