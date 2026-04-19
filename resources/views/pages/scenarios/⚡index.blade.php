@@ -17,6 +17,14 @@ new #[Title('Szenarien')] class extends Component {
 
     public string $runMode = 'drill';
 
+    public string $newName = '';
+
+    public string $newDescription = '';
+
+    public string $newTrigger = '';
+
+    public ?int $deletingId = null;
+
     #[Computed]
     public function scenarios()
     {
@@ -38,6 +46,53 @@ new #[Title('Szenarien')] class extends Component {
         $this->runMode = ScenarioRunMode::Drill->value;
 
         Flux::modal('scenario-start')->show();
+    }
+
+    public function openCreate(): void
+    {
+        $this->reset(['newName', 'newDescription', 'newTrigger']);
+        Flux::modal('scenario-create')->show();
+    }
+
+    public function createScenario(): void
+    {
+        if (! $this->hasCompany) {
+            return;
+        }
+
+        $validated = $this->validate([
+            'newName' => ['required', 'string', 'max:255'],
+            'newDescription' => ['nullable', 'string', 'max:2000'],
+            'newTrigger' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        $scenario = Scenario::create([
+            'name' => $validated['newName'],
+            'description' => $validated['newDescription'] ?: null,
+            'trigger' => $validated['newTrigger'] ?: null,
+        ]);
+
+        Flux::modal('scenario-create')->close();
+        $this->reset(['newName', 'newDescription', 'newTrigger']);
+
+        $this->redirectRoute('scenarios.show', ['scenario' => $scenario->id], navigate: true);
+    }
+
+    public function confirmDelete(int $id): void
+    {
+        $this->deletingId = $id;
+        Flux::modal('scenario-delete')->show();
+    }
+
+    public function delete(): void
+    {
+        if ($this->deletingId) {
+            Scenario::findOrFail($this->deletingId)->delete();
+            $this->deletingId = null;
+            unset($this->scenarios);
+            Flux::modal('scenario-delete')->close();
+            Flux::toast(variant: 'success', text: __('Szenario gelöscht.'));
+        }
     }
 
     public function start(): void
@@ -78,11 +133,17 @@ new #[Title('Szenarien')] class extends Component {
 }; ?>
 
 <section class="mx-auto w-full max-w-5xl">
-    <div class="mb-6">
-        <flux:heading size="xl">{{ __('Szenarien & Playbooks') }}</flux:heading>
-        <flux:subheading>
-            {{ __('Vorbereitete Abläufe für typische Notfälle. Starten Sie eine Übung oder einen Ernstfall – Schritte werden automatisch protokolliert.') }}
-        </flux:subheading>
+    <div class="mb-6 flex items-start justify-between gap-4">
+        <div>
+            <flux:heading size="xl">{{ __('Szenarien & Playbooks') }}</flux:heading>
+            <flux:subheading>
+                {{ __('Vorbereitete Abläufe für typische Notfälle. Starten Sie eine Übung oder einen Ernstfall – Schritte werden automatisch protokolliert.') }}
+            </flux:subheading>
+        </div>
+
+        <flux:button variant="primary" icon="plus" wire:click="openCreate" :disabled="! $this->hasCompany">
+            {{ __('Neues Szenario') }}
+        </flux:button>
     </div>
 
     @unless ($this->hasCompany)
@@ -126,7 +187,19 @@ new #[Title('Szenarien')] class extends Component {
                     @endif
                 </ol>
 
-                <div class="mt-5 flex items-center justify-end gap-2 border-t border-zinc-100 pt-4 dark:border-zinc-800">
+                <div class="mt-5 flex items-center justify-between gap-2 border-t border-zinc-100 pt-4 dark:border-zinc-800">
+                    <flux:dropdown align="start">
+                        <flux:button size="sm" variant="ghost" icon="ellipsis-vertical" />
+                        <flux:menu>
+                            <flux:menu.item icon="pencil" :href="route('scenarios.show', $scenario)" wire:navigate>
+                                {{ __('Bearbeiten') }}
+                            </flux:menu.item>
+                            <flux:menu.separator />
+                            <flux:menu.item icon="trash" variant="danger" wire:click="confirmDelete({{ $scenario->id }})">
+                                {{ __('Löschen') }}
+                            </flux:menu.item>
+                        </flux:menu>
+                    </flux:dropdown>
                     <flux:button size="sm" variant="primary" wire:click="openStart({{ $scenario->id }})" icon="play">
                         {{ __('Starten') }}
                     </flux:button>
@@ -175,5 +248,42 @@ new #[Title('Szenarien')] class extends Component {
                 </flux:button>
             </div>
         </form>
+    </flux:modal>
+
+    <flux:modal name="scenario-create" class="max-w-xl">
+        <form wire:submit="createScenario" class="space-y-5">
+            <div>
+                <flux:heading size="lg">{{ __('Neues Szenario anlegen') }}</flux:heading>
+                <flux:subheading>{{ __('Sie können Schritte im nächsten Schritt hinzufügen.') }}</flux:subheading>
+            </div>
+
+            <flux:input wire:model="newName" :label="__('Name')" required placeholder="z. B. Ausfall Buchhaltungsserver" />
+            <flux:textarea wire:model="newDescription" :label="__('Beschreibung')" rows="3" placeholder="{{ __('Was genau passiert in diesem Szenario?') }}" />
+            <flux:textarea wire:model="newTrigger" :label="__('Auslöser')" rows="2" placeholder="{{ __('Woran erkennen Sie, dass dieses Szenario zutrifft?') }}" />
+
+            <div class="flex items-center justify-end gap-2 border-t border-zinc-100 pt-4 dark:border-zinc-800">
+                <flux:modal.close>
+                    <flux:button variant="filled">{{ __('Abbrechen') }}</flux:button>
+                </flux:modal.close>
+                <flux:button variant="primary" type="submit">
+                    {{ __('Anlegen & bearbeiten') }}
+                </flux:button>
+            </div>
+        </form>
+    </flux:modal>
+
+    <flux:modal name="scenario-delete" class="max-w-md">
+        <div class="space-y-5">
+            <div>
+                <flux:heading size="lg">{{ __('Szenario löschen?') }}</flux:heading>
+                <flux:subheading>{{ __('Alle zugehörigen Schritte werden entfernt. Laufende und abgeschlossene Protokolle bleiben erhalten, verlieren aber die Szenario-Verknüpfung.') }}</flux:subheading>
+            </div>
+            <div class="flex items-center justify-end gap-2">
+                <flux:modal.close>
+                    <flux:button variant="filled">{{ __('Abbrechen') }}</flux:button>
+                </flux:modal.close>
+                <flux:button variant="danger" wire:click="delete">{{ __('Löschen') }}</flux:button>
+            </div>
+        </div>
     </flux:modal>
 </section>
