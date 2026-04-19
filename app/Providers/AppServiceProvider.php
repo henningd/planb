@@ -33,8 +33,12 @@ class AppServiceProvider extends ServiceProvider
     {
         Date::use(CarbonImmutable::class);
 
+        // In production, destruktive DB-Kommandos (migrate:fresh, wipe, etc.)
+        // sind standardmäßig gesperrt. Während der Stabilisierungsphase kann
+        // die Sperre per ENV `ALLOW_DESTRUCTIVE_DB=true` gezielt aufgehoben
+        // werden.
         DB::prohibitDestructiveCommands(
-            app()->isProduction(),
+            app()->isProduction() && ! env('ALLOW_DESTRUCTIVE_DB', false),
         );
 
         Password::defaults(fn (): ?Password => app()->isProduction()
