@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
-#[Fillable(['company_id', 'name', 'description', 'category', 'system_priority_id'])]
+#[Fillable(['company_id', 'name', 'description', 'category', 'system_priority_id', 'rto_minutes', 'rpo_minutes'])]
 class System extends Model
 {
     /** @use HasFactory<SystemFactory> */
@@ -42,6 +42,8 @@ class System extends Model
     {
         return [
             'category' => SystemCategory::class,
+            'rto_minutes' => 'integer',
+            'rpo_minutes' => 'integer',
         ];
     }
 }

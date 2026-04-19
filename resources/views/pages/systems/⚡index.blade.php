@@ -4,6 +4,7 @@ use App\Enums\SystemCategory;
 use App\Models\ServiceProvider;
 use App\Models\System;
 use App\Models\SystemPriority;
+use App\Support\Duration;
 use Flux\Flux;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Auth;
@@ -21,6 +22,10 @@ new #[Title('Systeme')] class extends Component {
     public string $category = '';
 
     public ?int $system_priority_id = null;
+
+    public ?int $rto_minutes = null;
+
+    public ?int $rpo_minutes = null;
 
     /** @var array<int> */
     public array $service_provider_ids = [];
@@ -92,6 +97,8 @@ new #[Title('Systeme')] class extends Component {
         $this->description = (string) $system->description;
         $this->category = $system->category->value;
         $this->system_priority_id = $system->system_priority_id;
+        $this->rto_minutes = $system->rto_minutes;
+        $this->rpo_minutes = $system->rpo_minutes;
         $this->service_provider_ids = $system->serviceProviders->pluck('id')->all();
 
         Flux::modal('system-form')->show();
@@ -105,11 +112,15 @@ new #[Title('Systeme')] class extends Component {
             return;
         }
 
+        $validDurations = array_keys(Duration::OPTIONS);
+
         $validated = $this->validate([
             'name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:2000'],
             'category' => ['required', 'in:'.collect(SystemCategory::cases())->pluck('value')->implode(',')],
             'system_priority_id' => ['nullable', 'integer', 'exists:system_priorities,id'],
+            'rto_minutes' => ['nullable', 'integer', 'in:'.implode(',', $validDurations)],
+            'rpo_minutes' => ['nullable', 'integer', 'in:'.implode(',', $validDurations)],
             'service_provider_ids' => ['array'],
             'service_provider_ids.*' => ['integer', 'exists:service_providers,id'],
         ]);
@@ -149,7 +160,7 @@ new #[Title('Systeme')] class extends Component {
 
     protected function resetForm(): void
     {
-        $this->reset(['editingId', 'name', 'description', 'system_priority_id', 'service_provider_ids']);
+        $this->reset(['editingId', 'name', 'description', 'system_priority_id', 'rto_minutes', 'rpo_minutes', 'service_provider_ids']);
         $this->category = SystemCategory::Basisbetrieb->value;
     }
 }; ?>
@@ -214,6 +225,22 @@ new #[Title('Systeme')] class extends Component {
                                     {{ $system->description }}
                                 </flux:text>
                             @endif
+                            @if ($system->rto_minutes || $system->rpo_minutes)
+                                <div class="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-zinc-600 dark:text-zinc-400">
+                                    @if ($system->rto_minutes)
+                                        <div class="flex items-center gap-1.5">
+                                            <flux:icon.clock class="h-3.5 w-3.5 text-zinc-400" />
+                                            <span>{{ __('Max. Ausfall') }}: <span class="font-medium">{{ \App\Support\Duration::format($system->rto_minutes) }}</span></span>
+                                        </div>
+                                    @endif
+                                    @if ($system->rpo_minutes)
+                                        <div class="flex items-center gap-1.5">
+                                            <flux:icon.archive-box class="h-3.5 w-3.5 text-zinc-400" />
+                                            <span>{{ __('Max. Datenverlust') }}: <span class="font-medium">{{ \App\Support\Duration::format($system->rpo_minutes) }}</span></span>
+                                        </div>
+                                    @endif
+                                </div>
+                            @endif
                             @if ($system->serviceProviders->isNotEmpty())
                                 <div class="mt-2 flex flex-wrap items-center gap-1.5">
                                     <flux:icon.wrench-screwdriver class="h-3.5 w-3.5 text-zinc-400" />
@@ -272,6 +299,36 @@ new #[Title('Systeme')] class extends Component {
                     <flux:select.option value="{{ $priority->id }}">{{ $priority->name }}</flux:select.option>
                 @endforeach
             </flux:select>
+
+            <div class="grid gap-4 sm:grid-cols-2">
+                <flux:field>
+                    <flux:label>{{ __('Max. Ausfallzeit') }}</flux:label>
+                    <flux:description>
+                        {{ __('Wie lange darf das System maximal ausfallen, bevor der Betrieb ernsthaft leidet?') }}
+                        <span class="text-zinc-400">· {{ __('Fachbegriff: RTO') }}</span>
+                    </flux:description>
+                    <flux:select wire:model="rto_minutes">
+                        <flux:select.option value="">{{ __('Nicht definiert') }}</flux:select.option>
+                        @foreach (\App\Support\Duration::options() as $opt)
+                            <flux:select.option value="{{ $opt['value'] }}">{{ $opt['label'] }}</flux:select.option>
+                        @endforeach
+                    </flux:select>
+                </flux:field>
+
+                <flux:field>
+                    <flux:label>{{ __('Max. Datenverlust') }}</flux:label>
+                    <flux:description>
+                        {{ __('Wieviel Datenverlust ist im Notfall verkraftbar?') }}
+                        <span class="text-zinc-400">· {{ __('Fachbegriff: RPO') }}</span>
+                    </flux:description>
+                    <flux:select wire:model="rpo_minutes">
+                        <flux:select.option value="">{{ __('Nicht definiert') }}</flux:select.option>
+                        @foreach (\App\Support\Duration::options() as $opt)
+                            <flux:select.option value="{{ $opt['value'] }}">{{ $opt['label'] }}</flux:select.option>
+                        @endforeach
+                    </flux:select>
+                </flux:field>
+            </div>
 
             @if ($this->providers->isNotEmpty())
                 <flux:field>

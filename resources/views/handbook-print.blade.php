@@ -212,6 +212,7 @@
                             <tr>
                                 <th>{{ __('System') }}</th>
                                 <th>{{ __('Priorität') }}</th>
+                                <th>{{ __('Zielwerte') }}</th>
                                 <th>{{ __('Dienstleister') }}</th>
                             </tr>
                         </thead>
@@ -227,6 +228,14 @@
                                             <span class="badge {{ $system->priority->sort === 1 ? 'badge-critical' : ($system->priority->sort === 2 ? 'badge-high' : '') }}">
                                                 {{ $system->priority->name }}
                                             </span>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        @if ($system->rto_minutes)
+                                            <div>RTO: {{ \App\Support\Duration::format($system->rto_minutes) }}</div>
+                                        @endif
+                                        @if ($system->rpo_minutes)
+                                            <div>RPO: {{ \App\Support\Duration::format($system->rpo_minutes) }}</div>
                                         @endif
                                     </td>
                                     <td>
