@@ -41,6 +41,16 @@ class SystemTask extends Model
             ->withTimestamps();
     }
 
+    /**
+     * @return BelongsToMany<ServiceProvider, $this>
+     */
+    public function providerAssignees(): BelongsToMany
+    {
+        return $this->belongsToMany(ServiceProvider::class, 'service_provider_system_task')
+            ->withPivot('raci_role')
+            ->withTimestamps();
+    }
+
     public function isDone(): bool
     {
         return $this->completed_at !== null;

@@ -3,6 +3,7 @@
 use App\Enums\RaciRole;
 use App\Models\Company;
 use App\Models\Employee;
+use App\Models\ServiceProvider;
 use App\Models\System;
 use App\Models\SystemTask;
 use App\Models\User;
@@ -77,6 +78,49 @@ test('add task stores multiple assignees with RACI roles', function () {
         ->and($byId[$b->id]->pivot->raci_role)->toBe('R');
 });
 
+test('add task stores multiple provider assignees with RACI roles', function () {
+    [$user, , $system] = bootSystemTaskTenant();
+
+    $acme = ServiceProvider::factory()->for($system->company)->create(['name' => 'ACME-IT']);
+    $beta = ServiceProvider::factory()->for($system->company)->create(['name' => 'Beta-Hoster']);
+
+    Livewire\Livewire::actingAs($user)
+        ->test('pages::systems.show', ['system' => $system])
+        ->set('newTaskTitle', 'Recovery-Test')
+        ->set('newTaskProviders', [
+            ['provider_id' => $acme->id, 'raci_role' => RaciRole::Responsible->value],
+            ['provider_id' => $beta->id, 'raci_role' => RaciRole::Consulted->value],
+        ])
+        ->call('addTask');
+
+    $task = SystemTask::withoutGlobalScope(CurrentCompanyScope::class)
+        ->where('system_id', $system->id)
+        ->with('providerAssignees')
+        ->first();
+
+    expect($task->providerAssignees)->toHaveCount(2);
+
+    $byId = $task->providerAssignees->keyBy('id');
+
+    expect($byId[$acme->id]->pivot->raci_role)->toBe('R')
+        ->and($byId[$beta->id]->pivot->raci_role)->toBe('C');
+});
+
+test('addNewTaskProvider appends and remove removes by index', function () {
+    [$user, , $system] = bootSystemTaskTenant();
+
+    $component = Livewire\Livewire::actingAs($user)
+        ->test('pages::systems.show', ['system' => $system])
+        ->call('addNewTaskProvider')
+        ->call('addNewTaskProvider');
+
+    expect($component->get('newTaskProviders'))->toHaveCount(2);
+
+    $component->call('removeNewTaskProvider', 0);
+
+    expect($component->get('newTaskProviders'))->toHaveCount(1);
+});
+
 test('addNewTaskAssignee appends an empty row and remove removes by index', function () {
     [$user, , $system] = bootSystemTaskTenant();
 
@@ -148,12 +192,13 @@ test('delete removes the task', function () {
     expect(SystemTask::withoutGlobalScope(CurrentCompanyScope::class)->find($task->id))->toBeNull();
 });
 
-test('edit modal updates task fields and re-syncs assignees', function () {
+test('edit modal updates task fields and re-syncs assignees and providers', function () {
     [$user, , $system] = bootSystemTaskTenant();
 
     $task = SystemTask::factory()->forSystem($system)->create(['title' => 'Old']);
     $old = Employee::factory()->for($system->company)->create();
-    $new = Employee::factory()->for($system->company)->create();
+    $newEmployee = Employee::factory()->for($system->company)->create();
+    $newProvider = ServiceProvider::factory()->for($system->company)->create();
 
     $task->assignees()->attach($old->id, ['raci_role' => RaciRole::Responsible->value]);
 
@@ -163,16 +208,21 @@ test('edit modal updates task fields and re-syncs assignees', function () {
         ->set('editTitle', 'New title')
         ->set('editDueDate', '2026-07-01')
         ->set('editAssignees', [
-            ['employee_id' => $new->id, 'raci_role' => RaciRole::Accountable->value],
+            ['employee_id' => $newEmployee->id, 'raci_role' => RaciRole::Accountable->value],
+        ])
+        ->set('editProviders', [
+            ['provider_id' => $newProvider->id, 'raci_role' => RaciRole::Informed->value],
         ])
         ->call('saveEditTask');
 
-    $task->refresh()->load('assignees');
+    $task->refresh()->load(['assignees', 'providerAssignees']);
 
     expect($task->title)->toBe('New title')
         ->and($task->due_date->toDateString())->toBe('2026-07-01')
-        ->and($task->assignees->pluck('id')->all())->toBe([$new->id])
-        ->and($task->assignees->first()->pivot->raci_role)->toBe('A');
+        ->and($task->assignees->pluck('id')->all())->toBe([$newEmployee->id])
+        ->and($task->assignees->first()->pivot->raci_role)->toBe('A')
+        ->and($task->providerAssignees->pluck('id')->all())->toBe([$newProvider->id])
+        ->and($task->providerAssignees->first()->pivot->raci_role)->toBe('I');
 });
 
 test('show page renders tasks section with existing tasks and RACI labels', function () {
