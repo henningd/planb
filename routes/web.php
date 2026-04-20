@@ -26,6 +26,7 @@ Route::prefix('{current_team}')
         Route::livewire('systems', 'pages::systems.index')->name('systems.index');
         Route::livewire('systems/recovery', 'pages::systems.recovery')->name('systems.recovery');
         Route::livewire('service-providers', 'pages::service-providers.index')->name('service-providers.index');
+        Route::livewire('insurance-policies', 'pages::insurance-policies.index')->name('insurance-policies.index');
         Route::livewire('employees', 'pages::employees.index')->name('employees.index');
 
         Route::livewire('scenarios', 'pages::scenarios.index')->name('scenarios.index');
@@ -87,6 +88,7 @@ Route::prefix('{current_team}')
                 'systemPriorities',
                 'scenarios.steps',
                 'communicationTemplates.scenario',
+                'insurancePolicies',
             ]);
 
             return view('handbook-print', [

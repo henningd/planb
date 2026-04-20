@@ -320,9 +320,36 @@
             @endif
         </section>
 
+        {{-- Versicherungen --}}
+        @if ($company->insurancePolicies->isNotEmpty())
+            <section class="page-break">
+                <h2>{{ __('5. Versicherungen') }}</h2>
+                <p class="section-intro">{{ __('Police-Nummer, Hotline und Meldefrist – im Schadensfall sofort greifbar.') }}</p>
+
+                <div class="grid-2">
+                    @foreach ($company->insurancePolicies as $policy)
+                        <div class="card">
+                            <div class="sub">{{ $policy->type->label() }}</div>
+                            <div class="title">{{ $policy->insurer }}</div>
+                            @if ($policy->contact_name) <div class="sub">{{ $policy->contact_name }}</div> @endif
+                            <div style="margin-top: 0.5rem; font-size: 0.9rem;">
+                                @if ($policy->policy_number)<div><strong>{{ __('Police') }}:</strong> {{ $policy->policy_number }}</div>@endif
+                                @if ($policy->hotline)<div><strong>{{ __('Hotline') }}:</strong> {{ $policy->hotline }}</div>@endif
+                                @if ($policy->email)<div><strong>E-Mail:</strong> {{ $policy->email }}</div>@endif
+                                @if ($policy->reporting_window)<div><strong>{{ __('Meldefrist') }}:</strong> {{ $policy->reporting_window }}</div>@endif
+                            </div>
+                            @if ($policy->notes)
+                                <div style="margin-top: 0.5rem; font-size: 0.85rem; color: #64748b;">{{ $policy->notes }}</div>
+                            @endif
+                        </div>
+                    @endforeach
+                </div>
+            </section>
+        @endif
+
         {{-- Szenarien --}}
         <section class="page-break">
-            <h2>{{ __('5. Szenarien & Playbooks') }}</h2>
+            <h2>{{ __('6. Szenarien & Playbooks') }}</h2>
             <p class="section-intro">{{ __('Schritt-für-Schritt-Ablauf für typische Notfälle.') }}</p>
 
             @foreach ($company->scenarios as $scenario)
@@ -346,7 +373,7 @@
         {{-- Kommunikations-Vorlagen --}}
         @if ($company->communicationTemplates->isNotEmpty())
             <section class="page-break">
-                <h2>{{ __('6. Kommunikations-Vorlagen') }}</h2>
+                <h2>{{ __('7. Kommunikations-Vorlagen') }}</h2>
                 <p class="section-intro">{{ __('Vorformulierte Texte für Mitarbeiter, Kunden, Presse und Behörden. Platzhalter sind bereits ersetzt.') }}</p>
 
                 @foreach (\App\Enums\CommunicationAudience::cases() as $audience)

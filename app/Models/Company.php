@@ -93,6 +93,14 @@ class Company extends Model
         return $this->hasMany(CommunicationTemplate::class)->orderBy('sort')->orderBy('name');
     }
 
+    /**
+     * @return HasMany<InsurancePolicy, $this>
+     */
+    public function insurancePolicies(): HasMany
+    {
+        return $this->hasMany(InsurancePolicy::class)->orderBy('type')->orderBy('insurer');
+    }
+
     public function primaryContact(): ?Contact
     {
         return $this->contacts()->where('is_primary', true)->first();
