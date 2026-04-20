@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Concerns\BelongsToCurrentCompany;
+use App\Concerns\LogsAudit;
 use App\Enums\SystemCategory;
 use Database\Factories\SystemFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -16,7 +17,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 class System extends Model
 {
     /** @use HasFactory<SystemFactory> */
-    use BelongsToCurrentCompany, HasFactory, HasUuids;
+    use BelongsToCurrentCompany, HasFactory, HasUuids, LogsAudit;
 
     /**
      * @return BelongsTo<SystemPriority, $this>

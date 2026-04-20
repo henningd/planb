@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Concerns\BelongsToCurrentCompany;
+use App\Concerns\LogsAudit;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
@@ -12,7 +13,7 @@ use Illuminate\Support\Carbon;
 #[Fillable(['company_id', 'created_by_user_id', 'token', 'label', 'expires_at', 'revoked_at', 'last_accessed_at', 'access_count'])]
 class HandbookShare extends Model
 {
-    use BelongsToCurrentCompany, HasUuids;
+    use BelongsToCurrentCompany, HasUuids, LogsAudit;
 
     /**
      * @return BelongsTo<User, $this>

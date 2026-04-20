@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Concerns\BelongsToCurrentCompany;
+use App\Concerns\LogsAudit;
 use Database\Factories\ScenarioFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -14,7 +15,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Scenario extends Model
 {
     /** @use HasFactory<ScenarioFactory> */
-    use BelongsToCurrentCompany, HasFactory, HasUuids;
+    use BelongsToCurrentCompany, HasFactory, HasUuids, LogsAudit;
 
     /**
      * @return HasMany<ScenarioStep, $this>

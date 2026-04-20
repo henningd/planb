@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Concerns\BelongsToCurrentCompany;
+use App\Concerns\LogsAudit;
 use App\Enums\IncidentType;
 use Database\Factories\IncidentReportFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -16,7 +17,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class IncidentReport extends Model
 {
     /** @use HasFactory<IncidentReportFactory> */
-    use BelongsToCurrentCompany, HasFactory, HasUuids;
+    use BelongsToCurrentCompany, HasFactory, HasUuids, LogsAudit;
 
     /**
      * @return BelongsTo<ScenarioRun, $this>

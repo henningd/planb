@@ -41,6 +41,8 @@ Route::prefix('{current_team}')
 
         Route::livewire('communication-templates', 'pages::communication-templates.index')->name('communication-templates.index');
 
+        Route::livewire('audit-log', 'pages::audit-log.index')->name('audit-log.index');
+
         Route::get('systems/export', function () {
             $company = CurrentCompany::resolve();
             abort_unless($company, 404);

@@ -47,6 +47,9 @@
                     <flux:sidebar.item icon="share" :href="route('handbook-shares.index')" :current="request()->routeIs('handbook-shares.*')" wire:navigate>
                         {{ __('Freigabelinks') }}
                     </flux:sidebar.item>
+                    <flux:sidebar.item icon="clock" :href="route('audit-log.index')" :current="request()->routeIs('audit-log.*')" wire:navigate>
+                        {{ __('Aktivitäten') }}
+                    </flux:sidebar.item>
                 </flux:sidebar.group>
 
                 <flux:sidebar.group :heading="__('Ernstfall')" class="grid">

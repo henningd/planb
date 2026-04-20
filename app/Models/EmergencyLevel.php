@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Concerns\BelongsToCurrentCompany;
+use App\Concerns\LogsAudit;
 use Database\Factories\EmergencyLevelFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -13,5 +14,5 @@ use Illuminate\Database\Eloquent\Model;
 class EmergencyLevel extends Model
 {
     /** @use HasFactory<EmergencyLevelFactory> */
-    use BelongsToCurrentCompany, HasFactory, HasUuids;
+    use BelongsToCurrentCompany, HasFactory, HasUuids, LogsAudit;
 }

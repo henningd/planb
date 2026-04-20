@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Concerns\BelongsToCurrentCompany;
+use App\Concerns\LogsAudit;
 use Database\Factories\EmployeeFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -30,11 +31,16 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Employee extends Model
 {
     /** @use HasFactory<EmployeeFactory> */
-    use BelongsToCurrentCompany, HasFactory, HasUuids;
+    use BelongsToCurrentCompany, HasFactory, HasUuids, LogsAudit;
 
     public function fullName(): string
     {
         return trim("{$this->first_name} {$this->last_name}");
+    }
+
+    public function auditLabel(): string
+    {
+        return $this->fullName();
     }
 
     /**
