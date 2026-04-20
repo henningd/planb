@@ -37,6 +37,9 @@ new #[Title('Systeme')] class extends Component {
     /** @var array<int, string> */
     public array $service_provider_ids = [];
 
+    /** @var array<int, string> */
+    public array $depends_on_ids = [];
+
     public ?string $deletingId = null;
 
     public string $templateKey = '';
@@ -83,7 +86,7 @@ new #[Title('Systeme')] class extends Component {
     #[Computed]
     public function systemsByCategory(): array
     {
-        $systems = System::with(['priority', 'serviceProviders'])->orderBy('name')->get();
+        $systems = System::with(['priority', 'serviceProviders', 'dependencies'])->orderBy('name')->get();
         $grouped = [];
 
         foreach (SystemCategory::cases() as $category) {
@@ -91,6 +94,61 @@ new #[Title('Systeme')] class extends Component {
         }
 
         return $grouped;
+    }
+
+    /**
+     * Candidates for a dependency selector: every system of the current tenant
+     * except the one being edited and its transitive dependents (cycle prevention).
+     *
+     * @return Collection<int, System>
+     */
+    #[Computed]
+    public function dependencyCandidates(): Collection
+    {
+        $all = System::orderBy('name')->get();
+
+        if ($this->editingId === null) {
+            return $all;
+        }
+
+        $forbidden = $this->descendantIds($this->editingId, $all);
+        $forbidden[$this->editingId] = true;
+
+        return $all->reject(fn (System $s) => isset($forbidden[$s->id]))->values();
+    }
+
+    /**
+     * Returns all system ids that (directly or transitively) depend on $systemId.
+     * Using preloaded collection to avoid extra queries.
+     *
+     * @param  Collection<int, System>  $systems
+     * @return array<string, true>
+     */
+    protected function descendantIds(string $systemId, Collection $systems): array
+    {
+        $dependentsByParent = [];
+        foreach (
+            DB::table('system_dependencies')
+                ->select('system_id', 'depends_on_system_id')
+                ->get() as $row
+        ) {
+            $dependentsByParent[$row->depends_on_system_id][] = $row->system_id;
+        }
+
+        $visited = [];
+        $stack = [$systemId];
+        while ($stack) {
+            $cur = array_pop($stack);
+            foreach ($dependentsByParent[$cur] ?? [] as $child) {
+                if (isset($visited[$child])) {
+                    continue;
+                }
+                $visited[$child] = true;
+                $stack[] = $child;
+            }
+        }
+
+        return $visited;
     }
 
     public function openCreate(?string $category = null): void
@@ -104,7 +162,7 @@ new #[Title('Systeme')] class extends Component {
 
     public function openEdit(string $id): void
     {
-        $system = System::with('serviceProviders')->findOrFail($id);
+        $system = System::with(['serviceProviders', 'dependencies'])->findOrFail($id);
 
         $this->editingId = $system->id;
         $this->name = $system->name;
@@ -115,6 +173,7 @@ new #[Title('Systeme')] class extends Component {
         $this->rpo_minutes = $system->rpo_minutes;
         $this->downtime_cost_per_hour = $system->downtime_cost_per_hour;
         $this->service_provider_ids = $system->serviceProviders->pluck('id')->all();
+        $this->depends_on_ids = $system->dependencies->pluck('id')->all();
 
         Flux::modal('system-form')->show();
     }
@@ -139,16 +198,30 @@ new #[Title('Systeme')] class extends Component {
             'downtime_cost_per_hour' => ['nullable', 'integer', 'min:0', 'max:100000000'],
             'service_provider_ids' => ['array'],
             'service_provider_ids.*' => ['uuid', 'exists:service_providers,id'],
+            'depends_on_ids' => ['array'],
+            'depends_on_ids.*' => ['uuid', 'exists:systems,id'],
         ]);
 
         $providerIds = $validated['service_provider_ids'] ?? [];
-        unset($validated['service_provider_ids']);
+        $dependencyIds = $validated['depends_on_ids'] ?? [];
+        unset($validated['service_provider_ids'], $validated['depends_on_ids']);
+
+        if ($this->editingId !== null) {
+            $forbidden = $this->descendantIds($this->editingId, System::all());
+            $forbidden[$this->editingId] = true;
+
+            $dependencyIds = array_values(array_filter(
+                $dependencyIds,
+                fn (string $id) => ! isset($forbidden[$id]),
+            ));
+        }
 
         $system = $this->editingId
             ? tap(System::findOrFail($this->editingId))->update($validated)
             : System::create($validated);
 
         $system->serviceProviders()->sync($providerIds);
+        $system->dependencies()->sync($dependencyIds);
 
         Flux::modal('system-form')->close();
         $this->resetForm();
@@ -176,7 +249,7 @@ new #[Title('Systeme')] class extends Component {
 
     protected function resetForm(): void
     {
-        $this->reset(['editingId', 'name', 'description', 'system_priority_id', 'rto_minutes', 'rpo_minutes', 'downtime_cost_per_hour', 'service_provider_ids']);
+        $this->reset(['editingId', 'name', 'description', 'system_priority_id', 'rto_minutes', 'rpo_minutes', 'downtime_cost_per_hour', 'service_provider_ids', 'depends_on_ids']);
         $this->category = SystemCategory::Basisbetrieb->value;
     }
 
@@ -427,6 +500,15 @@ new #[Title('Systeme')] class extends Component {
                                     @endforeach
                                 </div>
                             @endif
+                            @if ($system->dependencies->isNotEmpty())
+                                <div class="mt-2 flex flex-wrap items-center gap-1.5">
+                                    <flux:icon.link class="h-3.5 w-3.5 text-zinc-400" />
+                                    <span class="text-xs text-zinc-500 dark:text-zinc-400">{{ __('Braucht:') }}</span>
+                                    @foreach ($system->dependencies as $dep)
+                                        <flux:badge color="sky" size="sm">{{ $dep->name }}</flux:badge>
+                                    @endforeach
+                                </div>
+                            @endif
                         </div>
 
                         <flux:dropdown align="end">
@@ -534,6 +616,24 @@ new #[Title('Systeme')] class extends Component {
                                 wire:model="service_provider_ids"
                                 value="{{ $provider->id }}"
                                 :label="$provider->name.($provider->hotline ? ' · '.$provider->hotline : '')"
+                            />
+                        @endforeach
+                    </div>
+                </flux:field>
+            @endif
+
+            @if ($this->dependencyCandidates->isNotEmpty())
+                <flux:field>
+                    <flux:label>{{ __('Abhängigkeiten') }}</flux:label>
+                    <flux:description>
+                        {{ __('Welche anderen Systeme müssen bereits laufen, damit dieses hier funktioniert? Wird beim Wiederanlauf berücksichtigt.') }}
+                    </flux:description>
+                    <div class="max-h-56 space-y-2 overflow-y-auto rounded-lg border border-zinc-200 p-3 dark:border-zinc-700">
+                        @foreach ($this->dependencyCandidates as $candidate)
+                            <flux:checkbox
+                                wire:model="depends_on_ids"
+                                value="{{ $candidate->id }}"
+                                :label="$candidate->name"
                             />
                         @endforeach
                     </div>

@@ -252,6 +252,42 @@
                     </table>
                 @endif
             @endforeach
+
+            @if (! empty($recoveryPlan['stages']))
+                <h3>{{ __('Wiederanlauf-Reihenfolge') }}</h3>
+                <p class="meta">{{ __('Systeme einer Stufe können parallel angefahren werden. Eine Stufe darf erst starten, wenn die vorherige läuft.') }}</p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width: 5rem;">{{ __('Stufe') }}</th>
+                            <th>{{ __('Systeme') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($recoveryPlan['stages'] as $i => $stage)
+                            <tr>
+                                <td><strong>{{ $i + 1 }}</strong></td>
+                                <td>
+                                    @foreach ($stage as $s)
+                                        <div>
+                                            <strong>{{ $s->name }}</strong>
+                                            @if ($s->dependencies->isNotEmpty())
+                                                <span class="sub">({{ __('braucht') }}: {{ $s->dependencies->pluck('name')->join(', ') }})</span>
+                                            @endif
+                                        </div>
+                                    @endforeach
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+                @if (! empty($recoveryPlan['cycles']))
+                    <p class="meta" style="color: #b91c1c;">
+                        <strong>{{ __('Zirkuläre Abhängigkeit') }}:</strong>
+                        {{ collect($recoveryPlan['cycles'])->pluck('name')->join(', ') }}
+                    </p>
+                @endif
+            @endif
         </section>
 
         {{-- Dienstleister --}}

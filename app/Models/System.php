@@ -37,6 +37,36 @@ class System extends Model
     }
 
     /**
+     * Systems this one depends on and that must come up first.
+     *
+     * @return BelongsToMany<System, $this>
+     */
+    public function dependencies(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            System::class,
+            'system_dependencies',
+            'system_id',
+            'depends_on_system_id',
+        )->withTimestamps();
+    }
+
+    /**
+     * Systems that depend on this one (inverse).
+     *
+     * @return BelongsToMany<System, $this>
+     */
+    public function dependents(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            System::class,
+            'system_dependencies',
+            'depends_on_system_id',
+            'system_id',
+        )->withTimestamps();
+    }
+
+    /**
      * @return array<string, string>
      */
     protected function casts(): array

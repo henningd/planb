@@ -6,6 +6,7 @@ use App\Http\Middleware\SetTeamUrlDefaults;
 use App\Models\ServiceProvider;
 use App\Models\System;
 use App\Support\CurrentCompany;
+use App\Support\RecoveryOrder;
 use App\Support\SystemImport;
 use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Features;
@@ -23,6 +24,7 @@ Route::prefix('{current_team}')
         Route::livewire('contacts', 'pages::contacts.index')->name('contacts.index');
         Route::livewire('emergency-levels', 'pages::emergency-levels.index')->name('emergency-levels.index');
         Route::livewire('systems', 'pages::systems.index')->name('systems.index');
+        Route::livewire('systems/recovery', 'pages::systems.recovery')->name('systems.recovery');
         Route::livewire('service-providers', 'pages::service-providers.index')->name('service-providers.index');
         Route::livewire('employees', 'pages::employees.index')->name('employees.index');
 
@@ -79,6 +81,7 @@ Route::prefix('{current_team}')
                 'emergencyLevels',
                 'systems.priority',
                 'systems.serviceProviders',
+                'systems.dependencies',
                 'systemPriorities',
                 'scenarios.steps',
             ]);
@@ -86,6 +89,7 @@ Route::prefix('{current_team}')
             return view('handbook-print', [
                 'company' => $company,
                 'providers' => ServiceProvider::with('systems')->orderBy('name')->get(),
+                'recoveryPlan' => RecoveryOrder::compute($company->systems),
             ]);
         })->name('handbook.print');
     });

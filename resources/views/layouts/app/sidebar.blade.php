@@ -32,8 +32,11 @@
                     <flux:sidebar.item icon="shield-exclamation" :href="route('emergency-levels.index')" :current="request()->routeIs('emergency-levels.*')" wire:navigate>
                         {{ __('Notfall-Level') }}
                     </flux:sidebar.item>
-                    <flux:sidebar.item icon="server-stack" :href="route('systems.index')" :current="request()->routeIs('systems.*')" wire:navigate>
+                    <flux:sidebar.item icon="server-stack" :href="route('systems.index')" :current="request()->routeIs('systems.index') || request()->routeIs('systems.export')" wire:navigate>
                         {{ __('Systeme') }}
+                    </flux:sidebar.item>
+                    <flux:sidebar.item icon="arrow-path" :href="route('systems.recovery')" :current="request()->routeIs('systems.recovery')" wire:navigate>
+                        {{ __('Wiederanlauf') }}
                     </flux:sidebar.item>
                     <flux:sidebar.item icon="wrench-screwdriver" :href="route('service-providers.index')" :current="request()->routeIs('service-providers.*')" wire:navigate>
                         {{ __('Dienstleister') }}
