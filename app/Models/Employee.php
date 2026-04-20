@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable([
@@ -57,6 +58,16 @@ class Employee extends Model
     public function reports(): HasMany
     {
         return $this->hasMany(Employee::class, 'manager_id');
+    }
+
+    /**
+     * @return BelongsToMany<System, $this>
+     */
+    public function systems(): BelongsToMany
+    {
+        return $this->belongsToMany(System::class)
+            ->withPivot(['sort', 'note'])
+            ->withTimestamps();
     }
 
     /**

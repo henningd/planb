@@ -21,7 +21,7 @@ new #[Title('Wiederanlauf')] class extends Component {
     #[Computed]
     public function plan(): array
     {
-        $systems = System::with(['priority', 'dependencies'])
+        $systems = System::with(['priority', 'dependencies', 'dependents'])
             ->orderBy('name')
             ->get();
 
@@ -29,7 +29,7 @@ new #[Title('Wiederanlauf')] class extends Component {
     }
 }; ?>
 
-<section class="mx-auto w-full max-w-5xl">
+<section class="w-full">
     <div class="mb-6">
         <flux:heading size="xl">{{ __('Wiederanlauf-Reihenfolge') }}</flux:heading>
         <flux:subheading>
@@ -58,12 +58,13 @@ new #[Title('Wiederanlauf')] class extends Component {
         @else
             <div class="space-y-4">
                 @foreach ($plan['stages'] as $index => $stageSystems)
+                    @php($stageRto = collect($stageSystems)->pluck('rto_minutes')->filter()->max())
                     <div class="overflow-hidden rounded-xl border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-900">
                         <div class="flex items-center gap-3 border-b border-zinc-100 px-5 py-4 dark:border-zinc-800">
                             <span class="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-100 text-sm font-semibold text-emerald-800 dark:bg-emerald-900 dark:text-emerald-100">
                                 {{ $index + 1 }}
                             </span>
-                            <div>
+                            <div class="flex-1">
                                 <flux:heading size="base">{{ __('Stufe :n', ['n' => $index + 1]) }}</flux:heading>
                                 <flux:text class="text-sm text-zinc-500 dark:text-zinc-400">
                                     @if ($index === 0)
@@ -73,6 +74,11 @@ new #[Title('Wiederanlauf')] class extends Component {
                                     @endif
                                 </flux:text>
                             </div>
+                            @if ($stageRto)
+                                <flux:badge color="emerald" size="sm" icon="clock">
+                                    {{ __('Stufe spätestens nach :d verfügbar', ['d' => Duration::format($stageRto)]) }}
+                                </flux:badge>
+                            @endif
                         </div>
 
                         <div class="divide-y divide-zinc-100 dark:divide-zinc-800">
@@ -91,10 +97,26 @@ new #[Title('Wiederanlauf')] class extends Component {
                                             @endif
                                             <flux:badge color="zinc" size="sm">{{ $system->category->label() }}</flux:badge>
                                         </div>
-                                        @if ($system->rto_minutes)
-                                            <div class="mt-1 flex items-center gap-1.5 text-xs text-zinc-600 dark:text-zinc-400">
-                                                <flux:icon.clock class="h-3.5 w-3.5 text-zinc-400" />
-                                                <span>{{ __('Ziel: wieder verfügbar in') }} <span class="font-medium">{{ Duration::format($system->rto_minutes) }}</span></span>
+                                        @if ($system->rto_minutes || $system->rpo_minutes || $system->downtime_cost_per_hour)
+                                            <div class="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-zinc-600 dark:text-zinc-400">
+                                                @if ($system->rto_minutes)
+                                                    <div class="flex items-center gap-1.5">
+                                                        <flux:icon.clock class="h-3.5 w-3.5 text-zinc-400" />
+                                                        <span>{{ __('Max. Ausfall') }}: <span class="font-medium">{{ Duration::format($system->rto_minutes) }}</span></span>
+                                                    </div>
+                                                @endif
+                                                @if ($system->rpo_minutes)
+                                                    <div class="flex items-center gap-1.5">
+                                                        <flux:icon.circle-stack class="h-3.5 w-3.5 text-zinc-400" />
+                                                        <span>{{ __('Max. Datenverlust') }}: <span class="font-medium">{{ Duration::format($system->rpo_minutes) }}</span></span>
+                                                    </div>
+                                                @endif
+                                                @if ($system->downtime_cost_per_hour)
+                                                    <div class="flex items-center gap-1.5">
+                                                        <flux:icon.banknotes class="h-3.5 w-3.5 text-zinc-400" />
+                                                        <span>{{ number_format($system->downtime_cost_per_hour, 0, ',', '.') }} € / h</span>
+                                                    </div>
+                                                @endif
                                             </div>
                                         @endif
                                         @if ($system->dependencies->isNotEmpty())
@@ -103,6 +125,15 @@ new #[Title('Wiederanlauf')] class extends Component {
                                                 <span class="text-xs text-zinc-500 dark:text-zinc-400">{{ __('Braucht:') }}</span>
                                                 @foreach ($system->dependencies as $dep)
                                                     <flux:badge color="sky" size="sm">{{ $dep->name }}</flux:badge>
+                                                @endforeach
+                                            </div>
+                                        @endif
+                                        @if ($system->dependents->isNotEmpty())
+                                            <div class="mt-2 flex flex-wrap items-center gap-1.5">
+                                                <flux:icon.arrow-right class="h-3.5 w-3.5 text-zinc-400" />
+                                                <span class="text-xs text-zinc-500 dark:text-zinc-400">{{ __('Blockiert:') }}</span>
+                                                @foreach ($system->dependents as $dep)
+                                                    <flux:badge color="violet" size="sm">{{ $dep->name }}</flux:badge>
                                                 @endforeach
                                             </div>
                                         @endif

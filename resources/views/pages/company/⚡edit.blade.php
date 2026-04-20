@@ -66,7 +66,7 @@ new #[Title('Firma')] class extends Component {
     }
 }; ?>
 
-<section class="mx-auto w-full max-w-3xl">
+<section class="w-full">
     <div class="mb-8">
         <flux:heading size="xl">{{ __('Firmenprofil') }}</flux:heading>
         <flux:subheading>

@@ -23,46 +23,40 @@
                     <flux:sidebar.item icon="building-office-2" :href="route('company.edit')" :current="request()->routeIs('company.*')" wire:navigate>
                         {{ __('Firma') }}
                     </flux:sidebar.item>
-                    <flux:sidebar.item icon="users" :href="route('contacts.index')" :current="request()->routeIs('contacts.*')" wire:navigate>
-                        {{ __('Ansprechpartner') }}
-                    </flux:sidebar.item>
                     <flux:sidebar.item icon="user-group" :href="route('employees.index')" :current="request()->routeIs('employees.*')" wire:navigate>
                         {{ __('Mitarbeiter') }}
                     </flux:sidebar.item>
-                    <flux:sidebar.item icon="shield-exclamation" :href="route('emergency-levels.index')" :current="request()->routeIs('emergency-levels.*')" wire:navigate>
-                        {{ __('Notfall-Level') }}
-                    </flux:sidebar.item>
-                    <flux:sidebar.item icon="server-stack" :href="route('systems.index')" :current="request()->routeIs('systems.index') || request()->routeIs('systems.export')" wire:navigate>
-                        {{ __('Systeme') }}
-                    </flux:sidebar.item>
-                    <flux:sidebar.item icon="arrow-path" :href="route('systems.recovery')" :current="request()->routeIs('systems.recovery')" wire:navigate>
-                        {{ __('Wiederanlauf') }}
+                    <flux:sidebar.item icon="users" :href="route('contacts.index')" :current="request()->routeIs('contacts.*')" wire:navigate>
+                        {{ __('Ansprechpartner') }}
                     </flux:sidebar.item>
                     <flux:sidebar.item icon="wrench-screwdriver" :href="route('service-providers.index')" :current="request()->routeIs('service-providers.*')" wire:navigate>
                         {{ __('Dienstleister') }}
+                    </flux:sidebar.item>
+                    <flux:sidebar.item icon="server-stack" :href="route('systems.index')" :current="request()->routeIs('systems.index') || request()->routeIs('systems.create') || request()->routeIs('systems.show') || request()->routeIs('systems.edit') || request()->routeIs('systems.export')" wire:navigate>
+                        {{ __('Systeme') }}
                     </flux:sidebar.item>
                     @if (auth()->user()->isCurrentTeamAdmin())
                         <flux:sidebar.item icon="shield-check" :href="route('insurance-policies.index')" :current="request()->routeIs('insurance-policies.*')" wire:navigate>
                             {{ __('Versicherungen') }}
                         </flux:sidebar.item>
-                        <flux:sidebar.item icon="share" :href="route('handbook-shares.index')" :current="request()->routeIs('handbook-shares.*')" wire:navigate>
-                            {{ __('Freigabelinks') }}
-                        </flux:sidebar.item>
-                        <flux:sidebar.item icon="clock" :href="route('audit-log.index')" :current="request()->routeIs('audit-log.*')" wire:navigate>
-                            {{ __('Aktivitäten') }}
-                        </flux:sidebar.item>
                     @endif
+                    <flux:sidebar.item icon="shield-exclamation" :href="route('emergency-levels.index')" :current="request()->routeIs('emergency-levels.*')" wire:navigate>
+                        {{ __('Notfall-Level') }}
+                    </flux:sidebar.item>
                 </flux:sidebar.group>
 
                 <flux:sidebar.group :heading="__('Ernstfall')" class="grid">
                     <flux:sidebar.item icon="bolt" :href="route('scenarios.index')" :current="request()->routeIs('scenarios.*')" wire:navigate>
                         {{ __('Szenarien') }}
                     </flux:sidebar.item>
-                    <flux:sidebar.item icon="clipboard-document-check" :href="route('scenario-runs.index')" :current="request()->routeIs('scenario-runs.*')" wire:navigate>
-                        {{ __('Protokolle & Übungen') }}
+                    <flux:sidebar.item icon="arrow-path" :href="route('systems.recovery')" :current="request()->routeIs('systems.recovery')" wire:navigate>
+                        {{ __('Wiederanlauf') }}
                     </flux:sidebar.item>
                     <flux:sidebar.item icon="megaphone" :href="route('incidents.index')" :current="request()->routeIs('incidents.*')" wire:navigate>
                         {{ __('Meldepflichten') }}
+                    </flux:sidebar.item>
+                    <flux:sidebar.item icon="clipboard-document-check" :href="route('scenario-runs.index')" :current="request()->routeIs('scenario-runs.*')" wire:navigate>
+                        {{ __('Protokolle & Übungen') }}
                     </flux:sidebar.item>
                     @if (auth()->user()->isCurrentTeamAdmin())
                         <flux:sidebar.item icon="document-duplicate" :href="route('communication-templates.index')" :current="request()->routeIs('communication-templates.*')" wire:navigate>
@@ -71,7 +65,7 @@
                     @endif
                 </flux:sidebar.group>
 
-                <flux:sidebar.group :heading="__('Zugang')" class="grid">
+                <flux:sidebar.group :heading="__('Team & Freigaben')" class="grid">
                     <flux:sidebar.item
                         icon="key"
                         :href="auth()->user()?->currentTeam ? route('teams.edit', auth()->user()->currentTeam) : route('teams.index')"
@@ -80,6 +74,14 @@
                     >
                         {{ __('App-Benutzer & Einladungen') }}
                     </flux:sidebar.item>
+                    @if (auth()->user()->isCurrentTeamAdmin())
+                        <flux:sidebar.item icon="share" :href="route('handbook-shares.index')" :current="request()->routeIs('handbook-shares.*')" wire:navigate>
+                            {{ __('Freigabelinks') }}
+                        </flux:sidebar.item>
+                        <flux:sidebar.item icon="clock" :href="route('audit-log.index')" :current="request()->routeIs('audit-log.*')" wire:navigate>
+                            {{ __('Aktivitäten') }}
+                        </flux:sidebar.item>
+                    @endif
                 </flux:sidebar.group>
 
                 @if (auth()->user()?->isSuperAdmin())

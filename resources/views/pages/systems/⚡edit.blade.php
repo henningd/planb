@@ -1,0 +1,1064 @@
+<?php
+
+use App\Enums\SystemCategory;
+use App\Models\Employee;
+use App\Models\ServiceProvider;
+use App\Models\System;
+use App\Models\SystemPriority;
+use App\Support\Duration;
+use Flux\Flux;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Livewire\Attributes\Computed;
+use Livewire\Attributes\Title;
+use Livewire\Component;
+
+new #[Title('System bearbeiten')] class extends Component {
+    public ?System $system = null;
+
+    public string $name = '';
+
+    public string $description = '';
+
+    public string $category = '';
+
+    public ?string $system_priority_id = null;
+
+    public ?int $rto_minutes = null;
+
+    public ?int $rpo_minutes = null;
+
+    public ?int $downtime_cost_per_hour = null;
+
+    /** @var array<int, array{provider_id: string, note: string}> */
+    public array $providerAssignments = [];
+
+    public string $providerSearch = '';
+
+    /** @var array<int, array{employee_id: string, note: string}> */
+    public array $responsibles = [];
+
+    public string $employeeSearch = '';
+
+    /** @var array<int, array{dependency_id: string, note: string}> */
+    public array $dependencyAssignments = [];
+
+    public string $dependencySearch = '';
+
+    public function mount(?System $system = null): void
+    {
+        abort_unless(Auth::user()->currentCompany(), 403);
+
+        if ($system && $system->exists) {
+            $system->load(['serviceProviders', 'employees', 'dependencies']);
+
+            $this->system = $system;
+            $this->name = $system->name;
+            $this->description = (string) $system->description;
+            $this->category = $system->category->value;
+            $this->system_priority_id = $system->system_priority_id;
+            $this->rto_minutes = $system->rto_minutes;
+            $this->rpo_minutes = $system->rpo_minutes;
+            $this->downtime_cost_per_hour = $system->downtime_cost_per_hour;
+            $this->providerAssignments = $system->serviceProviders
+                ->map(fn (ServiceProvider $p) => [
+                    'provider_id' => $p->id,
+                    'note' => (string) ($p->pivot->note ?? ''),
+                ])
+                ->values()
+                ->all();
+            $this->responsibles = $system->employees
+                ->map(fn (Employee $e) => [
+                    'employee_id' => $e->id,
+                    'note' => (string) ($e->pivot->note ?? ''),
+                ])
+                ->values()
+                ->all();
+            $this->dependencyAssignments = $system->dependencies
+                ->map(fn (System $s) => [
+                    'dependency_id' => $s->id,
+                    'note' => (string) ($s->pivot->note ?? ''),
+                ])
+                ->values()
+                ->all();
+
+            return;
+        }
+
+        $requested = request()->string('category')->toString();
+        $this->category = in_array($requested, array_column(SystemCategory::cases(), 'value'), true)
+            ? $requested
+            : SystemCategory::Basisbetrieb->value;
+    }
+
+    /**
+     * @return Collection<int, SystemPriority>
+     */
+    #[Computed]
+    public function priorities(): Collection
+    {
+        return SystemPriority::orderBy('sort')->get();
+    }
+
+    /**
+     * @return Collection<int, ServiceProvider>
+     */
+    #[Computed]
+    public function providers(): Collection
+    {
+        return ServiceProvider::orderBy('name')->get();
+    }
+
+    /**
+     * @return array<string, ServiceProvider>
+     */
+    #[Computed]
+    public function providersById(): array
+    {
+        return $this->providers->keyBy('id')->all();
+    }
+
+    /**
+     * @return Collection<int, ServiceProvider>
+     */
+    #[Computed]
+    public function availableProviders(): Collection
+    {
+        $taken = collect($this->providerAssignments)->pluck('provider_id')->all();
+        $needle = mb_strtolower(trim($this->providerSearch));
+
+        return $this->providers
+            ->reject(fn (ServiceProvider $p) => in_array($p->id, $taken, true))
+            ->filter(function (ServiceProvider $p) use ($needle) {
+                if ($needle === '') {
+                    return true;
+                }
+
+                $hay = mb_strtolower($p->name.' '.$p->hotline.' '.$p->contact_name);
+
+                return str_contains($hay, $needle);
+            })
+            ->values();
+    }
+
+    public function addProviderById(string $id): void
+    {
+        $already = collect($this->providerAssignments)->pluck('provider_id')->contains($id);
+        if ($already) {
+            return;
+        }
+
+        if (! array_key_exists($id, $this->providersById)) {
+            return;
+        }
+
+        $this->providerAssignments[] = [
+            'provider_id' => $id,
+            'note' => '',
+        ];
+
+        $this->providerSearch = '';
+    }
+
+    public function removeProvider(int $index): void
+    {
+        if (! isset($this->providerAssignments[$index])) {
+            return;
+        }
+
+        unset($this->providerAssignments[$index]);
+        $this->providerAssignments = array_values($this->providerAssignments);
+    }
+
+    public function moveProviderUp(int $index): void
+    {
+        if ($index <= 0 || ! isset($this->providerAssignments[$index], $this->providerAssignments[$index - 1])) {
+            return;
+        }
+
+        [$this->providerAssignments[$index - 1], $this->providerAssignments[$index]] = [
+            $this->providerAssignments[$index],
+            $this->providerAssignments[$index - 1],
+        ];
+    }
+
+    public function moveProviderDown(int $index): void
+    {
+        if (! isset($this->providerAssignments[$index], $this->providerAssignments[$index + 1])) {
+            return;
+        }
+
+        [$this->providerAssignments[$index], $this->providerAssignments[$index + 1]] = [
+            $this->providerAssignments[$index + 1],
+            $this->providerAssignments[$index],
+        ];
+    }
+
+    /**
+     * @return Collection<int, Employee>
+     */
+    #[Computed]
+    public function employees(): Collection
+    {
+        return Employee::orderBy('last_name')->orderBy('first_name')->get();
+    }
+
+    /**
+     * @return array<string, Employee>
+     */
+    #[Computed]
+    public function employeesById(): array
+    {
+        return $this->employees->keyBy('id')->all();
+    }
+
+    /**
+     * @return Collection<int, Employee>
+     */
+    #[Computed]
+    public function availableEmployees(): Collection
+    {
+        $taken = collect($this->responsibles)->pluck('employee_id')->all();
+        $needle = mb_strtolower(trim($this->employeeSearch));
+
+        return $this->employees
+            ->reject(fn (Employee $e) => in_array($e->id, $taken, true))
+            ->filter(function (Employee $e) use ($needle) {
+                if ($needle === '') {
+                    return true;
+                }
+
+                $emailLocal = $e->email ? mb_strstr($e->email, '@', true) : '';
+                $hay = mb_strtolower($e->first_name.' '.$e->last_name.' '.$e->position.' '.$e->department.' '.$emailLocal);
+
+                return str_contains($hay, $needle);
+            })
+            ->values();
+    }
+
+    public function addResponsibleById(string $id): void
+    {
+        $already = collect($this->responsibles)->pluck('employee_id')->contains($id);
+        if ($already) {
+            return;
+        }
+
+        if (! array_key_exists($id, $this->employeesById)) {
+            return;
+        }
+
+        $this->responsibles[] = [
+            'employee_id' => $id,
+            'note' => '',
+        ];
+
+        $this->employeeSearch = '';
+    }
+
+    public function removeResponsible(int $index): void
+    {
+        if (! isset($this->responsibles[$index])) {
+            return;
+        }
+
+        unset($this->responsibles[$index]);
+        $this->responsibles = array_values($this->responsibles);
+    }
+
+    public function moveResponsibleUp(int $index): void
+    {
+        if ($index <= 0 || ! isset($this->responsibles[$index], $this->responsibles[$index - 1])) {
+            return;
+        }
+
+        [$this->responsibles[$index - 1], $this->responsibles[$index]] = [
+            $this->responsibles[$index],
+            $this->responsibles[$index - 1],
+        ];
+    }
+
+    public function moveResponsibleDown(int $index): void
+    {
+        if (! isset($this->responsibles[$index], $this->responsibles[$index + 1])) {
+            return;
+        }
+
+        [$this->responsibles[$index], $this->responsibles[$index + 1]] = [
+            $this->responsibles[$index + 1],
+            $this->responsibles[$index],
+        ];
+    }
+
+    /**
+     * @return Collection<int, System>
+     */
+    #[Computed]
+    public function dependencyCandidates(): Collection
+    {
+        $all = System::orderBy('name')->get();
+
+        if ($this->system === null) {
+            return $all;
+        }
+
+        $forbidden = $this->descendantIds($this->system->id);
+        $forbidden[$this->system->id] = true;
+
+        return $all->reject(fn (System $s) => isset($forbidden[$s->id]))->values();
+    }
+
+    /**
+     * @return array<string, System>
+     */
+    #[Computed]
+    public function dependencyCandidatesById(): array
+    {
+        return $this->dependencyCandidates->keyBy('id')->all();
+    }
+
+    /**
+     * @return Collection<int, System>
+     */
+    #[Computed]
+    public function availableDependencies(): Collection
+    {
+        $taken = collect($this->dependencyAssignments)->pluck('dependency_id')->all();
+        $needle = mb_strtolower(trim($this->dependencySearch));
+
+        return $this->dependencyCandidates
+            ->reject(fn (System $s) => in_array($s->id, $taken, true))
+            ->filter(function (System $s) use ($needle) {
+                if ($needle === '') {
+                    return true;
+                }
+
+                $hay = mb_strtolower($s->name.' '.$s->category->label().' '.$s->description);
+
+                return str_contains($hay, $needle);
+            })
+            ->values();
+    }
+
+    public function addDependencyById(string $id): void
+    {
+        $already = collect($this->dependencyAssignments)->pluck('dependency_id')->contains($id);
+        if ($already) {
+            return;
+        }
+
+        if (! array_key_exists($id, $this->dependencyCandidatesById)) {
+            return;
+        }
+
+        $this->dependencyAssignments[] = [
+            'dependency_id' => $id,
+            'note' => '',
+        ];
+
+        $this->dependencySearch = '';
+    }
+
+    public function removeDependency(int $index): void
+    {
+        if (! isset($this->dependencyAssignments[$index])) {
+            return;
+        }
+
+        unset($this->dependencyAssignments[$index]);
+        $this->dependencyAssignments = array_values($this->dependencyAssignments);
+    }
+
+    public function moveDependencyUp(int $index): void
+    {
+        if ($index <= 0 || ! isset($this->dependencyAssignments[$index], $this->dependencyAssignments[$index - 1])) {
+            return;
+        }
+
+        [$this->dependencyAssignments[$index - 1], $this->dependencyAssignments[$index]] = [
+            $this->dependencyAssignments[$index],
+            $this->dependencyAssignments[$index - 1],
+        ];
+    }
+
+    public function moveDependencyDown(int $index): void
+    {
+        if (! isset($this->dependencyAssignments[$index], $this->dependencyAssignments[$index + 1])) {
+            return;
+        }
+
+        [$this->dependencyAssignments[$index], $this->dependencyAssignments[$index + 1]] = [
+            $this->dependencyAssignments[$index + 1],
+            $this->dependencyAssignments[$index],
+        ];
+    }
+
+    /**
+     * @return array<string, true>
+     */
+    protected function descendantIds(string $systemId): array
+    {
+        $dependentsByParent = [];
+        foreach (
+            DB::table('system_dependencies')
+                ->select('system_id', 'depends_on_system_id')
+                ->get() as $row
+        ) {
+            $dependentsByParent[$row->depends_on_system_id][] = $row->system_id;
+        }
+
+        $visited = [];
+        $stack = [$systemId];
+        while ($stack) {
+            $cur = array_pop($stack);
+            foreach ($dependentsByParent[$cur] ?? [] as $child) {
+                if (isset($visited[$child])) {
+                    continue;
+                }
+                $visited[$child] = true;
+                $stack[] = $child;
+            }
+        }
+
+        return $visited;
+    }
+
+    public function save()
+    {
+        $validDurations = array_keys(Duration::OPTIONS);
+
+        $validated = $this->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'description' => ['nullable', 'string', 'max:2000'],
+            'category' => ['required', 'in:'.collect(SystemCategory::cases())->pluck('value')->implode(',')],
+            'system_priority_id' => ['nullable', 'uuid', 'exists:system_priorities,id'],
+            'rto_minutes' => ['nullable', 'integer', 'in:'.implode(',', $validDurations)],
+            'rpo_minutes' => ['nullable', 'integer', 'in:'.implode(',', $validDurations)],
+            'downtime_cost_per_hour' => ['nullable', 'integer', 'min:0', 'max:100000000'],
+            'providerAssignments' => ['array'],
+            'providerAssignments.*.provider_id' => ['required', 'uuid', 'exists:service_providers,id'],
+            'providerAssignments.*.note' => ['nullable', 'string', 'max:500'],
+            'responsibles' => ['array'],
+            'responsibles.*.employee_id' => ['required', 'uuid', 'exists:employees,id'],
+            'responsibles.*.note' => ['nullable', 'string', 'max:500'],
+            'dependencyAssignments' => ['array'],
+            'dependencyAssignments.*.dependency_id' => ['required', 'uuid', 'exists:systems,id'],
+            'dependencyAssignments.*.note' => ['nullable', 'string', 'max:500'],
+        ]);
+
+        $providerAssignments = $validated['providerAssignments'] ?? [];
+        $responsibles = $validated['responsibles'] ?? [];
+        $dependencyAssignments = $validated['dependencyAssignments'] ?? [];
+        unset($validated['providerAssignments'], $validated['responsibles'], $validated['dependencyAssignments']);
+
+        if ($this->system !== null) {
+            $forbidden = $this->descendantIds($this->system->id);
+            $forbidden[$this->system->id] = true;
+
+            $dependencyAssignments = array_values(array_filter(
+                $dependencyAssignments,
+                fn (array $row) => ! isset($forbidden[$row['dependency_id']]),
+            ));
+        }
+
+        $system = $this->system
+            ? tap($this->system)->update($validated)
+            : System::create($validated);
+
+        $employeeSync = [];
+        foreach (array_values($responsibles) as $index => $row) {
+            $employeeSync[$row['employee_id']] = [
+                'sort' => $index,
+                'note' => ($row['note'] ?? '') !== '' ? $row['note'] : null,
+            ];
+        }
+
+        $providerSync = [];
+        foreach (array_values($providerAssignments) as $index => $row) {
+            $providerSync[$row['provider_id']] = [
+                'sort' => $index,
+                'note' => ($row['note'] ?? '') !== '' ? $row['note'] : null,
+            ];
+        }
+
+        $dependencySync = [];
+        foreach (array_values($dependencyAssignments) as $index => $row) {
+            $dependencySync[$row['dependency_id']] = [
+                'sort' => $index,
+                'note' => ($row['note'] ?? '') !== '' ? $row['note'] : null,
+            ];
+        }
+
+        $system->serviceProviders()->sync($providerSync);
+        $system->employees()->sync($employeeSync);
+        $system->dependencies()->sync($dependencySync);
+
+        Flux::toast(variant: 'success', text: __('System gespeichert.'));
+
+        return redirect()->route('systems.index');
+    }
+}; ?>
+
+<section class="w-full">
+    <div class="mb-2">
+        <flux:link :href="route('systems.index')" wire:navigate class="text-sm">
+            ← {{ __('Alle Systeme') }}
+        </flux:link>
+    </div>
+
+    <div class="mb-6 rounded-xl border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-900">
+        <form wire:submit="save" class="space-y-5 p-6">
+            <div>
+                <flux:heading size="xl">
+                    {{ $system ? __('System bearbeiten') : __('Neues System anlegen') }}
+                </flux:heading>
+                <flux:subheading>
+                    {{ __('Was ist das System, wofür wird es gebraucht und wie wichtig ist es?') }}
+                </flux:subheading>
+            </div>
+
+            <flux:input wire:model="name" :label="__('Name')" type="text" required placeholder="z. B. Warenwirtschaft, Telefonanlage" />
+
+            <flux:textarea
+                wire:model="description"
+                :label="__('Beschreibung')"
+                rows="3"
+                placeholder="Wofür wird dieses System genutzt?"
+            />
+
+            <div class="grid gap-4 sm:grid-cols-2">
+                <flux:select wire:model="category" :label="__('Kategorie')" required>
+                    @foreach (\App\Enums\SystemCategory::cases() as $case)
+                        <flux:select.option value="{{ $case->value }}">{{ $case->label() }}</flux:select.option>
+                    @endforeach
+                </flux:select>
+
+                <flux:select wire:model="system_priority_id" :label="__('Priorität')" placeholder="Keine">
+                    <flux:select.option value="">{{ __('Ohne Priorität') }}</flux:select.option>
+                    @foreach ($this->priorities as $priority)
+                        <flux:select.option value="{{ $priority->id }}">{{ $priority->name }}</flux:select.option>
+                    @endforeach
+                </flux:select>
+            </div>
+
+            <flux:field>
+                <flux:label>{{ __('Ausfallkosten pro Stunde') }}</flux:label>
+                <flux:description>
+                    {{ __('Geschätzter Umsatz- oder Produktivitätsverlust, wenn dieses System eine Stunde lang ausfällt. In Euro, nur ganze Zahlen.') }}
+                </flux:description>
+                <flux:input wire:model="downtime_cost_per_hour" type="number" min="0" step="1" placeholder="z. B. 250" />
+            </flux:field>
+
+            <div class="grid gap-4 sm:grid-cols-2">
+                <flux:field>
+                    <flux:label>{{ __('Max. Ausfallzeit') }}</flux:label>
+                    <flux:description>
+                        {{ __('Wie lange darf das System maximal ausfallen, bevor der Betrieb ernsthaft leidet?') }}
+                        <span class="text-zinc-400">· {{ __('Fachbegriff: RTO') }}</span>
+                    </flux:description>
+                    <flux:select wire:model="rto_minutes">
+                        <flux:select.option value="">{{ __('Nicht definiert') }}</flux:select.option>
+                        @foreach (\App\Support\Duration::options() as $opt)
+                            <flux:select.option value="{{ $opt['value'] }}">{{ $opt['label'] }}</flux:select.option>
+                        @endforeach
+                    </flux:select>
+                </flux:field>
+
+                <flux:field>
+                    <flux:label>{{ __('Max. Datenverlust') }}</flux:label>
+                    <flux:description>
+                        {{ __('Wieviel Datenverlust ist im Notfall verkraftbar?') }}
+                        <span class="text-zinc-400">· {{ __('Fachbegriff: RPO') }}</span>
+                    </flux:description>
+                    <flux:select wire:model="rpo_minutes">
+                        <flux:select.option value="">{{ __('Nicht definiert') }}</flux:select.option>
+                        @foreach (\App\Support\Duration::options() as $opt)
+                            <flux:select.option value="{{ $opt['value'] }}">{{ $opt['label'] }}</flux:select.option>
+                        @endforeach
+                    </flux:select>
+                </flux:field>
+            </div>
+
+            @if ($this->employees->isNotEmpty() || $this->providers->isNotEmpty() || $this->dependencyCandidates->isNotEmpty())
+                @php($defaultTab = $this->employees->isNotEmpty() ? 'employees' : ($this->providers->isNotEmpty() ? 'providers' : 'dependencies'))
+                <div x-data="{ tab: '{{ $defaultTab }}' }" class="space-y-3">
+                    <div role="tablist" class="flex gap-1 border-b border-zinc-200 dark:border-zinc-700">
+                        @if ($this->employees->isNotEmpty())
+                            <button
+                                type="button"
+                                role="tab"
+                                :aria-selected="tab === 'employees'"
+                                @click="tab = 'employees'"
+                                :class="tab === 'employees'
+                                    ? 'border-b-2 border-zinc-900 text-zinc-900 dark:border-white dark:text-white'
+                                    : 'border-b-2 border-transparent text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200'"
+                                class="flex items-center gap-2 px-4 py-2 text-sm font-medium"
+                            >
+                                <flux:icon.user class="h-4 w-4" />
+                                {{ __('Verantwortliche Mitarbeiter') }}
+                                @if (count($responsibles) > 0)
+                                    <flux:badge color="teal" size="sm">{{ count($responsibles) }}</flux:badge>
+                                @endif
+                            </button>
+                        @endif
+                        @if ($this->providers->isNotEmpty())
+                            <button
+                                type="button"
+                                role="tab"
+                                :aria-selected="tab === 'providers'"
+                                @click="tab = 'providers'"
+                                :class="tab === 'providers'
+                                    ? 'border-b-2 border-zinc-900 text-zinc-900 dark:border-white dark:text-white'
+                                    : 'border-b-2 border-transparent text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200'"
+                                class="flex items-center gap-2 px-4 py-2 text-sm font-medium"
+                            >
+                                <flux:icon.wrench-screwdriver class="h-4 w-4" />
+                                {{ __('Dienstleister') }}
+                                @if (count($providerAssignments) > 0)
+                                    <flux:badge color="teal" size="sm">{{ count($providerAssignments) }}</flux:badge>
+                                @endif
+                            </button>
+                        @endif
+                        @if ($this->dependencyCandidates->isNotEmpty())
+                            <button
+                                type="button"
+                                role="tab"
+                                :aria-selected="tab === 'dependencies'"
+                                @click="tab = 'dependencies'"
+                                :class="tab === 'dependencies'
+                                    ? 'border-b-2 border-zinc-900 text-zinc-900 dark:border-white dark:text-white'
+                                    : 'border-b-2 border-transparent text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200'"
+                                class="flex items-center gap-2 px-4 py-2 text-sm font-medium"
+                            >
+                                <flux:icon.link class="h-4 w-4" />
+                                {{ __('Abhängigkeiten') }}
+                                @if (count($dependencyAssignments) > 0)
+                                    <flux:badge color="teal" size="sm">{{ count($dependencyAssignments) }}</flux:badge>
+                                @endif
+                            </button>
+                        @endif
+                    </div>
+
+                    @if ($this->employees->isNotEmpty())
+                        <div x-show="tab === 'employees'" x-cloak class="space-y-4">
+                            <flux:description>
+                                {{ __('Rufreihenfolge: zuerst Position 1, dann 2 etc. Notiz für Hinweise wie „nur werktags erreichbar".') }}
+                            </flux:description>
+
+                            @php($remaining = $this->employees->count() - count($responsibles))
+
+                            @if ($remaining > 0)
+                                <div
+                                    x-data="{ open: false }"
+                                    @focusin="open = true"
+                                    @click.outside="open = false"
+                                    class="relative"
+                                >
+                                    <flux:field>
+                                        <flux:label>{{ __('Mitarbeiter hinzufügen') }}</flux:label>
+                                        <flux:input
+                                            type="search"
+                                            wire:model.live.debounce.150ms="employeeSearch"
+                                            autocomplete="off"
+                                            icon="magnifying-glass"
+                                            :placeholder="__('Name, Position oder Abteilung tippen …')"
+                                        />
+                                    </flux:field>
+
+                                    <div
+                                        x-show="open"
+                                        x-cloak
+                                        class="absolute left-0 right-0 z-20 mt-1 max-h-64 overflow-y-auto rounded-lg border border-zinc-200 bg-white shadow-lg dark:border-zinc-700 dark:bg-zinc-900"
+                                    >
+                                        @forelse ($this->availableEmployees as $employee)
+                                            <button
+                                                type="button"
+                                                wire:click="addResponsibleById('{{ $employee->id }}')"
+                                                class="flex w-full items-center gap-3 border-b border-zinc-100 px-3 py-2 text-left text-sm last:border-b-0 hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-800"
+                                            >
+                                                <flux:icon.user class="h-4 w-4 text-zinc-400" />
+                                                <div class="min-w-0 flex-1">
+                                                    <div class="truncate font-medium">{{ $employee->fullName() }}</div>
+                                                    @if ($employee->position || $employee->department)
+                                                        <div class="truncate text-xs text-zinc-500 dark:text-zinc-400">
+                                                            {{ $employee->position }}@if ($employee->position && $employee->department) · @endif{{ $employee->department }}
+                                                        </div>
+                                                    @endif
+                                                </div>
+                                                <flux:icon.plus class="h-4 w-4 text-zinc-400" />
+                                            </button>
+                                        @empty
+                                            <div class="px-3 py-3 text-sm text-zinc-500 dark:text-zinc-400">
+                                                {{ __('Keine passenden Mitarbeiter.') }}
+                                            </div>
+                                        @endforelse
+                                    </div>
+                                </div>
+                            @endif
+
+                            @php($employeeLookup = $this->employees->mapWithKeys(fn ($e) => [
+                                $e->id => [
+                                    'name' => $e->fullName(),
+                                    'position' => (string) $e->position,
+                                    'mobile' => (string) $e->mobile_phone,
+                                ],
+                            ])->all())
+
+                            <div
+                                wire:key="responsibles-list"
+                                x-data="{
+                                    rows: $wire.entangle('responsibles'),
+                                    directory: @js((object) $employeeLookup),
+                                    moveUp(i) {
+                                        if (i <= 0) return;
+                                        const copy = [...this.rows];
+                                        [copy[i - 1], copy[i]] = [copy[i], copy[i - 1]];
+                                        this.rows = copy;
+                                    },
+                                    moveDown(i) {
+                                        if (i >= this.rows.length - 1) return;
+                                        const copy = [...this.rows];
+                                        [copy[i], copy[i + 1]] = [copy[i + 1], copy[i]];
+                                        this.rows = copy;
+                                    },
+                                    remove(i) {
+                                        this.rows = this.rows.filter((_, idx) => idx !== i);
+                                    },
+                                    meta(id) {
+                                        return this.directory[id] || { name: 'Unbekannter Mitarbeiter', position: '', mobile: '' };
+                                    },
+                                }"
+                            >
+                                <template x-if="rows.length === 0">
+                                    <div class="rounded-lg border border-dashed border-zinc-300 p-4 text-center text-sm text-zinc-500 dark:border-zinc-700 dark:text-zinc-400">
+                                        {{ __('Noch keine Verantwortlichen zugewiesen.') }}
+                                    </div>
+                                </template>
+
+                                <ol x-show="rows.length > 0" class="space-y-2">
+                                    <template x-for="(row, index) in rows" :key="row.employee_id">
+                                        <li class="flex items-start gap-3 rounded-lg border border-zinc-200 bg-white p-3 dark:border-zinc-700 dark:bg-zinc-900">
+                                            <span class="mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-teal-100 text-xs font-semibold text-teal-800 dark:bg-teal-900 dark:text-teal-100"
+                                                  x-text="index + 1"></span>
+
+                                            <div class="min-w-0 flex-1 space-y-1.5">
+                                                <div class="flex items-center gap-2 text-sm">
+                                                    <span class="font-medium" x-text="meta(row.employee_id).name"></span>
+                                                    <span x-show="meta(row.employee_id).position" class="text-xs text-zinc-500 dark:text-zinc-400" x-text="'· ' + meta(row.employee_id).position"></span>
+                                                    <span x-show="meta(row.employee_id).mobile" class="text-xs text-zinc-500 dark:text-zinc-400" x-text="'· ' + meta(row.employee_id).mobile"></span>
+                                                </div>
+                                                <input
+                                                    type="text"
+                                                    x-model="row.note"
+                                                    @keydown.enter.prevent
+                                                    placeholder="{{ __('Notiz (optional, z. B. „nur werktags erreichbar")') }}"
+                                                    class="block w-full rounded-md border border-zinc-200 bg-white px-2.5 py-1 text-sm shadow-sm placeholder:text-zinc-400 focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white"
+                                                />
+                                            </div>
+
+                                            <div class="flex shrink-0 items-center gap-1">
+                                                <button type="button" @click="moveUp(index)" :disabled="index === 0"
+                                                        class="inline-flex h-8 w-8 items-center justify-center rounded-md text-zinc-500 hover:bg-zinc-100 disabled:opacity-40 dark:hover:bg-zinc-800">
+                                                    <flux:icon.arrow-up class="h-4 w-4" />
+                                                </button>
+                                                <button type="button" @click="moveDown(index)" :disabled="index === rows.length - 1"
+                                                        class="inline-flex h-8 w-8 items-center justify-center rounded-md text-zinc-500 hover:bg-zinc-100 disabled:opacity-40 dark:hover:bg-zinc-800">
+                                                    <flux:icon.arrow-down class="h-4 w-4" />
+                                                </button>
+                                                <button type="button" @click="remove(index)"
+                                                        class="inline-flex h-8 w-8 items-center justify-center rounded-md text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800">
+                                                    <flux:icon.x-mark class="h-4 w-4" />
+                                                </button>
+                                            </div>
+                                        </li>
+                                    </template>
+                                </ol>
+                            </div>
+                        </div>
+                    @endif
+
+                    @if ($this->providers->isNotEmpty())
+                        <div x-show="tab === 'providers'" x-cloak class="space-y-4">
+                            <flux:description>
+                                {{ __('Reihenfolge = Eskalationskette: zuerst Dienstleister 1, dann 2 etc. Notiz für Hinweise wie „SLA nur Mo–Fr 8–17".') }}
+                            </flux:description>
+
+                            @php($providersRemaining = $this->providers->count() - count($providerAssignments))
+
+                            @if ($providersRemaining > 0)
+                                <div
+                                    x-data="{ open: false }"
+                                    @focusin="open = true"
+                                    @click.outside="open = false"
+                                    class="relative"
+                                >
+                                    <flux:field>
+                                        <flux:label>{{ __('Dienstleister hinzufügen') }}</flux:label>
+                                        <flux:input
+                                            type="search"
+                                            wire:model.live.debounce.150ms="providerSearch"
+                                            autocomplete="off"
+                                            icon="magnifying-glass"
+                                            :placeholder="__('Name, Hotline oder Ansprechpartner tippen …')"
+                                        />
+                                    </flux:field>
+
+                                    <div
+                                        x-show="open"
+                                        x-cloak
+                                        class="absolute left-0 right-0 z-20 mt-1 max-h-64 overflow-y-auto rounded-lg border border-zinc-200 bg-white shadow-lg dark:border-zinc-700 dark:bg-zinc-900"
+                                    >
+                                        @forelse ($this->availableProviders as $provider)
+                                            <button
+                                                type="button"
+                                                wire:click="addProviderById('{{ $provider->id }}')"
+                                                class="flex w-full items-center gap-3 border-b border-zinc-100 px-3 py-2 text-left text-sm last:border-b-0 hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-800"
+                                            >
+                                                <flux:icon.wrench-screwdriver class="h-4 w-4 text-zinc-400" />
+                                                <div class="min-w-0 flex-1">
+                                                    <div class="truncate font-medium">{{ $provider->name }}</div>
+                                                    @if ($provider->hotline || $provider->contact_name)
+                                                        <div class="truncate text-xs text-zinc-500 dark:text-zinc-400">
+                                                            {{ $provider->hotline }}@if ($provider->hotline && $provider->contact_name) · @endif{{ $provider->contact_name }}
+                                                        </div>
+                                                    @endif
+                                                </div>
+                                                <flux:icon.plus class="h-4 w-4 text-zinc-400" />
+                                            </button>
+                                        @empty
+                                            <div class="px-3 py-3 text-sm text-zinc-500 dark:text-zinc-400">
+                                                {{ __('Keine passenden Dienstleister.') }}
+                                            </div>
+                                        @endforelse
+                                    </div>
+                                </div>
+                            @endif
+
+                            @php($providerLookup = $this->providers->mapWithKeys(fn ($p) => [
+                                $p->id => [
+                                    'name' => $p->name,
+                                    'hotline' => (string) $p->hotline,
+                                    'contact' => (string) $p->contact_name,
+                                ],
+                            ])->all())
+
+                            <div
+                                wire:key="provider-list"
+                                x-data="{
+                                    rows: $wire.entangle('providerAssignments'),
+                                    directory: @js((object) $providerLookup),
+                                    moveUp(i) {
+                                        if (i <= 0) return;
+                                        const copy = [...this.rows];
+                                        [copy[i - 1], copy[i]] = [copy[i], copy[i - 1]];
+                                        this.rows = copy;
+                                    },
+                                    moveDown(i) {
+                                        if (i >= this.rows.length - 1) return;
+                                        const copy = [...this.rows];
+                                        [copy[i], copy[i + 1]] = [copy[i + 1], copy[i]];
+                                        this.rows = copy;
+                                    },
+                                    remove(i) {
+                                        this.rows = this.rows.filter((_, idx) => idx !== i);
+                                    },
+                                    meta(id) {
+                                        return this.directory[id] || { name: 'Unbekannter Dienstleister', hotline: '', contact: '' };
+                                    },
+                                }"
+                            >
+                                <template x-if="rows.length === 0">
+                                    <div class="rounded-lg border border-dashed border-zinc-300 p-4 text-center text-sm text-zinc-500 dark:border-zinc-700 dark:text-zinc-400">
+                                        {{ __('Noch keine Dienstleister zugewiesen.') }}
+                                    </div>
+                                </template>
+
+                                <ol x-show="rows.length > 0" class="space-y-2">
+                                    <template x-for="(row, index) in rows" :key="row.provider_id">
+                                        <li class="flex items-start gap-3 rounded-lg border border-zinc-200 bg-white p-3 dark:border-zinc-700 dark:bg-zinc-900">
+                                            <span class="mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-teal-100 text-xs font-semibold text-teal-800 dark:bg-teal-900 dark:text-teal-100"
+                                                  x-text="index + 1"></span>
+
+                                            <div class="min-w-0 flex-1 space-y-1.5">
+                                                <div class="flex items-center gap-2 text-sm">
+                                                    <span class="font-medium" x-text="meta(row.provider_id).name"></span>
+                                                    <span x-show="meta(row.provider_id).hotline" class="text-xs text-zinc-500 dark:text-zinc-400" x-text="'· ' + meta(row.provider_id).hotline"></span>
+                                                    <span x-show="meta(row.provider_id).contact" class="text-xs text-zinc-500 dark:text-zinc-400" x-text="'· ' + meta(row.provider_id).contact"></span>
+                                                </div>
+                                                <input
+                                                    type="text"
+                                                    x-model="row.note"
+                                                    @keydown.enter.prevent
+                                                    placeholder="{{ __('Notiz (optional, z. B. „SLA nur Mo–Fr 8–17")') }}"
+                                                    class="block w-full rounded-md border border-zinc-200 bg-white px-2.5 py-1 text-sm shadow-sm placeholder:text-zinc-400 focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white"
+                                                />
+                                            </div>
+
+                                            <div class="flex shrink-0 items-center gap-1">
+                                                <button type="button" @click="moveUp(index)" :disabled="index === 0"
+                                                        class="inline-flex h-8 w-8 items-center justify-center rounded-md text-zinc-500 hover:bg-zinc-100 disabled:opacity-40 dark:hover:bg-zinc-800">
+                                                    <flux:icon.arrow-up class="h-4 w-4" />
+                                                </button>
+                                                <button type="button" @click="moveDown(index)" :disabled="index === rows.length - 1"
+                                                        class="inline-flex h-8 w-8 items-center justify-center rounded-md text-zinc-500 hover:bg-zinc-100 disabled:opacity-40 dark:hover:bg-zinc-800">
+                                                    <flux:icon.arrow-down class="h-4 w-4" />
+                                                </button>
+                                                <button type="button" @click="remove(index)"
+                                                        class="inline-flex h-8 w-8 items-center justify-center rounded-md text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800">
+                                                    <flux:icon.x-mark class="h-4 w-4" />
+                                                </button>
+                                            </div>
+                                        </li>
+                                    </template>
+                                </ol>
+                            </div>
+                        </div>
+                    @endif
+
+                    @if ($this->dependencyCandidates->isNotEmpty())
+                        <div x-show="tab === 'dependencies'" x-cloak class="space-y-4">
+                            <flux:description>
+                                {{ __('Welche anderen Systeme müssen bereits laufen, damit dieses hier funktioniert? Reihenfolge beeinflusst die Darstellung; die Startreihenfolge im Ernstfall wird aus dem Abhängigkeitsgraph berechnet.') }}
+                            </flux:description>
+
+                            @php($depsRemaining = $this->dependencyCandidates->count() - count($dependencyAssignments))
+
+                            @if ($depsRemaining > 0)
+                                <div
+                                    x-data="{ open: false }"
+                                    @focusin="open = true"
+                                    @click.outside="open = false"
+                                    class="relative"
+                                >
+                                    <flux:field>
+                                        <flux:label>{{ __('Abhängigkeit hinzufügen') }}</flux:label>
+                                        <flux:input
+                                            type="search"
+                                            wire:model.live.debounce.150ms="dependencySearch"
+                                            autocomplete="off"
+                                            icon="magnifying-glass"
+                                            :placeholder="__('Systemname, Kategorie oder Beschreibung tippen …')"
+                                        />
+                                    </flux:field>
+
+                                    <div
+                                        x-show="open"
+                                        x-cloak
+                                        class="absolute left-0 right-0 z-20 mt-1 max-h-64 overflow-y-auto rounded-lg border border-zinc-200 bg-white shadow-lg dark:border-zinc-700 dark:bg-zinc-900"
+                                    >
+                                        @forelse ($this->availableDependencies as $candidate)
+                                            <button
+                                                type="button"
+                                                wire:click="addDependencyById('{{ $candidate->id }}')"
+                                                class="flex w-full items-center gap-3 border-b border-zinc-100 px-3 py-2 text-left text-sm last:border-b-0 hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-800"
+                                            >
+                                                <flux:icon.server-stack class="h-4 w-4 text-zinc-400" />
+                                                <div class="min-w-0 flex-1">
+                                                    <div class="truncate font-medium">{{ $candidate->name }}</div>
+                                                    <div class="truncate text-xs text-zinc-500 dark:text-zinc-400">
+                                                        {{ $candidate->category->label() }}
+                                                    </div>
+                                                </div>
+                                                <flux:icon.plus class="h-4 w-4 text-zinc-400" />
+                                            </button>
+                                        @empty
+                                            <div class="px-3 py-3 text-sm text-zinc-500 dark:text-zinc-400">
+                                                {{ __('Keine passenden Systeme.') }}
+                                            </div>
+                                        @endforelse
+                                    </div>
+                                </div>
+                            @endif
+
+                            @php($dependencyLookup = $this->dependencyCandidates->mapWithKeys(fn ($s) => [
+                                $s->id => [
+                                    'name' => $s->name,
+                                    'category' => $s->category->label(),
+                                ],
+                            ])->all())
+
+                            <div
+                                wire:key="dependency-list"
+                                x-data="{
+                                    rows: $wire.entangle('dependencyAssignments'),
+                                    directory: @js((object) $dependencyLookup),
+                                    moveUp(i) {
+                                        if (i <= 0) return;
+                                        const copy = [...this.rows];
+                                        [copy[i - 1], copy[i]] = [copy[i], copy[i - 1]];
+                                        this.rows = copy;
+                                    },
+                                    moveDown(i) {
+                                        if (i >= this.rows.length - 1) return;
+                                        const copy = [...this.rows];
+                                        [copy[i], copy[i + 1]] = [copy[i + 1], copy[i]];
+                                        this.rows = copy;
+                                    },
+                                    remove(i) {
+                                        this.rows = this.rows.filter((_, idx) => idx !== i);
+                                    },
+                                    meta(id) {
+                                        return this.directory[id] || { name: 'Unbekanntes System', category: '' };
+                                    },
+                                }"
+                            >
+                                <template x-if="rows.length === 0">
+                                    <div class="rounded-lg border border-dashed border-zinc-300 p-4 text-center text-sm text-zinc-500 dark:border-zinc-700 dark:text-zinc-400">
+                                        {{ __('Keine Abhängigkeiten definiert.') }}
+                                    </div>
+                                </template>
+
+                                <ol x-show="rows.length > 0" class="space-y-2">
+                                    <template x-for="(row, index) in rows" :key="row.dependency_id">
+                                        <li class="flex items-start gap-3 rounded-lg border border-zinc-200 bg-white p-3 dark:border-zinc-700 dark:bg-zinc-900">
+                                            <span class="mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-teal-100 text-xs font-semibold text-teal-800 dark:bg-teal-900 dark:text-teal-100"
+                                                  x-text="index + 1"></span>
+
+                                            <div class="min-w-0 flex-1 space-y-1.5">
+                                                <div class="flex items-center gap-2 text-sm">
+                                                    <span class="font-medium" x-text="meta(row.dependency_id).name"></span>
+                                                    <span x-show="meta(row.dependency_id).category" class="text-xs text-zinc-500 dark:text-zinc-400" x-text="'· ' + meta(row.dependency_id).category"></span>
+                                                </div>
+                                                <input
+                                                    type="text"
+                                                    x-model="row.note"
+                                                    @keydown.enter.prevent
+                                                    placeholder="{{ __('Notiz (optional, z. B. „Nur Schreibzugriff nötig")') }}"
+                                                    class="block w-full rounded-md border border-zinc-200 bg-white px-2.5 py-1 text-sm shadow-sm placeholder:text-zinc-400 focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white"
+                                                />
+                                            </div>
+
+                                            <div class="flex shrink-0 items-center gap-1">
+                                                <button type="button" @click="moveUp(index)" :disabled="index === 0"
+                                                        class="inline-flex h-8 w-8 items-center justify-center rounded-md text-zinc-500 hover:bg-zinc-100 disabled:opacity-40 dark:hover:bg-zinc-800">
+                                                    <flux:icon.arrow-up class="h-4 w-4" />
+                                                </button>
+                                                <button type="button" @click="moveDown(index)" :disabled="index === rows.length - 1"
+                                                        class="inline-flex h-8 w-8 items-center justify-center rounded-md text-zinc-500 hover:bg-zinc-100 disabled:opacity-40 dark:hover:bg-zinc-800">
+                                                    <flux:icon.arrow-down class="h-4 w-4" />
+                                                </button>
+                                                <button type="button" @click="remove(index)"
+                                                        class="inline-flex h-8 w-8 items-center justify-center rounded-md text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800">
+                                                    <flux:icon.x-mark class="h-4 w-4" />
+                                                </button>
+                                            </div>
+                                        </li>
+                                    </template>
+                                </ol>
+                            </div>
+                        </div>
+                    @endif
+                </div>
+            @endif
+
+            <div class="flex items-center justify-end gap-2 border-t border-zinc-100 pt-4 dark:border-zinc-800">
+                <flux:button variant="filled" :href="route('systems.index')" wire:navigate>
+                    {{ __('Abbrechen') }}
+                </flux:button>
+                <flux:button variant="primary" type="submit">
+                    {{ $system ? __('Speichern') : __('Anlegen') }}
+                </flux:button>
+            </div>
+        </form>
+    </div>
+</section>

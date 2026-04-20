@@ -43,7 +43,7 @@ new #[Title('Vorfall')] class extends Component {
     }
 }; ?>
 
-<section class="mx-auto w-full max-w-4xl">
+<section class="w-full">
     <div class="mb-2">
         <flux:link :href="route('incidents.index')" wire:navigate class="text-sm">
             ← {{ __('Alle Vorfälle') }}

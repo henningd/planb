@@ -26,7 +26,14 @@ Route::prefix('{current_team}')
         Route::livewire('contacts', 'pages::contacts.index')->name('contacts.index');
         Route::livewire('emergency-levels', 'pages::emergency-levels.index')->name('emergency-levels.index');
         Route::livewire('systems', 'pages::systems.index')->name('systems.index');
+        Route::livewire('systems/create', 'pages::systems.edit')->name('systems.create');
         Route::livewire('systems/recovery', 'pages::systems.recovery')->name('systems.recovery');
+        Route::livewire('systems/{system}', 'pages::systems.show')
+            ->where('system', '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}')
+            ->name('systems.show');
+        Route::livewire('systems/{system}/edit', 'pages::systems.edit')
+            ->where('system', '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}')
+            ->name('systems.edit');
         Route::livewire('service-providers', 'pages::service-providers.index')->name('service-providers.index');
         Route::livewire('employees', 'pages::employees.index')->name('employees.index');
 

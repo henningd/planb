@@ -21,7 +21,7 @@ new #[Title('Admin · Übersicht')] class extends Component {
     }
 }; ?>
 
-<section class="mx-auto w-full max-w-5xl">
+<section class="w-full">
     <div class="mb-6 rounded-xl border border-rose-300 bg-rose-50 p-4 text-sm text-rose-900 dark:border-rose-800 dark:bg-rose-950/50 dark:text-rose-100">
         <strong>{{ __('Superadmin-Modus') }}</strong> – {{ __('Sie sehen und bearbeiten hier Daten über alle Mandanten hinweg.') }}
     </div>

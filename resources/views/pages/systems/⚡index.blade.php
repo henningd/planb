@@ -1,14 +1,10 @@
 <?php
 
 use App\Enums\SystemCategory;
-use App\Models\ServiceProvider;
 use App\Models\System;
-use App\Models\SystemPriority;
-use App\Support\Duration;
 use App\Support\IndustryTemplates;
 use App\Support\SystemImport;
 use Flux\Flux;
-use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Computed;
@@ -18,27 +14,6 @@ use Livewire\WithFileUploads;
 
 new #[Title('Systeme')] class extends Component {
     use WithFileUploads;
-    public ?string $editingId = null;
-
-    public string $name = '';
-
-    public string $description = '';
-
-    public string $category = '';
-
-    public ?string $system_priority_id = null;
-
-    public ?int $rto_minutes = null;
-
-    public ?int $rpo_minutes = null;
-
-    public ?int $downtime_cost_per_hour = null;
-
-    /** @var array<int, string> */
-    public array $service_provider_ids = [];
-
-    /** @var array<int, string> */
-    public array $depends_on_ids = [];
 
     public ?string $deletingId = null;
 
@@ -50,7 +25,6 @@ new #[Title('Systeme')] class extends Component {
 
     public function mount(): void
     {
-        $this->category = SystemCategory::Basisbetrieb->value;
         $this->templateKey = IndustryTemplates::defaultFor(Auth::user()->currentCompany()?->industry) ?? '';
     }
 
@@ -61,173 +35,29 @@ new #[Title('Systeme')] class extends Component {
     }
 
     /**
-     * @return Collection<int, SystemPriority>
-     */
-    #[Computed]
-    public function priorities(): Collection
-    {
-        return SystemPriority::orderBy('sort')->get();
-    }
-
-    /**
-     * @return Collection<int, ServiceProvider>
-     */
-    #[Computed]
-    public function providers(): Collection
-    {
-        return ServiceProvider::orderBy('name')->get();
-    }
-
-    /**
      * Systems grouped by their category. Keyed by the enum value.
      *
-     * @return array<string, Collection<int, System>>
+     * @return array<string, \Illuminate\Support\Collection<int, System>>
      */
     #[Computed]
     public function systemsByCategory(): array
     {
-        $systems = System::with(['priority', 'serviceProviders', 'dependencies'])->orderBy('name')->get();
+        $systems = System::with(['priority', 'serviceProviders', 'employees', 'dependencies'])
+            ->get()
+            ->sort(function (System $a, System $b) {
+                $prio = ($a->priority?->sort ?? PHP_INT_MAX) <=> ($b->priority?->sort ?? PHP_INT_MAX);
+
+                return $prio !== 0 ? $prio : strcasecmp($a->name, $b->name);
+            })
+            ->values();
+
         $grouped = [];
 
         foreach (SystemCategory::cases() as $category) {
-            $grouped[$category->value] = $systems->where('category', $category);
+            $grouped[$category->value] = $systems->where('category', $category)->values();
         }
 
         return $grouped;
-    }
-
-    /**
-     * Candidates for a dependency selector: every system of the current tenant
-     * except the one being edited and its transitive dependents (cycle prevention).
-     *
-     * @return Collection<int, System>
-     */
-    #[Computed]
-    public function dependencyCandidates(): Collection
-    {
-        $all = System::orderBy('name')->get();
-
-        if ($this->editingId === null) {
-            return $all;
-        }
-
-        $forbidden = $this->descendantIds($this->editingId, $all);
-        $forbidden[$this->editingId] = true;
-
-        return $all->reject(fn (System $s) => isset($forbidden[$s->id]))->values();
-    }
-
-    /**
-     * Returns all system ids that (directly or transitively) depend on $systemId.
-     * Using preloaded collection to avoid extra queries.
-     *
-     * @param  Collection<int, System>  $systems
-     * @return array<string, true>
-     */
-    protected function descendantIds(string $systemId, Collection $systems): array
-    {
-        $dependentsByParent = [];
-        foreach (
-            DB::table('system_dependencies')
-                ->select('system_id', 'depends_on_system_id')
-                ->get() as $row
-        ) {
-            $dependentsByParent[$row->depends_on_system_id][] = $row->system_id;
-        }
-
-        $visited = [];
-        $stack = [$systemId];
-        while ($stack) {
-            $cur = array_pop($stack);
-            foreach ($dependentsByParent[$cur] ?? [] as $child) {
-                if (isset($visited[$child])) {
-                    continue;
-                }
-                $visited[$child] = true;
-                $stack[] = $child;
-            }
-        }
-
-        return $visited;
-    }
-
-    public function openCreate(?string $category = null): void
-    {
-        $this->resetForm();
-        if ($category) {
-            $this->category = $category;
-        }
-        Flux::modal('system-form')->show();
-    }
-
-    public function openEdit(string $id): void
-    {
-        $system = System::with(['serviceProviders', 'dependencies'])->findOrFail($id);
-
-        $this->editingId = $system->id;
-        $this->name = $system->name;
-        $this->description = (string) $system->description;
-        $this->category = $system->category->value;
-        $this->system_priority_id = $system->system_priority_id;
-        $this->rto_minutes = $system->rto_minutes;
-        $this->rpo_minutes = $system->rpo_minutes;
-        $this->downtime_cost_per_hour = $system->downtime_cost_per_hour;
-        $this->service_provider_ids = $system->serviceProviders->pluck('id')->all();
-        $this->depends_on_ids = $system->dependencies->pluck('id')->all();
-
-        Flux::modal('system-form')->show();
-    }
-
-    public function save(): void
-    {
-        if (! $this->hasCompany) {
-            Flux::toast(variant: 'warning', text: __('Bitte legen Sie zuerst ein Firmenprofil an.'));
-
-            return;
-        }
-
-        $validDurations = array_keys(Duration::OPTIONS);
-
-        $validated = $this->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'description' => ['nullable', 'string', 'max:2000'],
-            'category' => ['required', 'in:'.collect(SystemCategory::cases())->pluck('value')->implode(',')],
-            'system_priority_id' => ['nullable', 'uuid', 'exists:system_priorities,id'],
-            'rto_minutes' => ['nullable', 'integer', 'in:'.implode(',', $validDurations)],
-            'rpo_minutes' => ['nullable', 'integer', 'in:'.implode(',', $validDurations)],
-            'downtime_cost_per_hour' => ['nullable', 'integer', 'min:0', 'max:100000000'],
-            'service_provider_ids' => ['array'],
-            'service_provider_ids.*' => ['uuid', 'exists:service_providers,id'],
-            'depends_on_ids' => ['array'],
-            'depends_on_ids.*' => ['uuid', 'exists:systems,id'],
-        ]);
-
-        $providerIds = $validated['service_provider_ids'] ?? [];
-        $dependencyIds = $validated['depends_on_ids'] ?? [];
-        unset($validated['service_provider_ids'], $validated['depends_on_ids']);
-
-        if ($this->editingId !== null) {
-            $forbidden = $this->descendantIds($this->editingId, System::all());
-            $forbidden[$this->editingId] = true;
-
-            $dependencyIds = array_values(array_filter(
-                $dependencyIds,
-                fn (string $id) => ! isset($forbidden[$id]),
-            ));
-        }
-
-        $system = $this->editingId
-            ? tap(System::findOrFail($this->editingId))->update($validated)
-            : System::create($validated);
-
-        $system->serviceProviders()->sync($providerIds);
-        $system->dependencies()->sync($dependencyIds);
-
-        Flux::modal('system-form')->close();
-        $this->resetForm();
-        unset($this->systemsByCategory);
-
-        Flux::toast(variant: 'success', text: __('System gespeichert.'));
     }
 
     public function confirmDelete(string $id): void
@@ -245,12 +75,6 @@ new #[Title('Systeme')] class extends Component {
             Flux::modal('system-delete')->close();
             Flux::toast(variant: 'success', text: __('System gelöscht.'));
         }
-    }
-
-    protected function resetForm(): void
-    {
-        $this->reset(['editingId', 'name', 'description', 'system_priority_id', 'rto_minutes', 'rpo_minutes', 'downtime_cost_per_hour', 'service_provider_ids', 'depends_on_ids']);
-        $this->category = SystemCategory::Basisbetrieb->value;
     }
 
     /**
@@ -396,7 +220,7 @@ new #[Title('Systeme')] class extends Component {
     }
 }; ?>
 
-<section class="mx-auto w-full max-w-5xl">
+<section class="w-full">
     <div class="mb-6">
         <div class="flex items-start justify-between gap-4">
             <div>
@@ -406,7 +230,7 @@ new #[Title('Systeme')] class extends Component {
                 </flux:subheading>
             </div>
 
-            <flux:button variant="primary" icon="plus" wire:click="openCreate" :disabled="! $this->hasCompany">
+            <flux:button variant="primary" icon="plus" :href="$this->hasCompany ? route('systems.create') : null" :disabled="! $this->hasCompany" wire:navigate>
                 {{ __('Neues System') }}
             </flux:button>
         </div>
@@ -444,7 +268,7 @@ new #[Title('Systeme')] class extends Component {
                             {{ $category->description() }}
                         </flux:text>
                     </div>
-                    <flux:button size="sm" variant="ghost" icon="plus" wire:click="openCreate('{{ $category->value }}')" :disabled="! $this->hasCompany">
+                    <flux:button size="sm" variant="ghost" icon="plus" :href="$this->hasCompany ? route('systems.create', ['category' => $category->value]) : null" :disabled="! $this->hasCompany" wire:navigate>
                         {{ __('Hinzufügen') }}
                     </flux:button>
                 </div>
@@ -495,8 +319,20 @@ new #[Title('Systeme')] class extends Component {
                             @if ($system->serviceProviders->isNotEmpty())
                                 <div class="mt-2 flex flex-wrap items-center gap-1.5">
                                     <flux:icon.wrench-screwdriver class="h-3.5 w-3.5 text-zinc-400" />
-                                    @foreach ($system->serviceProviders as $p)
-                                        <flux:badge color="zinc" size="sm">{{ $p->name }}@if ($p->hotline) · {{ $p->hotline }}@endif</flux:badge>
+                                    @foreach ($system->serviceProviders as $rank => $p)
+                                        <flux:badge color="zinc" size="sm" :title="$p->pivot->note">
+                                            {{ $rank + 1 }}. {{ $p->name }}@if ($p->hotline) · {{ $p->hotline }}@endif
+                                        </flux:badge>
+                                    @endforeach
+                                </div>
+                            @endif
+                            @if ($system->employees->isNotEmpty())
+                                <div class="mt-2 flex flex-wrap items-center gap-1.5">
+                                    <flux:icon.user class="h-3.5 w-3.5 text-zinc-400" />
+                                    @foreach ($system->employees as $rank => $e)
+                                        <flux:badge color="teal" size="sm" :title="$e->pivot->note">
+                                            {{ $rank + 1 }}. {{ $e->fullName() }}@if ($e->position) · {{ $e->position }}@endif
+                                        </flux:badge>
                                     @endforeach
                                 </div>
                             @endif
@@ -504,8 +340,10 @@ new #[Title('Systeme')] class extends Component {
                                 <div class="mt-2 flex flex-wrap items-center gap-1.5">
                                     <flux:icon.link class="h-3.5 w-3.5 text-zinc-400" />
                                     <span class="text-xs text-zinc-500 dark:text-zinc-400">{{ __('Braucht:') }}</span>
-                                    @foreach ($system->dependencies as $dep)
-                                        <flux:badge color="sky" size="sm">{{ $dep->name }}</flux:badge>
+                                    @foreach ($system->dependencies as $rank => $dep)
+                                        <flux:badge color="sky" size="sm" :title="$dep->pivot->note">
+                                            {{ $rank + 1 }}. {{ $dep->name }}
+                                        </flux:badge>
                                     @endforeach
                                 </div>
                             @endif
@@ -514,7 +352,10 @@ new #[Title('Systeme')] class extends Component {
                         <flux:dropdown align="end">
                             <flux:button size="sm" variant="ghost" icon="ellipsis-vertical" />
                             <flux:menu>
-                                <flux:menu.item icon="pencil" wire:click="openEdit('{{ $system->id }}')">
+                                <flux:menu.item icon="eye" :href="route('systems.show', ['system' => $system->id])" wire:navigate>
+                                    {{ __('Details') }}
+                                </flux:menu.item>
+                                <flux:menu.item icon="pencil" :href="route('systems.edit', ['system' => $system->id])" wire:navigate>
                                     {{ __('Bearbeiten') }}
                                 </flux:menu.item>
                                 <flux:menu.item icon="qr-code" :href="route('systems.sticker', ['system' => $system->id])" target="_blank">
@@ -537,122 +378,6 @@ new #[Title('Systeme')] class extends Component {
             </div>
         @endforeach
     </div>
-
-    <flux:modal name="system-form" class="max-w-xl">
-        <form wire:submit="save" class="space-y-5">
-            <div>
-                <flux:heading size="lg">
-                    {{ $editingId ? __('System bearbeiten') : __('Neues System anlegen') }}
-                </flux:heading>
-                <flux:subheading>
-                    {{ __('Was ist das System, wofür wird es gebraucht und wie wichtig ist es?') }}
-                </flux:subheading>
-            </div>
-
-            <flux:input wire:model="name" :label="__('Name')" type="text" required placeholder="z. B. Warenwirtschaft, Telefonanlage" />
-
-            <flux:textarea
-                wire:model="description"
-                :label="__('Beschreibung')"
-                rows="3"
-                placeholder="Wofür wird dieses System genutzt?"
-            />
-
-            <flux:select wire:model="category" :label="__('Kategorie')" required>
-                @foreach (\App\Enums\SystemCategory::cases() as $case)
-                    <flux:select.option value="{{ $case->value }}">{{ $case->label() }}</flux:select.option>
-                @endforeach
-            </flux:select>
-
-            <flux:select wire:model="system_priority_id" :label="__('Priorität')" placeholder="Keine">
-                <flux:select.option value="">{{ __('Ohne Priorität') }}</flux:select.option>
-                @foreach ($this->priorities as $priority)
-                    <flux:select.option value="{{ $priority->id }}">{{ $priority->name }}</flux:select.option>
-                @endforeach
-            </flux:select>
-
-            <flux:field>
-                <flux:label>{{ __('Ausfallkosten pro Stunde') }}</flux:label>
-                <flux:description>
-                    {{ __('Geschätzter Umsatz- oder Produktivitätsverlust, wenn dieses System eine Stunde lang ausfällt. In Euro, nur ganze Zahlen.') }}
-                </flux:description>
-                <flux:input wire:model="downtime_cost_per_hour" type="number" min="0" step="1" placeholder="z. B. 250" />
-            </flux:field>
-
-            <div class="grid gap-4 sm:grid-cols-2">
-                <flux:field>
-                    <flux:label>{{ __('Max. Ausfallzeit') }}</flux:label>
-                    <flux:description>
-                        {{ __('Wie lange darf das System maximal ausfallen, bevor der Betrieb ernsthaft leidet?') }}
-                        <span class="text-zinc-400">· {{ __('Fachbegriff: RTO') }}</span>
-                    </flux:description>
-                    <flux:select wire:model="rto_minutes">
-                        <flux:select.option value="">{{ __('Nicht definiert') }}</flux:select.option>
-                        @foreach (\App\Support\Duration::options() as $opt)
-                            <flux:select.option value="{{ $opt['value'] }}">{{ $opt['label'] }}</flux:select.option>
-                        @endforeach
-                    </flux:select>
-                </flux:field>
-
-                <flux:field>
-                    <flux:label>{{ __('Max. Datenverlust') }}</flux:label>
-                    <flux:description>
-                        {{ __('Wieviel Datenverlust ist im Notfall verkraftbar?') }}
-                        <span class="text-zinc-400">· {{ __('Fachbegriff: RPO') }}</span>
-                    </flux:description>
-                    <flux:select wire:model="rpo_minutes">
-                        <flux:select.option value="">{{ __('Nicht definiert') }}</flux:select.option>
-                        @foreach (\App\Support\Duration::options() as $opt)
-                            <flux:select.option value="{{ $opt['value'] }}">{{ $opt['label'] }}</flux:select.option>
-                        @endforeach
-                    </flux:select>
-                </flux:field>
-            </div>
-
-            @if ($this->providers->isNotEmpty())
-                <flux:field>
-                    <flux:label>{{ __('Dienstleister') }}</flux:label>
-                    <flux:description>{{ __('Wer ist für dieses System zuständig, wenn es ausfällt?') }}</flux:description>
-                    <div class="space-y-2 rounded-lg border border-zinc-200 p-3 dark:border-zinc-700">
-                        @foreach ($this->providers as $provider)
-                            <flux:checkbox
-                                wire:model="service_provider_ids"
-                                value="{{ $provider->id }}"
-                                :label="$provider->name.($provider->hotline ? ' · '.$provider->hotline : '')"
-                            />
-                        @endforeach
-                    </div>
-                </flux:field>
-            @endif
-
-            @if ($this->dependencyCandidates->isNotEmpty())
-                <flux:field>
-                    <flux:label>{{ __('Abhängigkeiten') }}</flux:label>
-                    <flux:description>
-                        {{ __('Welche anderen Systeme müssen bereits laufen, damit dieses hier funktioniert? Wird beim Wiederanlauf berücksichtigt.') }}
-                    </flux:description>
-                    <div class="max-h-56 space-y-2 overflow-y-auto rounded-lg border border-zinc-200 p-3 dark:border-zinc-700">
-                        @foreach ($this->dependencyCandidates as $candidate)
-                            <flux:checkbox
-                                wire:model="depends_on_ids"
-                                value="{{ $candidate->id }}"
-                                :label="$candidate->name"
-                            />
-                        @endforeach
-                    </div>
-                </flux:field>
-            @endif
-
-            <div class="flex items-center justify-end gap-2 border-t border-zinc-100 pt-4 dark:border-zinc-800">
-                <flux:modal.close>
-                    <flux:button variant="filled">{{ __('Abbrechen') }}</flux:button>
-                </flux:modal.close>
-                <flux:button variant="primary" type="submit">
-                    {{ $editingId ? __('Speichern') : __('Anlegen') }}
-                </flux:button>
-            </div>
-        </form>
-    </flux:modal>
 
     <flux:modal name="system-delete" class="max-w-md">
         <div class="space-y-5">

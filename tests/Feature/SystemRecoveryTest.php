@@ -84,11 +84,11 @@ test('edit form rejects dependencies that would create a cycle', function () {
     $b->dependencies()->sync([$a->id]);
 
     Livewire\Livewire::actingAs($user)
-        ->test('pages::systems.index')
-        ->call('openEdit', $a->id)
-        ->set('depends_on_ids', [$b->id])
-        ->call('save')
-        ->assertHasNoErrors();
+        ->test('pages::systems.edit', ['system' => $a])
+        ->set('dependencyAssignments', [
+            ['dependency_id' => $b->id, 'note' => ''],
+        ])
+        ->call('save');
 
     expect($a->fresh()->dependencies)->toBeEmpty()
         ->and($b->fresh()->dependencies->pluck('id')->all())->toBe([$a->id]);
@@ -120,6 +120,26 @@ test('recovery page empty state when no systems exist', function () {
         ->assertSee('Noch keine Systeme erfasst.');
 });
 
+test('recovery page shows RPO, dependents and stage aggregate', function () {
+    [$user, $company] = bootRecoveryTenant();
+
+    $storage = makeSystem($company, 'Storage');
+    $storage->update(['rto_minutes' => 60, 'rpo_minutes' => 15, 'downtime_cost_per_hour' => 500]);
+
+    $db = makeSystem($company, 'Datenbank');
+    $db->update(['rto_minutes' => 240]);
+    $db->dependencies()->sync([$storage->id]);
+
+    $this->actingAs($user)
+        ->get(route('systems.recovery'))
+        ->assertOk()
+        ->assertSee('Max. Datenverlust')
+        ->assertSee('15 Minuten')
+        ->assertSee('Blockiert:')
+        ->assertSee('500 € / h')
+        ->assertSee('Stufe spätestens nach');
+});
+
 test('system form saves selected dependencies', function () {
     [$user, $company] = bootRecoveryTenant();
 
@@ -127,11 +147,11 @@ test('system form saves selected dependencies', function () {
     $db = makeSystem($company, 'Datenbank');
 
     Livewire\Livewire::actingAs($user)
-        ->test('pages::systems.index')
-        ->call('openEdit', $db->id)
-        ->set('depends_on_ids', [$storage->id])
-        ->call('save')
-        ->assertHasNoErrors();
+        ->test('pages::systems.edit', ['system' => $db])
+        ->set('dependencyAssignments', [
+            ['dependency_id' => $storage->id, 'note' => ''],
+        ])
+        ->call('save');
 
     expect($db->fresh()->dependencies->pluck('name')->all())->toBe(['Storage']);
 });

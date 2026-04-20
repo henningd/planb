@@ -129,7 +129,7 @@ new #[Title('Admin · Globales Szenario')] class extends Component {
     }
 }; ?>
 
-<section class="mx-auto w-full max-w-4xl">
+<section class="w-full">
     <div class="mb-2">
         <flux:link :href="route('admin.scenarios.index')" wire:navigate class="text-sm">
             ← {{ __('Alle globalen Szenarien') }}

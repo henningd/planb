@@ -185,7 +185,7 @@ new #[Title('Szenarien')] class extends Component {
     }
 }; ?>
 
-<section class="mx-auto w-full max-w-5xl">
+<section class="w-full">
     <div class="mb-6 flex items-start justify-between gap-4">
         <div>
             <flux:heading size="xl">{{ __('Szenarien & Playbooks') }}</flux:heading>

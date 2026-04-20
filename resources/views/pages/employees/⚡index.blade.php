@@ -189,7 +189,7 @@ new #[Title('Mitarbeiter')] class extends Component {
     }
 }; ?>
 
-<section class="mx-auto w-full max-w-6xl">
+<section class="w-full">
     <div class="mb-6 flex items-end justify-between gap-4">
         <div>
             <flux:heading size="xl">{{ __('Mitarbeiter') }}</flux:heading>

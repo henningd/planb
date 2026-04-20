@@ -92,7 +92,7 @@ new #[Title('Durchlauf')] class extends Component {
     }
 }; ?>
 
-<section class="mx-auto w-full max-w-4xl">
+<section class="w-full">
     <div class="mb-2">
         <flux:link :href="route('scenario-runs.index')" wire:navigate class="text-sm">
             ← {{ __('Alle Durchläufe') }}

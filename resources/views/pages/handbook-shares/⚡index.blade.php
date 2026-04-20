@@ -76,7 +76,7 @@ new #[Title('Freigabelinks')] class extends Component {
     }
 }; ?>
 
-<section class="mx-auto w-full max-w-5xl">
+<section class="w-full">
     <div class="mb-6">
         <flux:heading size="xl">{{ __('Read-only-Freigabelinks') }}</flux:heading>
         <flux:subheading>

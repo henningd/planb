@@ -33,8 +33,20 @@ class System extends Model
     public function serviceProviders(): BelongsToMany
     {
         return $this->belongsToMany(ServiceProvider::class)
-            ->withPivot('role')
-            ->withTimestamps();
+            ->withPivot(['role', 'sort', 'note'])
+            ->withTimestamps()
+            ->orderBy('service_provider_system.sort');
+    }
+
+    /**
+     * @return BelongsToMany<Employee, $this>
+     */
+    public function employees(): BelongsToMany
+    {
+        return $this->belongsToMany(Employee::class)
+            ->withPivot(['sort', 'note'])
+            ->withTimestamps()
+            ->orderBy('employee_system.sort');
     }
 
     /**
@@ -49,7 +61,10 @@ class System extends Model
             'system_dependencies',
             'system_id',
             'depends_on_system_id',
-        )->withTimestamps();
+        )
+            ->withPivot(['sort', 'note'])
+            ->withTimestamps()
+            ->orderBy('system_dependencies.sort');
     }
 
     /**
@@ -64,7 +79,9 @@ class System extends Model
             'system_dependencies',
             'depends_on_system_id',
             'system_id',
-        )->withTimestamps();
+        )
+            ->withPivot(['sort', 'note'])
+            ->withTimestamps();
     }
 
     /**

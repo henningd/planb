@@ -1,6 +1,8 @@
 <?php
 
 use App\Models\Company;
+use App\Models\Employee;
+use App\Models\ServiceProvider;
 use App\Models\System;
 use App\Models\SystemPriority;
 use App\Models\Team;
@@ -263,4 +265,321 @@ test('exported json can be re-imported without loss', function () {
         ->and($imported->rto_minutes)->toBe(60)
         ->and($imported->rpo_minutes)->toBe(15)
         ->and($imported->downtime_cost_per_hour)->toBe(5000);
+});
+
+test('systems within a category are sorted by priority then name', function () {
+    $user = User::factory()->create();
+    $company = Company::factory()->for($user->currentTeam)->create();
+
+    $kritisch = $company->systemPriorities()->where('sort', 1)->first();
+    $hoch = $company->systemPriorities()->where('sort', 2)->first();
+    $normal = $company->systemPriorities()->where('sort', 3)->first();
+
+    foreach ([
+        ['Zebra', $normal->id],
+        ['Apfel', $hoch->id],
+        ['Mango', $kritisch->id],
+        ['Banane', $kritisch->id],
+    ] as [$name, $priorityId]) {
+        System::withoutGlobalScope(CurrentCompanyScope::class)->create([
+            'company_id' => $company->id,
+            'name' => $name,
+            'category' => 'basisbetrieb',
+            'system_priority_id' => $priorityId,
+        ]);
+    }
+
+    $component = Livewire\Livewire::actingAs($user->fresh())
+        ->test('pages::systems.index');
+
+    $names = $component->instance()->systemsByCategory['basisbetrieb']->pluck('name')->all();
+
+    expect($names)->toBe(['Banane', 'Mango', 'Apfel', 'Zebra']);
+});
+
+test('system form assigns responsible employees with notes and order', function () {
+    $user = User::factory()->create();
+    $company = Company::factory()->for($user->currentTeam)->create();
+
+    $first = Employee::factory()->for($company)->create([
+        'first_name' => 'Martina',
+        'last_name' => 'Beispiel',
+        'position' => 'IT-Leiterin',
+    ]);
+
+    $backup = Employee::factory()->for($company)->create([
+        'first_name' => 'Paul',
+        'last_name' => 'Vertretung',
+        'position' => 'Systemadmin',
+    ]);
+
+    $system = System::withoutGlobalScope(CurrentCompanyScope::class)->create([
+        'company_id' => $company->id,
+        'name' => 'ERP',
+        'category' => 'geschaeftsbetrieb',
+    ]);
+
+    Livewire\Livewire::actingAs($user->fresh())
+        ->test('pages::systems.edit', ['system' => $system])
+        ->set('responsibles', [
+            ['employee_id' => $first->id, 'note' => 'nur werktags'],
+            ['employee_id' => $backup->id, 'note' => ''],
+        ])
+        ->call('save');
+
+    $ordered = $system->fresh()->employees;
+
+    expect($ordered->pluck('id')->all())->toBe([$first->id, $backup->id])
+        ->and($ordered[0]->pivot->sort)->toBe(0)
+        ->and($ordered[0]->pivot->note)->toBe('nur werktags')
+        ->and($ordered[1]->pivot->sort)->toBe(1)
+        ->and($ordered[1]->pivot->note)->toBeNull();
+
+    $this->actingAs($user->fresh())
+        ->get(route('systems.index'))
+        ->assertOk()
+        ->assertSee('1. Martina Beispiel')
+        ->assertSee('2. Paul Vertretung');
+});
+
+test('addResponsibleById appends and employee search filters available list', function () {
+    $user = User::factory()->create();
+    $company = Company::factory()->for($user->currentTeam)->create();
+
+    $iris = Employee::factory()->for($company)->create(['first_name' => 'Iris', 'last_name' => 'Schmitt', 'position' => 'IT-Leiterin']);
+    $leo = Employee::factory()->for($company)->create(['first_name' => 'Leo', 'last_name' => 'Wagner', 'position' => 'Lager']);
+
+    $system = System::withoutGlobalScope(CurrentCompanyScope::class)->create([
+        'company_id' => $company->id,
+        'name' => 'ERP',
+        'category' => 'geschaeftsbetrieb',
+    ]);
+
+    $component = Livewire\Livewire::actingAs($user->fresh())
+        ->test('pages::systems.edit', ['system' => $system])
+        ->set('employeeSearch', 'iris');
+
+    $available = $component->instance()->availableEmployees;
+    expect($available->pluck('id')->all())->toBe([$iris->id]);
+
+    $component->call('addResponsibleById', $iris->id);
+
+    expect($component->get('responsibles'))->toBe([
+        ['employee_id' => $iris->id, 'note' => ''],
+    ])->and($component->get('employeeSearch'))->toBe('');
+
+    $component->set('employeeSearch', '')
+        ->call('addResponsibleById', $leo->id)
+        ->call('save');
+
+    expect($system->fresh()->employees->pluck('id')->all())->toBe([$iris->id, $leo->id]);
+});
+
+test('moveResponsibleUp reorders responsibles', function () {
+    $user = User::factory()->create();
+    $company = Company::factory()->for($user->currentTeam)->create();
+
+    $a = Employee::factory()->for($company)->create(['first_name' => 'A', 'last_name' => 'A']);
+    $b = Employee::factory()->for($company)->create(['first_name' => 'B', 'last_name' => 'B']);
+
+    $system = System::withoutGlobalScope(CurrentCompanyScope::class)->create([
+        'company_id' => $company->id,
+        'name' => 'X',
+        'category' => 'basisbetrieb',
+    ]);
+
+    Livewire\Livewire::actingAs($user->fresh())
+        ->test('pages::systems.edit', ['system' => $system])
+        ->set('responsibles', [
+            ['employee_id' => $a->id, 'note' => ''],
+            ['employee_id' => $b->id, 'note' => ''],
+        ])
+        ->call('moveResponsibleUp', 1)
+        ->call('save');
+
+    expect($system->fresh()->employees->pluck('id')->all())->toBe([$b->id, $a->id]);
+});
+
+test('system form assigns providers with notes and order', function () {
+    $user = User::factory()->create();
+    $company = Company::factory()->for($user->currentTeam)->create();
+
+    $first = ServiceProvider::factory()->for($company)->create(['name' => 'ACME-IT', 'hotline' => '0800-12345']);
+    $backup = ServiceProvider::factory()->for($company)->create(['name' => 'Backup-GmbH']);
+
+    $system = System::withoutGlobalScope(CurrentCompanyScope::class)->create([
+        'company_id' => $company->id,
+        'name' => 'ERP',
+        'category' => 'geschaeftsbetrieb',
+    ]);
+
+    Livewire\Livewire::actingAs($user->fresh())
+        ->test('pages::systems.edit', ['system' => $system])
+        ->set('providerAssignments', [
+            ['provider_id' => $first->id, 'note' => '24/7 SLA'],
+            ['provider_id' => $backup->id, 'note' => ''],
+        ])
+        ->call('save');
+
+    $ordered = $system->fresh()->serviceProviders;
+
+    expect($ordered->pluck('id')->all())->toBe([$first->id, $backup->id])
+        ->and($ordered[0]->pivot->sort)->toBe(0)
+        ->and($ordered[0]->pivot->note)->toBe('24/7 SLA')
+        ->and($ordered[1]->pivot->note)->toBeNull();
+});
+
+test('addProviderById appends and search filters available list', function () {
+    $user = User::factory()->create();
+    $company = Company::factory()->for($user->currentTeam)->create();
+
+    $acme = ServiceProvider::factory()->for($company)->create(['name' => 'ACME-IT', 'hotline' => '0800-1']);
+    $beta = ServiceProvider::factory()->for($company)->create(['name' => 'Beta-Hoster', 'hotline' => '0800-2']);
+
+    $system = System::withoutGlobalScope(CurrentCompanyScope::class)->create([
+        'company_id' => $company->id,
+        'name' => 'Mail',
+        'category' => 'geschaeftsbetrieb',
+    ]);
+
+    $component = Livewire\Livewire::actingAs($user->fresh())
+        ->test('pages::systems.edit', ['system' => $system])
+        ->set('providerSearch', 'acme');
+
+    $available = $component->instance()->availableProviders;
+    expect($available->pluck('id')->all())->toBe([$acme->id]);
+
+    $component->call('addProviderById', $acme->id);
+
+    expect($component->get('providerAssignments'))->toBe([
+        ['provider_id' => $acme->id, 'note' => ''],
+    ])->and($component->get('providerSearch'))->toBe('');
+
+    $component->call('addProviderById', $beta->id)->call('save');
+
+    expect($system->fresh()->serviceProviders->pluck('id')->all())->toBe([$acme->id, $beta->id]);
+});
+
+test('system form assigns dependencies with notes and order', function () {
+    $user = User::factory()->create();
+    $company = Company::factory()->for($user->currentTeam)->create();
+
+    $storage = System::withoutGlobalScope(CurrentCompanyScope::class)->create([
+        'company_id' => $company->id,
+        'name' => 'Storage',
+        'category' => 'basisbetrieb',
+    ]);
+    $db = System::withoutGlobalScope(CurrentCompanyScope::class)->create([
+        'company_id' => $company->id,
+        'name' => 'Datenbank',
+        'category' => 'basisbetrieb',
+    ]);
+    $erp = System::withoutGlobalScope(CurrentCompanyScope::class)->create([
+        'company_id' => $company->id,
+        'name' => 'ERP',
+        'category' => 'geschaeftsbetrieb',
+    ]);
+
+    Livewire\Livewire::actingAs($user->fresh())
+        ->test('pages::systems.edit', ['system' => $erp])
+        ->set('dependencyAssignments', [
+            ['dependency_id' => $storage->id, 'note' => 'nur Schreibzugriff'],
+            ['dependency_id' => $db->id, 'note' => ''],
+        ])
+        ->call('save');
+
+    $ordered = $erp->fresh()->dependencies;
+
+    expect($ordered->pluck('id')->all())->toBe([$storage->id, $db->id])
+        ->and($ordered[0]->pivot->sort)->toBe(0)
+        ->and($ordered[0]->pivot->note)->toBe('nur Schreibzugriff')
+        ->and($ordered[1]->pivot->note)->toBeNull();
+});
+
+test('addDependencyById appends and search filters candidates', function () {
+    $user = User::factory()->create();
+    $company = Company::factory()->for($user->currentTeam)->create();
+
+    $storage = System::withoutGlobalScope(CurrentCompanyScope::class)->create([
+        'company_id' => $company->id,
+        'name' => 'Storage-Cluster',
+        'category' => 'basisbetrieb',
+    ]);
+    $backup = System::withoutGlobalScope(CurrentCompanyScope::class)->create([
+        'company_id' => $company->id,
+        'name' => 'Backup-Server',
+        'category' => 'basisbetrieb',
+    ]);
+    $erp = System::withoutGlobalScope(CurrentCompanyScope::class)->create([
+        'company_id' => $company->id,
+        'name' => 'ERP',
+        'category' => 'geschaeftsbetrieb',
+    ]);
+
+    $component = Livewire\Livewire::actingAs($user->fresh())
+        ->test('pages::systems.edit', ['system' => $erp])
+        ->set('dependencySearch', 'storage');
+
+    $available = $component->instance()->availableDependencies;
+    expect($available->pluck('id')->all())->toBe([$storage->id]);
+
+    $component->call('addDependencyById', $storage->id);
+
+    expect($component->get('dependencyAssignments'))->toBe([
+        ['dependency_id' => $storage->id, 'note' => ''],
+    ])->and($component->get('dependencySearch'))->toBe('');
+
+    $component->call('addDependencyById', $backup->id)->call('save');
+
+    expect($erp->fresh()->dependencies->pluck('id')->all())->toBe([$storage->id, $backup->id]);
+});
+
+test('system show page lists employees, providers and dependencies', function () {
+    $user = User::factory()->create();
+    $company = Company::factory()->for($user->currentTeam)->create();
+
+    $employee = Employee::factory()->for($company)->create(['first_name' => 'Sabine', 'last_name' => 'Ruf', 'position' => 'IT-Leiterin']);
+    $provider = ServiceProvider::factory()->for($company)->create(['name' => 'ACME-IT', 'hotline' => '0800-12345']);
+
+    $storage = System::withoutGlobalScope(CurrentCompanyScope::class)->create([
+        'company_id' => $company->id,
+        'name' => 'Storage',
+        'category' => 'basisbetrieb',
+    ]);
+    $erp = System::withoutGlobalScope(CurrentCompanyScope::class)->create([
+        'company_id' => $company->id,
+        'name' => 'ERP',
+        'category' => 'geschaeftsbetrieb',
+        'rto_minutes' => 240,
+    ]);
+
+    $erp->employees()->attach($employee->id, ['sort' => 0, 'note' => 'nur werktags']);
+    $erp->serviceProviders()->attach($provider->id);
+    $erp->dependencies()->sync([$storage->id]);
+
+    $this->actingAs($user->fresh())
+        ->get(route('systems.show', ['system' => $erp]))
+        ->assertOk()
+        ->assertSee('ERP')
+        ->assertSee('Sabine Ruf')
+        ->assertSee('nur werktags')
+        ->assertSee('ACME-IT')
+        ->assertSee('0800-12345')
+        ->assertSee('Storage');
+});
+
+test('system show forbids access to a system from another tenant', function () {
+    $user = User::factory()->create();
+    Company::factory()->for($user->currentTeam)->create();
+
+    $other = Company::factory()->for(Team::factory())->create();
+    $foreign = System::withoutGlobalScope(CurrentCompanyScope::class)->create([
+        'company_id' => $other->id,
+        'name' => 'Foreign',
+        'category' => 'basisbetrieb',
+    ]);
+
+    $this->actingAs($user->fresh())
+        ->get(route('systems.show', ['system' => $foreign]))
+        ->assertNotFound();
 });
