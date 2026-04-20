@@ -517,6 +517,9 @@ new #[Title('Systeme')] class extends Component {
                                 <flux:menu.item icon="pencil" wire:click="openEdit('{{ $system->id }}')">
                                     {{ __('Bearbeiten') }}
                                 </flux:menu.item>
+                                <flux:menu.item icon="qr-code" :href="route('systems.sticker', ['system' => $system->id])" target="_blank">
+                                    {{ __('QR-Aushang') }}
+                                </flux:menu.item>
                                 <flux:menu.separator />
                                 <flux:menu.item icon="trash" variant="danger" wire:click="confirmDelete('{{ $system->id }}')">
                                     {{ __('Löschen') }}

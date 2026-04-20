@@ -87,6 +87,16 @@ Route::prefix('{current_team}')
 
             return view('handbook-print', HandbookData::forCompany($company));
         })->name('handbook.print');
+
+        Route::get('systems/{system}/sticker', function (string $currentTeam, string $system) {
+            $systemModel = System::with(['priority', 'serviceProviders', 'dependencies'])
+                ->findOrFail($system);
+
+            return view('system-sticker', [
+                'system' => $systemModel,
+                'url' => route('systems.sticker', ['current_team' => $currentTeam, 'system' => $systemModel->id]),
+            ]);
+        })->name('systems.sticker');
     });
 
 Route::prefix('admin')
