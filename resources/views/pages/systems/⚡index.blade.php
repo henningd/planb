@@ -354,18 +354,9 @@ new #[Title('Systeme')] class extends Component {
                             @if ($system->tasks_count > 0)
                                 <div class="mt-2 flex flex-wrap items-center gap-1.5">
                                     <flux:icon.clipboard-document-list class="h-3.5 w-3.5 text-zinc-400" />
-                                    @if ($system->open_tasks_count > 0)
-                                        <flux:badge color="amber" size="sm">
-                                            {{ $system->open_tasks_count }} {{ __('offen') }}
-                                            @if ($system->tasks_count > $system->open_tasks_count)
-                                                / {{ $system->tasks_count }} {{ __('gesamt') }}
-                                            @endif
-                                        </flux:badge>
-                                    @else
-                                        <flux:badge color="teal" size="sm" icon="check">
-                                            {{ $system->tasks_count }} {{ $system->tasks_count === 1 ? __('Aufgabe erledigt') : __('Aufgaben erledigt') }}
-                                        </flux:badge>
-                                    @endif
+                                    <flux:badge color="zinc" size="sm">
+                                        {{ $system->tasks_count }} {{ $system->tasks_count === 1 ? __('Aufgabe definiert') : __('Aufgaben definiert') }}
+                                    </flux:badge>
                                 </div>
                             @endif
                         </div>

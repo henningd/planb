@@ -280,28 +280,28 @@ test('edit modal updates task fields and re-syncs assignees and providers', func
         ->and($task->providerAssignees->first()->pivot->raci_role)->toBe('I');
 });
 
-test('systems index shows open and total task counts', function () {
+test('systems index shows the total number of defined tasks per system', function () {
     [$user, , $system] = bootSystemTaskTenant();
 
-    SystemTask::factory()->forSystem($system)->create(['title' => 'Offen-1']);
-    SystemTask::factory()->forSystem($system)->create(['title' => 'Offen-2']);
-    SystemTask::factory()->forSystem($system)->completed()->create(['title' => 'Fertig']);
+    SystemTask::factory()->forSystem($system)->create();
+    SystemTask::factory()->forSystem($system)->create();
+    SystemTask::factory()->forSystem($system)->completed()->create();
 
     $this->actingAs($user)
         ->get(route('systems.index'))
         ->assertOk()
-        ->assertSeeInOrder(['2 offen', '3 gesamt']);
+        ->assertSee('3 Aufgaben definiert');
 });
 
-test('systems index shows all-done badge when no task is open', function () {
+test('systems index uses singular label when exactly one task is defined', function () {
     [$user, , $system] = bootSystemTaskTenant();
 
-    SystemTask::factory()->forSystem($system)->completed()->create(['title' => 'Done']);
+    SystemTask::factory()->forSystem($system)->create();
 
     $this->actingAs($user)
         ->get(route('systems.index'))
         ->assertOk()
-        ->assertSee('1 Aufgabe erledigt');
+        ->assertSee('1 Aufgabe definiert');
 });
 
 test('show page renders tasks section with existing tasks and RACI labels', function () {
