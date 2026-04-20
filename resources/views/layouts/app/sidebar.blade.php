@@ -44,6 +44,9 @@
                     <flux:sidebar.item icon="shield-check" :href="route('insurance-policies.index')" :current="request()->routeIs('insurance-policies.*')" wire:navigate>
                         {{ __('Versicherungen') }}
                     </flux:sidebar.item>
+                    <flux:sidebar.item icon="share" :href="route('handbook-shares.index')" :current="request()->routeIs('handbook-shares.*')" wire:navigate>
+                        {{ __('Freigabelinks') }}
+                    </flux:sidebar.item>
                 </flux:sidebar.group>
 
                 <flux:sidebar.group :heading="__('Ernstfall')" class="grid">

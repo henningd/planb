@@ -101,6 +101,14 @@ class Company extends Model
         return $this->hasMany(InsurancePolicy::class)->orderBy('type')->orderBy('insurer');
     }
 
+    /**
+     * @return HasMany<HandbookShare, $this>
+     */
+    public function handbookShares(): HasMany
+    {
+        return $this->hasMany(HandbookShare::class)->orderByDesc('created_at');
+    }
+
     public function primaryContact(): ?Contact
     {
         return $this->contacts()->where('is_primary', true)->first();

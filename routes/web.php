@@ -3,10 +3,12 @@
 use App\Http\Middleware\EnsureSuperAdmin;
 use App\Http\Middleware\EnsureTeamMembership;
 use App\Http\Middleware\SetTeamUrlDefaults;
-use App\Models\ServiceProvider;
+use App\Models\Company;
+use App\Models\HandbookShare;
 use App\Models\System;
+use App\Scopes\CurrentCompanyScope;
 use App\Support\CurrentCompany;
-use App\Support\RecoveryOrder;
+use App\Support\HandbookData;
 use App\Support\SystemImport;
 use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Features;
@@ -79,24 +81,10 @@ Route::prefix('{current_team}')
             $company = CurrentCompany::resolve();
             abort_unless($company, 404);
 
-            $company->loadMissing([
-                'contacts' => fn ($q) => $q->orderByDesc('is_primary')->orderBy('name'),
-                'emergencyLevels',
-                'systems.priority',
-                'systems.serviceProviders',
-                'systems.dependencies',
-                'systemPriorities',
-                'scenarios.steps',
-                'communicationTemplates.scenario',
-                'insurancePolicies',
-            ]);
-
-            return view('handbook-print', [
-                'company' => $company,
-                'providers' => ServiceProvider::with('systems')->orderBy('name')->get(),
-                'recoveryPlan' => RecoveryOrder::compute($company->systems),
-            ]);
+            return view('handbook-print', HandbookData::forCompany($company));
         })->name('handbook.print');
+
+        Route::livewire('handbook-shares', 'pages::handbook-shares.index')->name('handbook-shares.index');
     });
 
 Route::prefix('admin')
@@ -112,5 +100,36 @@ Route::prefix('admin')
 Route::middleware(['auth'])->group(function () {
     Route::livewire('invitations/{invitation}/accept', 'pages::teams.accept-invitation')->name('invitations.accept');
 });
+
+Route::get('shared-handbook/{token}', function (string $token) {
+    $share = HandbookShare::withoutGlobalScope(CurrentCompanyScope::class)
+        ->where('token', $token)
+        ->first();
+
+    if (! $share) {
+        abort(404);
+    }
+
+    if ($share->revoked_at !== null) {
+        return response()->view('handbook-share-inactive', [
+            'reason' => 'revoked',
+        ], 410);
+    }
+
+    if ($share->expires_at->isPast()) {
+        return response()->view('handbook-share-inactive', [
+            'reason' => 'expired',
+        ], 410);
+    }
+
+    $company = Company::findOrFail($share->company_id);
+
+    $share->forceFill([
+        'last_accessed_at' => now(),
+        'access_count' => $share->access_count + 1,
+    ])->save();
+
+    return view('handbook-print', HandbookData::forCompany($company, $share));
+})->name('handbook.shared');
 
 require __DIR__.'/settings.php';

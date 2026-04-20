@@ -121,12 +121,27 @@
         <div>
             <strong>{{ __('Notfallhandbuch') }}</strong>
             <span class="meta"> · {{ $company->name }} · {{ now()->format('d.m.Y') }}</span>
+            @if (! empty($share))
+                <span class="meta"> · {{ __('Read-only-Freigabe für') }} „{{ $share->label }}"</span>
+            @endif
         </div>
         <div style="display:flex; gap:0.5rem;">
-            <a href="{{ route('dashboard') }}">← {{ __('Zurück') }}</a>
+            @if (empty($share))
+                <a href="{{ route('dashboard') }}">← {{ __('Zurück') }}</a>
+            @endif
             <button class="primary" onclick="window.print()">{{ __('Als PDF speichern / Drucken') }}</button>
         </div>
     </div>
+
+    @if (! empty($share))
+        <div style="max-width: 880px; margin: 0 auto; padding: 0.75rem 2.5rem 0;">
+            <div style="border: 1px solid #fde68a; background: #fffbeb; color: #78350f; padding: 0.75rem 1rem; border-radius: 0.5rem; font-size: 0.85rem;">
+                {{ __('Read-only-Zugriff ohne Login.') }}
+                <strong>{{ __('Freigegeben für') }}:</strong> {{ $share->label }}.
+                <strong>{{ __('Gültig bis') }}:</strong> {{ $share->expires_at->format('d.m.Y H:i') }}.
+            </div>
+        </div>
+    @endif
 
     <div class="page">
         {{-- Cover --}}
