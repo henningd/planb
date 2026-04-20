@@ -41,15 +41,17 @@
                     <flux:sidebar.item icon="wrench-screwdriver" :href="route('service-providers.index')" :current="request()->routeIs('service-providers.*')" wire:navigate>
                         {{ __('Dienstleister') }}
                     </flux:sidebar.item>
-                    <flux:sidebar.item icon="shield-check" :href="route('insurance-policies.index')" :current="request()->routeIs('insurance-policies.*')" wire:navigate>
-                        {{ __('Versicherungen') }}
-                    </flux:sidebar.item>
-                    <flux:sidebar.item icon="share" :href="route('handbook-shares.index')" :current="request()->routeIs('handbook-shares.*')" wire:navigate>
-                        {{ __('Freigabelinks') }}
-                    </flux:sidebar.item>
-                    <flux:sidebar.item icon="clock" :href="route('audit-log.index')" :current="request()->routeIs('audit-log.*')" wire:navigate>
-                        {{ __('Aktivitäten') }}
-                    </flux:sidebar.item>
+                    @if (auth()->user()->isCurrentTeamAdmin())
+                        <flux:sidebar.item icon="shield-check" :href="route('insurance-policies.index')" :current="request()->routeIs('insurance-policies.*')" wire:navigate>
+                            {{ __('Versicherungen') }}
+                        </flux:sidebar.item>
+                        <flux:sidebar.item icon="share" :href="route('handbook-shares.index')" :current="request()->routeIs('handbook-shares.*')" wire:navigate>
+                            {{ __('Freigabelinks') }}
+                        </flux:sidebar.item>
+                        <flux:sidebar.item icon="clock" :href="route('audit-log.index')" :current="request()->routeIs('audit-log.*')" wire:navigate>
+                            {{ __('Aktivitäten') }}
+                        </flux:sidebar.item>
+                    @endif
                 </flux:sidebar.group>
 
                 <flux:sidebar.group :heading="__('Ernstfall')" class="grid">
@@ -62,9 +64,11 @@
                     <flux:sidebar.item icon="megaphone" :href="route('incidents.index')" :current="request()->routeIs('incidents.*')" wire:navigate>
                         {{ __('Meldepflichten') }}
                     </flux:sidebar.item>
-                    <flux:sidebar.item icon="document-duplicate" :href="route('communication-templates.index')" :current="request()->routeIs('communication-templates.*')" wire:navigate>
-                        {{ __('Vorlagen') }}
-                    </flux:sidebar.item>
+                    @if (auth()->user()->isCurrentTeamAdmin())
+                        <flux:sidebar.item icon="document-duplicate" :href="route('communication-templates.index')" :current="request()->routeIs('communication-templates.*')" wire:navigate>
+                            {{ __('Vorlagen') }}
+                        </flux:sidebar.item>
+                    @endif
                 </flux:sidebar.group>
 
                 <flux:sidebar.group :heading="__('Zugang')" class="grid">

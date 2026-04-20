@@ -28,7 +28,6 @@ Route::prefix('{current_team}')
         Route::livewire('systems', 'pages::systems.index')->name('systems.index');
         Route::livewire('systems/recovery', 'pages::systems.recovery')->name('systems.recovery');
         Route::livewire('service-providers', 'pages::service-providers.index')->name('service-providers.index');
-        Route::livewire('insurance-policies', 'pages::insurance-policies.index')->name('insurance-policies.index');
         Route::livewire('employees', 'pages::employees.index')->name('employees.index');
 
         Route::livewire('scenarios', 'pages::scenarios.index')->name('scenarios.index');
@@ -39,9 +38,12 @@ Route::prefix('{current_team}')
         Route::livewire('incidents', 'pages::incidents.index')->name('incidents.index');
         Route::livewire('incidents/{report}', 'pages::incidents.show')->name('incidents.show');
 
-        Route::livewire('communication-templates', 'pages::communication-templates.index')->name('communication-templates.index');
-
-        Route::livewire('audit-log', 'pages::audit-log.index')->name('audit-log.index');
+        Route::middleware([EnsureTeamMembership::class.':admin'])->group(function () {
+            Route::livewire('insurance-policies', 'pages::insurance-policies.index')->name('insurance-policies.index');
+            Route::livewire('communication-templates', 'pages::communication-templates.index')->name('communication-templates.index');
+            Route::livewire('audit-log', 'pages::audit-log.index')->name('audit-log.index');
+            Route::livewire('handbook-shares', 'pages::handbook-shares.index')->name('handbook-shares.index');
+        });
 
         Route::get('systems/export', function () {
             $company = CurrentCompany::resolve();
@@ -85,8 +87,6 @@ Route::prefix('{current_team}')
 
             return view('handbook-print', HandbookData::forCompany($company));
         })->name('handbook.print');
-
-        Route::livewire('handbook-shares', 'pages::handbook-shares.index')->name('handbook-shares.index');
     });
 
 Route::prefix('admin')

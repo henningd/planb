@@ -4,6 +4,7 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Concerns\HasTeams;
+use App\Enums\TeamRole;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -58,5 +59,23 @@ class User extends Authenticatable
     public function currentCompany(): ?Company
     {
         return $this->currentTeam?->company;
+    }
+
+    /**
+     * True if the user is at least Admin on their current team.
+     * Used to gate sensitive sections of the app (insurance, shares, audit log).
+     */
+    public function isCurrentTeamAdmin(): bool
+    {
+        if ($this->isSuperAdmin()) {
+            return true;
+        }
+
+        $team = $this->currentTeam;
+        if (! $team) {
+            return false;
+        }
+
+        return $this->teamRole($team)?->isAtLeast(TeamRole::Admin) ?? false;
     }
 }
