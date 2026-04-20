@@ -1,13 +1,39 @@
 <?php
 
+use App\Enums\RaciRole;
+use App\Models\Employee;
 use App\Models\System;
+use App\Models\SystemTask;
 use App\Support\Duration;
+use Flux\Flux;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Auth;
+use Livewire\Attributes\Computed;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 
 new #[Title('System')] class extends Component {
     public System $system;
+
+    public string $newTaskTitle = '';
+
+    public string $newTaskDescription = '';
+
+    public ?string $newTaskDueDate = null;
+
+    /** @var array<int, array{employee_id: string, raci_role: string}> */
+    public array $newTaskAssignees = [];
+
+    public ?string $editingTaskId = null;
+
+    public string $editTitle = '';
+
+    public ?string $editDescription = '';
+
+    public ?string $editDueDate = null;
+
+    /** @var array<int, array{employee_id: string, raci_role: string}> */
+    public array $editAssignees = [];
 
     public function mount(System $system): void
     {
@@ -20,6 +46,189 @@ new #[Title('System')] class extends Component {
             'dependencies',
             'dependents',
         ]);
+    }
+
+    /**
+     * Open tasks first (by due date, nulls last), then completed.
+     *
+     * @return Collection<int, SystemTask>
+     */
+    #[Computed]
+    public function tasks(): Collection
+    {
+        return SystemTask::with('assignees')
+            ->where('system_id', $this->system->id)
+            ->get()
+            ->sort(function (SystemTask $a, SystemTask $b) {
+                if ($a->isDone() !== $b->isDone()) {
+                    return $a->isDone() ? 1 : -1;
+                }
+
+                $aDue = $a->due_date?->timestamp ?? PHP_INT_MAX;
+                $bDue = $b->due_date?->timestamp ?? PHP_INT_MAX;
+
+                if ($aDue !== $bDue) {
+                    return $aDue <=> $bDue;
+                }
+
+                return $a->created_at <=> $b->created_at;
+            })
+            ->values();
+    }
+
+    /**
+     * @return Collection<int, Employee>
+     */
+    #[Computed]
+    public function employeesForSelect(): Collection
+    {
+        return Employee::orderBy('last_name')->orderBy('first_name')->get();
+    }
+
+    public function addNewTaskAssignee(): void
+    {
+        $this->newTaskAssignees[] = [
+            'employee_id' => '',
+            'raci_role' => RaciRole::Responsible->value,
+        ];
+    }
+
+    public function removeNewTaskAssignee(int $index): void
+    {
+        if (isset($this->newTaskAssignees[$index])) {
+            unset($this->newTaskAssignees[$index]);
+            $this->newTaskAssignees = array_values($this->newTaskAssignees);
+        }
+    }
+
+    public function addEditAssignee(): void
+    {
+        $this->editAssignees[] = [
+            'employee_id' => '',
+            'raci_role' => RaciRole::Responsible->value,
+        ];
+    }
+
+    public function removeEditAssignee(int $index): void
+    {
+        if (isset($this->editAssignees[$index])) {
+            unset($this->editAssignees[$index]);
+            $this->editAssignees = array_values($this->editAssignees);
+        }
+    }
+
+    public function addTask(): void
+    {
+        $raciValues = implode(',', array_column(RaciRole::cases(), 'value'));
+
+        $validated = $this->validate([
+            'newTaskTitle' => ['required', 'string', 'max:255'],
+            'newTaskDescription' => ['nullable', 'string', 'max:2000'],
+            'newTaskDueDate' => ['nullable', 'date'],
+            'newTaskAssignees' => ['array'],
+            'newTaskAssignees.*.employee_id' => ['required', 'uuid', 'exists:employees,id'],
+            'newTaskAssignees.*.raci_role' => ['required', 'in:'.$raciValues],
+        ]);
+
+        $task = SystemTask::create([
+            'system_id' => $this->system->id,
+            'title' => $validated['newTaskTitle'],
+            'description' => $validated['newTaskDescription'] ?: null,
+            'due_date' => $validated['newTaskDueDate'] ?: null,
+        ]);
+
+        $this->syncAssignees($task, $validated['newTaskAssignees'] ?? []);
+
+        $this->reset(['newTaskTitle', 'newTaskDescription', 'newTaskDueDate', 'newTaskAssignees']);
+        unset($this->tasks);
+
+        Flux::toast(variant: 'success', text: __('Aufgabe hinzugefügt.'));
+    }
+
+    public function toggleTask(string $id): void
+    {
+        $task = SystemTask::where('system_id', $this->system->id)->findOrFail($id);
+
+        $task->update([
+            'completed_at' => $task->completed_at ? null : now(),
+        ]);
+
+        unset($this->tasks);
+    }
+
+    public function deleteTask(string $id): void
+    {
+        SystemTask::where('system_id', $this->system->id)->findOrFail($id)->delete();
+
+        unset($this->tasks);
+
+        Flux::toast(variant: 'success', text: __('Aufgabe gelöscht.'));
+    }
+
+    public function openEditTask(string $id): void
+    {
+        $task = SystemTask::with('assignees')->where('system_id', $this->system->id)->findOrFail($id);
+
+        $this->editingTaskId = $task->id;
+        $this->editTitle = $task->title;
+        $this->editDescription = (string) $task->description;
+        $this->editDueDate = $task->due_date?->toDateString();
+        $this->editAssignees = $task->assignees
+            ->map(fn (Employee $e) => [
+                'employee_id' => $e->id,
+                'raci_role' => (string) $e->pivot->raci_role,
+            ])
+            ->values()
+            ->all();
+
+        Flux::modal('task-edit')->show();
+    }
+
+    public function saveEditTask(): void
+    {
+        $raciValues = implode(',', array_column(RaciRole::cases(), 'value'));
+
+        $validated = $this->validate([
+            'editTitle' => ['required', 'string', 'max:255'],
+            'editDescription' => ['nullable', 'string', 'max:2000'],
+            'editDueDate' => ['nullable', 'date'],
+            'editAssignees' => ['array'],
+            'editAssignees.*.employee_id' => ['required', 'uuid', 'exists:employees,id'],
+            'editAssignees.*.raci_role' => ['required', 'in:'.$raciValues],
+        ]);
+
+        $task = SystemTask::where('system_id', $this->system->id)
+            ->findOrFail($this->editingTaskId);
+
+        $task->update([
+            'title' => $validated['editTitle'],
+            'description' => $validated['editDescription'] ?: null,
+            'due_date' => $validated['editDueDate'] ?: null,
+        ]);
+
+        $this->syncAssignees($task, $validated['editAssignees'] ?? []);
+
+        Flux::modal('task-edit')->close();
+        $this->reset(['editingTaskId', 'editTitle', 'editDescription', 'editDueDate', 'editAssignees']);
+        unset($this->tasks);
+
+        Flux::toast(variant: 'success', text: __('Aufgabe gespeichert.'));
+    }
+
+    /**
+     * @param  array<int, array{employee_id: string, raci_role: string}>  $rows
+     */
+    protected function syncAssignees(SystemTask $task, array $rows): void
+    {
+        $sync = [];
+        foreach ($rows as $row) {
+            if (empty($row['employee_id'])) {
+                continue;
+            }
+            $sync[$row['employee_id']] = ['raci_role' => $row['raci_role']];
+        }
+
+        $task->assignees()->sync($sync);
     }
 }; ?>
 
@@ -271,6 +480,231 @@ new #[Title('System')] class extends Component {
                     @endif
                 </div>
             </div>
+
         </div>
     </div>
+
+    {{-- Aufgaben-Bereich unter der Systemkarte --}}
+    <div class="mb-6 overflow-hidden rounded-xl border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-900">
+        <div class="flex items-center justify-between gap-4 border-b border-zinc-100 p-6 dark:border-zinc-800">
+            <div>
+                <flux:heading size="lg">{{ __('Aufgaben') }}</flux:heading>
+                <flux:subheading>
+                    {{ __('Wartungs-, Vorbereitungs- und Nachbesserungs-Aufgaben zu diesem System. Personen werden nach RACI zugeordnet.') }}
+                </flux:subheading>
+            </div>
+            @php($openCount = $this->tasks->whereNull('completed_at')->count())
+            @if ($openCount > 0)
+                <flux:badge color="teal">{{ $openCount }} {{ __('offen') }}</flux:badge>
+            @endif
+        </div>
+
+        <div class="space-y-6 p-6">
+            <form wire:submit="addTask" class="space-y-4 rounded-lg border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-700 dark:bg-zinc-950/50">
+                <flux:heading size="sm">{{ __('Neue Aufgabe') }}</flux:heading>
+
+                <flux:input
+                    wire:model="newTaskTitle"
+                    :label="__('Überschrift')"
+                    placeholder="z. B. Backup monatlich prüfen"
+                    required
+                />
+
+                <flux:textarea
+                    wire:model="newTaskDescription"
+                    :label="__('Beschreibung')"
+                    rows="3"
+                    placeholder="Details, Schritte, Kontext"
+                />
+
+                <flux:field>
+                    <flux:label>{{ __('Fällig') }}</flux:label>
+                    <flux:input type="date" wire:model="newTaskDueDate" class="max-w-xs" />
+                </flux:field>
+
+                <div class="space-y-2">
+                    <div class="flex items-center justify-between">
+                        <flux:label>{{ __('Personen (RACI)') }}</flux:label>
+                        <flux:button type="button" size="sm" variant="filled" icon="plus" wire:click.prevent="addNewTaskAssignee">
+                            {{ __('Person hinzufügen') }}
+                        </flux:button>
+                    </div>
+
+                    @if (empty($newTaskAssignees))
+                        <flux:text class="text-xs text-zinc-500 dark:text-zinc-400">
+                            {{ __('Noch keine Personen zugeordnet. Sie können die Aufgabe auch ohne Zuordnung anlegen.') }}
+                        </flux:text>
+                    @else
+                        <div class="space-y-2">
+                            @foreach ($newTaskAssignees as $i => $row)
+                                <div wire:key="new-assignee-{{ $i }}" class="flex flex-col gap-2 sm:flex-row sm:items-end">
+                                    <flux:select wire:model="newTaskAssignees.{{ $i }}.employee_id" class="flex-1" required>
+                                        <flux:select.option value="">{{ __('Mitarbeiter wählen') }}</flux:select.option>
+                                        @foreach ($this->employeesForSelect as $e)
+                                            <flux:select.option value="{{ $e->id }}">
+                                                {{ $e->fullName() }}@if ($e->position) · {{ $e->position }}@endif
+                                            </flux:select.option>
+                                        @endforeach
+                                    </flux:select>
+                                    <flux:select wire:model="newTaskAssignees.{{ $i }}.raci_role" class="sm:w-64">
+                                        @foreach (\App\Enums\RaciRole::cases() as $r)
+                                            <flux:select.option value="{{ $r->value }}">{{ $r->value }} – {{ $r->label() }}</flux:select.option>
+                                        @endforeach
+                                    </flux:select>
+                                    <flux:button type="button" size="sm" variant="ghost" icon="x-mark"
+                                        wire:click.prevent="removeNewTaskAssignee({{ $i }})" />
+                                </div>
+                            @endforeach
+                        </div>
+                    @endif
+                </div>
+
+                <div class="flex justify-end border-t border-zinc-200 pt-3 dark:border-zinc-700">
+                    <flux:button type="submit" variant="primary" icon="plus">
+                        {{ __('Aufgabe anlegen') }}
+                    </flux:button>
+                </div>
+            </form>
+
+            @if ($this->tasks->isEmpty())
+                <div class="rounded-lg border border-dashed border-zinc-300 p-6 text-center text-sm text-zinc-500 dark:border-zinc-700 dark:text-zinc-400">
+                    {{ __('Noch keine Aufgaben erfasst.') }}
+                </div>
+            @else
+                <ul class="space-y-2">
+                    @foreach ($this->tasks as $task)
+                        <li wire:key="task-{{ $task->id }}"
+                            class="flex items-start gap-3 rounded-lg border border-zinc-200 p-4 dark:border-zinc-700 {{ $task->isDone() ? 'bg-zinc-50 dark:bg-zinc-950/50' : '' }}">
+                            <button type="button"
+                                wire:click.prevent="toggleTask('{{ $task->id }}')"
+                                class="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 {{ $task->isDone() ? 'border-teal-600 bg-teal-600 text-white' : 'border-zinc-300 dark:border-zinc-600' }}"
+                                :title="'{{ $task->isDone() ? __('Wiederöffnen') : __('Abhaken') }}'"
+                            >
+                                @if ($task->isDone())
+                                    <flux:icon.check class="h-3.5 w-3.5" />
+                                @endif
+                            </button>
+
+                            <div class="min-w-0 flex-1 space-y-1">
+                                <div class="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
+                                    <span class="font-medium {{ $task->isDone() ? 'text-zinc-500 line-through dark:text-zinc-500' : '' }}">
+                                        {{ $task->title }}
+                                    </span>
+                                    @if ($task->due_date)
+                                        @if ($task->isOverdue())
+                                            <flux:badge color="rose" size="sm" icon="clock">
+                                                {{ __('Überfällig') }}: {{ $task->due_date->format('d.m.Y') }}
+                                            </flux:badge>
+                                        @else
+                                            <flux:badge :color="$task->isDone() ? 'zinc' : 'amber'" size="sm" icon="calendar-days">
+                                                {{ $task->due_date->format('d.m.Y') }}
+                                            </flux:badge>
+                                        @endif
+                                    @endif
+                                    @if ($task->isDone())
+                                        <span class="text-xs text-zinc-500 dark:text-zinc-400">
+                                            {{ __('Erledigt am') }} {{ $task->completed_at->format('d.m.Y') }}
+                                        </span>
+                                    @endif
+                                </div>
+                                @if ($task->description)
+                                    <div class="text-sm text-zinc-600 dark:text-zinc-400 {{ $task->isDone() ? 'line-through' : '' }}">
+                                        {{ $task->description }}
+                                    </div>
+                                @endif
+                                @if ($task->assignees->isNotEmpty())
+                                    <div class="flex flex-wrap items-center gap-1.5 pt-1">
+                                        @foreach ($task->assignees as $person)
+                                            @php($raci = \App\Enums\RaciRole::tryFrom($person->pivot->raci_role))
+                                            <flux:badge
+                                                :color="$raci?->badgeColor() ?? 'zinc'"
+                                                size="sm"
+                                                :title="$raci?->label()"
+                                            >
+                                                <span class="font-bold">{{ $person->pivot->raci_role }}</span>
+                                                <span class="ml-1">{{ $person->fullName() }}</span>
+                                            </flux:badge>
+                                        @endforeach
+                                    </div>
+                                @endif
+                            </div>
+
+                            <div class="flex shrink-0 items-center gap-1">
+                                <button type="button" wire:click.prevent="openEditTask('{{ $task->id }}')"
+                                        class="inline-flex h-8 w-8 items-center justify-center rounded-md text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800">
+                                    <flux:icon.pencil class="h-4 w-4" />
+                                </button>
+                                <button type="button" wire:click.prevent="deleteTask('{{ $task->id }}')"
+                                        wire:confirm="{{ __('Aufgabe wirklich löschen?') }}"
+                                        class="inline-flex h-8 w-8 items-center justify-center rounded-md text-zinc-500 hover:bg-rose-100 hover:text-rose-700 dark:hover:bg-rose-900/30">
+                                    <flux:icon.trash class="h-4 w-4" />
+                                </button>
+                            </div>
+                        </li>
+                    @endforeach
+                </ul>
+            @endif
+        </div>
+    </div>
+
+    <flux:modal name="task-edit" class="max-w-xl">
+        <form wire:submit="saveEditTask" class="space-y-5">
+            <div>
+                <flux:heading size="lg">{{ __('Aufgabe bearbeiten') }}</flux:heading>
+            </div>
+
+            <flux:input wire:model="editTitle" :label="__('Überschrift')" required />
+
+            <flux:textarea wire:model="editDescription" :label="__('Beschreibung')" rows="3" />
+
+            <flux:field>
+                <flux:label>{{ __('Fällig') }}</flux:label>
+                <flux:input type="date" wire:model="editDueDate" class="max-w-xs" />
+            </flux:field>
+
+            <div class="space-y-2">
+                <div class="flex items-center justify-between">
+                    <flux:label>{{ __('Personen (RACI)') }}</flux:label>
+                    <flux:button type="button" size="sm" variant="filled" icon="plus" wire:click.prevent="addEditAssignee">
+                        {{ __('Person hinzufügen') }}
+                    </flux:button>
+                </div>
+
+                @if (empty($editAssignees))
+                    <flux:text class="text-xs text-zinc-500 dark:text-zinc-400">
+                        {{ __('Noch keine Personen zugeordnet.') }}
+                    </flux:text>
+                @else
+                    <div class="space-y-2">
+                        @foreach ($editAssignees as $i => $row)
+                            <div wire:key="edit-assignee-{{ $i }}" class="flex flex-col gap-2 sm:flex-row sm:items-end">
+                                <flux:select wire:model="editAssignees.{{ $i }}.employee_id" class="flex-1" required>
+                                    <flux:select.option value="">{{ __('Mitarbeiter wählen') }}</flux:select.option>
+                                    @foreach ($this->employeesForSelect as $e)
+                                        <flux:select.option value="{{ $e->id }}">
+                                            {{ $e->fullName() }}@if ($e->position) · {{ $e->position }}@endif
+                                        </flux:select.option>
+                                    @endforeach
+                                </flux:select>
+                                <flux:select wire:model="editAssignees.{{ $i }}.raci_role" class="sm:w-64">
+                                    @foreach (\App\Enums\RaciRole::cases() as $r)
+                                        <flux:select.option value="{{ $r->value }}">{{ $r->value }} – {{ $r->label() }}</flux:select.option>
+                                    @endforeach
+                                </flux:select>
+                                <flux:button type="button" size="sm" variant="ghost" icon="x-mark"
+                                    wire:click.prevent="removeEditAssignee({{ $i }})" />
+                            </div>
+                        @endforeach
+                    </div>
+                @endif
+            </div>
+
+            <div class="flex items-center justify-end gap-2 border-t border-zinc-100 pt-4 dark:border-zinc-800">
+                <flux:modal.close>
+                    <flux:button type="button" variant="filled">{{ __('Abbrechen') }}</flux:button>
+                </flux:modal.close>
+                <flux:button type="submit" variant="primary">{{ __('Speichern') }}</flux:button>
+            </div>
+        </form>
+    </flux:modal>
 </section>

@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable(['company_id', 'name', 'description', 'category', 'system_priority_id', 'rto_minutes', 'rpo_minutes', 'downtime_cost_per_hour'])]
 class System extends Model
@@ -47,6 +48,14 @@ class System extends Model
             ->withPivot(['sort', 'note'])
             ->withTimestamps()
             ->orderBy('employee_system.sort');
+    }
+
+    /**
+     * @return HasMany<SystemTask, $this>
+     */
+    public function tasks(): HasMany
+    {
+        return $this->hasMany(SystemTask::class);
     }
 
     /**
