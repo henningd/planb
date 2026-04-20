@@ -343,6 +343,40 @@
             @endforeach
         </section>
 
+        {{-- Kommunikations-Vorlagen --}}
+        @if ($company->communicationTemplates->isNotEmpty())
+            <section class="page-break">
+                <h2>{{ __('6. Kommunikations-Vorlagen') }}</h2>
+                <p class="section-intro">{{ __('Vorformulierte Texte für Mitarbeiter, Kunden, Presse und Behörden. Platzhalter sind bereits ersetzt.') }}</p>
+
+                @foreach (\App\Enums\CommunicationAudience::cases() as $audience)
+                    @php($audienceTemplates = $company->communicationTemplates->where('audience', $audience))
+                    @continue ($audienceTemplates->isEmpty())
+
+                    <h3>{{ $audience->label() }}</h3>
+                    @foreach ($audienceTemplates as $tpl)
+                        <div class="card" style="margin-bottom: 0.75rem;">
+                            <div class="title">{{ $tpl->name }}</div>
+                            <div class="sub">{{ $tpl->channel->label() }}@if ($tpl->scenario) · {{ __('Szenario') }}: {{ $tpl->scenario->name }}@endif</div>
+                            @if ($tpl->subject)
+                                <div style="margin-top: 0.5rem; font-size: 0.9rem;">
+                                    <strong>{{ __('Betreff') }}:</strong>
+                                    {{ \App\Support\TemplatePlaceholders::resolve($tpl->subject, $company) }}
+                                </div>
+                            @endif
+                            <div style="margin-top: 0.5rem; font-size: 0.9rem; white-space: pre-wrap;">{{ \App\Support\TemplatePlaceholders::resolve($tpl->body, $company) }}</div>
+                            @if ($tpl->fallback)
+                                <div style="margin-top: 0.5rem; font-size: 0.85rem; color: #64748b;">
+                                    <strong>{{ __('Wenn Kanal ausgefallen') }}:</strong>
+                                    {{ \App\Support\TemplatePlaceholders::resolve($tpl->fallback, $company) }}
+                                </div>
+                            @endif
+                        </div>
+                    @endforeach
+                @endforeach
+            </section>
+        @endif
+
         <footer>
             {{ __('Notfallhandbuch von') }} {{ $company->name }} · {{ __('erstellt mit PlanB') }} · {{ now()->format('d.m.Y H:i') }}
         </footer>

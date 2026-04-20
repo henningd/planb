@@ -36,6 +36,8 @@ Route::prefix('{current_team}')
         Route::livewire('incidents', 'pages::incidents.index')->name('incidents.index');
         Route::livewire('incidents/{report}', 'pages::incidents.show')->name('incidents.show');
 
+        Route::livewire('communication-templates', 'pages::communication-templates.index')->name('communication-templates.index');
+
         Route::get('systems/export', function () {
             $company = CurrentCompany::resolve();
             abort_unless($company, 404);
@@ -84,6 +86,7 @@ Route::prefix('{current_team}')
                 'systems.dependencies',
                 'systemPriorities',
                 'scenarios.steps',
+                'communicationTemplates.scenario',
             ]);
 
             return view('handbook-print', [

@@ -53,6 +53,9 @@
                     <flux:sidebar.item icon="megaphone" :href="route('incidents.index')" :current="request()->routeIs('incidents.*')" wire:navigate>
                         {{ __('Meldepflichten') }}
                     </flux:sidebar.item>
+                    <flux:sidebar.item icon="document-duplicate" :href="route('communication-templates.index')" :current="request()->routeIs('communication-templates.*')" wire:navigate>
+                        {{ __('Vorlagen') }}
+                    </flux:sidebar.item>
                 </flux:sidebar.group>
 
                 <flux:sidebar.group :heading="__('Zugang')" class="grid">

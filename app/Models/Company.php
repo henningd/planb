@@ -85,6 +85,14 @@ class Company extends Model
         return $this->hasMany(IncidentReport::class);
     }
 
+    /**
+     * @return HasMany<CommunicationTemplate, $this>
+     */
+    public function communicationTemplates(): HasMany
+    {
+        return $this->hasMany(CommunicationTemplate::class)->orderBy('sort')->orderBy('name');
+    }
+
     public function primaryContact(): ?Contact
     {
         return $this->contacts()->where('is_primary', true)->first();
