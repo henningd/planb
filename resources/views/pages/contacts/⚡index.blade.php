@@ -2,6 +2,7 @@
 
 use App\Enums\ContactType;
 use App\Models\Contact;
+use App\Support\IndustryTemplates;
 use Flux\Flux;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -10,6 +11,8 @@ use Livewire\Attributes\Title;
 use Livewire\Component;
 
 new #[Title('Ansprechpartner')] class extends Component {
+    public const PLACEHOLDER_NAME = '(zu benennen)';
+
     public ?string $editingId = null;
 
     public string $name = '';
@@ -25,6 +28,14 @@ new #[Title('Ansprechpartner')] class extends Component {
     public bool $is_primary = false;
 
     public ?string $deletingId = null;
+
+    public string $roleTemplateKey = '';
+
+    public function mount(): void
+    {
+        $industry = Auth::user()->currentCompany()?->industry;
+        $this->roleTemplateKey = IndustryTemplates::defaultFor($industry) ?? '';
+    }
 
     #[Computed]
     public function contacts()
@@ -125,6 +136,67 @@ new #[Title('Ansprechpartner')] class extends Component {
         $this->reset(['editingId', 'name', 'role', 'phone', 'email', 'is_primary']);
         $this->type = ContactType::Internal->value;
     }
+
+    /**
+     * @return array<string, array{label: string, count: int}>
+     */
+    public function roleCatalog(): array
+    {
+        return IndustryTemplates::contactCatalog();
+    }
+
+    public function openRoleTemplate(): void
+    {
+        Flux::modal('contact-role-template')->show();
+    }
+
+    public function loadRoleTemplate(): void
+    {
+        if (! $this->hasCompany) {
+            return;
+        }
+
+        $roles = IndustryTemplates::contactRolesFor($this->roleTemplateKey);
+
+        if ($roles === []) {
+            $this->addError('roleTemplateKey', __('Bitte eine Branche wählen.'));
+
+            return;
+        }
+
+        $existing = Contact::pluck('role')->filter()->map(fn ($r) => mb_strtolower(trim($r)))->all();
+
+        $added = 0;
+        $skipped = 0;
+
+        DB::transaction(function () use ($roles, $existing, &$added, &$skipped) {
+            foreach ($roles as $entry) {
+                if (in_array(mb_strtolower(trim($entry['role'])), $existing, true)) {
+                    $skipped++;
+
+                    continue;
+                }
+
+                Contact::create([
+                    'name' => self::PLACEHOLDER_NAME,
+                    'role' => $entry['role'],
+                    'type' => $entry['type'],
+                    'is_primary' => false,
+                ]);
+                $added++;
+            }
+        });
+
+        unset($this->contacts, $this->hasPrimaryContact);
+        Flux::modal('contact-role-template')->close();
+
+        $message = __(':count Rollen-Platzhalter hinzugefügt.', ['count' => $added]);
+        if ($skipped > 0) {
+            $message .= ' '.__(':count bereits vorhanden.', ['count' => $skipped]);
+        }
+
+        Flux::toast(variant: 'success', text: $message);
+    }
 }; ?>
 
 <section class="mx-auto w-full max-w-5xl">
@@ -136,9 +208,14 @@ new #[Title('Ansprechpartner')] class extends Component {
             </flux:subheading>
         </div>
 
-        <flux:button variant="primary" icon="plus" wire:click="openCreate" :disabled="! $this->hasCompany">
-            {{ __('Neuer Kontakt') }}
-        </flux:button>
+        <div class="flex flex-wrap items-center gap-2">
+            <flux:button variant="filled" icon="sparkles" wire:click="openRoleTemplate" :disabled="! $this->hasCompany">
+                {{ __('Rollen-Vorlage') }}
+            </flux:button>
+            <flux:button variant="primary" icon="plus" wire:click="openCreate" :disabled="! $this->hasCompany">
+                {{ __('Neuer Kontakt') }}
+            </flux:button>
+        </div>
     </div>
 
     @if (! $this->hasCompany)
@@ -242,6 +319,54 @@ new #[Title('Ansprechpartner')] class extends Component {
                 </flux:modal.close>
                 <flux:button variant="primary" type="submit">
                     {{ $editingId ? __('Speichern') : __('Anlegen') }}
+                </flux:button>
+            </div>
+        </form>
+    </flux:modal>
+
+    <flux:modal name="contact-role-template" class="max-w-xl">
+        <form wire:submit="loadRoleTemplate" class="space-y-5">
+            <div>
+                <flux:heading size="lg">{{ __('Branchentypische Rollen einfügen') }}</flux:heading>
+                <flux:subheading>
+                    {{ __('Für die gewählte Branche werden typische Rollen als Platzhalter angelegt. Name und Kontaktdaten tragen Sie anschließend selbst ein.') }}
+                </flux:subheading>
+            </div>
+
+            <flux:field>
+                <flux:label>{{ __('Branche') }}</flux:label>
+                <flux:select wire:model.live="roleTemplateKey" required>
+                    <flux:select.option value="">{{ __('Bitte wählen') }}</flux:select.option>
+                    @foreach ($this->roleCatalog() as $key => $tpl)
+                        <flux:select.option value="{{ $key }}">
+                            {{ $tpl['label'] }} ({{ $tpl['count'] }} {{ __('Rollen') }})
+                        </flux:select.option>
+                    @endforeach
+                </flux:select>
+                @error('roleTemplateKey') <flux:error>{{ $message }}</flux:error> @enderror
+            </flux:field>
+
+            @if ($roleTemplateKey)
+                <div class="rounded-md bg-zinc-50 p-3 text-xs text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400">
+                    <div class="mb-1 font-medium">{{ __('Diese Rollen werden als Platzhalter angelegt:') }}</div>
+                    <ul class="list-inside list-disc space-y-0.5">
+                        @foreach (\App\Support\IndustryTemplates::contactRolesFor($roleTemplateKey) as $entry)
+                            <li>{{ $entry['role'] }} <span class="text-zinc-400">· {{ \App\Enums\ContactType::from($entry['type'])->label() }}</span></li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
+
+            <div class="rounded-md bg-zinc-50 p-3 text-xs text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400">
+                {{ __('Bereits vorhandene Rollen (gleiche Bezeichnung) werden übersprungen.') }}
+            </div>
+
+            <div class="flex items-center justify-end gap-2 border-t border-zinc-100 pt-4 dark:border-zinc-800">
+                <flux:modal.close>
+                    <flux:button variant="filled">{{ __('Abbrechen') }}</flux:button>
+                </flux:modal.close>
+                <flux:button variant="primary" type="submit" icon="sparkles">
+                    {{ __('Rollen einfügen') }}
                 </flux:button>
             </div>
         </form>
