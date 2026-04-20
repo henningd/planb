@@ -4,6 +4,7 @@ use App\Models\Company;
 use App\Models\Contact;
 use App\Models\EmergencyLevel;
 use App\Models\ScenarioRun;
+use Flux\Flux;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Title;
@@ -14,6 +15,23 @@ new #[Title('Dashboard')] class extends Component {
     public function company(): ?Company
     {
         return Auth::user()->currentCompany();
+    }
+
+    public function confirmReview(): void
+    {
+        $company = $this->company;
+        if (! $company) {
+            return;
+        }
+
+        $company->forceFill([
+            'last_reviewed_at' => now(),
+            'last_reminder_sent_at' => null,
+        ])->save();
+
+        unset($this->company);
+
+        Flux::toast(variant: 'success', text: __('Review bestätigt. Nächste Prüfung in :n Monaten.', ['n' => $company->review_cycle_months]));
     }
 
     #[Computed]
@@ -70,6 +88,47 @@ new #[Title('Dashboard')] class extends Component {
             @endif
         </flux:subheading>
     </div>
+
+    {{-- Review reminder --}}
+    @if ($this->company)
+        @php($reviewDue = $this->company->reviewDueAt())
+        @if ($reviewDue)
+            @php($isOverdue = $reviewDue->isPast())
+            @php($isSoon = ! $isOverdue && $reviewDue->diffInDays(now()) <= 14)
+            @if ($isOverdue || $isSoon)
+                <div class="rounded-xl border-2 p-5 {{ $isOverdue ? 'border-amber-400 bg-amber-50 dark:border-amber-700 dark:bg-amber-950/50' : 'border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-900' }}">
+                    <div class="flex flex-wrap items-start justify-between gap-4">
+                        <div class="flex items-start gap-3">
+                            <flux:icon.clock class="mt-0.5 h-6 w-6 shrink-0 {{ $isOverdue ? 'text-amber-600 dark:text-amber-300' : 'text-zinc-500' }}" />
+                            <div>
+                                <flux:heading size="base">
+                                    @if ($isOverdue)
+                                        {{ __('Review überfällig') }}
+                                    @else
+                                        {{ __('Review fällig am :date', ['date' => $reviewDue->format('d.m.Y')]) }}
+                                    @endif
+                                </flux:heading>
+                                <flux:text class="mt-1 text-sm text-zinc-600 dark:text-zinc-300">
+                                    @if ($this->company->last_reviewed_at)
+                                        {{ __('Letzte Bestätigung: :date', ['date' => $this->company->last_reviewed_at->format('d.m.Y')]) }}
+                                    @else
+                                        {{ __('Noch nie bestätigt.') }}
+                                    @endif
+                                    · {{ __('Prüfzyklus: :n Monate', ['n' => $this->company->review_cycle_months]) }}
+                                </flux:text>
+                                <flux:text class="mt-1 text-sm text-zinc-600 dark:text-zinc-300">
+                                    {{ __('Prüfen Sie Ansprechpartner, Systeme und Dienstleister und bestätigen Sie den aktuellen Stand.') }}
+                                </flux:text>
+                            </div>
+                        </div>
+                        <flux:button variant="primary" icon="check" wire:click="confirmReview">
+                            {{ __('Jetzt bestätigen') }}
+                        </flux:button>
+                    </div>
+                </div>
+            @endif
+        @endif
+    @endif
 
     {{-- Active runs banner --}}
     @if ($this->activeRuns->isNotEmpty())

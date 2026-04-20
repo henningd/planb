@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\Industry;
 use App\Observers\CompanyObserver;
+use Carbon\CarbonInterface;
 use Database\Factories\CompanyFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
@@ -14,7 +15,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-#[Fillable(['team_id', 'name', 'industry', 'employee_count', 'locations_count'])]
+#[Fillable(['team_id', 'name', 'industry', 'employee_count', 'locations_count', 'review_cycle_months', 'last_reviewed_at', 'last_reminder_sent_at'])]
 #[ObservedBy([CompanyObserver::class])]
 class Company extends Model
 {
@@ -120,6 +121,26 @@ class Company extends Model
     }
 
     /**
+     * Date when the next review is due. Null if no confirmation has happened
+     * yet – in that case the company is "due" once it is older than the cycle.
+     */
+    public function reviewDueAt(): ?CarbonInterface
+    {
+        if ($this->last_reviewed_at) {
+            return $this->last_reviewed_at->copy()->addMonths($this->review_cycle_months);
+        }
+
+        return $this->created_at?->copy()->addMonths($this->review_cycle_months);
+    }
+
+    public function isReviewDue(): bool
+    {
+        $due = $this->reviewDueAt();
+
+        return $due !== null && $due->isPast();
+    }
+
+    /**
      * @return array<string, string>
      */
     protected function casts(): array
@@ -128,6 +149,9 @@ class Company extends Model
             'industry' => Industry::class,
             'employee_count' => 'integer',
             'locations_count' => 'integer',
+            'review_cycle_months' => 'integer',
+            'last_reviewed_at' => 'datetime',
+            'last_reminder_sent_at' => 'datetime',
         ];
     }
 }
