@@ -164,20 +164,75 @@ test('toggle task marks done and re-opens', function () {
     expect($task->fresh()->completed_at)->toBeNull();
 });
 
-test('tasks are sorted open first by due date then completed at the bottom', function () {
+test('tasks are sorted by the user-defined sort column, completed at the bottom', function () {
     [$user, , $system] = bootSystemTaskTenant();
 
-    SystemTask::factory()->forSystem($system)->completed()->create(['title' => 'Z-Done', 'due_date' => '2026-05-01']);
-    SystemTask::factory()->forSystem($system)->create(['title' => 'Late', 'due_date' => '2026-08-01']);
-    SystemTask::factory()->forSystem($system)->create(['title' => 'Early', 'due_date' => '2026-05-15']);
-    SystemTask::factory()->forSystem($system)->create(['title' => 'NoDue', 'due_date' => null]);
+    SystemTask::factory()->forSystem($system)->completed()->create(['title' => 'Z-Done', 'sort' => 5]);
+    SystemTask::factory()->forSystem($system)->create(['title' => 'Third', 'sort' => 3]);
+    SystemTask::factory()->forSystem($system)->create(['title' => 'First', 'sort' => 1]);
+    SystemTask::factory()->forSystem($system)->create(['title' => 'Second', 'sort' => 2]);
 
     $component = Livewire\Livewire::actingAs($user)
         ->test('pages::systems.show', ['system' => $system]);
 
     $titles = $component->instance()->tasks->pluck('title')->all();
 
-    expect($titles)->toBe(['Early', 'Late', 'NoDue', 'Z-Done']);
+    expect($titles)->toBe(['First', 'Second', 'Third', 'Z-Done']);
+});
+
+test('addTask assigns the next sort value', function () {
+    [$user, , $system] = bootSystemTaskTenant();
+
+    SystemTask::factory()->forSystem($system)->create(['sort' => 7]);
+
+    Livewire\Livewire::actingAs($user)
+        ->test('pages::systems.show', ['system' => $system])
+        ->set('newTaskTitle', 'Neu')
+        ->call('addTask');
+
+    $new = SystemTask::withoutGlobalScope(CurrentCompanyScope::class)
+        ->where('system_id', $system->id)
+        ->where('title', 'Neu')
+        ->first();
+
+    expect($new->sort)->toBe(8);
+});
+
+test('moveTaskUp and moveTaskDown swap sort values of open tasks', function () {
+    [$user, , $system] = bootSystemTaskTenant();
+
+    $a = SystemTask::factory()->forSystem($system)->create(['title' => 'A', 'sort' => 0]);
+    $b = SystemTask::factory()->forSystem($system)->create(['title' => 'B', 'sort' => 1]);
+    $c = SystemTask::factory()->forSystem($system)->create(['title' => 'C', 'sort' => 2]);
+
+    Livewire\Livewire::actingAs($user)
+        ->test('pages::systems.show', ['system' => $system])
+        ->call('moveTaskDown', $a->id);
+
+    expect($a->fresh()->sort)->toBe(1)
+        ->and($b->fresh()->sort)->toBe(0);
+
+    Livewire\Livewire::actingAs($user)
+        ->test('pages::systems.show', ['system' => $system])
+        ->call('moveTaskUp', $c->id);
+
+    expect($c->fresh()->sort)->toBe(1)
+        ->and($a->fresh()->sort)->toBe(2);
+});
+
+test('moveTask does nothing when at boundary or for completed tasks', function () {
+    [$user, , $system] = bootSystemTaskTenant();
+
+    $first = SystemTask::factory()->forSystem($system)->create(['sort' => 0]);
+    $done = SystemTask::factory()->forSystem($system)->completed()->create(['sort' => 1]);
+
+    Livewire\Livewire::actingAs($user)
+        ->test('pages::systems.show', ['system' => $system])
+        ->call('moveTaskUp', $first->id)
+        ->call('moveTaskDown', $done->id);
+
+    expect($first->fresh()->sort)->toBe(0)
+        ->and($done->fresh()->sort)->toBe(1);
 });
 
 test('delete removes the task', function () {

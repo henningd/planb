@@ -56,7 +56,7 @@ new #[Title('System')] class extends Component {
     }
 
     /**
-     * Open tasks first (by due date, nulls last), then completed.
+     * Open tasks first (by user-defined sort), completed at the bottom.
      *
      * @return Collection<int, SystemTask>
      */
@@ -65,20 +65,15 @@ new #[Title('System')] class extends Component {
     {
         return SystemTask::with(['assignees', 'providerAssignees'])
             ->where('system_id', $this->system->id)
+            ->orderBy('sort')
+            ->orderBy('created_at')
             ->get()
             ->sort(function (SystemTask $a, SystemTask $b) {
                 if ($a->isDone() !== $b->isDone()) {
                     return $a->isDone() ? 1 : -1;
                 }
 
-                $aDue = $a->due_date?->timestamp ?? PHP_INT_MAX;
-                $bDue = $b->due_date?->timestamp ?? PHP_INT_MAX;
-
-                if ($aDue !== $bDue) {
-                    return $aDue <=> $bDue;
-                }
-
-                return $a->created_at <=> $b->created_at;
+                return $a->sort <=> $b->sort;
             })
             ->values();
     }
@@ -181,11 +176,14 @@ new #[Title('System')] class extends Component {
             'newTaskProviders.*.raci_role' => ['required', 'in:'.$raciValues],
         ]);
 
+        $nextSort = (int) SystemTask::where('system_id', $this->system->id)->max('sort') + 1;
+
         $task = SystemTask::create([
             'system_id' => $this->system->id,
             'title' => $validated['newTaskTitle'],
             'description' => $validated['newTaskDescription'] ?: null,
             'due_date' => $validated['newTaskDueDate'] ?: null,
+            'sort' => $nextSort,
         ]);
 
         $this->syncAssignees($task, $validated['newTaskAssignees'] ?? []);
@@ -204,6 +202,42 @@ new #[Title('System')] class extends Component {
         $task->update([
             'completed_at' => $task->completed_at ? null : now(),
         ]);
+
+        unset($this->tasks);
+    }
+
+    public function moveTaskUp(string $id): void
+    {
+        $this->swapSort($id, -1);
+    }
+
+    public function moveTaskDown(string $id): void
+    {
+        $this->swapSort($id, +1);
+    }
+
+    protected function swapSort(string $id, int $direction): void
+    {
+        $task = SystemTask::where('system_id', $this->system->id)->findOrFail($id);
+
+        if ($task->completed_at !== null) {
+            return;
+        }
+
+        $neighbour = SystemTask::where('system_id', $this->system->id)
+            ->whereNull('completed_at')
+            ->where('id', '!=', $task->id)
+            ->when($direction < 0, fn ($q) => $q->where('sort', '<', $task->sort)->orderByDesc('sort'))
+            ->when($direction > 0, fn ($q) => $q->where('sort', '>', $task->sort)->orderBy('sort'))
+            ->first();
+
+        if (! $neighbour) {
+            return;
+        }
+
+        [$task->sort, $neighbour->sort] = [$neighbour->sort, $task->sort];
+        $task->save();
+        $neighbour->save();
 
         unset($this->tasks);
     }
@@ -689,8 +723,11 @@ new #[Title('System')] class extends Component {
                     {{ __('Noch keine Aufgaben erfasst.') }}
                 </div>
             @else
+                @php($openTasks = $this->tasks->whereNull('completed_at')->values())
+                @php($openCount = $openTasks->count())
                 <ul class="space-y-2">
                     @foreach ($this->tasks as $task)
+                        @php($openIndex = $openTasks->search(fn ($t) => $t->id === $task->id))
                         <li wire:key="task-{{ $task->id }}"
                             class="flex items-start gap-3 rounded-lg border border-zinc-200 p-4 dark:border-zinc-700 {{ $task->isDone() ? 'bg-zinc-50 dark:bg-zinc-950/50' : '' }}">
                             <button type="button"
@@ -761,6 +798,20 @@ new #[Title('System')] class extends Component {
                             </div>
 
                             <div class="flex shrink-0 items-center gap-1">
+                                @unless ($task->isDone())
+                                    <button type="button" wire:click.prevent="moveTaskUp('{{ $task->id }}')"
+                                            @disabled($openIndex === false || $openIndex === 0)
+                                            :title="{{ json_encode(__('Nach oben')) }}"
+                                            class="inline-flex h-8 w-8 items-center justify-center rounded-md text-zinc-500 hover:bg-zinc-100 disabled:opacity-30 disabled:hover:bg-transparent dark:hover:bg-zinc-800">
+                                        <flux:icon.arrow-up class="h-4 w-4" />
+                                    </button>
+                                    <button type="button" wire:click.prevent="moveTaskDown('{{ $task->id }}')"
+                                            @disabled($openIndex === false || $openIndex === $openCount - 1)
+                                            :title="{{ json_encode(__('Nach unten')) }}"
+                                            class="inline-flex h-8 w-8 items-center justify-center rounded-md text-zinc-500 hover:bg-zinc-100 disabled:opacity-30 disabled:hover:bg-transparent dark:hover:bg-zinc-800">
+                                        <flux:icon.arrow-down class="h-4 w-4" />
+                                    </button>
+                                @endunless
                                 <button type="button" wire:click.prevent="openEditTask('{{ $task->id }}')"
                                         class="inline-flex h-8 w-8 items-center justify-center rounded-md text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800">
                                     <flux:icon.pencil class="h-4 w-4" />

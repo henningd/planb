@@ -18,6 +18,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
     'description',
     'due_date',
     'completed_at',
+    'sort',
 ])]
 class SystemTask extends Model
 {
