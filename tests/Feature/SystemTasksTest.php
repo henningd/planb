@@ -280,6 +280,30 @@ test('edit modal updates task fields and re-syncs assignees and providers', func
         ->and($task->providerAssignees->first()->pivot->raci_role)->toBe('I');
 });
 
+test('systems index shows open and total task counts', function () {
+    [$user, , $system] = bootSystemTaskTenant();
+
+    SystemTask::factory()->forSystem($system)->create(['title' => 'Offen-1']);
+    SystemTask::factory()->forSystem($system)->create(['title' => 'Offen-2']);
+    SystemTask::factory()->forSystem($system)->completed()->create(['title' => 'Fertig']);
+
+    $this->actingAs($user)
+        ->get(route('systems.index'))
+        ->assertOk()
+        ->assertSeeInOrder(['2 offen', '3 gesamt']);
+});
+
+test('systems index shows all-done badge when no task is open', function () {
+    [$user, , $system] = bootSystemTaskTenant();
+
+    SystemTask::factory()->forSystem($system)->completed()->create(['title' => 'Done']);
+
+    $this->actingAs($user)
+        ->get(route('systems.index'))
+        ->assertOk()
+        ->assertSee('1 Aufgabe erledigt');
+});
+
 test('show page renders tasks section with existing tasks and RACI labels', function () {
     [$user, , $system] = bootSystemTaskTenant();
 

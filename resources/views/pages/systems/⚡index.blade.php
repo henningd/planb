@@ -43,6 +43,10 @@ new #[Title('Systeme')] class extends Component {
     public function systemsByCategory(): array
     {
         $systems = System::with(['priority', 'serviceProviders', 'employees', 'dependencies'])
+            ->withCount([
+                'tasks',
+                'tasks as open_tasks_count' => fn ($q) => $q->whereNull('completed_at'),
+            ])
             ->get()
             ->sort(function (System $a, System $b) {
                 $prio = ($a->priority?->sort ?? PHP_INT_MAX) <=> ($b->priority?->sort ?? PHP_INT_MAX);
@@ -345,6 +349,23 @@ new #[Title('Systeme')] class extends Component {
                                             {{ $rank + 1 }}. {{ $dep->name }}
                                         </flux:badge>
                                     @endforeach
+                                </div>
+                            @endif
+                            @if ($system->tasks_count > 0)
+                                <div class="mt-2 flex flex-wrap items-center gap-1.5">
+                                    <flux:icon.clipboard-document-list class="h-3.5 w-3.5 text-zinc-400" />
+                                    @if ($system->open_tasks_count > 0)
+                                        <flux:badge color="amber" size="sm">
+                                            {{ $system->open_tasks_count }} {{ __('offen') }}
+                                            @if ($system->tasks_count > $system->open_tasks_count)
+                                                / {{ $system->tasks_count }} {{ __('gesamt') }}
+                                            @endif
+                                        </flux:badge>
+                                    @else
+                                        <flux:badge color="teal" size="sm" icon="check">
+                                            {{ $system->tasks_count }} {{ $system->tasks_count === 1 ? __('Aufgabe erledigt') : __('Aufgaben erledigt') }}
+                                        </flux:badge>
+                                    @endif
                                 </div>
                             @endif
                         </div>
