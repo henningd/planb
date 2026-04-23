@@ -13,7 +13,11 @@ enum TeamRole: string
      */
     public function label(): string
     {
-        return ucfirst($this->value);
+        return match ($this) {
+            self::Owner => 'Inhaber',
+            self::Admin => 'Administrator',
+            self::Member => 'Mitglied',
+        };
     }
 
     /**
