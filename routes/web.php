@@ -116,9 +116,7 @@ Route::prefix('admin')
         Route::livewire('scenarios/{globalScenario}', 'pages::admin.scenarios.show')->name('scenarios.show');
     });
 
-Route::middleware(['auth'])->group(function () {
-    Route::livewire('invitations/{invitation}/accept', 'pages::teams.accept-invitation')->name('invitations.accept');
-});
+Route::livewire('invitations/{invitation}/accept', 'pages::teams.accept-invitation')->name('invitations.accept');
 
 Route::get('shared-handbook/{token}', function (string $token) {
     $share = HandbookShare::withoutGlobalScope(CurrentCompanyScope::class)
