@@ -25,10 +25,10 @@ new #[Title('Teams')] class extends Component {
 
         $this->validateInvitation($user, $this->invitation);
 
-        DB::transaction(function () use ($user) {
-            $team = $this->invitation->team;
+        $team = $this->invitation->team;
 
-            $membership = $team->memberships()->firstOrCreate(
+        DB::transaction(function () use ($user, $team) {
+            $team->memberships()->firstOrCreate(
                 ['user_id' => $user->id],
                 ['role' => $this->invitation->role]
             );
@@ -38,7 +38,7 @@ new #[Title('Teams')] class extends Component {
             $user->switchTeam($team);
         });
 
-        $this->redirectRoute('dashboard');
+        $this->redirectRoute('dashboard', ['current_team' => $team->slug]);
     }
 
     private function validateInvitation(User $user, TeamInvitation $invitation): void
