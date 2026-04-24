@@ -852,7 +852,9 @@ new #[Title('System')] class extends Component {
                 </flux:subheading>
             </div>
             <div class="flex shrink-0 items-center gap-2">
-                @php($openCount = $this->tasks->whereNull('completed_at')->count())
+                @php
+                    $openCount = $this->tasks->whereNull('completed_at')->count();
+                @endphp
                 @if ($openCount > 0)
                     <flux:badge color="teal">{{ $openCount }} {{ __('offen') }}</flux:badge>
                 @endif
@@ -979,11 +981,15 @@ new #[Title('System')] class extends Component {
                     {{ __('Noch keine Aufgaben erfasst.') }}
                 </div>
             @else
-                @php($openTasks = $this->tasks->whereNull('completed_at')->values())
-                @php($openCount = $openTasks->count())
+                @php
+                    $openTasks = $this->tasks->whereNull('completed_at')->values();
+                    $openCount = $openTasks->count();
+                @endphp
                 <ul class="space-y-2">
                     @foreach ($this->tasks as $task)
-                        @php($openIndex = $openTasks->search(fn ($t) => $t->id === $task->id))
+                        @php
+                            $openIndex = $openTasks->search(fn ($t) => $t->id === $task->id);
+                        @endphp
                         <li wire:key="task-{{ $task->id }}"
                             class="flex items-start gap-3 rounded-lg border border-zinc-200 p-4 dark:border-zinc-700 {{ $task->isDone() ? 'bg-zinc-50 dark:bg-zinc-950/50' : '' }}">
                             <button type="button"
@@ -1024,30 +1030,43 @@ new #[Title('System')] class extends Component {
                                     </div>
                                 @endif
                                 @if ($task->assignees->isNotEmpty() || $task->providerAssignees->isNotEmpty())
-                                    <div class="flex flex-wrap items-center gap-1.5 pt-1">
-                                        @foreach ($task->assignees as $person)
-                                            @php($raci = \App\Enums\RaciRole::tryFrom($person->pivot->raci_role))
-                                            <flux:badge
-                                                :color="$raci?->badgeColor() ?? 'zinc'"
-                                                size="sm"
-                                                :title="$raci?->label()"
-                                                icon="user"
-                                            >
-                                                <span class="font-bold">{{ $person->pivot->raci_role }}</span>
-                                                <span class="ml-1">{{ $person->fullName() }}</span>
-                                            </flux:badge>
-                                        @endforeach
-                                        @foreach ($task->providerAssignees as $prov)
-                                            @php($raci = \App\Enums\RaciRole::tryFrom($prov->pivot->raci_role))
-                                            <flux:badge
-                                                :color="$raci?->badgeColor() ?? 'zinc'"
-                                                size="sm"
-                                                :title="$raci?->label()"
-                                                icon="wrench-screwdriver"
-                                            >
-                                                <span class="font-bold">{{ $prov->pivot->raci_role }}</span>
-                                                <span class="ml-1">{{ $prov->name }}</span>
-                                            </flux:badge>
+                                    @php
+                                        $taskEmpGroups = $task->assignees->groupBy(fn ($e) => $e->pivot->raci_role ?? '');
+                                        $taskProvGroups = $task->providerAssignees->groupBy(fn ($p) => $p->pivot->raci_role ?? '');
+                                    @endphp
+                                    <div class="grid gap-2 pt-2 sm:grid-cols-2 lg:grid-cols-4">
+                                        @foreach (\App\Enums\RaciRole::cases() as $r)
+                                            @php
+                                                $emps = $taskEmpGroups->get($r->value) ?? collect();
+                                                $provs = $taskProvGroups->get($r->value) ?? collect();
+                                                $isEmpty = $emps->isEmpty() && $provs->isEmpty();
+                                            @endphp
+                                            <div class="rounded-md border border-zinc-200 bg-white p-2 dark:border-zinc-700 dark:bg-zinc-900">
+                                                <div class="mb-1">
+                                                    <flux:badge :color="$r->badgeColor()" size="sm" :title="$r->description()">
+                                                        <span class="font-bold">{{ $r->value }}</span>
+                                                        <span class="ml-1">{{ $r->label() }}</span>
+                                                    </flux:badge>
+                                                </div>
+                                                @if ($isEmpty)
+                                                    <div class="text-xs italic text-zinc-400 dark:text-zinc-500">{{ __('— nicht besetzt —') }}</div>
+                                                @else
+                                                    <ul class="space-y-0.5 text-xs">
+                                                        @foreach ($emps as $person)
+                                                            <li class="flex items-center gap-1 text-zinc-700 dark:text-zinc-200">
+                                                                <flux:icon.user class="h-3 w-3 shrink-0 text-zinc-400" />
+                                                                <span class="truncate">{{ $person->fullName() }}</span>
+                                                            </li>
+                                                        @endforeach
+                                                        @foreach ($provs as $prov)
+                                                            <li class="flex items-center gap-1 text-zinc-700 dark:text-zinc-200">
+                                                                <flux:icon.wrench-screwdriver class="h-3 w-3 shrink-0 text-zinc-400" />
+                                                                <span class="truncate">{{ $prov->name }}</span>
+                                                            </li>
+                                                        @endforeach
+                                                    </ul>
+                                                @endif
+                                            </div>
                                         @endforeach
                                     </div>
                                 @endif
