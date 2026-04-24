@@ -360,7 +360,7 @@ test('addResponsibleById appends and employee search filters available list', fu
     $component->call('addResponsibleById', $iris->id);
 
     expect($component->get('responsibles'))->toBe([
-        ['employee_id' => $iris->id, 'note' => ''],
+        ['employee_id' => $iris->id, 'raci_role' => '', 'note' => ''],
     ])->and($component->get('employeeSearch'))->toBe('');
 
     $component->set('employeeSearch', '')
@@ -447,7 +447,7 @@ test('addProviderById appends and search filters available list', function () {
     $component->call('addProviderById', $acme->id);
 
     expect($component->get('providerAssignments'))->toBe([
-        ['provider_id' => $acme->id, 'note' => ''],
+        ['provider_id' => $acme->id, 'raci_role' => '', 'note' => ''],
     ])->and($component->get('providerSearch'))->toBe('');
 
     $component->call('addProviderById', $beta->id)->call('save');

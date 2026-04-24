@@ -38,12 +38,12 @@ new #[Title('System bearbeiten')] class extends Component {
 
     public ?int $downtime_cost_per_hour = null;
 
-    /** @var array<int, array{provider_id: string, note: string}> */
+    /** @var array<int, array{provider_id: string, raci_role: string, note: string}> */
     public array $providerAssignments = [];
 
     public string $providerSearch = '';
 
-    /** @var array<int, array{employee_id: string, note: string}> */
+    /** @var array<int, array{employee_id: string, raci_role: string, note: string}> */
     public array $responsibles = [];
 
     public string $employeeSearch = '';
@@ -74,6 +74,7 @@ new #[Title('System bearbeiten')] class extends Component {
             $this->providerAssignments = $system->serviceProviders
                 ->map(fn (ServiceProvider $p) => [
                     'provider_id' => $p->id,
+                    'raci_role' => (string) ($p->pivot->raci_role ?? ''),
                     'note' => (string) ($p->pivot->note ?? ''),
                 ])
                 ->values()
@@ -81,6 +82,7 @@ new #[Title('System bearbeiten')] class extends Component {
             $this->responsibles = $system->employees
                 ->map(fn (Employee $e) => [
                     'employee_id' => $e->id,
+                    'raci_role' => (string) ($e->pivot->raci_role ?? ''),
                     'note' => (string) ($e->pivot->note ?? ''),
                 ])
                 ->values()
@@ -174,6 +176,7 @@ new #[Title('System bearbeiten')] class extends Component {
 
         $this->providerAssignments[] = [
             'provider_id' => $id,
+            'raci_role' => '',
             'note' => '',
         ];
 
@@ -269,6 +272,7 @@ new #[Title('System bearbeiten')] class extends Component {
 
         $this->responsibles[] = [
             'employee_id' => $id,
+            'raci_role' => '',
             'note' => '',
         ];
 
@@ -445,6 +449,7 @@ new #[Title('System bearbeiten')] class extends Component {
     public function save()
     {
         $validDurations = array_keys(Duration::OPTIONS);
+        $raciValues = implode(',', array_column(\App\Enums\RaciRole::cases(), 'value'));
 
         $validated = $this->validate([
             'name' => ['required', 'string', 'max:255'],
@@ -459,9 +464,11 @@ new #[Title('System bearbeiten')] class extends Component {
             'downtime_cost_per_hour' => ['nullable', 'integer', 'min:0', 'max:100000000'],
             'providerAssignments' => ['array'],
             'providerAssignments.*.provider_id' => ['required', 'uuid', 'exists:service_providers,id'],
+            'providerAssignments.*.raci_role' => ['nullable', 'in:'.$raciValues],
             'providerAssignments.*.note' => ['nullable', 'string', 'max:500'],
             'responsibles' => ['array'],
             'responsibles.*.employee_id' => ['required', 'uuid', 'exists:employees,id'],
+            'responsibles.*.raci_role' => ['nullable', 'in:'.$raciValues],
             'responsibles.*.note' => ['nullable', 'string', 'max:500'],
             'dependencyAssignments' => ['array'],
             'dependencyAssignments.*.dependency_id' => ['required', 'uuid', 'exists:systems,id'],
@@ -491,6 +498,7 @@ new #[Title('System bearbeiten')] class extends Component {
         foreach (array_values($responsibles) as $index => $row) {
             $employeeSync[$row['employee_id']] = [
                 'sort' => $index,
+                'raci_role' => ($row['raci_role'] ?? '') !== '' ? $row['raci_role'] : null,
                 'note' => ($row['note'] ?? '') !== '' ? $row['note'] : null,
             ];
         }
@@ -499,6 +507,7 @@ new #[Title('System bearbeiten')] class extends Component {
         foreach (array_values($providerAssignments) as $index => $row) {
             $providerSync[$row['provider_id']] = [
                 'sort' => $index,
+                'raci_role' => ($row['raci_role'] ?? '') !== '' ? $row['raci_role'] : null,
                 'note' => ($row['note'] ?? '') !== '' ? $row['note'] : null,
             ];
         }
@@ -758,7 +767,7 @@ new #[Title('System bearbeiten')] class extends Component {
                     @if ($this->employees->isNotEmpty())
                         <div x-show="tab === 'employees'" x-cloak class="space-y-4">
                             <flux:description>
-                                {{ __('Rufreihenfolge: zuerst Position 1, dann 2 etc. Notiz für Hinweise wie „nur werktags erreichbar".') }}
+                                {{ __('Zuständigkeiten auf System-Ebene (Ownership). Rufreihenfolge: zuerst Position 1, dann 2 etc. Für konkrete Aufgaben wird RACI separat in der Aufgaben-Sektion vergeben.') }}
                             </flux:description>
 
                             @php($remaining = $this->employees->count() - count($responsibles))
@@ -863,13 +872,24 @@ new #[Title('System bearbeiten')] class extends Component {
                                                     <span x-show="meta(row.employee_id).position" class="text-xs text-zinc-500 dark:text-zinc-400" x-text="'· ' + meta(row.employee_id).position"></span>
                                                     <span x-show="meta(row.employee_id).mobile" class="text-xs text-zinc-500 dark:text-zinc-400" x-text="'· ' + meta(row.employee_id).mobile"></span>
                                                 </div>
-                                                <input
-                                                    type="text"
-                                                    x-model="row.note"
-                                                    @keydown.enter.prevent
-                                                    placeholder="{{ __('Notiz (optional, z. B. „nur werktags erreichbar")') }}"
-                                                    class="block w-full rounded-md border border-zinc-200 bg-white px-2.5 py-1 text-sm shadow-sm placeholder:text-zinc-400 focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white"
-                                                />
+                                                <div class="flex flex-col gap-2 sm:flex-row">
+                                                    <select
+                                                        x-model="row.raci_role"
+                                                        class="w-full rounded-md border border-zinc-200 bg-white px-2.5 py-1 text-sm shadow-sm focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500 sm:w-56 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white"
+                                                    >
+                                                        <option value="">{{ __('System-Zuständigkeit (optional)') }}</option>
+                                                        @foreach (\App\Enums\RaciRole::cases() as $r)
+                                                            <option value="{{ $r->value }}">{{ $r->value }} – {{ $r->label() }}</option>
+                                                        @endforeach
+                                                    </select>
+                                                    <input
+                                                        type="text"
+                                                        x-model="row.note"
+                                                        @keydown.enter.prevent
+                                                        placeholder="{{ __('Notiz (optional, z. B. „nur werktags erreichbar")') }}"
+                                                        class="block w-full rounded-md border border-zinc-200 bg-white px-2.5 py-1 text-sm shadow-sm placeholder:text-zinc-400 focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white"
+                                                    />
+                                                </div>
                                             </div>
 
                                             <div class="flex shrink-0 items-center gap-1">
@@ -896,7 +916,7 @@ new #[Title('System bearbeiten')] class extends Component {
                     @if ($this->providers->isNotEmpty())
                         <div x-show="tab === 'providers'" x-cloak class="space-y-4">
                             <flux:description>
-                                {{ __('Reihenfolge = Eskalationskette: zuerst Dienstleister 1, dann 2 etc. Notiz für Hinweise wie „SLA nur Mo–Fr 8–17".') }}
+                                {{ __('Zuständigkeiten auf System-Ebene und Eskalationskette: zuerst Dienstleister 1, dann 2 etc. Für konkrete Aufgaben wird RACI separat in der Aufgaben-Sektion vergeben.') }}
                             </flux:description>
 
                             @php($providersRemaining = $this->providers->count() - count($providerAssignments))
@@ -1001,13 +1021,24 @@ new #[Title('System bearbeiten')] class extends Component {
                                                     <span x-show="meta(row.provider_id).hotline" class="text-xs text-zinc-500 dark:text-zinc-400" x-text="'· ' + meta(row.provider_id).hotline"></span>
                                                     <span x-show="meta(row.provider_id).contact" class="text-xs text-zinc-500 dark:text-zinc-400" x-text="'· ' + meta(row.provider_id).contact"></span>
                                                 </div>
-                                                <input
-                                                    type="text"
-                                                    x-model="row.note"
-                                                    @keydown.enter.prevent
-                                                    placeholder="{{ __('Notiz (optional, z. B. „SLA nur Mo–Fr 8–17")') }}"
-                                                    class="block w-full rounded-md border border-zinc-200 bg-white px-2.5 py-1 text-sm shadow-sm placeholder:text-zinc-400 focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white"
-                                                />
+                                                <div class="flex flex-col gap-2 sm:flex-row">
+                                                    <select
+                                                        x-model="row.raci_role"
+                                                        class="w-full rounded-md border border-zinc-200 bg-white px-2.5 py-1 text-sm shadow-sm focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500 sm:w-56 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white"
+                                                    >
+                                                        <option value="">{{ __('System-Zuständigkeit (optional)') }}</option>
+                                                        @foreach (\App\Enums\RaciRole::cases() as $r)
+                                                            <option value="{{ $r->value }}">{{ $r->value }} – {{ $r->label() }}</option>
+                                                        @endforeach
+                                                    </select>
+                                                    <input
+                                                        type="text"
+                                                        x-model="row.note"
+                                                        @keydown.enter.prevent
+                                                        placeholder="{{ __('Notiz (optional, z. B. „SLA nur Mo–Fr 8–17")') }}"
+                                                        class="block w-full rounded-md border border-zinc-200 bg-white px-2.5 py-1 text-sm shadow-sm placeholder:text-zinc-400 focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white"
+                                                    />
+                                                </div>
                                             </div>
 
                                             <div class="flex shrink-0 items-center gap-1">

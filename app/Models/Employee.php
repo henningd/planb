@@ -66,7 +66,7 @@ class Employee extends Model
     public function systems(): BelongsToMany
     {
         return $this->belongsToMany(System::class)
-            ->withPivot(['sort', 'note'])
+            ->withPivot(['raci_role', 'sort', 'note'])
             ->withTimestamps();
     }
 

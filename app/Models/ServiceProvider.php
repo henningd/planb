@@ -23,7 +23,7 @@ class ServiceProvider extends Model
     public function systems(): BelongsToMany
     {
         return $this->belongsToMany(System::class)
-            ->withPivot(['role', 'sort', 'note'])
+            ->withPivot(['raci_role', 'sort', 'note'])
             ->withTimestamps();
     }
 }

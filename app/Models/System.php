@@ -42,7 +42,7 @@ class System extends Model
     public function serviceProviders(): BelongsToMany
     {
         return $this->belongsToMany(ServiceProvider::class)
-            ->withPivot(['role', 'sort', 'note'])
+            ->withPivot(['raci_role', 'sort', 'note'])
             ->withTimestamps()
             ->orderBy('service_provider_system.sort');
     }
@@ -53,7 +53,7 @@ class System extends Model
     public function employees(): BelongsToMany
     {
         return $this->belongsToMany(Employee::class)
-            ->withPivot(['sort', 'note'])
+            ->withPivot(['raci_role', 'sort', 'note'])
             ->withTimestamps()
             ->orderBy('employee_system.sort');
     }
