@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Company;
+use App\Models\EmergencyLevel;
 use App\Models\Employee;
 use App\Models\ServiceProvider;
 use App\Models\System;
@@ -334,12 +335,6 @@ test('system form assigns responsible employees with notes and order', function 
         ->and($ordered[0]->pivot->note)->toBe('nur werktags')
         ->and($ordered[1]->pivot->sort)->toBe(1)
         ->and($ordered[1]->pivot->note)->toBeNull();
-
-    $this->actingAs($user->fresh())
-        ->get(route('systems.index'))
-        ->assertOk()
-        ->assertSee('1. Martina Beispiel')
-        ->assertSee('2. Paul Vertretung');
 });
 
 test('addResponsibleById appends and employee search filters available list', function () {
@@ -566,6 +561,35 @@ test('system show page lists employees, providers and dependencies', function ()
         ->assertSee('ACME-IT')
         ->assertSee('0800-12345')
         ->assertSee('Storage');
+});
+
+test('system edit saves fallback process, runbook reference and emergency level', function () {
+    $user = User::factory()->create();
+    $company = Company::factory()->for($user->currentTeam)->create();
+
+    $level = EmergencyLevel::withoutGlobalScope(CurrentCompanyScope::class)
+        ->where('company_id', $company->id)
+        ->orderBy('sort')
+        ->first();
+
+    $system = System::withoutGlobalScope(CurrentCompanyScope::class)->create([
+        'company_id' => $company->id,
+        'name' => 'ERP',
+        'category' => 'geschaeftsbetrieb',
+    ]);
+
+    Livewire\Livewire::actingAs($user->fresh())
+        ->test('pages::systems.edit', ['system' => $system])
+        ->set('fallback_process', 'Aufträge werden per Telefon/Papier erfasst.')
+        ->set('runbook_reference', 'Wiki: /ops/erp-runbook')
+        ->set('emergency_level_id', $level?->id)
+        ->call('save')
+        ->assertHasNoErrors();
+
+    $fresh = $system->fresh();
+    expect($fresh->fallback_process)->toBe('Aufträge werden per Telefon/Papier erfasst.')
+        ->and($fresh->runbook_reference)->toBe('Wiki: /ops/erp-runbook')
+        ->and($fresh->emergency_level_id)->toBe($level?->id);
 });
 
 test('system show forbids access to a system from another tenant', function () {

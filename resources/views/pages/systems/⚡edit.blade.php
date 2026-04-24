@@ -2,6 +2,7 @@
 
 use App\Enums\SystemCategory;
 use App\Models\Employee;
+use App\Models\EmergencyLevel;
 use App\Models\ServiceProvider;
 use App\Models\System;
 use App\Models\SystemPriority;
@@ -20,6 +21,12 @@ new #[Title('System bearbeiten')] class extends Component {
     public string $name = '';
 
     public string $description = '';
+
+    public string $fallback_process = '';
+
+    public string $runbook_reference = '';
+
+    public ?string $emergency_level_id = null;
 
     public string $category = '';
 
@@ -56,6 +63,9 @@ new #[Title('System bearbeiten')] class extends Component {
             $this->system = $system;
             $this->name = $system->name;
             $this->description = (string) $system->description;
+            $this->fallback_process = (string) $system->fallback_process;
+            $this->runbook_reference = (string) $system->runbook_reference;
+            $this->emergency_level_id = $system->emergency_level_id;
             $this->category = $system->category->value;
             $this->system_priority_id = $system->system_priority_id;
             $this->rto_minutes = $system->rto_minutes;
@@ -99,6 +109,15 @@ new #[Title('System bearbeiten')] class extends Component {
     public function priorities(): Collection
     {
         return SystemPriority::orderBy('sort')->get();
+    }
+
+    /**
+     * @return Collection<int, EmergencyLevel>
+     */
+    #[Computed]
+    public function emergencyLevels(): Collection
+    {
+        return EmergencyLevel::orderBy('sort')->orderBy('name')->get();
     }
 
     /**
@@ -430,6 +449,9 @@ new #[Title('System bearbeiten')] class extends Component {
         $validated = $this->validate([
             'name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:2000'],
+            'fallback_process' => ['nullable', 'string', 'max:2000'],
+            'runbook_reference' => ['nullable', 'string', 'max:255'],
+            'emergency_level_id' => ['nullable', 'uuid', 'exists:emergency_levels,id'],
             'category' => ['required', 'in:'.collect(SystemCategory::cases())->pluck('value')->implode(',')],
             'system_priority_id' => ['nullable', 'uuid', 'exists:system_priorities,id'],
             'rto_minutes' => ['nullable', 'integer', 'in:'.implode(',', $validDurations)],
@@ -525,6 +547,100 @@ new #[Title('System bearbeiten')] class extends Component {
                 rows="3"
                 placeholder="Wofür wird dieses System genutzt?"
             />
+
+            <flux:textarea
+                wire:model="fallback_process"
+                :label="__('Notbetrieb / Ersatzprozess')"
+                rows="3"
+                placeholder="Wie läuft der Betrieb weiter, wenn dieses System ausfällt?"
+            />
+
+            <flux:input
+                wire:model="runbook_reference"
+                :label="__('Runbook-Verweis')"
+                type="text"
+                placeholder="z. B. Wiki-Link, Dateipfad oder Dokumenttitel"
+            />
+
+            <flux:field>
+                <flux:label>{{ __('Wiederanlauf-Stufe') }}</flux:label>
+                <flux:description>
+                    {{ __('Ab welcher Notfall-Stufe muss dieses System wieder verfügbar sein? Karte anklicken zum Auswählen.') }}
+                </flux:description>
+
+                @if ($this->emergencyLevels->isEmpty())
+                    <div class="rounded-lg border border-dashed border-zinc-300 p-4 text-sm text-zinc-500 dark:border-zinc-700 dark:text-zinc-400">
+                        {{ __('Noch keine Notfall-Stufen definiert.') }}
+                        <flux:link :href="route('emergency-levels.index')" wire:navigate>{{ __('Jetzt anlegen') }}</flux:link>
+                    </div>
+                @else
+                    <div class="grid gap-3 sm:grid-cols-2">
+                        @foreach ($this->emergencyLevels as $level)
+                            @php($selected = $emergency_level_id === $level->id)
+                            <label
+                                wire:key="level-{{ $level->id }}"
+                                class="group relative flex cursor-pointer flex-col gap-2 rounded-lg border p-4 transition
+                                    {{ $selected
+                                        ? 'border-teal-500 bg-teal-50 ring-2 ring-teal-500 dark:border-teal-500 dark:bg-teal-950/40'
+                                        : 'border-zinc-200 bg-white hover:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-900 dark:hover:border-zinc-500' }}"
+                            >
+                                <input
+                                    type="radio"
+                                    wire:model.live="emergency_level_id"
+                                    value="{{ $level->id }}"
+                                    class="sr-only"
+                                />
+                                <div class="flex items-start justify-between gap-2">
+                                    <div class="flex items-center gap-2">
+                                        <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-xs font-semibold
+                                            {{ $selected
+                                                ? 'border-teal-600 bg-teal-600 text-white'
+                                                : 'border-zinc-300 text-zinc-500 dark:border-zinc-600 dark:text-zinc-400' }}">
+                                            {{ $level->sort }}
+                                        </span>
+                                        <span class="font-medium text-zinc-900 dark:text-white">{{ $level->name }}</span>
+                                    </div>
+                                    @if ($selected)
+                                        <flux:icon.check-circle class="h-5 w-5 text-teal-600 dark:text-teal-400" />
+                                    @endif
+                                </div>
+                                @if ($level->description)
+                                    <p class="text-sm text-zinc-600 dark:text-zinc-300">{{ $level->description }}</p>
+                                @endif
+                                @if ($level->reaction)
+                                    <div class="mt-1 rounded-md bg-zinc-50 px-2.5 py-1.5 text-xs text-zinc-600 dark:bg-zinc-950/50 dark:text-zinc-400">
+                                        <span class="font-semibold uppercase text-zinc-500 dark:text-zinc-400">{{ __('Reaktion') }}:</span>
+                                        {{ $level->reaction }}
+                                    </div>
+                                @endif
+                            </label>
+                        @endforeach
+
+                        @php($none = $emergency_level_id === null || $emergency_level_id === '')
+                        <label
+                            class="group relative flex cursor-pointer flex-col gap-2 rounded-lg border border-dashed p-4 transition sm:col-span-2
+                                {{ $none
+                                    ? 'border-zinc-500 bg-zinc-50 ring-2 ring-zinc-400 dark:border-zinc-400 dark:bg-zinc-950/40'
+                                    : 'border-zinc-300 bg-white hover:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-900 dark:hover:border-zinc-500' }}"
+                        >
+                            <input
+                                type="radio"
+                                wire:model.live="emergency_level_id"
+                                value=""
+                                class="sr-only"
+                            />
+                            <div class="flex items-center justify-between gap-2">
+                                <span class="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                                    {{ __('Keine Zuordnung') }}
+                                </span>
+                                @if ($none)
+                                    <flux:icon.check-circle class="h-5 w-5 text-zinc-500 dark:text-zinc-400" />
+                                @endif
+                            </div>
+                        </label>
+                    </div>
+                @endif
+            </flux:field>
 
             <div class="grid gap-4 sm:grid-cols-2">
                 <flux:select wire:model="category" :label="__('Kategorie')" required>

@@ -14,7 +14,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['company_id', 'name', 'description', 'category', 'system_priority_id', 'rto_minutes', 'rpo_minutes', 'downtime_cost_per_hour'])]
+#[Fillable(['company_id', 'name', 'description', 'fallback_process', 'runbook_reference', 'emergency_level_id', 'category', 'system_priority_id', 'rto_minutes', 'rpo_minutes', 'downtime_cost_per_hour'])]
 class System extends Model
 {
     /** @use HasFactory<SystemFactory> */
@@ -26,6 +26,14 @@ class System extends Model
     public function priority(): BelongsTo
     {
         return $this->belongsTo(SystemPriority::class, 'system_priority_id');
+    }
+
+    /**
+     * @return BelongsTo<EmergencyLevel, $this>
+     */
+    public function emergencyLevel(): BelongsTo
+    {
+        return $this->belongsTo(EmergencyLevel::class);
     }
 
     /**

@@ -42,7 +42,7 @@ new #[Title('Systeme')] class extends Component {
     #[Computed]
     public function systemsByCategory(): array
     {
-        $systems = System::with(['priority', 'serviceProviders', 'employees', 'dependencies'])
+        $systems = System::with(['priority'])
             ->withCount([
                 'tasks',
                 'tasks as open_tasks_count' => fn ($q) => $q->whereNull('completed_at'),
@@ -272,121 +272,99 @@ new #[Title('Systeme')] class extends Component {
                             {{ $category->description() }}
                         </flux:text>
                     </div>
-                    <flux:button size="sm" variant="ghost" icon="plus" :href="$this->hasCompany ? route('systems.create', ['category' => $category->value]) : null" :disabled="! $this->hasCompany" wire:navigate>
-                        {{ __('Hinzufügen') }}
+                    <flux:button size="sm" variant="primary" icon="plus" :href="$this->hasCompany ? route('systems.create', ['category' => $category->value]) : null" :disabled="! $this->hasCompany" wire:navigate>
+                        {{ __($category->label().' hinzufügen') }}
                     </flux:button>
                 </div>
 
-                @forelse ($systems as $system)
-                    <div class="flex items-start justify-between gap-4 border-b border-zinc-100 px-5 py-4 last:border-b-0 dark:border-zinc-800">
-                        <div class="flex-1">
-                            <div class="flex items-center gap-2">
-                                <span class="font-medium">{{ $system->name }}</span>
-                                @if ($system->priority)
-                                    <flux:badge
-                                        :color="match ($system->priority->sort) { 1 => 'rose', 2 => 'amber', default => 'zinc' }"
-                                        size="sm"
-                                    >
-                                        {{ $system->priority->name }}
-                                    </flux:badge>
-                                @else
-                                    <flux:badge color="zinc" size="sm">{{ __('Ohne Priorität') }}</flux:badge>
-                                @endif
-                            </div>
-                            @if ($system->description)
-                                <flux:text class="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-                                    {{ $system->description }}
-                                </flux:text>
-                            @endif
-                            @if ($system->rto_minutes || $system->rpo_minutes || $system->downtime_cost_per_hour)
-                                <div class="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-zinc-600 dark:text-zinc-400">
-                                    @if ($system->rto_minutes)
-                                        <div class="flex items-center gap-1.5">
-                                            <flux:icon.clock class="h-3.5 w-3.5 text-zinc-400" />
-                                            <span>{{ __('Max. Ausfall') }}: <span class="font-medium">{{ \App\Support\Duration::format($system->rto_minutes) }}</span></span>
-                                        </div>
-                                    @endif
-                                    @if ($system->rpo_minutes)
-                                        <div class="flex items-center gap-1.5">
-                                            <flux:icon.archive-box class="h-3.5 w-3.5 text-zinc-400" />
-                                            <span>{{ __('Max. Datenverlust') }}: <span class="font-medium">{{ \App\Support\Duration::format($system->rpo_minutes) }}</span></span>
-                                        </div>
-                                    @endif
-                                    @if ($system->downtime_cost_per_hour)
-                                        <div class="flex items-center gap-1.5">
-                                            <flux:icon.currency-euro class="h-3.5 w-3.5 text-zinc-400" />
-                                            <span>{{ __('Ausfallkosten') }}: <span class="font-medium">{{ number_format($system->downtime_cost_per_hour, 0, ',', '.') }} € / h</span></span>
-                                        </div>
-                                    @endif
-                                </div>
-                            @endif
-                            @if ($system->serviceProviders->isNotEmpty())
-                                <div class="mt-2 flex flex-wrap items-center gap-1.5">
-                                    <flux:icon.wrench-screwdriver class="h-3.5 w-3.5 text-zinc-400" />
-                                    @foreach ($system->serviceProviders as $rank => $p)
-                                        <flux:badge color="zinc" size="sm" :title="$p->pivot->note">
-                                            {{ $rank + 1 }}. {{ $p->name }}@if ($p->hotline) · {{ $p->hotline }}@endif
-                                        </flux:badge>
-                                    @endforeach
-                                </div>
-                            @endif
-                            @if ($system->employees->isNotEmpty())
-                                <div class="mt-2 flex flex-wrap items-center gap-1.5">
-                                    <flux:icon.user class="h-3.5 w-3.5 text-zinc-400" />
-                                    @foreach ($system->employees as $rank => $e)
-                                        <flux:badge color="teal" size="sm" :title="$e->pivot->note">
-                                            {{ $rank + 1 }}. {{ $e->fullName() }}@if ($e->position) · {{ $e->position }}@endif
-                                        </flux:badge>
-                                    @endforeach
-                                </div>
-                            @endif
-                            @if ($system->dependencies->isNotEmpty())
-                                <div class="mt-2 flex flex-wrap items-center gap-1.5">
-                                    <flux:icon.link class="h-3.5 w-3.5 text-zinc-400" />
-                                    <span class="text-xs text-zinc-500 dark:text-zinc-400">{{ __('Braucht:') }}</span>
-                                    @foreach ($system->dependencies as $rank => $dep)
-                                        <flux:badge color="sky" size="sm" :title="$dep->pivot->note">
-                                            {{ $rank + 1 }}. {{ $dep->name }}
-                                        </flux:badge>
-                                    @endforeach
-                                </div>
-                            @endif
-                            @if ($system->tasks_count > 0)
-                                <div class="mt-2 flex flex-wrap items-center gap-1.5">
-                                    <flux:icon.clipboard-document-list class="h-3.5 w-3.5 text-zinc-400" />
-                                    <flux:badge color="zinc" size="sm">
-                                        {{ $system->tasks_count }} {{ $system->tasks_count === 1 ? __('Aufgabe definiert') : __('Aufgaben definiert') }}
-                                    </flux:badge>
-                                </div>
-                            @endif
-                        </div>
-
-                        <flux:dropdown align="end">
-                            <flux:button size="sm" variant="ghost" icon="ellipsis-vertical" />
-                            <flux:menu>
-                                <flux:menu.item icon="eye" :href="route('systems.show', ['system' => $system->id])" wire:navigate>
-                                    {{ __('Details') }}
-                                </flux:menu.item>
-                                <flux:menu.item icon="pencil" :href="route('systems.edit', ['system' => $system->id])" wire:navigate>
-                                    {{ __('Bearbeiten') }}
-                                </flux:menu.item>
-                                <flux:menu.item icon="qr-code" :href="route('systems.sticker', ['system' => $system->id])" target="_blank">
-                                    {{ __('QR-Aushang') }}
-                                </flux:menu.item>
-                                <flux:menu.separator />
-                                <flux:menu.item icon="trash" variant="danger" wire:click="confirmDelete('{{ $system->id }}')">
-                                    {{ __('Löschen') }}
-                                </flux:menu.item>
-                            </flux:menu>
-                        </flux:dropdown>
-                    </div>
-                @empty
+                @if ($systems->isEmpty())
                     <div class="px-5 py-8 text-center">
                         <flux:text class="text-sm text-zinc-500 dark:text-zinc-400">
                             {{ __('Noch kein System in dieser Kategorie.') }}
                         </flux:text>
                     </div>
-                @endforelse
+                @else
+                    <div class="grid gap-4 p-5 sm:grid-cols-2 xl:grid-cols-3">
+                        @foreach ($systems as $system)
+                            <div class="flex flex-col rounded-lg border border-zinc-200 bg-white p-4 transition hover:border-zinc-300 hover:shadow-sm dark:border-zinc-700 dark:bg-zinc-900 dark:hover:border-zinc-600">
+                                <div class="flex items-start justify-between gap-2">
+                                    <a href="{{ route('systems.show', ['system' => $system->id]) }}" wire:navigate class="min-w-0 flex-1">
+                                        <div class="flex flex-wrap items-center gap-2">
+                                            <span class="truncate font-medium text-zinc-900 hover:underline dark:text-white">{{ $system->name }}</span>
+                                            @if ($system->priority)
+                                                <flux:badge
+                                                    :color="match ($system->priority->sort) { 1 => 'rose', 2 => 'amber', default => 'zinc' }"
+                                                    size="sm"
+                                                >
+                                                    {{ $system->priority->name }}
+                                                </flux:badge>
+                                            @else
+                                                <flux:badge color="zinc" size="sm">{{ __('Ohne Priorität') }}</flux:badge>
+                                            @endif
+                                        </div>
+                                    </a>
+
+                                    <flux:dropdown align="end">
+                                        <flux:button size="sm" variant="ghost" icon="ellipsis-vertical" />
+                                        <flux:menu>
+                                            <flux:menu.item icon="eye" :href="route('systems.show', ['system' => $system->id])" wire:navigate>
+                                                {{ __('Details') }}
+                                            </flux:menu.item>
+                                            <flux:menu.item icon="pencil" :href="route('systems.edit', ['system' => $system->id])" wire:navigate>
+                                                {{ __('Bearbeiten') }}
+                                            </flux:menu.item>
+                                            <flux:menu.item icon="qr-code" :href="route('systems.sticker', ['system' => $system->id])" target="_blank">
+                                                {{ __('QR-Aushang') }}
+                                            </flux:menu.item>
+                                            <flux:menu.separator />
+                                            <flux:menu.item icon="trash" variant="danger" wire:click="confirmDelete('{{ $system->id }}')">
+                                                {{ __('Löschen') }}
+                                            </flux:menu.item>
+                                        </flux:menu>
+                                    </flux:dropdown>
+                                </div>
+
+                                @if ($system->description)
+                                    <flux:text class="mt-2 line-clamp-2 text-sm text-zinc-600 dark:text-zinc-400">
+                                        {{ $system->description }}
+                                    </flux:text>
+                                @endif
+
+                                @if ($system->rto_minutes || $system->rpo_minutes || $system->downtime_cost_per_hour)
+                                    <div class="mt-3 space-y-1.5 border-t border-zinc-100 pt-3 text-xs text-zinc-600 dark:border-zinc-800 dark:text-zinc-400">
+                                        @if ($system->rto_minutes)
+                                            <div class="flex items-center gap-1.5">
+                                                <flux:icon.clock class="h-3.5 w-3.5 text-zinc-400" />
+                                                <span>{{ __('Max. Ausfall') }}: <span class="font-medium">{{ \App\Support\Duration::format($system->rto_minutes) }}</span></span>
+                                            </div>
+                                        @endif
+                                        @if ($system->rpo_minutes)
+                                            <div class="flex items-center gap-1.5">
+                                                <flux:icon.archive-box class="h-3.5 w-3.5 text-zinc-400" />
+                                                <span>{{ __('Max. Datenverlust') }}: <span class="font-medium">{{ \App\Support\Duration::format($system->rpo_minutes) }}</span></span>
+                                            </div>
+                                        @endif
+                                        @if ($system->downtime_cost_per_hour)
+                                            <div class="flex items-center gap-1.5">
+                                                <flux:icon.currency-euro class="h-3.5 w-3.5 text-zinc-400" />
+                                                <span>{{ __('Ausfallkosten') }}: <span class="font-medium">{{ number_format($system->downtime_cost_per_hour, 0, ',', '.') }} € / h</span></span>
+                                            </div>
+                                        @endif
+                                    </div>
+                                @endif
+
+                                @if ($system->tasks_count > 0)
+                                    <div class="mt-3 flex items-center gap-1.5">
+                                        <flux:icon.clipboard-document-list class="h-3.5 w-3.5 text-zinc-400" />
+                                        <flux:badge color="zinc" size="sm">
+                                            {{ $system->tasks_count }} {{ $system->tasks_count === 1 ? __('Aufgabe definiert') : __('Aufgaben definiert') }}
+                                        </flux:badge>
+                                    </div>
+                                @endif
+                            </div>
+                        @endforeach
+                    </div>
+                @endif
             </div>
         @endforeach
     </div>

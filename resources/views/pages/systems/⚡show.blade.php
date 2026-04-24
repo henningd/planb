@@ -48,6 +48,7 @@ new #[Title('System')] class extends Component {
 
         $this->system = $system->load([
             'priority',
+            'emergencyLevel',
             'serviceProviders',
             'employees',
             'dependencies',
@@ -191,6 +192,8 @@ new #[Title('System')] class extends Component {
 
         $this->reset(['newTaskTitle', 'newTaskDescription', 'newTaskDueDate', 'newTaskAssignees', 'newTaskProviders']);
         unset($this->tasks);
+
+        $this->dispatch('task-saved');
 
         Flux::toast(variant: 'success', text: __('Aufgabe hinzugefügt.'));
     }
@@ -373,6 +376,25 @@ new #[Title('System')] class extends Component {
                         {{ $system->description }}
                     </flux:text>
                 @endif
+                @if ($system->fallback_process)
+                    <div class="mt-3">
+                        <flux:text class="text-xs uppercase text-zinc-500 dark:text-zinc-400">{{ __('Notbetrieb / Ersatzprozess') }}</flux:text>
+                        <flux:text class="mt-1 whitespace-pre-line text-sm text-zinc-700 dark:text-zinc-300">
+                            {{ $system->fallback_process }}
+                        </flux:text>
+                    </div>
+                @endif
+                @if ($system->runbook_reference)
+                    <div class="mt-3 flex items-center gap-2">
+                        <flux:icon.book-open class="h-4 w-4 text-zinc-400" />
+                        <div>
+                            <flux:text class="text-xs uppercase text-zinc-500 dark:text-zinc-400">{{ __('Runbook-Verweis') }}</flux:text>
+                            <flux:text class="text-sm text-zinc-700 dark:text-zinc-300">
+                                {{ $system->runbook_reference }}
+                            </flux:text>
+                        </div>
+                    </div>
+                @endif
             </div>
 
             <div class="flex shrink-0 gap-2">
@@ -384,6 +406,34 @@ new #[Title('System')] class extends Component {
                 </flux:button>
             </div>
         </div>
+
+        @if ($system->emergencyLevel)
+            @php($level = $system->emergencyLevel)
+            <div class="border-b border-zinc-100 p-6 dark:border-zinc-800">
+                <flux:text class="text-xs uppercase text-zinc-500 dark:text-zinc-400">{{ __('Wiederanlauf-Stufe') }}</flux:text>
+                <div class="mt-2 rounded-lg border border-sky-200 bg-sky-50 p-4 dark:border-sky-900 dark:bg-sky-950/40">
+                    <div class="flex items-start gap-3">
+                        <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-sky-600 bg-sky-600 text-sm font-semibold text-white">
+                            {{ $level->sort }}
+                        </span>
+                        <div class="min-w-0 flex-1">
+                            <flux:heading size="base" class="text-sky-900 dark:text-sky-100">{{ $level->name }}</flux:heading>
+                            @if ($level->description)
+                                <flux:text class="mt-1 text-sm text-sky-900/80 dark:text-sky-100/80">
+                                    {{ $level->description }}
+                                </flux:text>
+                            @endif
+                            @if ($level->reaction)
+                                <div class="mt-3 rounded-md bg-white/60 px-3 py-2 text-sm dark:bg-zinc-900/60">
+                                    <span class="text-xs font-semibold uppercase text-sky-700 dark:text-sky-300">{{ __('Reaktion') }}:</span>
+                                    <span class="ml-1 text-zinc-700 dark:text-zinc-200">{{ $level->reaction }}</span>
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @endif
 
         @if ($system->rto_minutes || $system->rpo_minutes || $system->downtime_cost_per_hour)
             <div class="grid gap-4 border-b border-zinc-100 p-6 sm:grid-cols-3 dark:border-zinc-800">
@@ -458,53 +508,67 @@ new #[Title('System')] class extends Component {
                 @if ($system->employees->isEmpty())
                     <flux:text class="text-sm text-zinc-500 dark:text-zinc-400">{{ __('Noch keine Verantwortlichen zugewiesen.') }}</flux:text>
                 @else
-                    <ol class="space-y-2">
+                    <div class="grid gap-4 md:grid-cols-2">
                         @foreach ($system->employees as $index => $e)
-                            <li class="flex items-start gap-3 rounded-lg border border-zinc-200 p-3 dark:border-zinc-700">
-                                <span class="mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-teal-100 text-xs font-semibold text-teal-800 dark:bg-teal-900 dark:text-teal-100">
-                                    {{ $index + 1 }}
-                                </span>
-                                <div class="flex-1">
-                                    <div class="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-sm">
-                                        <span class="font-medium">{{ $e->fullName() }}</span>
-                                        @if ($e->position)
-                                            <span class="text-zinc-500 dark:text-zinc-400">· {{ $e->position }}</span>
-                                        @endif
-                                        @if ($e->department)
-                                            <span class="text-zinc-500 dark:text-zinc-400">· {{ $e->department }}</span>
+                            <div class="rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
+                                <div class="flex items-start gap-3">
+                                    <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-teal-100 text-sm font-semibold text-teal-800 dark:bg-teal-900 dark:text-teal-100">
+                                        {{ $index + 1 }}
+                                    </span>
+                                    <div class="min-w-0 flex-1">
+                                        <flux:heading size="base">{{ $e->fullName() }}</flux:heading>
+                                        @if ($e->position || $e->department)
+                                            <flux:text class="text-sm text-zinc-500 dark:text-zinc-400">
+                                                {{ $e->position }}@if ($e->position && $e->department) · @endif{{ $e->department }}
+                                            </flux:text>
                                         @endif
                                     </div>
-                                    @if ($e->mobile_phone || $e->work_phone || $e->email)
-                                        <div class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-zinc-500 dark:text-zinc-400">
-                                            @if ($e->mobile_phone)
-                                                <span class="inline-flex items-center gap-1">
-                                                    <flux:icon.device-phone-mobile class="h-3 w-3" />
-                                                    {{ $e->mobile_phone }}
-                                                </span>
-                                            @endif
-                                            @if ($e->work_phone)
-                                                <span class="inline-flex items-center gap-1">
-                                                    <flux:icon.phone class="h-3 w-3" />
-                                                    {{ $e->work_phone }}
-                                                </span>
-                                            @endif
-                                            @if ($e->email)
-                                                <span class="inline-flex items-center gap-1">
-                                                    <flux:icon.envelope class="h-3 w-3" />
-                                                    {{ $e->email }}
-                                                </span>
-                                            @endif
-                                        </div>
-                                    @endif
-                                    @if ($e->pivot->note)
-                                        <div class="mt-1 text-xs italic text-zinc-600 dark:text-zinc-400">
-                                            {{ $e->pivot->note }}
-                                        </div>
-                                    @endif
                                 </div>
-                            </li>
+
+                                @if ($e->mobile_phone || $e->work_phone || $e->email)
+                                    <div class="mt-4 space-y-2 text-sm">
+                                        @if ($e->mobile_phone)
+                                            <div class="flex items-start gap-2">
+                                                <flux:icon.device-phone-mobile class="mt-0.5 h-4 w-4 text-zinc-400" />
+                                                <div>
+                                                    <div class="text-xs uppercase text-zinc-500 dark:text-zinc-400">{{ __('Mobil') }}</div>
+                                                    <a href="tel:{{ $e->mobile_phone }}" class="font-medium hover:underline">{{ $e->mobile_phone }}</a>
+                                                </div>
+                                            </div>
+                                        @endif
+                                        @if ($e->work_phone)
+                                            <div class="flex items-start gap-2">
+                                                <flux:icon.phone class="mt-0.5 h-4 w-4 text-zinc-400" />
+                                                <div>
+                                                    <div class="text-xs uppercase text-zinc-500 dark:text-zinc-400">{{ __('Festnetz') }}</div>
+                                                    <a href="tel:{{ $e->work_phone }}" class="hover:underline">{{ $e->work_phone }}</a>
+                                                </div>
+                                            </div>
+                                        @endif
+                                        @if ($e->email)
+                                            <div class="flex items-start gap-2">
+                                                <flux:icon.envelope class="mt-0.5 h-4 w-4 text-zinc-400" />
+                                                <div>
+                                                    <div class="text-xs uppercase text-zinc-500 dark:text-zinc-400">{{ __('E-Mail') }}</div>
+                                                    <a href="mailto:{{ $e->email }}" class="hover:underline">{{ $e->email }}</a>
+                                                </div>
+                                            </div>
+                                        @endif
+                                    </div>
+                                @endif
+
+                                @if ($e->pivot->note)
+                                    <div class="mt-4 flex items-start gap-2 rounded-md border-l-2 border-amber-400 bg-amber-50 px-3 py-2 dark:border-amber-500 dark:bg-amber-950/30">
+                                        <flux:icon.chat-bubble-left-ellipsis class="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+                                        <div class="min-w-0 flex-1">
+                                            <div class="text-xs font-semibold uppercase text-amber-700 dark:text-amber-400">{{ __('Notiz') }}</div>
+                                            <div class="mt-0.5 text-sm text-zinc-700 dark:text-zinc-200">{{ $e->pivot->note }}</div>
+                                        </div>
+                                    </div>
+                                @endif
+                            </div>
                         @endforeach
-                    </ol>
+                    </div>
                 @endif
             </div>
 
@@ -512,84 +576,137 @@ new #[Title('System')] class extends Component {
                 @if ($system->serviceProviders->isEmpty())
                     <flux:text class="text-sm text-zinc-500 dark:text-zinc-400">{{ __('Keine Dienstleister zugeordnet.') }}</flux:text>
                 @else
-                    <ol class="space-y-2">
+                    <div class="grid gap-4 md:grid-cols-2">
                         @foreach ($system->serviceProviders as $index => $p)
-                            <li class="flex items-start gap-3 rounded-lg border border-zinc-200 p-3 dark:border-zinc-700">
-                                <span class="mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-teal-100 text-xs font-semibold text-teal-800 dark:bg-teal-900 dark:text-teal-100">
-                                    {{ $index + 1 }}
-                                </span>
-                                <div class="flex-1">
-                                    <div class="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-sm">
-                                        <span class="font-medium">{{ $p->name }}</span>
+                            <div class="rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
+                                <div class="flex items-start gap-3">
+                                    <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-teal-100 text-sm font-semibold text-teal-800 dark:bg-teal-900 dark:text-teal-100">
+                                        {{ $index + 1 }}
+                                    </span>
+                                    <div class="min-w-0 flex-1">
+                                        <flux:heading size="base">{{ $p->name }}</flux:heading>
                                         @if ($p->contact_name)
-                                            <span class="text-zinc-500 dark:text-zinc-400">· {{ $p->contact_name }}</span>
+                                            <flux:text class="text-sm text-zinc-500 dark:text-zinc-400">
+                                                {{ $p->contact_name }}
+                                            </flux:text>
                                         @endif
                                     </div>
-                                    @if ($p->hotline || $p->email)
-                                        <div class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-zinc-500 dark:text-zinc-400">
-                                            @if ($p->hotline)
-                                                <span class="inline-flex items-center gap-1">
-                                                    <flux:icon.phone class="h-3 w-3" />
-                                                    {{ $p->hotline }}
-                                                </span>
-                                            @endif
-                                            @if ($p->email)
-                                                <span class="inline-flex items-center gap-1">
-                                                    <flux:icon.envelope class="h-3 w-3" />
-                                                    {{ $p->email }}
-                                                </span>
-                                            @endif
+                                </div>
+
+                                <div class="mt-4 space-y-2 text-sm">
+                                    @if ($p->hotline)
+                                        <div class="flex items-start gap-2">
+                                            <flux:icon.phone class="mt-0.5 h-4 w-4 text-zinc-400" />
+                                            <div>
+                                                <div class="text-xs uppercase text-zinc-500 dark:text-zinc-400">{{ __('Hotline') }}</div>
+                                                <div class="flex flex-wrap items-center gap-2">
+                                                    <span class="font-medium">{{ $p->hotline }}</span>
+                                                    @if ($p->sla)<flux:badge color="zinc" size="sm">{{ $p->sla }}</flux:badge>@endif
+                                                </div>
+                                            </div>
                                         </div>
                                     @endif
-                                    @if ($p->pivot->note)
-                                        <div class="mt-1 text-xs italic text-zinc-600 dark:text-zinc-400">
-                                            {{ $p->pivot->note }}
+                                    @if ($p->email)
+                                        <div class="flex items-start gap-2">
+                                            <flux:icon.envelope class="mt-0.5 h-4 w-4 text-zinc-400" />
+                                            <div>
+                                                <div class="text-xs uppercase text-zinc-500 dark:text-zinc-400">{{ __('Notfall-E-Mail') }}</div>
+                                                <span>{{ $p->email }}</span>
+                                            </div>
+                                        </div>
+                                    @endif
+                                    @if ($p->contract_number)
+                                        <div class="flex items-start gap-2">
+                                            <flux:icon.document-text class="mt-0.5 h-4 w-4 text-zinc-400" />
+                                            <div>
+                                                <div class="text-xs uppercase text-zinc-500 dark:text-zinc-400">{{ __('Vertragsnummer') }}</div>
+                                                <span class="text-zinc-600 dark:text-zinc-300">{{ $p->contract_number }}</span>
+                                            </div>
                                         </div>
                                     @endif
                                 </div>
-                            </li>
+
+                                @if ($p->pivot->note)
+                                    <div class="mt-4 flex items-start gap-2 rounded-md border-l-2 border-amber-400 bg-amber-50 px-3 py-2 dark:border-amber-500 dark:bg-amber-950/30">
+                                        <flux:icon.chat-bubble-left-ellipsis class="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+                                        <div class="min-w-0 flex-1">
+                                            <div class="text-xs font-semibold uppercase text-amber-700 dark:text-amber-400">{{ __('Notiz') }}</div>
+                                            <div class="mt-0.5 text-sm text-zinc-700 dark:text-zinc-200">{{ $p->pivot->note }}</div>
+                                        </div>
+                                    </div>
+                                @endif
+                            </div>
                         @endforeach
-                    </ol>
+                    </div>
                 @endif
             </div>
 
-            <div x-show="tab === 'dependencies'" x-cloak class="space-y-5">
+            <div x-show="tab === 'dependencies'" x-cloak class="space-y-6">
                 <div>
-                    <flux:heading size="sm" class="mb-2">{{ __('Braucht:') }}</flux:heading>
+                    <flux:heading size="sm" class="mb-3">{{ __('Braucht:') }}</flux:heading>
                     @if ($system->dependencies->isEmpty())
                         <flux:text class="text-sm text-zinc-500 dark:text-zinc-400">{{ __('Dieses System hat keine Abhängigkeiten.') }}</flux:text>
                     @else
-                        <ol class="space-y-2">
+                        <div class="grid gap-4 md:grid-cols-2">
                             @foreach ($system->dependencies as $index => $dep)
-                                <li class="flex items-start gap-3 rounded-lg border border-zinc-200 p-3 dark:border-zinc-700">
-                                    <span class="mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-teal-100 text-xs font-semibold text-teal-800 dark:bg-teal-900 dark:text-teal-100">
-                                        {{ $index + 1 }}
-                                    </span>
-                                    <div class="flex-1">
-                                        <div class="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-sm">
-                                            <span class="font-medium">{{ $dep->name }}</span>
-                                            <span class="text-xs text-zinc-500 dark:text-zinc-400">· {{ $dep->category->label() }}</span>
-                                        </div>
-                                        @if ($dep->pivot->note)
-                                            <div class="mt-1 text-xs italic text-zinc-600 dark:text-zinc-400">
-                                                {{ $dep->pivot->note }}
+                                <a href="{{ route('systems.show', ['system' => $dep->id]) }}" wire:navigate
+                                   class="group rounded-xl border border-zinc-200 bg-white p-5 transition hover:border-zinc-300 hover:shadow-sm dark:border-zinc-700 dark:bg-zinc-900 dark:hover:border-zinc-600">
+                                    <div class="flex items-start gap-3">
+                                        <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-teal-100 text-sm font-semibold text-teal-800 dark:bg-teal-900 dark:text-teal-100">
+                                            {{ $index + 1 }}
+                                        </span>
+                                        <div class="min-w-0 flex-1">
+                                            <div class="flex flex-wrap items-center gap-2">
+                                                <flux:heading size="base" class="group-hover:underline">{{ $dep->name }}</flux:heading>
+                                                <flux:badge color="zinc" size="sm">{{ $dep->category->label() }}</flux:badge>
                                             </div>
-                                        @endif
+                                            @if ($dep->description)
+                                                <flux:text class="mt-1 line-clamp-2 text-sm text-zinc-500 dark:text-zinc-400">
+                                                    {{ $dep->description }}
+                                                </flux:text>
+                                            @endif
+                                        </div>
                                     </div>
-                                </li>
+
+                                    @if ($dep->pivot->note)
+                                        <div class="mt-4 flex items-start gap-2 rounded-md border-l-2 border-amber-400 bg-amber-50 px-3 py-2 dark:border-amber-500 dark:bg-amber-950/30">
+                                            <flux:icon.chat-bubble-left-ellipsis class="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+                                            <div class="min-w-0 flex-1">
+                                                <div class="text-xs font-semibold uppercase text-amber-700 dark:text-amber-400">{{ __('Notiz') }}</div>
+                                                <div class="mt-0.5 text-sm text-zinc-700 dark:text-zinc-200">{{ $dep->pivot->note }}</div>
+                                            </div>
+                                        </div>
+                                    @endif
+                                </a>
                             @endforeach
-                        </ol>
+                        </div>
                     @endif
                 </div>
 
                 <div>
-                    <flux:heading size="sm" class="mb-2">{{ __('Blockiert:') }}</flux:heading>
+                    <flux:heading size="sm" class="mb-3">{{ __('Blockiert:') }}</flux:heading>
                     @if ($system->dependents->isEmpty())
                         <flux:text class="text-sm text-zinc-500 dark:text-zinc-400">{{ __('Kein anderes System hängt davon ab.') }}</flux:text>
                     @else
-                        <div class="flex flex-wrap gap-1.5">
+                        <div class="grid gap-4 md:grid-cols-2">
                             @foreach ($system->dependents as $dep)
-                                <flux:badge color="violet">{{ $dep->name }}</flux:badge>
+                                <a href="{{ route('systems.show', ['system' => $dep->id]) }}" wire:navigate
+                                   class="group rounded-xl border border-violet-200 bg-violet-50/50 p-5 transition hover:border-violet-300 hover:shadow-sm dark:border-violet-900 dark:bg-violet-950/20 dark:hover:border-violet-700">
+                                    <div class="flex items-start gap-3">
+                                        <flux:icon.arrow-long-left class="mt-1 h-5 w-5 shrink-0 text-violet-600 dark:text-violet-400" />
+                                        <div class="min-w-0 flex-1">
+                                            <div class="flex flex-wrap items-center gap-2">
+                                                <flux:heading size="base" class="group-hover:underline">{{ $dep->name }}</flux:heading>
+                                                <flux:badge color="violet" size="sm">{{ $dep->category->label() }}</flux:badge>
+                                            </div>
+                                            @if ($dep->description)
+                                                <flux:text class="mt-1 line-clamp-2 text-sm text-zinc-500 dark:text-zinc-400">
+                                                    {{ $dep->description }}
+                                                </flux:text>
+                                            @endif
+                                        </div>
+                                    </div>
+                                </a>
                             @endforeach
                         </div>
                     @endif
@@ -600,7 +717,7 @@ new #[Title('System')] class extends Component {
     </div>
 
     {{-- Aufgaben-Bereich unter der Systemkarte --}}
-    <div class="mb-6 overflow-hidden rounded-xl border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-900">
+    <div class="mb-6 overflow-hidden rounded-xl border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-900" x-data="{ showTaskForm: false }" @task-saved.window="showTaskForm = false">
         <div class="flex items-center justify-between gap-4 border-b border-zinc-100 p-6 dark:border-zinc-800">
             <div>
                 <flux:heading size="lg">{{ __('Aufgaben') }}</flux:heading>
@@ -608,14 +725,24 @@ new #[Title('System')] class extends Component {
                     {{ __('Wartungs-, Vorbereitungs- und Nachbesserungs-Aufgaben zu diesem System. Personen werden nach RACI zugeordnet.') }}
                 </flux:subheading>
             </div>
-            @php($openCount = $this->tasks->whereNull('completed_at')->count())
-            @if ($openCount > 0)
-                <flux:badge color="teal">{{ $openCount }} {{ __('offen') }}</flux:badge>
-            @endif
+            <div class="flex shrink-0 items-center gap-2">
+                @php($openCount = $this->tasks->whereNull('completed_at')->count())
+                @if ($openCount > 0)
+                    <flux:badge color="teal">{{ $openCount }} {{ __('offen') }}</flux:badge>
+                @endif
+                <flux:button type="button" variant="primary" icon="plus" x-show="!showTaskForm" @click="showTaskForm = true">
+                    {{ __('Aufgabe erfassen') }}
+                </flux:button>
+            </div>
         </div>
 
         <div class="space-y-6 p-6">
-            <form wire:submit="addTask" class="space-y-4 rounded-lg border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-700 dark:bg-zinc-950/50">
+            <form
+                wire:submit="addTask"
+                x-show="showTaskForm"
+                x-cloak
+                class="space-y-4 rounded-lg border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-700 dark:bg-zinc-950/50"
+            >
                 <flux:heading size="sm">{{ __('Neue Aufgabe') }}</flux:heading>
 
                 <flux:input
@@ -711,9 +838,12 @@ new #[Title('System')] class extends Component {
                     @endif
                 </div>
 
-                <div class="flex justify-end border-t border-zinc-200 pt-3 dark:border-zinc-700">
-                    <flux:button type="submit" variant="primary" icon="plus">
-                        {{ __('Aufgabe anlegen') }}
+                <div class="flex justify-end gap-2 border-t border-zinc-200 pt-3 dark:border-zinc-700">
+                    <flux:button type="button" variant="filled" @click="showTaskForm = false">
+                        {{ __('Abbrechen') }}
+                    </flux:button>
+                    <flux:button type="submit" variant="primary" icon="check">
+                        {{ __('Aufgabe speichern') }}
                     </flux:button>
                 </div>
             </form>
