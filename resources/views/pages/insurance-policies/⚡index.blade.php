@@ -152,22 +152,22 @@ new #[Title('Versicherungen')] class extends Component {
         </div>
     @endunless
 
-    <div class="grid gap-4 md:grid-cols-2">
+    <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         @forelse ($this->policies as $policy)
-            <div class="rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
-                <div class="flex items-start justify-between gap-3">
-                    <div class="flex-1 min-w-0">
-                        <div class="flex items-center gap-2">
-                            <flux:badge :color="$policy->type === \App\Enums\InsuranceType::Cyber ? 'sky' : 'zinc'" size="sm">
-                                {{ $policy->type->label() }}
-                            </flux:badge>
-                        </div>
-                        <flux:heading size="base" class="mt-1">{{ $policy->insurer }}</flux:heading>
+            <div class="flex flex-col rounded-xl border border-zinc-200 bg-white p-5 transition hover:border-zinc-300 hover:shadow-sm dark:border-zinc-700 dark:bg-zinc-900 dark:hover:border-zinc-600">
+                <div class="flex items-start justify-between gap-2">
+                    <div class="min-w-0 flex-1">
+                        <flux:heading size="base">{{ $policy->insurer }}</flux:heading>
                         @if ($policy->contact_name)
                             <flux:text class="text-sm text-zinc-500 dark:text-zinc-400">
                                 {{ $policy->contact_name }}
                             </flux:text>
                         @endif
+                        <div class="mt-1">
+                            <flux:badge :color="$policy->type === \App\Enums\InsuranceType::Cyber ? 'sky' : 'zinc'" size="sm">
+                                {{ $policy->type->label() }}
+                            </flux:badge>
+                        </div>
                     </div>
                     <flux:dropdown align="end">
                         <flux:button size="sm" variant="ghost" icon="ellipsis-vertical" />
@@ -185,37 +185,51 @@ new #[Title('Versicherungen')] class extends Component {
 
                 <div class="mt-4 space-y-2 text-sm">
                     @if ($policy->policy_number)
-                        <div class="flex items-center gap-2">
-                            <flux:icon.document-text class="h-4 w-4 text-zinc-400" />
-                            <span class="text-zinc-600 dark:text-zinc-300">{{ __('Police') }}: {{ $policy->policy_number }}</span>
+                        <div class="flex items-start gap-2">
+                            <flux:icon.document-text class="mt-0.5 h-4 w-4 shrink-0 text-zinc-400" />
+                            <div>
+                                <div class="text-xs uppercase text-zinc-500 dark:text-zinc-400">{{ __('Police-Nummer') }}</div>
+                                <span class="text-zinc-700 dark:text-zinc-200">{{ $policy->policy_number }}</span>
+                            </div>
                         </div>
                     @endif
                     @if ($policy->hotline)
-                        <div class="flex items-center gap-2">
-                            <flux:icon.phone class="h-4 w-4 text-zinc-400" />
-                            <span class="font-medium">{{ $policy->hotline }}</span>
+                        <div class="flex items-start gap-2">
+                            <flux:icon.phone class="mt-0.5 h-4 w-4 shrink-0 text-zinc-400" />
+                            <div>
+                                <div class="text-xs uppercase text-zinc-500 dark:text-zinc-400">{{ __('Notfall-Hotline') }}</div>
+                                <a href="tel:{{ $policy->hotline }}" class="font-medium hover:underline">{{ $policy->hotline }}</a>
+                            </div>
                         </div>
                     @endif
                     @if ($policy->email)
-                        <div class="flex items-center gap-2">
-                            <flux:icon.envelope class="h-4 w-4 text-zinc-400" />
-                            <span>{{ $policy->email }}</span>
+                        <div class="flex items-start gap-2">
+                            <flux:icon.envelope class="mt-0.5 h-4 w-4 shrink-0 text-zinc-400" />
+                            <div>
+                                <div class="text-xs uppercase text-zinc-500 dark:text-zinc-400">{{ __('E-Mail') }}</div>
+                                <a href="mailto:{{ $policy->email }}" class="truncate hover:underline">{{ $policy->email }}</a>
+                            </div>
                         </div>
                     @endif
                     @if ($policy->reporting_window)
-                        <div class="flex items-center gap-2">
-                            <flux:icon.clock class="h-4 w-4 text-zinc-400" />
-                            <span class="text-zinc-600 dark:text-zinc-300">{{ __('Meldefrist') }}: {{ $policy->reporting_window }}</span>
+                        <div class="flex items-start gap-2">
+                            <flux:icon.clock class="mt-0.5 h-4 w-4 shrink-0 text-zinc-400" />
+                            <div>
+                                <div class="text-xs uppercase text-zinc-500 dark:text-zinc-400">{{ __('Meldefrist') }}</div>
+                                <span class="text-zinc-700 dark:text-zinc-200">{{ $policy->reporting_window }}</span>
+                            </div>
                         </div>
                     @endif
                 </div>
 
                 @if ($policy->notes)
-                    <flux:text class="mt-3 text-sm text-zinc-600 dark:text-zinc-400">{{ $policy->notes }}</flux:text>
+                    <flux:text class="mt-4 border-t border-zinc-100 pt-3 text-sm text-zinc-600 dark:border-zinc-800 dark:text-zinc-400">
+                        {{ $policy->notes }}
+                    </flux:text>
                 @endif
             </div>
         @empty
-            <div class="col-span-full rounded-xl border border-dashed border-zinc-300 px-5 py-12 text-center dark:border-zinc-700">
+            <div class="col-span-full rounded-xl border border-dashed border-zinc-300 bg-white px-5 py-12 text-center dark:border-zinc-700 dark:bg-zinc-900">
                 <flux:text class="text-zinc-500 dark:text-zinc-400">
                     {{ __('Noch keine Versicherung hinterlegt.') }}
                 </flux:text>

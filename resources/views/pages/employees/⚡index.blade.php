@@ -223,89 +223,90 @@ new #[Title('Mitarbeiter')] class extends Component {
         </div>
     @endif
 
-    <div class="overflow-hidden rounded-xl border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-900">
-        @forelse ($this->employees as $employee)
-            <div class="flex items-start justify-between gap-4 border-b border-zinc-100 px-5 py-4 last:border-b-0 dark:border-zinc-800">
-                <div class="flex min-w-0 flex-1 items-start gap-3">
-                    <flux:avatar :name="$employee->fullName()" size="sm" class="mt-0.5 shrink-0" />
-                    <div class="min-w-0 flex-1">
-                        <div class="flex flex-wrap items-center gap-2">
-                            <span class="font-medium">{{ $employee->fullName() }}</span>
-                            @if ($employee->is_key_personnel)
-                                <flux:badge color="amber" size="sm">{{ __('Schlüsselmitarbeiter') }}</flux:badge>
+    @if ($this->employees->isEmpty())
+        <div class="rounded-xl border border-zinc-200 bg-white px-5 py-12 text-center dark:border-zinc-700 dark:bg-zinc-900">
+            <flux:text class="text-zinc-500 dark:text-zinc-400">
+                @if ($this->search !== '' || $this->filterDepartment !== '')
+                    {{ __('Keine Mitarbeiter gefunden, die zu den Filtern passen.') }}
+                @else
+                    {{ __('Noch keine Mitarbeiter angelegt.') }}
+                @endif
+            </flux:text>
+        </div>
+    @else
+        <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            @foreach ($this->employees as $employee)
+                <div class="flex flex-col rounded-xl border border-zinc-200 bg-white p-5 transition hover:border-zinc-300 hover:shadow-sm dark:border-zinc-700 dark:bg-zinc-900 dark:hover:border-zinc-600">
+                    <div class="flex items-start justify-between gap-2">
+                        <div class="flex min-w-0 flex-1 items-start gap-3">
+                            <flux:avatar :name="$employee->fullName()" size="sm" class="mt-0.5 shrink-0" />
+                            <div class="min-w-0 flex-1">
+                                <flux:heading size="base">{{ $employee->fullName() }}</flux:heading>
+                                @if ($employee->position)
+                                    <flux:text class="text-sm text-zinc-500 dark:text-zinc-400">{{ $employee->position }}</flux:text>
+                                @endif
+                                <div class="mt-1 flex flex-wrap items-center gap-1.5">
+                                    @if ($employee->is_key_personnel)
+                                        <flux:badge color="amber" size="sm">{{ __('Schlüsselmitarbeiter') }}</flux:badge>
+                                    @endif
+                                    @if ($employee->department)
+                                        <flux:badge color="zinc" size="sm">{{ $employee->department }}</flux:badge>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+                        <flux:dropdown align="end">
+                            <flux:button size="sm" variant="ghost" icon="ellipsis-vertical" />
+                            <flux:menu>
+                                <flux:menu.item icon="pencil" wire:click="openEdit('{{ $employee->id }}')">
+                                    {{ __('Bearbeiten') }}
+                                </flux:menu.item>
+                                <flux:menu.separator />
+                                <flux:menu.item icon="trash" variant="danger" wire:click="confirmDelete('{{ $employee->id }}')">
+                                    {{ __('Löschen') }}
+                                </flux:menu.item>
+                            </flux:menu>
+                        </flux:dropdown>
+                    </div>
+
+                    @if ($employee->mobile_phone || $employee->work_phone || $employee->email || $employee->location)
+                        <div class="mt-4 space-y-2 text-sm">
+                            @if ($employee->mobile_phone)
+                                <div class="flex items-center gap-2">
+                                    <flux:icon.device-phone-mobile class="h-4 w-4 shrink-0 text-zinc-400" />
+                                    <a href="tel:{{ $employee->mobile_phone }}" class="hover:underline">{{ $employee->mobile_phone }}</a>
+                                </div>
                             @endif
-                            @if ($employee->department)
-                                <flux:badge color="zinc" size="sm">{{ $employee->department }}</flux:badge>
+                            @if ($employee->work_phone)
+                                <div class="flex items-center gap-2">
+                                    <flux:icon.phone class="h-4 w-4 shrink-0 text-zinc-400" />
+                                    <a href="tel:{{ $employee->work_phone }}" class="hover:underline">{{ $employee->work_phone }}</a>
+                                </div>
+                            @endif
+                            @if ($employee->email)
+                                <div class="flex items-center gap-2">
+                                    <flux:icon.envelope class="h-4 w-4 shrink-0 text-zinc-400" />
+                                    <a href="mailto:{{ $employee->email }}" class="truncate hover:underline">{{ $employee->email }}</a>
+                                </div>
+                            @endif
+                            @if ($employee->location)
+                                <div class="flex items-center gap-2">
+                                    <flux:icon.map-pin class="h-4 w-4 shrink-0 text-zinc-400" />
+                                    <span>{{ $employee->location }}</span>
+                                </div>
                             @endif
                         </div>
-                        @if ($employee->position)
-                            <flux:text class="text-sm text-zinc-500 dark:text-zinc-400">
-                                {{ $employee->position }}
-                            </flux:text>
-                        @endif
-
-                        @if ($employee->mobile_phone || $employee->work_phone || $employee->email)
-                            <div class="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-zinc-600 dark:text-zinc-400">
-                                @if ($employee->mobile_phone)
-                                    <div class="flex items-center gap-1.5">
-                                        <flux:icon.device-phone-mobile class="h-3.5 w-3.5 text-zinc-400" />
-                                        <span>{{ $employee->mobile_phone }}</span>
-                                    </div>
-                                @endif
-                                @if ($employee->work_phone)
-                                    <div class="flex items-center gap-1.5">
-                                        <flux:icon.phone class="h-3.5 w-3.5 text-zinc-400" />
-                                        <span>{{ $employee->work_phone }}</span>
-                                    </div>
-                                @endif
-                                @if ($employee->email)
-                                    <div class="flex items-center gap-1.5">
-                                        <flux:icon.envelope class="h-3.5 w-3.5 text-zinc-400" />
-                                        <span class="truncate">{{ $employee->email }}</span>
-                                    </div>
-                                @endif
-                                @if ($employee->location)
-                                    <div class="flex items-center gap-1.5">
-                                        <flux:icon.map-pin class="h-3.5 w-3.5 text-zinc-400" />
-                                        <span>{{ $employee->location }}</span>
-                                    </div>
-                                @endif
-                            </div>
-                        @endif
-
-                        @if ($employee->manager)
-                            <flux:text class="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-                                {{ __('Vorgesetzt:') }} {{ $employee->manager->fullName() }}
-                            </flux:text>
-                        @endif
-                    </div>
-                </div>
-
-                <flux:dropdown align="end">
-                    <flux:button size="sm" variant="ghost" icon="ellipsis-vertical" />
-                    <flux:menu>
-                        <flux:menu.item icon="pencil" wire:click="openEdit('{{ $employee->id }}')">
-                            {{ __('Bearbeiten') }}
-                        </flux:menu.item>
-                        <flux:menu.separator />
-                        <flux:menu.item icon="trash" variant="danger" wire:click="confirmDelete('{{ $employee->id }}')">
-                            {{ __('Löschen') }}
-                        </flux:menu.item>
-                    </flux:menu>
-                </flux:dropdown>
-            </div>
-        @empty
-            <div class="px-5 py-12 text-center">
-                <flux:text class="text-zinc-500 dark:text-zinc-400">
-                    @if ($this->search !== '' || $this->filterDepartment !== '')
-                        {{ __('Keine Mitarbeiter gefunden, die zu den Filtern passen.') }}
-                    @else
-                        {{ __('Noch keine Mitarbeiter angelegt.') }}
                     @endif
-                </flux:text>
-            </div>
-        @endforelse
-    </div>
+
+                    @if ($employee->manager)
+                        <flux:text class="mt-3 border-t border-zinc-100 pt-3 text-xs text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
+                            {{ __('Vorgesetzt:') }} {{ $employee->manager->fullName() }}
+                        </flux:text>
+                    @endif
+                </div>
+            @endforeach
+        </div>
+    @endif
 
     <flux:modal name="employee-form" class="max-w-2xl">
         <form wire:submit="save" class="space-y-5">

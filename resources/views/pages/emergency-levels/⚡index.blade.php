@@ -117,45 +117,52 @@ new #[Title('Notfall-Level')] class extends Component {
         </flux:button>
     </div>
 
-    <div class="overflow-hidden rounded-xl border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-900">
-        @forelse ($this->levels as $level)
-            <div class="flex items-start justify-between gap-4 border-b border-zinc-100 px-5 py-4 last:border-b-0 dark:border-zinc-800">
-                <div class="flex-1">
-                    <div class="flex items-center gap-2">
-                        <flux:badge color="zinc" size="sm">#{{ $level->sort }}</flux:badge>
-                        <span class="font-medium">{{ $level->name }}</span>
+    @if ($this->levels->isEmpty())
+        <div class="rounded-xl border border-zinc-200 bg-white px-5 py-12 text-center dark:border-zinc-700 dark:bg-zinc-900">
+            <flux:text class="text-zinc-500 dark:text-zinc-400">
+                {{ __('Noch keine Notfall-Level angelegt.') }}
+            </flux:text>
+        </div>
+    @else
+        <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            @foreach ($this->levels as $level)
+                <div class="flex flex-col rounded-xl border border-zinc-200 bg-white p-5 transition hover:border-zinc-300 hover:shadow-sm dark:border-zinc-700 dark:bg-zinc-900 dark:hover:border-zinc-600">
+                    <div class="flex items-start justify-between gap-2">
+                        <div class="flex min-w-0 flex-1 items-start gap-3">
+                            <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sky-100 text-sm font-semibold text-sky-800 dark:bg-sky-900 dark:text-sky-100">
+                                {{ $level->sort }}
+                            </span>
+                            <div class="min-w-0 flex-1">
+                                <flux:heading size="base">{{ $level->name }}</flux:heading>
+                                @if ($level->description)
+                                    <flux:text class="mt-1 text-sm text-zinc-500 dark:text-zinc-400">{{ $level->description }}</flux:text>
+                                @endif
+                            </div>
+                        </div>
+                        <flux:dropdown align="end">
+                            <flux:button size="sm" variant="ghost" icon="ellipsis-vertical" />
+                            <flux:menu>
+                                <flux:menu.item icon="pencil" wire:click="openEdit('{{ $level->id }}')">
+                                    {{ __('Bearbeiten') }}
+                                </flux:menu.item>
+                                <flux:menu.separator />
+                                <flux:menu.item icon="trash" variant="danger" wire:click="confirmDelete('{{ $level->id }}')">
+                                    {{ __('Löschen') }}
+                                </flux:menu.item>
+                            </flux:menu>
+                        </flux:dropdown>
                     </div>
-                    @if ($level->description)
-                        <flux:text class="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{{ $level->description }}</flux:text>
-                    @endif
+
                     @if ($level->reaction)
-                        <div class="mt-2 rounded-md bg-zinc-50 p-3 text-sm text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
-                            <span class="font-medium">{{ __('Reaktion') }}:</span> {{ $level->reaction }}
+                        <div class="mt-4 rounded-md bg-zinc-50 px-3 py-2 text-sm dark:bg-zinc-950/50">
+                            <div class="text-xs font-semibold uppercase text-zinc-500 dark:text-zinc-400">{{ __('Reaktion') }}</div>
+                            <div class="mt-0.5 whitespace-pre-line text-zinc-700 dark:text-zinc-200">{{ $level->reaction }}</div>
                         </div>
                     @endif
                 </div>
-
-                <flux:dropdown align="end">
-                    <flux:button size="sm" variant="ghost" icon="ellipsis-vertical" />
-                    <flux:menu>
-                        <flux:menu.item icon="pencil" wire:click="openEdit('{{ $level->id }}')">
-                            {{ __('Bearbeiten') }}
-                        </flux:menu.item>
-                        <flux:menu.separator />
-                        <flux:menu.item icon="trash" variant="danger" wire:click="confirmDelete('{{ $level->id }}')">
-                            {{ __('Löschen') }}
-                        </flux:menu.item>
-                    </flux:menu>
-                </flux:dropdown>
-            </div>
-        @empty
-            <div class="px-5 py-12 text-center">
-                <flux:text class="text-zinc-500 dark:text-zinc-400">
-                    {{ __('Noch keine Notfall-Level angelegt.') }}
-                </flux:text>
-            </div>
-        @endforelse
-    </div>
+            @endforeach
+        </div>
+    @endif
 
     <flux:modal name="level-form" class="max-w-xl">
         <form wire:submit="save" class="space-y-5">
