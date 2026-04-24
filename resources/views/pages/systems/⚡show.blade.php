@@ -852,12 +852,6 @@ new #[Title('System')] class extends Component {
                 </flux:subheading>
             </div>
             <div class="flex shrink-0 items-center gap-2">
-                @php
-                    $openCount = $this->tasks->whereNull('completed_at')->count();
-                @endphp
-                @if ($openCount > 0)
-                    <flux:badge color="teal">{{ $openCount }} {{ __('offen') }}</flux:badge>
-                @endif
                 <flux:button type="button" variant="primary" icon="plus" x-show="!showTaskForm" @click="showTaskForm = true">
                     {{ __('Aufgabe erfassen') }}
                 </flux:button>
@@ -991,17 +985,7 @@ new #[Title('System')] class extends Component {
                             $openIndex = $openTasks->search(fn ($t) => $t->id === $task->id);
                         @endphp
                         <li wire:key="task-{{ $task->id }}"
-                            class="flex items-start gap-3 rounded-lg border border-zinc-200 p-4 dark:border-zinc-700 {{ $task->isDone() ? 'bg-zinc-50 dark:bg-zinc-950/50' : '' }}">
-                            <button type="button"
-                                wire:click.prevent="toggleTask('{{ $task->id }}')"
-                                class="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 {{ $task->isDone() ? 'border-teal-600 bg-teal-600 text-white' : 'border-zinc-300 dark:border-zinc-600' }}"
-                                :title="'{{ $task->isDone() ? __('Wiederöffnen') : __('Abhaken') }}'"
-                            >
-                                @if ($task->isDone())
-                                    <flux:icon.check class="h-3.5 w-3.5" />
-                                @endif
-                            </button>
-
+                            class="flex items-start gap-3 rounded-lg border border-zinc-200 p-4 dark:border-zinc-700">
                             <div class="min-w-0 flex-1 space-y-1">
                                 <div class="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
                                     <span class="font-medium {{ $task->isDone() ? 'text-zinc-500 line-through dark:text-zinc-500' : '' }}">
@@ -1033,7 +1017,26 @@ new #[Title('System')] class extends Component {
                                     @php
                                         $taskEmpGroups = $task->assignees->groupBy(fn ($e) => $e->pivot->raci_role ?? '');
                                         $taskProvGroups = $task->providerAssignees->groupBy(fn ($p) => $p->pivot->raci_role ?? '');
+                                        $taskAccountableCount = ($taskEmpGroups->get('A') ?? collect())->count() + ($taskProvGroups->get('A') ?? collect())->count();
+                                        $taskResponsibleCount = ($taskEmpGroups->get('R') ?? collect())->count() + ($taskProvGroups->get('R') ?? collect())->count();
                                     @endphp
+
+                                    @if (! $task->isDone() && ($taskAccountableCount === 0 || $taskResponsibleCount === 0 || $taskAccountableCount > 1))
+                                        <div class="mt-2 flex items-start gap-2 rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-xs dark:border-rose-900 dark:bg-rose-950/40">
+                                            <flux:icon.exclamation-triangle class="mt-0.5 h-4 w-4 shrink-0 text-rose-600 dark:text-rose-400" />
+                                            <div class="space-y-0.5 text-rose-800 dark:text-rose-200">
+                                                @if ($taskAccountableCount === 0)
+                                                    <div>{{ __('Kein „A" (Accountable) zugewiesen – genau eine Person wird erwartet.') }}</div>
+                                                @elseif ($taskAccountableCount > 1)
+                                                    <div>{{ __(':n × „A" (Accountable) zugewiesen – klassisch nur eine Person.', ['n' => $taskAccountableCount]) }}</div>
+                                                @endif
+                                                @if ($taskResponsibleCount === 0)
+                                                    <div>{{ __('Kein „R" (Responsible) zugewiesen – mindestens eine Person wird erwartet.') }}</div>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    @endif
+
                                     <div class="grid gap-2 pt-2 sm:grid-cols-2 lg:grid-cols-4">
                                         @foreach (\App\Enums\RaciRole::cases() as $r)
                                             @php
@@ -1048,6 +1051,9 @@ new #[Title('System')] class extends Component {
                                                         <span class="ml-1">{{ $r->label() }}</span>
                                                     </flux:badge>
                                                 </div>
+                                                <flux:text class="mb-1.5 text-[11px] leading-tight text-zinc-500 dark:text-zinc-400">
+                                                    {{ $r->description() }}
+                                                </flux:text>
                                                 @if ($isEmpty)
                                                     <div class="text-xs italic text-zinc-400 dark:text-zinc-500">{{ __('— nicht besetzt —') }}</div>
                                                 @else
