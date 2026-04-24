@@ -4,8 +4,8 @@ namespace App\Enums;
 
 enum RaciRole: string
 {
-    case Accountable = 'A';
     case Responsible = 'R';
+    case Accountable = 'A';
     case Consulted = 'C';
     case Informed = 'I';
 

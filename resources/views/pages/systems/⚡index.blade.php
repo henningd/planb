@@ -284,7 +284,7 @@ new #[Title('Systeme')] class extends Component {
                         </flux:text>
                     </div>
                 @else
-                    <div class="grid gap-4 p-5 sm:grid-cols-2 xl:grid-cols-3">
+                    <div class="grid gap-4 bg-zinc-50 p-5 sm:grid-cols-2 xl:grid-cols-3 dark:bg-zinc-950/50">
                         @foreach ($systems as $system)
                             <div class="flex flex-col rounded-lg border border-zinc-200 bg-white p-4 transition hover:border-zinc-300 hover:shadow-sm dark:border-zinc-700 dark:bg-zinc-900 dark:hover:border-zinc-600">
                                 <div class="flex items-start justify-between gap-2">
