@@ -45,7 +45,7 @@ new #[Title('Teams')] class extends Component {
 
     <flux:heading class="sr-only">{{ __('Teams') }}</flux:heading>
 
-    <x-pages::settings.layout :heading="__('Teams')" :subheading="__('Manage your teams and team memberships')">
+    <x-pages::settings.layout :heading="__('Teams')" :subheading="__('Manage your teams and team memberships')" full-width>
         <div class="flex items-center justify-end">
             <flux:modal.trigger name="create-team">
                 <flux:button variant="primary" icon="plus" x-data="" x-on:click.prevent="$dispatch('open-modal', 'create-team')" data-test="teams-new-team-button">

@@ -141,7 +141,7 @@ new class extends Component
 
     <flux:heading class="sr-only">{{ __('Teams') }}</flux:heading>
 
-    <x-pages::settings.layout :heading="__('Teams')" :subheading="__('Manage your team settings')">
+    <x-pages::settings.layout :heading="__('Teams')" :subheading="__('Manage your team settings')" full-width>
         <div class="space-y-10">
             <div class="space-y-6">
                 @if ($this->permissions->canUpdateTeam)
