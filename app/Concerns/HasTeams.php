@@ -18,14 +18,28 @@ use Illuminate\Support\Facades\URL;
 trait HasTeams
 {
     /**
-     * Get all of the teams the user belongs to.
+     * Get all of the teams the user belongs to with an active (non-disabled) membership.
      *
      * @return BelongsToMany<Team, $this>
      */
     public function teams(): BelongsToMany
     {
+        return $this->allTeams()
+            ->where(function ($query) {
+                $query->whereNull('team_members.disabled_at')
+                    ->orWhere('team_members.disabled_at', '>', now());
+            });
+    }
+
+    /**
+     * Get all memberships, including disabled ones.
+     *
+     * @return BelongsToMany<Team, $this>
+     */
+    public function allTeams(): BelongsToMany
+    {
         return $this->belongsToMany(Team::class, 'team_members', 'user_id', 'team_id')
-            ->withPivot(['role'])
+            ->withPivot(['role', 'disabled_at'])
             ->withTimestamps();
     }
 
@@ -94,9 +108,17 @@ trait HasTeams
     }
 
     /**
-     * Determine if the user belongs to the given team.
+     * Determine if the user belongs to the given team (including disabled memberships).
      */
     public function belongsToTeam(Team $team): bool
+    {
+        return $this->allTeams()->where('teams.id', $team->id)->exists();
+    }
+
+    /**
+     * Determine if the user has an active (non-disabled) membership on the team.
+     */
+    public function activelyBelongsToTeam(Team $team): bool
     {
         return $this->teams()->where('teams.id', $team->id)->exists();
     }
@@ -184,6 +206,18 @@ trait HasTeams
             ->when($excluding, fn ($query) => $query->where('teams.id', '!=', $excluding->id))
             ->orderByRaw('LOWER(teams.name)')
             ->first();
+    }
+
+    /**
+     * Check if the user's membership on the given team is currently disabled.
+     */
+    public function isMembershipDisabled(Team $team): bool
+    {
+        $membership = $this->teamMemberships()
+            ->where('team_id', $team->id)
+            ->first();
+
+        return $membership !== null && $membership->isDisabled();
     }
 
     /**

@@ -80,6 +80,20 @@ new class extends Component
         Flux::toast(variant: 'success', text: __('Member role updated.'));
     }
 
+    public function reactivateMember(int $userId): void
+    {
+        Gate::authorize('removeMember', $this->teamModel);
+
+        $this->teamModel->memberships()
+            ->where('user_id', $userId)
+            ->firstOrFail()
+            ->update(['disabled_at' => null]);
+
+        $this->populateTeamData();
+
+        Flux::toast(variant: 'success', text: __('Member reactivated.'));
+    }
+
     private function populateTeamData(): void
     {
         $user = Auth::user();
@@ -100,6 +114,10 @@ new class extends Component
             'avatar' => $member->avatar ?? null,
             'role' => $member->pivot->role->value,
             'role_label' => $member->pivot->role?->label(),
+            'disabled_at' => $member->pivot->disabled_at,
+            'is_disabled' => $member->pivot->isDisabled(),
+            'is_disable_scheduled' => $member->pivot->isDisableScheduled(),
+            'has_activity' => $member->hasActivity(),
         ])->toArray();
 
         $this->invitations = $team->invitations()
@@ -181,11 +199,31 @@ new class extends Component
 
                 <div class="space-y-3">
                     @foreach ($members as $member)
-                        <div class="flex items-center justify-between rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-900" data-test="member-row">
+                        <div
+                            @class([
+                                'flex items-center justify-between rounded-lg border p-4',
+                                'border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-900' => ! $member['is_disabled'],
+                                'border-amber-300/70 bg-amber-50 dark:border-amber-700/40 dark:bg-amber-900/10' => $member['is_disabled'],
+                            ])
+                            data-test="member-row"
+                        >
                             <div class="flex items-center gap-4">
                                 <flux:avatar :name="$member['name']" :initials="strtoupper(substr($member['name'], 0, 1))" />
                                 <div>
-                                    <div class="font-medium">{{ $member['name'] }}</div>
+                                    <div class="flex flex-wrap items-center gap-2">
+                                        <span class="font-medium">{{ $member['name'] }}</span>
+                                        @if ($member['is_disabled'])
+                                            <flux:badge color="amber" size="sm">
+                                                {{ __('Deactivated') }}@if ($member['disabled_at'])
+                                                    — {{ \Illuminate\Support\Carbon::parse($member['disabled_at'])->setTimezone(config('app.timezone'))->format('d.m.Y') }}
+                                                @endif
+                                            </flux:badge>
+                                        @elseif ($member['is_disable_scheduled'])
+                                            <flux:badge color="amber" size="sm">
+                                                {{ __('Deactivation scheduled') }} — {{ \Illuminate\Support\Carbon::parse($member['disabled_at'])->setTimezone(config('app.timezone'))->format('d.m.Y') }}
+                                            </flux:badge>
+                                        @endif
+                                    </div>
                                     <flux:text class="text-sm text-zinc-500 dark:text-zinc-400">{{ $member['email'] }}</flux:text>
                                 </div>
                             </div>
@@ -214,16 +252,66 @@ new class extends Component
                                 @endif
 
                                 @if ($member['role'] !== 'owner' && $this->permissions->canRemoveMember)
-                                    <flux:modal.trigger name="remove-member-{{ $member['id'] }}">
-                                        <flux:tooltip :content="__('Remove member')">
-                                            <flux:button
-                                                variant="ghost"
-                                                size="sm"
-                                                icon="x-mark"
-                                                data-test="member-remove-button"
-                                            />
-                                        </flux:tooltip>
-                                    </flux:modal.trigger>
+                                    <flux:dropdown position="bottom" align="end">
+                                        <flux:button
+                                            variant="ghost"
+                                            size="sm"
+                                            icon="ellipsis-horizontal"
+                                            data-test="member-actions-trigger"
+                                        />
+                                        <flux:menu>
+                                            @if ($member['is_disabled'] || $member['is_disable_scheduled'])
+                                                <flux:menu.item
+                                                    as="button"
+                                                    type="button"
+                                                    icon="arrow-path"
+                                                    wire:click="reactivateMember({{ $member['id'] }})"
+                                                    data-test="member-reactivate"
+                                                >
+                                                    {{ __('Reactivate') }}
+                                                </flux:menu.item>
+                                            @else
+                                                <flux:modal.trigger name="disable-member-{{ $member['id'] }}">
+                                                    <flux:menu.item
+                                                        as="button"
+                                                        type="button"
+                                                        icon="pause-circle"
+                                                        data-test="member-disable"
+                                                    >
+                                                        {{ __('Deactivate…') }}
+                                                    </flux:menu.item>
+                                                </flux:modal.trigger>
+                                            @endif
+
+                                            <flux:menu.separator />
+
+                                            <flux:modal.trigger name="remove-member-{{ $member['id'] }}">
+                                                <flux:menu.item
+                                                    as="button"
+                                                    type="button"
+                                                    variant="danger"
+                                                    icon="x-mark"
+                                                    data-test="member-remove-button"
+                                                >
+                                                    {{ __('Remove from team') }}
+                                                </flux:menu.item>
+                                            </flux:modal.trigger>
+
+                                            @if (! $member['has_activity'])
+                                                <flux:modal.trigger name="delete-user-{{ $member['id'] }}">
+                                                    <flux:menu.item
+                                                        as="button"
+                                                        type="button"
+                                                        variant="danger"
+                                                        icon="trash"
+                                                        data-test="delete-user-trigger"
+                                                    >
+                                                        {{ __('Delete user') }}
+                                                    </flux:menu.item>
+                                                </flux:modal.trigger>
+                                            @endif
+                                        </flux:menu>
+                                    </flux:dropdown>
                                 @endif
                             </div>
                         </div>
@@ -236,6 +324,26 @@ new class extends Component
                                 :modal-name="'remove-member-'.$member['id']"
                                 :key="'remove-member-modal-'.$member['id']"
                             />
+
+                            @if (! $member['is_disabled'] && ! $member['is_disable_scheduled'])
+                                <livewire:pages::teams.disable-member-modal
+                                    :team="$teamModel"
+                                    :member-id="$member['id']"
+                                    :member-name="$member['name']"
+                                    :modal-name="'disable-member-'.$member['id']"
+                                    :key="'disable-member-modal-'.$member['id']"
+                                />
+                            @endif
+
+                            @if (! $member['has_activity'])
+                                <livewire:pages::teams.delete-user-modal
+                                    :team="$teamModel"
+                                    :member-id="$member['id']"
+                                    :member-name="$member['name']"
+                                    :modal-name="'delete-user-'.$member['id']"
+                                    :key="'delete-user-modal-'.$member['id']"
+                                />
+                            @endif
                         @endif
                     @endforeach
                 </div>

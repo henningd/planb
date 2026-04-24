@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 
@@ -77,5 +78,19 @@ class User extends Authenticatable
         }
 
         return $this->teamRole($team)?->isAtLeast(TeamRole::Admin) ?? false;
+    }
+
+    /**
+     * True if the user has any activity on record (audit log, scenario runs/steps,
+     * handbook shares, outgoing invitations). Used to decide whether a hard delete
+     * of the user account is safe.
+     */
+    public function hasActivity(): bool
+    {
+        return DB::table('audit_log_entries')->where('user_id', $this->id)->exists()
+            || DB::table('scenario_runs')->where('started_by_user_id', $this->id)->exists()
+            || DB::table('scenario_run_steps')->where('checked_by_user_id', $this->id)->exists()
+            || DB::table('handbook_shares')->where('created_by_user_id', $this->id)->exists()
+            || DB::table('team_invitations')->where('invited_by', $this->id)->exists();
     }
 }

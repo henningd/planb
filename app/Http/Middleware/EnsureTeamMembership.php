@@ -28,6 +28,22 @@ class EnsureTeamMembership
             $user->switchTeam($team);
         }
 
+        if ($user->isCurrentTeam($team) && $user->isMembershipDisabled($team)) {
+            $fallback = $user->fallbackTeam(excluding: $team);
+
+            if ($fallback === null) {
+                auth()->logout();
+                $request->session()?->invalidate();
+                $request->session()?->regenerateToken();
+
+                return redirect()->route('login');
+            }
+
+            $user->switchTeam($fallback);
+
+            return redirect()->route('dashboard', ['current_team' => $fallback->slug]);
+        }
+
         return $next($request);
     }
 

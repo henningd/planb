@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\Pivot;
 
-#[Fillable(['team_id', 'user_id', 'role'])]
+#[Fillable(['team_id', 'user_id', 'role', 'disabled_at'])]
 class Membership extends Pivot
 {
     /**
@@ -54,6 +54,23 @@ class Membership extends Pivot
     {
         return [
             'role' => TeamRole::class,
+            'disabled_at' => 'datetime',
         ];
+    }
+
+    /**
+     * True if this membership has a disable date in the past or present.
+     */
+    public function isDisabled(): bool
+    {
+        return $this->disabled_at !== null && ! $this->disabled_at->isFuture();
+    }
+
+    /**
+     * True if the membership has a disable date set (now or in the future).
+     */
+    public function isDisableScheduled(): bool
+    {
+        return $this->disabled_at !== null;
     }
 }
