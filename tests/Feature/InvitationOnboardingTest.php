@@ -7,7 +7,7 @@ use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Livewire\Livewire;
 
-test('full flow: guest invitation → register → auto-accept lands on invited team dashboard', function () {
+test('full flow: guest invitation → register auto-joins invited team without personal team', function () {
     $owner = User::factory()->create();
     $team = Team::factory()->create(['name' => 'Invited Team']);
     $team->members()->attach($owner, ['role' => TeamRole::Owner->value]);
@@ -29,7 +29,7 @@ test('full flow: guest invitation → register → auto-accept lands on invited 
 
     expect(session('url.intended'))->toBe(route('invitations.accept', $invitation->code));
 
-    // 2. Guest registers a new account (Fortify endpoint)
+    // 2. Guest registers a new account (Fortify endpoint) → invitation is auto-accepted during user creation
     $this->post(route('register.store'), [
         'name' => 'Newbie',
         'email' => 'newbie@example.com',
@@ -39,17 +39,58 @@ test('full flow: guest invitation → register → auto-accept lands on invited 
 
     $newUser = User::where('email', 'newbie@example.com')->firstOrFail();
     expect(Hash::check('secret-password', $newUser->password))->toBeTrue();
-    expect($newUser->teams()->where('is_personal', true)->exists())->toBeTrue();
 
-    // 3. Following the redirect (still logged in as the new user) triggers auto-accept
+    // No personal team was created; only the invited team membership exists.
+    expect($newUser->teams()->where('is_personal', true)->exists())->toBeFalse();
+    expect($newUser->belongsToTeam($team))->toBeTrue();
+    expect($newUser->current_team_id)->toBe($team->id);
+    expect($invitation->fresh()->accepted_at)->not->toBeNull();
+
+    // 3. Following the redirect shows the already-accepted landing page, not a second accept.
     Livewire::actingAs($newUser)
         ->test('pages::teams.accept-invitation', ['invitation' => $invitation->fresh()])
-        ->assertRedirect(route('dashboard', ['current_team' => $team->slug]));
+        ->assertSet('state', 'accepted');
+});
 
-    // 4. Verify end state: membership, accepted timestamp, current team switched
-    expect($invitation->fresh()->accepted_at)->not->toBeNull();
-    expect($newUser->fresh()->belongsToTeam($team))->toBeTrue();
-    expect($newUser->fresh()->current_team_id)->toBe($team->id);
+test('register without pending invitation still creates a personal team', function () {
+    $this->post(route('register.store'), [
+        'name' => 'Solo',
+        'email' => 'solo@example.com',
+        'password' => 'secret-password',
+        'password_confirmation' => 'secret-password',
+    ])->assertRedirect();
+
+    $user = User::where('email', 'solo@example.com')->firstOrFail();
+    $personal = $user->teams()->where('is_personal', true)->first();
+
+    expect($personal)->not->toBeNull();
+    expect($user->current_team_id)->toBe($personal->id);
+});
+
+test('register ignores expired invitations and falls back to personal team', function () {
+    $owner = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($owner, ['role' => TeamRole::Owner->value]);
+
+    TeamInvitation::factory()->create([
+        'team_id' => $team->id,
+        'email' => 'expired@example.com',
+        'role' => TeamRole::Member,
+        'invited_by' => $owner->id,
+        'expires_at' => now()->subDay(),
+    ]);
+
+    $this->post(route('register.store'), [
+        'name' => 'Late',
+        'email' => 'expired@example.com',
+        'password' => 'secret-password',
+        'password_confirmation' => 'secret-password',
+    ])->assertRedirect();
+
+    $user = User::where('email', 'expired@example.com')->firstOrFail();
+
+    expect($user->teams()->where('is_personal', true)->exists())->toBeTrue();
+    expect($user->belongsToTeam($team))->toBeFalse();
 });
 
 test('existing user flow: login after clicking invitation link lands on invited team', function () {
