@@ -32,7 +32,12 @@ new #[Title('Aktivitäten')] class extends Component {
             $query->where('entity_type', $this->entityType);
         }
 
-        if ($this->action !== '') {
+        if ($this->action === 'assignments') {
+            $query->where(function ($q) {
+                $q->where('action', 'like', '%.assigned')
+                    ->orWhere('action', 'like', '%.unassigned');
+            });
+        } elseif ($this->action !== '') {
             $query->where('action', $this->action);
         }
 
@@ -68,6 +73,32 @@ new #[Title('Aktivitäten')] class extends Component {
     {
         $this->resetPage();
     }
+
+    public function actionBadge(AuditLogEntry $entry): array
+    {
+        $action = (string) $entry->action;
+        $isAssignment = str_ends_with($action, '.assigned');
+        $isUnassignment = str_ends_with($action, '.unassigned');
+
+        return [
+            'is_assignment' => $isAssignment,
+            'is_unassignment' => $isUnassignment,
+            'color' => match (true) {
+                $action === 'created' => 'emerald',
+                $action === 'deleted' => 'rose',
+                $isAssignment => 'teal',
+                $isUnassignment => 'amber',
+                default => 'sky',
+            },
+            'label' => match (true) {
+                $action === 'created' => __('Angelegt'),
+                $action === 'deleted' => __('Gelöscht'),
+                $isAssignment => __('Zugewiesen'),
+                $isUnassignment => __('Entzogen'),
+                default => __('Geändert'),
+            },
+        ];
+    }
 }; ?>
 
 <section class="w-full">
@@ -100,6 +131,7 @@ new #[Title('Aktivitäten')] class extends Component {
                     <flux:select.option value="created">{{ __('Angelegt') }}</flux:select.option>
                     <flux:select.option value="updated">{{ __('Geändert') }}</flux:select.option>
                     <flux:select.option value="deleted">{{ __('Gelöscht') }}</flux:select.option>
+                    <flux:select.option value="assignments">{{ __('Zuordnungen') }}</flux:select.option>
                 </flux:select>
             </flux:field>
             @if ($entityType !== '' || $action !== '')
@@ -116,19 +148,25 @@ new #[Title('Aktivitäten')] class extends Component {
                 <div class="border-b border-zinc-100 px-5 py-4 last:border-b-0 dark:border-zinc-800">
                     <div class="flex items-start justify-between gap-4">
                         <div class="flex-1 min-w-0">
+                            @php($badge = $this->actionBadge($entry))
                             <div class="flex flex-wrap items-center gap-2">
-                                <flux:badge
-                                    size="sm"
-                                    :color="match ($entry->action) { 'created' => 'emerald', 'deleted' => 'rose', default => 'sky' }"
-                                >
-                                    @switch ($entry->action)
-                                        @case('created') {{ __('Angelegt') }} @break
-                                        @case('deleted') {{ __('Gelöscht') }} @break
-                                        @default {{ __('Geändert') }}
-                                    @endswitch
+                                <flux:badge size="sm" :color="$badge['color']">
+                                    {{ $badge['label'] }}
                                 </flux:badge>
                                 <flux:badge color="zinc" size="sm">{{ $entry->entity_type }}</flux:badge>
                                 <span class="font-medium">{{ $entry->entity_label ?? $entry->entity_id }}</span>
+                                @if (($badge['is_assignment'] || $badge['is_unassignment']) && is_array($entry->changes) && ($entry->changes['related_label'] ?? null))
+                                    <span class="text-zinc-400">→</span>
+                                    <span class="text-sm text-zinc-700 dark:text-zinc-200">{{ $entry->changes['related_label'] }}</span>
+                                    @if ($entry->changes['pivot']['raci_role'] ?? null)
+                                        @php($raci = \App\Enums\RaciRole::tryFrom((string) $entry->changes['pivot']['raci_role']))
+                                        @if ($raci)
+                                            <flux:badge :color="$raci->badgeColor()" size="sm">
+                                                <span class="font-bold">{{ $raci->value }}</span>
+                                            </flux:badge>
+                                        @endif
+                                    @endif
+                                @endif
                             </div>
                             <flux:text class="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
                                 {{ $entry->created_at->format('d.m.Y H:i') }}

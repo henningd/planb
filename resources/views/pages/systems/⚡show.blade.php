@@ -6,6 +6,7 @@ use App\Models\Role;
 use App\Models\ServiceProvider;
 use App\Models\System;
 use App\Models\SystemTask;
+use App\Support\AssignmentHistory;
 use App\Support\AssignmentSync;
 use App\Support\Duration;
 use Flux\Flux;
@@ -49,6 +50,9 @@ new #[Title('System')] class extends Component {
 
     /** @var array<int, array{role_id: string, raci_role: string}> */
     public array $editRoles = [];
+
+    /** Stichtag (YYYY-MM-DD) für die Historie-Ansicht. Leer = alle Stints anzeigen. */
+    public string $historyDate = '';
 
     public function mount(System $system): void
     {
@@ -112,6 +116,36 @@ new #[Title('System')] class extends Component {
     public function rolesForSelect(): Collection
     {
         return Role::with('employees')->orderBy('sort')->orderBy('name')->get();
+    }
+
+    /**
+     * Vereinheitlichte Zuordnungs-Historie über alle Pivots des Systems
+     * inkl. Aufgaben. Wenn $historyDate gesetzt ist, gefiltert auf den
+     * Stichtag (point-in-time).
+     *
+     * @return \Illuminate\Support\Collection<int, array<string, mixed>>
+     */
+    #[Computed]
+    public function assignmentHistory(): \Illuminate\Support\Collection
+    {
+        $history = AssignmentHistory::forSystem($this->system);
+
+        if ($this->historyDate === '') {
+            return $history;
+        }
+
+        try {
+            $moment = \Illuminate\Support\Carbon::parse($this->historyDate)->endOfDay();
+        } catch (\Throwable) {
+            return $history;
+        }
+
+        return AssignmentHistory::atMoment($history, $moment);
+    }
+
+    public function clearHistoryDate(): void
+    {
+        $this->historyDate = '';
     }
 
     public function roleMembersText(?string $roleId): string
@@ -603,6 +637,19 @@ new #[Title('System')] class extends Component {
                     {{ __('Abhängigkeiten') }}
                     <flux:badge color="teal" size="sm">{{ $system->dependencies->count() + $system->dependents->count() }}</flux:badge>
                 </button>
+                <button
+                    type="button"
+                    role="tab"
+                    :aria-selected="tab === 'history'"
+                    @click="tab = 'history'"
+                    :class="tab === 'history'
+                        ? 'border-b-2 border-zinc-900 text-zinc-900 dark:border-white dark:text-white'
+                        : 'border-b-2 border-transparent text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200'"
+                    class="flex items-center gap-2 px-4 py-2 text-sm font-medium"
+                >
+                    <flux:icon.clock class="h-4 w-4" />
+                    {{ __('Historie') }}
+                </button>
             </div>
 
             <div x-show="tab === 'employees'" x-cloak class="space-y-5">
@@ -936,6 +983,113 @@ new #[Title('System')] class extends Component {
                         </div>
                     @endif
                 </div>
+            </div>
+
+            <div x-show="tab === 'history'" x-cloak class="space-y-5">
+                <div class="rounded-xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-700 dark:bg-zinc-950/50">
+                    <div class="flex flex-wrap items-end gap-3">
+                        <div class="flex-1 min-w-[220px]">
+                            <flux:heading size="sm">{{ __('Zuordnungs-Historie') }}</flux:heading>
+                            <flux:text class="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+                                {{ __('Revisionssichere Übersicht aller Mitarbeiter-, Rollen- und Dienstleister-Zuordnungen — auf System-Ebene und auf Aufgaben-Ebene. Wähle einen Stichtag, um die Verantwortlichen zu einem konkreten Zeitpunkt zu sehen.') }}
+                            </flux:text>
+                        </div>
+                        <flux:field>
+                            <flux:label>{{ __('Stichtag') }}</flux:label>
+                            <flux:input type="date" wire:model.live="historyDate" />
+                        </flux:field>
+                        @if ($historyDate !== '')
+                            <flux:button size="sm" variant="ghost" icon="x-mark" wire:click="clearHistoryDate">
+                                {{ __('Filter zurücksetzen') }}
+                            </flux:button>
+                        @endif
+                    </div>
+                </div>
+
+                @php
+                    $rows = $this->assignmentHistory;
+                @endphp
+
+                @if ($rows->isEmpty())
+                    <flux:text class="text-sm text-zinc-500 dark:text-zinc-400">
+                        {{ $historyDate !== ''
+                            ? __('Am gewählten Stichtag waren keine Zuordnungen aktiv.')
+                            : __('Für dieses System sind noch keine Zuordnungen erfasst.') }}
+                    </flux:text>
+                @else
+                    <div class="overflow-hidden rounded-xl border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-900">
+                        @foreach ($rows as $row)
+                            @php
+                                $raci = $row['raci_role'] ? \App\Enums\RaciRole::tryFrom((string) $row['raci_role']) : null;
+                                $isActive = $row['removed_at'] === null;
+                                $kindIcon = match ($row['kind']) {
+                                    'role' => 'users',
+                                    'provider' => 'wrench-screwdriver',
+                                    default => 'user',
+                                };
+                            @endphp
+                            <div class="border-b border-zinc-100 px-5 py-4 last:border-b-0 dark:border-zinc-800">
+                                <div class="flex flex-wrap items-start gap-3">
+                                    <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full {{ $isActive ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-200' : 'bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400' }}">
+                                        <flux:icon :name="$kindIcon" class="h-4 w-4" />
+                                    </div>
+                                    <div class="min-w-0 flex-1">
+                                        <div class="flex flex-wrap items-center gap-2">
+                                            <flux:badge color="zinc" size="sm">{{ $row['kind_label'] }}</flux:badge>
+                                            <span class="font-medium">{{ $row['target_label'] }}</span>
+                                            @if ($raci)
+                                                <flux:badge :color="$raci->badgeColor()" size="sm" :title="$raci->description()">
+                                                    <span class="font-bold">{{ $raci->value }}</span>
+                                                    <span class="ml-1">{{ $raci->label() }}</span>
+                                                </flux:badge>
+                                            @endif
+                                            @if ($isActive)
+                                                <flux:badge color="emerald" size="sm">{{ __('aktiv') }}</flux:badge>
+                                            @else
+                                                <flux:badge color="zinc" size="sm">{{ __('beendet') }}</flux:badge>
+                                            @endif
+                                        </div>
+                                        <flux:text class="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+                                            @if ($row['scope'] === 'system')
+                                                {{ __('System-Ebene') }}
+                                            @else
+                                                {{ __('Aufgabe') }}: <span class="text-zinc-700 dark:text-zinc-200">{{ $row['scope_label'] }}</span>
+                                            @endif
+                                        </flux:text>
+                                        <div class="mt-2 grid gap-2 text-xs sm:grid-cols-2">
+                                            <div>
+                                                <span class="text-zinc-500 dark:text-zinc-400">{{ __('Zugewiesen') }}:</span>
+                                                <span class="ml-1 text-zinc-700 dark:text-zinc-200">
+                                                    {{ $row['assigned_at']?->format('d.m.Y H:i') ?? '—' }}
+                                                </span>
+                                                @if ($row['assigned_by'])
+                                                    <span class="text-zinc-500 dark:text-zinc-400">· {{ $row['assigned_by'] }}</span>
+                                                @endif
+                                            </div>
+                                            <div>
+                                                @if ($row['removed_at'])
+                                                    <span class="text-zinc-500 dark:text-zinc-400">{{ __('Entzogen') }}:</span>
+                                                    <span class="ml-1 text-zinc-700 dark:text-zinc-200">{{ $row['removed_at']->format('d.m.Y H:i') }}</span>
+                                                    @if ($row['removed_by'])
+                                                        <span class="text-zinc-500 dark:text-zinc-400">· {{ $row['removed_by'] }}</span>
+                                                    @endif
+                                                @else
+                                                    <span class="text-zinc-400 italic dark:text-zinc-500">{{ __('aktuell zugewiesen') }}</span>
+                                                @endif
+                                            </div>
+                                        </div>
+                                        @if ($row['note'])
+                                            <div class="mt-2 flex items-start gap-2 rounded-md border-l-2 border-amber-400 bg-amber-50 px-3 py-1.5 text-sm dark:border-amber-500 dark:bg-amber-950/30">
+                                                <flux:icon.chat-bubble-left-ellipsis class="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-600 dark:text-amber-400" />
+                                                <span class="text-zinc-700 dark:text-zinc-200">{{ $row['note'] }}</span>
+                                            </div>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                @endif
             </div>
 
         </div>
