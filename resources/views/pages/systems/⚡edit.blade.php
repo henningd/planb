@@ -651,20 +651,11 @@ new #[Title('System bearbeiten')] class extends Component {
                 @endif
             </flux:field>
 
-            <div class="grid gap-4 sm:grid-cols-2">
-                <flux:select wire:model="category" :label="__('Kategorie')" required>
-                    @foreach (\App\Enums\SystemCategory::cases() as $case)
-                        <flux:select.option value="{{ $case->value }}">{{ $case->label() }}</flux:select.option>
-                    @endforeach
-                </flux:select>
-
-                <flux:select wire:model="system_priority_id" :label="__('Priorität')" placeholder="Keine">
-                    <flux:select.option value="">{{ __('Ohne Priorität') }}</flux:select.option>
-                    @foreach ($this->priorities as $priority)
-                        <flux:select.option value="{{ $priority->id }}">{{ $priority->name }}</flux:select.option>
-                    @endforeach
-                </flux:select>
-            </div>
+            <flux:select wire:model="category" :label="__('Kategorie')" required>
+                @foreach (\App\Enums\SystemCategory::cases() as $case)
+                    <flux:select.option value="{{ $case->value }}">{{ $case->label() }}</flux:select.option>
+                @endforeach
+            </flux:select>
 
             <flux:field>
                 <flux:label>{{ __('Ausfallkosten pro Stunde') }}</flux:label>
