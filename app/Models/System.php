@@ -42,9 +42,20 @@ class System extends Model
     public function serviceProviders(): BelongsToMany
     {
         return $this->belongsToMany(ServiceProvider::class)
-            ->withPivot(['raci_role', 'sort', 'note'])
+            ->withPivot(['id', 'raci_role', 'sort', 'note', 'assigned_at', 'assigned_by_user_id', 'removed_at', 'removed_by_user_id'])
             ->withTimestamps()
+            ->wherePivotNull('removed_at')
             ->orderBy('service_provider_system.sort');
+    }
+
+    /**
+     * @return BelongsToMany<ServiceProvider, $this>
+     */
+    public function serviceProvidersHistory(): BelongsToMany
+    {
+        return $this->belongsToMany(ServiceProvider::class)
+            ->withPivot(['id', 'raci_role', 'sort', 'note', 'assigned_at', 'assigned_by_user_id', 'removed_at', 'removed_by_user_id'])
+            ->withTimestamps();
     }
 
     /**
@@ -53,9 +64,20 @@ class System extends Model
     public function employees(): BelongsToMany
     {
         return $this->belongsToMany(Employee::class)
-            ->withPivot(['raci_role', 'sort', 'note'])
+            ->withPivot(['id', 'raci_role', 'sort', 'note', 'assigned_at', 'assigned_by_user_id', 'removed_at', 'removed_by_user_id'])
             ->withTimestamps()
+            ->wherePivotNull('removed_at')
             ->orderBy('employee_system.sort');
+    }
+
+    /**
+     * @return BelongsToMany<Employee, $this>
+     */
+    public function employeesHistory(): BelongsToMany
+    {
+        return $this->belongsToMany(Employee::class)
+            ->withPivot(['id', 'raci_role', 'sort', 'note', 'assigned_at', 'assigned_by_user_id', 'removed_at', 'removed_by_user_id'])
+            ->withTimestamps();
     }
 
     /**
@@ -64,9 +86,20 @@ class System extends Model
     public function roles(): BelongsToMany
     {
         return $this->belongsToMany(Role::class)
-            ->withPivot(['raci_role', 'sort', 'note'])
+            ->withPivot(['id', 'raci_role', 'sort', 'note', 'assigned_at', 'assigned_by_user_id', 'removed_at', 'removed_by_user_id'])
             ->withTimestamps()
+            ->wherePivotNull('removed_at')
             ->orderBy('role_system.sort');
+    }
+
+    /**
+     * @return BelongsToMany<Role, $this>
+     */
+    public function rolesHistory(): BelongsToMany
+    {
+        return $this->belongsToMany(Role::class)
+            ->withPivot(['id', 'raci_role', 'sort', 'note', 'assigned_at', 'assigned_by_user_id', 'removed_at', 'removed_by_user_id'])
+            ->withTimestamps();
     }
 
     /**

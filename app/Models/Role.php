@@ -23,14 +23,30 @@ class Role extends Model
     }
 
     /**
+     * Aktive Mitarbeiter dieser Rolle (entfernte Zuordnungen sind ausgefiltert).
+     *
      * @return BelongsToMany<Employee, $this>
      */
     public function employees(): BelongsToMany
     {
         return $this->belongsToMany(Employee::class)
+            ->withPivot(['id', 'assigned_at', 'assigned_by_user_id', 'removed_at', 'removed_by_user_id'])
             ->withTimestamps()
+            ->wherePivotNull('removed_at')
             ->orderBy('last_name')
             ->orderBy('first_name');
+    }
+
+    /**
+     * Alle Zuordnungen inklusive entfernter — für Historie- und Audit-Anfragen.
+     *
+     * @return BelongsToMany<Employee, $this>
+     */
+    public function employeesHistory(): BelongsToMany
+    {
+        return $this->belongsToMany(Employee::class)
+            ->withPivot(['id', 'assigned_at', 'assigned_by_user_id', 'removed_at', 'removed_by_user_id'])
+            ->withTimestamps();
     }
 
     /**
@@ -39,7 +55,18 @@ class Role extends Model
     public function systems(): BelongsToMany
     {
         return $this->belongsToMany(System::class)
-            ->withPivot(['raci_role', 'sort', 'note'])
+            ->withPivot(['id', 'raci_role', 'sort', 'note', 'assigned_at', 'assigned_by_user_id', 'removed_at', 'removed_by_user_id'])
+            ->withTimestamps()
+            ->wherePivotNull('removed_at');
+    }
+
+    /**
+     * @return BelongsToMany<System, $this>
+     */
+    public function systemsHistory(): BelongsToMany
+    {
+        return $this->belongsToMany(System::class)
+            ->withPivot(['id', 'raci_role', 'sort', 'note', 'assigned_at', 'assigned_by_user_id', 'removed_at', 'removed_by_user_id'])
             ->withTimestamps();
     }
 
@@ -49,7 +76,18 @@ class Role extends Model
     public function systemTasks(): BelongsToMany
     {
         return $this->belongsToMany(SystemTask::class)
-            ->withPivot(['raci_role', 'sort'])
+            ->withPivot(['id', 'raci_role', 'sort', 'assigned_at', 'assigned_by_user_id', 'removed_at', 'removed_by_user_id'])
+            ->withTimestamps()
+            ->wherePivotNull('removed_at');
+    }
+
+    /**
+     * @return BelongsToMany<SystemTask, $this>
+     */
+    public function systemTasksHistory(): BelongsToMany
+    {
+        return $this->belongsToMany(SystemTask::class)
+            ->withPivot(['id', 'raci_role', 'sort', 'assigned_at', 'assigned_by_user_id', 'removed_at', 'removed_by_user_id'])
             ->withTimestamps();
     }
 

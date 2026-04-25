@@ -8,6 +8,7 @@ use App\Models\ServiceProvider;
 use App\Models\System;
 use App\Models\SystemPriority;
 use App\Models\SystemTask;
+use App\Support\AssignmentSync;
 use App\Support\Duration;
 use Flux\Flux;
 use Illuminate\Database\Eloquent\Collection;
@@ -660,9 +661,9 @@ new #[Title('System bearbeiten')] class extends Component {
             ];
         }
 
-        $system->serviceProviders()->sync($providerSync);
-        $system->employees()->sync($employeeSync);
-        $system->roles()->sync($roleSync);
+        AssignmentSync::sync($system, $system->serviceProviders(), $providerSync);
+        AssignmentSync::sync($system, $system->employees(), $employeeSync);
+        AssignmentSync::sync($system, $system->roles(), $roleSync);
         $system->dependencies()->sync($dependencySync);
 
         Flux::toast(variant: 'success', text: __('System gespeichert.'));

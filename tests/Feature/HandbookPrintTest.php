@@ -7,6 +7,7 @@ use App\Models\ServiceProvider;
 use App\Models\System;
 use App\Models\User;
 use App\Scopes\CurrentCompanyScope;
+use App\Support\AssignmentSync;
 use Database\Seeders\GlobalScenariosSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -34,7 +35,7 @@ test('handbook print view renders with full data', function () {
         'category' => 'geschaeftsbetrieb',
     ]);
 
-    $system->serviceProviders()->attach($provider->id);
+    AssignmentSync::attach($system, $system->serviceProviders(), $provider->id);
 
     $this->actingAs($user->fresh())
         ->get(route('handbook.print'))

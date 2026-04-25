@@ -8,6 +8,7 @@ use App\Models\System;
 use App\Models\SystemTask;
 use App\Models\User;
 use App\Scopes\CurrentCompanyScope;
+use App\Support\AssignmentSync;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -255,7 +256,7 @@ test('edit modal updates task fields and re-syncs assignees and providers', func
     $newEmployee = Employee::factory()->for($system->company)->create();
     $newProvider = ServiceProvider::factory()->for($system->company)->create();
 
-    $task->assignees()->attach($old->id, ['raci_role' => RaciRole::Responsible->value]);
+    AssignmentSync::attach($task, $task->assignees(), $old->id, ['raci_role' => RaciRole::Responsible->value]);
 
     Livewire\Livewire::actingAs($user)
         ->test('pages::systems.show', ['system' => $system])
@@ -309,7 +310,7 @@ test('show page renders tasks section with existing tasks and RACI labels', func
 
     $person = Employee::factory()->for($system->company)->create(['first_name' => 'Sabine', 'last_name' => 'Ruf']);
     $task = SystemTask::factory()->forSystem($system)->create(['title' => 'Backup prüfen', 'due_date' => '2026-09-01']);
-    $task->assignees()->attach($person->id, ['raci_role' => RaciRole::Accountable->value]);
+    AssignmentSync::attach($task, $task->assignees(), $person->id, ['raci_role' => RaciRole::Accountable->value]);
 
     $this->actingAs($user)
         ->get(route('systems.show', ['system' => $system]))

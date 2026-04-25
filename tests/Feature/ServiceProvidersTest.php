@@ -6,6 +6,7 @@ use App\Models\System;
 use App\Models\Team;
 use App\Models\User;
 use App\Scopes\CurrentCompanyScope;
+use App\Support\AssignmentSync;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -44,7 +45,7 @@ test('service providers page renders with systems', function () {
         'category' => 'geschaeftsbetrieb',
     ]);
 
-    $system->serviceProviders()->attach($provider->id);
+    AssignmentSync::attach($system, $system->serviceProviders(), $provider->id);
 
     $this->actingAs($user->fresh())
         ->get(route('service-providers.index'))

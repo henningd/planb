@@ -5,6 +5,7 @@ use App\Models\ServiceProvider;
 use App\Models\System;
 use App\Models\User;
 use App\Scopes\CurrentCompanyScope;
+use App\Support\AssignmentSync;
 use App\Support\QrCode;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -36,7 +37,7 @@ test('system sticker page renders with QR and system info', function () {
         'name' => 'IT-Notdienst GmbH',
         'hotline' => '0800 999 111',
     ]);
-    $system->serviceProviders()->attach($provider->id);
+    AssignmentSync::attach($system, $system->serviceProviders(), $provider->id);
 
     $this->actingAs($user->fresh())
         ->get(route('systems.sticker', ['system' => $system->id]))

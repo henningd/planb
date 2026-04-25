@@ -6,6 +6,7 @@ use App\Models\Role;
 use App\Models\ServiceProvider;
 use App\Models\System;
 use App\Models\SystemTask;
+use App\Support\AssignmentSync;
 use App\Support\Duration;
 use Flux\Flux;
 use Illuminate\Database\Eloquent\Collection;
@@ -409,7 +410,7 @@ new #[Title('System')] class extends Component {
             $sync[$row['employee_id']] = ['raci_role' => $row['raci_role']];
         }
 
-        $task->assignees()->sync($sync);
+        AssignmentSync::sync($task, $task->assignees(), $sync);
     }
 
     /**
@@ -425,7 +426,7 @@ new #[Title('System')] class extends Component {
             $sync[$row['provider_id']] = ['raci_role' => $row['raci_role']];
         }
 
-        $task->providerAssignees()->sync($sync);
+        AssignmentSync::sync($task, $task->providerAssignees(), $sync);
     }
 
     /**
@@ -444,7 +445,7 @@ new #[Title('System')] class extends Component {
             ];
         }
 
-        $task->roleAssignees()->sync($sync);
+        AssignmentSync::sync($task, $task->roleAssignees(), $sync);
     }
 }; ?>
 

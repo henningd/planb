@@ -9,6 +9,7 @@ use App\Models\SystemPriority;
 use App\Models\Team;
 use App\Models\User;
 use App\Scopes\CurrentCompanyScope;
+use App\Support\AssignmentSync;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -548,8 +549,8 @@ test('system show page lists employees, providers and dependencies', function ()
         'rto_minutes' => 240,
     ]);
 
-    $erp->employees()->attach($employee->id, ['sort' => 0, 'note' => 'nur werktags']);
-    $erp->serviceProviders()->attach($provider->id);
+    AssignmentSync::attach($erp, $erp->employees(), $employee->id, ['sort' => 0, 'note' => 'nur werktags']);
+    AssignmentSync::attach($erp, $erp->serviceProviders(), $provider->id);
     $erp->dependencies()->sync([$storage->id]);
 
     $this->actingAs($user->fresh())

@@ -69,7 +69,18 @@ class Employee extends Model
     public function systems(): BelongsToMany
     {
         return $this->belongsToMany(System::class)
-            ->withPivot(['raci_role', 'sort', 'note'])
+            ->withPivot(['id', 'raci_role', 'sort', 'note', 'assigned_at', 'assigned_by_user_id', 'removed_at', 'removed_by_user_id'])
+            ->withTimestamps()
+            ->wherePivotNull('removed_at');
+    }
+
+    /**
+     * @return BelongsToMany<System, $this>
+     */
+    public function systemsHistory(): BelongsToMany
+    {
+        return $this->belongsToMany(System::class)
+            ->withPivot(['id', 'raci_role', 'sort', 'note', 'assigned_at', 'assigned_by_user_id', 'removed_at', 'removed_by_user_id'])
             ->withTimestamps();
     }
 
@@ -79,9 +90,21 @@ class Employee extends Model
     public function roles(): BelongsToMany
     {
         return $this->belongsToMany(Role::class)
+            ->withPivot(['id', 'assigned_at', 'assigned_by_user_id', 'removed_at', 'removed_by_user_id'])
             ->withTimestamps()
+            ->wherePivotNull('removed_at')
             ->orderBy('sort')
             ->orderBy('name');
+    }
+
+    /**
+     * @return BelongsToMany<Role, $this>
+     */
+    public function rolesHistory(): BelongsToMany
+    {
+        return $this->belongsToMany(Role::class)
+            ->withPivot(['id', 'assigned_at', 'assigned_by_user_id', 'removed_at', 'removed_by_user_id'])
+            ->withTimestamps();
     }
 
     /**

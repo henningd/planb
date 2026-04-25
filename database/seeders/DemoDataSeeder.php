@@ -39,6 +39,7 @@ use App\Models\System;
 use App\Models\Team;
 use App\Models\User;
 use App\Scopes\CurrentCompanyScope;
+use App\Support\AssignmentSync;
 use App\Support\IndustryTemplates;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
@@ -274,7 +275,9 @@ class DemoDataSeeder extends Seeder
                 ->pluck('id')
                 ->all();
 
-            $role->employees()->syncWithoutDetaching($employeeIds);
+            $existing = $role->employees()->pluck('employees.id')->all();
+            $merged = array_values(array_unique(array_merge($existing, $employeeIds)));
+            AssignmentSync::sync($role, $role->employees(), $merged);
         }
     }
 
@@ -419,7 +422,7 @@ class DemoDataSeeder extends Seeder
             ]);
 
             if ($itProvider && in_array($entry['name'], ['Büro-Server / Zentralrechner', 'Handwerkersoftware', 'E-Mail'], true)) {
-                $system->serviceProviders()->syncWithoutDetaching([$itProvider->id]);
+                AssignmentSync::attach($system, $system->serviceProviders(), $itProvider->id);
             }
         }
     }

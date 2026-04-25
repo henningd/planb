@@ -6,6 +6,7 @@ use App\Models\Role;
 use App\Models\Team;
 use App\Models\User;
 use App\Scopes\CurrentCompanyScope;
+use App\Support\AssignmentSync;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -62,7 +63,7 @@ test('role can be edited and assignments updated', function () {
     $newEmp = Employee::factory()->for($company)->create();
 
     $role = Role::factory()->for($company)->create(['name' => 'Vertrieb']);
-    $role->employees()->attach($oldEmp);
+    AssignmentSync::attach($role, $role->employees(), $oldEmp->id);
 
     Livewire\Livewire::actingAs($user->fresh())
         ->test('pages::roles.index')
@@ -98,7 +99,7 @@ test('roles index page renders with assigned employees', function () {
         'first_name' => 'Erika', 'last_name' => 'Beispiel',
     ]);
     $role = Role::factory()->for($company)->create(['name' => 'Buchhaltung']);
-    $role->employees()->attach($emp);
+    AssignmentSync::attach($role, $role->employees(), $emp->id);
 
     $this->actingAs($user->fresh())
         ->get(route('roles.index'))

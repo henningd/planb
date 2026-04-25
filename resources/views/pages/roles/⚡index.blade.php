@@ -2,6 +2,7 @@
 
 use App\Models\Employee;
 use App\Models\Role;
+use App\Support\AssignmentSync;
 use Flux\Flux;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Auth;
@@ -104,7 +105,7 @@ new #[Title('Rollen')] class extends Component {
             'sort' => $validated['sort'] ?? 0,
         ])->save();
 
-        $role->employees()->sync($validated['assignedEmployeeIds'] ?? []);
+        AssignmentSync::sync($role, $role->employees(), $validated['assignedEmployeeIds'] ?? []);
 
         Flux::modal('role-form')->close();
         $this->resetForm();
