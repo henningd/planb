@@ -6,6 +6,7 @@ use App\Models\EmergencyLevel;
 use App\Models\ServiceProvider;
 use App\Models\System;
 use App\Models\SystemPriority;
+use App\Models\SystemTask;
 use App\Support\Duration;
 use Flux\Flux;
 use Illuminate\Database\Eloquent\Collection;
@@ -111,6 +112,26 @@ new #[Title('System bearbeiten')] class extends Component {
     public function priorities(): Collection
     {
         return SystemPriority::orderBy('sort')->get();
+    }
+
+    /**
+     * Read-only listing of tasks for this system. Management
+     * (anlegen/bearbeiten/löschen) erfolgt auf der Detail-Seite.
+     *
+     * @return Collection<int, SystemTask>
+     */
+    #[Computed]
+    public function tasks(): Collection
+    {
+        if (! $this->system) {
+            return new Collection;
+        }
+
+        return SystemTask::with(['assignees', 'providerAssignees'])
+            ->where('system_id', $this->system->id)
+            ->orderByRaw('completed_at IS NULL DESC')
+            ->orderBy('sort')
+            ->get();
     }
 
     /**
@@ -1199,4 +1220,91 @@ new #[Title('System bearbeiten')] class extends Component {
             </div>
         </form>
     </div>
+
+    @if ($system)
+        <div class="mt-6 rounded-xl border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-900">
+            <div class="flex items-start justify-between gap-4 border-b border-zinc-100 p-6 dark:border-zinc-800">
+                <div>
+                    <flux:heading size="lg">{{ __('Aufgaben') }}</flux:heading>
+                    <flux:subheading>
+                        {{ __('Übersicht der Wartungs- und Vorbereitungs-Aufgaben zu diesem System. Anlegen, bearbeiten und löschen erfolgt in der Detail-Ansicht.') }}
+                    </flux:subheading>
+                </div>
+                <flux:button size="sm" icon="arrow-top-right-on-square" :href="route('systems.show', ['system' => $system->id])" wire:navigate>
+                    {{ __('Aufgaben verwalten') }}
+                </flux:button>
+            </div>
+
+            <div class="p-6">
+                @if ($this->tasks->isEmpty())
+                    <div class="rounded-lg border border-dashed border-zinc-300 p-6 text-center text-sm text-zinc-500 dark:border-zinc-700 dark:text-zinc-400">
+                        {{ __('Noch keine Aufgaben erfasst.') }}
+                    </div>
+                @else
+                    <ul class="space-y-2">
+                        @foreach ($this->tasks as $task)
+                            @php($empGroups = $task->assignees->groupBy(fn ($e) => $e->pivot->raci_role ?? ''))
+                            @php($provGroups = $task->providerAssignees->groupBy(fn ($p) => $p->pivot->raci_role ?? ''))
+                            @php($accountableNames = $empGroups->get('A', collect())->map(fn ($e) => $e->fullName())->merge($provGroups->get('A', collect())->map(fn ($p) => $p->name)))
+                            @php($responsibleNames = $empGroups->get('R', collect())->map(fn ($e) => $e->fullName())->merge($provGroups->get('R', collect())->map(fn ($p) => $p->name)))
+                            <li wire:key="edit-task-{{ $task->id }}"
+                                class="flex items-start gap-3 rounded-lg border border-zinc-200 p-4 dark:border-zinc-700">
+                                <div class="mt-0.5 shrink-0">
+                                    @if ($task->isDone())
+                                        <flux:icon.check-circle class="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                                    @else
+                                        <flux:icon.clock class="h-5 w-5 text-zinc-400" />
+                                    @endif
+                                </div>
+                                <div class="min-w-0 flex-1 space-y-1">
+                                    <div class="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
+                                        <span class="font-medium {{ $task->isDone() ? 'text-zinc-500 line-through dark:text-zinc-500' : '' }}">
+                                            {{ $task->title }}
+                                        </span>
+                                        @if ($task->due_date)
+                                            @if ($task->isOverdue())
+                                                <flux:badge color="rose" size="sm" icon="clock">
+                                                    {{ __('Überfällig') }}: {{ $task->due_date->format('d.m.Y') }}
+                                                </flux:badge>
+                                            @else
+                                                <flux:badge :color="$task->isDone() ? 'zinc' : 'amber'" size="sm" icon="calendar-days">
+                                                    {{ $task->due_date->format('d.m.Y') }}
+                                                </flux:badge>
+                                            @endif
+                                        @endif
+                                        @if ($task->isDone())
+                                            <span class="text-xs text-zinc-500 dark:text-zinc-400">
+                                                {{ __('Erledigt am') }} {{ $task->completed_at->format('d.m.Y') }}
+                                            </span>
+                                        @endif
+                                    </div>
+                                    @if ($task->description)
+                                        <div class="text-sm text-zinc-600 dark:text-zinc-400 {{ $task->isDone() ? 'line-through' : '' }}">
+                                            {{ $task->description }}
+                                        </div>
+                                    @endif
+                                    @if ($accountableNames->isNotEmpty() || $responsibleNames->isNotEmpty())
+                                        <div class="flex flex-wrap items-center gap-x-3 gap-y-1 pt-1 text-xs text-zinc-600 dark:text-zinc-400">
+                                            @if ($responsibleNames->isNotEmpty())
+                                                <span class="inline-flex items-center gap-1">
+                                                    <span class="rounded bg-blue-100 px-1.5 py-0.5 font-bold text-blue-800 dark:bg-blue-900/40 dark:text-blue-200">R</span>
+                                                    {{ $responsibleNames->join(', ') }}
+                                                </span>
+                                            @endif
+                                            @if ($accountableNames->isNotEmpty())
+                                                <span class="inline-flex items-center gap-1">
+                                                    <span class="rounded bg-rose-100 px-1.5 py-0.5 font-bold text-rose-800 dark:bg-rose-900/40 dark:text-rose-200">A</span>
+                                                    {{ $accountableNames->join(', ') }}
+                                                </span>
+                                            @endif
+                                        </div>
+                                    @endif
+                                </div>
+                            </li>
+                        @endforeach
+                    </ul>
+                @endif
+            </div>
+        </div>
+    @endif
 </section>
