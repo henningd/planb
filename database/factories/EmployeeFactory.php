@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\CrisisRole;
 use App\Models\Company;
 use App\Models\Employee;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -30,7 +31,17 @@ class EmployeeFactory extends Factory
             'emergency_contact' => null,
             'manager_id' => null,
             'is_key_personnel' => false,
+            'crisis_role' => null,
+            'is_crisis_deputy' => false,
             'notes' => null,
         ];
+    }
+
+    public function withCrisisRole(CrisisRole $role, bool $deputy = false): static
+    {
+        return $this->state(fn () => [
+            'crisis_role' => $role,
+            'is_crisis_deputy' => $deputy,
+        ]);
     }
 }

@@ -1,8 +1,10 @@
 <?php
 
+use App\Enums\ServiceProviderType;
 use App\Models\ServiceProvider;
 use Flux\Flux;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -11,6 +13,8 @@ new #[Title('Dienstleister')] class extends Component {
     public ?string $editingId = null;
 
     public string $name = '';
+
+    public string $type = '';
 
     public string $contact_name = '';
 
@@ -22,14 +26,27 @@ new #[Title('Dienstleister')] class extends Component {
 
     public string $sla = '';
 
+    public ?string $direct_order_limit = null;
+
     public string $notes = '';
 
+    public string $filterType = '';
+
     public ?string $deletingId = null;
+
+    public function mount(): void
+    {
+        $this->type = ServiceProviderType::Other->value;
+    }
 
     #[Computed]
     public function providers()
     {
-        return ServiceProvider::with('systems')->orderBy('name')->get();
+        return ServiceProvider::with('systems')
+            ->when($this->filterType !== '', fn ($q) => $q->where('type', $this->filterType))
+            ->orderBy('type')
+            ->orderBy('name')
+            ->get();
     }
 
     #[Computed]
@@ -50,11 +67,13 @@ new #[Title('Dienstleister')] class extends Component {
 
         $this->editingId = $provider->id;
         $this->name = $provider->name;
+        $this->type = $provider->type?->value ?? ServiceProviderType::Other->value;
         $this->contact_name = (string) $provider->contact_name;
         $this->hotline = (string) $provider->hotline;
         $this->email = (string) $provider->email;
         $this->contract_number = (string) $provider->contract_number;
         $this->sla = (string) $provider->sla;
+        $this->direct_order_limit = $provider->direct_order_limit !== null ? (string) $provider->direct_order_limit : null;
         $this->notes = (string) $provider->notes;
 
         Flux::modal('provider-form')->show();
@@ -70,11 +89,13 @@ new #[Title('Dienstleister')] class extends Component {
 
         $validated = $this->validate([
             'name' => ['required', 'string', 'max:255'],
+            'type' => ['required', 'string', Rule::in(collect(ServiceProviderType::cases())->pluck('value'))],
             'contact_name' => ['nullable', 'string', 'max:255'],
             'hotline' => ['nullable', 'string', 'max:50'],
             'email' => ['nullable', 'email', 'max:255'],
             'contract_number' => ['nullable', 'string', 'max:100'],
             'sla' => ['nullable', 'string', 'max:100'],
+            'direct_order_limit' => ['nullable', 'numeric', 'min:0'],
             'notes' => ['nullable', 'string', 'max:2000'],
         ]);
 
@@ -110,7 +131,16 @@ new #[Title('Dienstleister')] class extends Component {
 
     protected function resetForm(): void
     {
-        $this->reset(['editingId', 'name', 'contact_name', 'hotline', 'email', 'contract_number', 'sla', 'notes']);
+        $this->reset(['editingId', 'name', 'contact_name', 'hotline', 'email', 'contract_number', 'sla', 'direct_order_limit', 'notes']);
+        $this->type = ServiceProviderType::Other->value;
+    }
+
+    /**
+     * @return array<int, array{value: string, label: string}>
+     */
+    public function typeOptions(): array
+    {
+        return ServiceProviderType::options();
     }
 }; ?>
 
@@ -134,6 +164,17 @@ new #[Title('Dienstleister')] class extends Component {
         </div>
     @endunless
 
+    @if ($this->hasCompany)
+        <div class="mb-4 flex flex-wrap gap-3">
+            <flux:select wire:model.live="filterType" placeholder="{{ __('Alle Kategorien') }}" class="max-w-xs">
+                <flux:select.option value="">{{ __('Alle Kategorien') }}</flux:select.option>
+                @foreach ($this->typeOptions() as $option)
+                    <flux:select.option value="{{ $option['value'] }}">{{ $option['label'] }}</flux:select.option>
+                @endforeach
+            </flux:select>
+        </div>
+    @endif
+
     <div class="grid gap-4 md:grid-cols-2">
         @forelse ($this->providers as $provider)
             <div class="rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
@@ -144,6 +185,13 @@ new #[Title('Dienstleister')] class extends Component {
                             <flux:text class="text-sm text-zinc-500 dark:text-zinc-400">
                                 {{ $provider->contact_name }}
                             </flux:text>
+                        @endif
+                        @if ($provider->type)
+                            <div class="mt-1">
+                                <flux:badge :color="$provider->type->isAuthority() ? 'amber' : 'zinc'" size="sm">
+                                    {{ $provider->type->label() }}
+                                </flux:badge>
+                            </div>
                         @endif
                     </div>
                     <flux:dropdown align="end">
@@ -178,6 +226,12 @@ new #[Title('Dienstleister')] class extends Component {
                         <div class="flex items-center gap-2">
                             <flux:icon.document-text class="h-4 w-4 text-zinc-400" />
                             <span class="text-zinc-600 dark:text-zinc-300">{{ __('Vertrag') }}: {{ $provider->contract_number }}</span>
+                        </div>
+                    @endif
+                    @if ($provider->direct_order_limit !== null)
+                        <div class="flex items-center gap-2">
+                            <flux:icon.banknotes class="h-4 w-4 text-zinc-400" />
+                            <span class="text-zinc-600 dark:text-zinc-300">{{ __('Direktbeauftragung bis') }}: {{ number_format((float) $provider->direct_order_limit, 2, ',', '.') }} €</span>
                         </div>
                     @endif
                 </div>
@@ -218,6 +272,13 @@ new #[Title('Dienstleister')] class extends Component {
             </div>
 
             <flux:input wire:model="name" :label="__('Firma')" type="text" required placeholder="z. B. Musterdienstleister GmbH" />
+
+            <flux:select wire:model="type" :label="__('Kategorie')" required>
+                @foreach ($this->typeOptions() as $option)
+                    <flux:select.option value="{{ $option['value'] }}">{{ $option['label'] }}</flux:select.option>
+                @endforeach
+            </flux:select>
+
             <flux:input wire:model="contact_name" :label="__('Ansprechpartner')" type="text" placeholder="z. B. Frau Müller" />
 
             <div class="grid gap-4 sm:grid-cols-2">
@@ -226,7 +287,11 @@ new #[Title('Dienstleister')] class extends Component {
             </div>
 
             <flux:input wire:model="email" :label="__('E-Mail')" type="email" />
-            <flux:input wire:model="contract_number" :label="__('Vertrags- / Kundennummer')" type="text" />
+
+            <div class="grid gap-4 sm:grid-cols-2">
+                <flux:input wire:model="contract_number" :label="__('Vertrags- / Kundennummer')" type="text" />
+                <flux:input wire:model="direct_order_limit" :label="__('Direktbeauftragung bis (€)')" type="number" min="0" step="0.01" placeholder="z. B. 2000" />
+            </div>
 
             <flux:textarea wire:model="notes" :label="__('Notizen')" rows="3" />
 

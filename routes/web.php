@@ -23,7 +23,7 @@ Route::prefix('{current_team}')
         Route::livewire('dashboard', 'pages::dashboard')->name('dashboard');
 
         Route::livewire('company', 'pages::company.edit')->name('company.edit');
-        Route::livewire('contacts', 'pages::contacts.index')->name('contacts.index');
+        Route::livewire('locations', 'pages::locations.index')->name('locations.index');
         Route::livewire('emergency-levels', 'pages::emergency-levels.index')->name('emergency-levels.index');
         Route::livewire('systems', 'pages::systems.index')->name('systems.index');
         Route::livewire('systems/create', 'pages::systems.edit')->name('systems.create');
@@ -35,6 +35,7 @@ Route::prefix('{current_team}')
             ->where('system', '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}')
             ->name('systems.edit');
         Route::livewire('service-providers', 'pages::service-providers.index')->name('service-providers.index');
+        Route::livewire('emergency-resources', 'pages::emergency-resources.index')->name('emergency-resources.index');
         Route::livewire('employees', 'pages::employees.index')->name('employees.index');
 
         Route::livewire('scenarios', 'pages::scenarios.index')->name('scenarios.index');
@@ -50,6 +51,8 @@ Route::prefix('{current_team}')
             Route::livewire('communication-templates', 'pages::communication-templates.index')->name('communication-templates.index');
             Route::livewire('audit-log', 'pages::audit-log.index')->name('audit-log.index');
             Route::livewire('handbook-shares', 'pages::handbook-shares.index')->name('handbook-shares.index');
+            Route::livewire('handbook-versions', 'pages::handbook-versions.index')->name('handbook-versions.index');
+            Route::livewire('handbook-tests', 'pages::handbook-tests.index')->name('handbook-tests.index');
         });
 
         Route::get('systems/export', function () {

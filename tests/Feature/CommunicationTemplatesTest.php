@@ -2,9 +2,10 @@
 
 use App\Enums\CommunicationAudience;
 use App\Enums\CommunicationChannel;
+use App\Enums\CrisisRole;
 use App\Models\CommunicationTemplate;
 use App\Models\Company;
-use App\Models\Contact;
+use App\Models\Employee;
 use App\Models\Team;
 use App\Models\User;
 use App\Scopes\CurrentCompanyScope;
@@ -17,7 +18,9 @@ test('placeholder resolver replaces known tokens and keeps unknown ones', functi
     $user = User::factory()->create();
     $company = Company::factory()->for($user->currentTeam)->create(['name' => 'Musterfirma GmbH']);
 
-    Contact::factory()->for($company)->create(['name' => 'Erika Meier', 'is_primary' => true]);
+    Employee::factory()->for($company)->withCrisisRole(CrisisRole::Management)->create([
+        'first_name' => 'Erika', 'last_name' => 'Meier',
+    ]);
 
     $resolved = TemplatePlaceholders::resolve(
         'Hallo, {{ firma }} meldet einen Vorfall. Kontakt: {{ ansprechpartner }}. {{ unbekannt }}',

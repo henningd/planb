@@ -2,21 +2,23 @@
 
 namespace App\Enums;
 
-enum ContactType: string
+enum KritisRelevance: string
 {
-    case Internal = 'intern';
-    case External = 'extern';
+    case Yes = 'yes';
+    case No = 'no';
+    case Pending = 'pending';
 
     public function label(): string
     {
         return match ($this) {
-            self::Internal => 'Intern',
-            self::External => 'Extern',
+            self::Yes => 'Ja',
+            self::No => 'Nein',
+            self::Pending => 'Prüfung ausstehend',
         };
     }
 
     /**
-     * @return array<array{value: string, label: string}>
+     * @return array<int, array{value: string, label: string}>
      */
     public static function options(): array
     {

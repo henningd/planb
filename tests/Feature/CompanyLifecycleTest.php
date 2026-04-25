@@ -1,8 +1,9 @@
 <?php
 
+use App\Enums\CrisisRole;
 use App\Models\Company;
-use App\Models\Contact;
 use App\Models\EmergencyLevel;
+use App\Models\Employee;
 use App\Models\Team;
 use App\Scopes\CurrentCompanyScope;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -34,29 +35,22 @@ test('default levels have descriptions and reactions populated', function () {
     }
 });
 
-test('the first contact of a company becomes the primary contact automatically', function () {
+test('the management crisis-role holder is the primary contact', function () {
     $company = Company::factory()->for(Team::factory())->create();
 
-    $first = Contact::withoutGlobalScope(CurrentCompanyScope::class)
-        ->create([
-            'company_id' => $company->id,
-            'name' => 'Erika Mustermann',
-            'type' => 'intern',
-        ]);
+    Employee::factory()->for($company)->withCrisisRole(CrisisRole::Management)->create([
+        'first_name' => 'Erika', 'last_name' => 'Mustermann',
+    ]);
 
-    expect($first->is_primary)->toBeTrue()
-        ->and($company->hasPrimaryContact())->toBeTrue();
+    expect($company->hasPrimaryContact())->toBeTrue()
+        ->and($company->primaryContact()->fullName())->toBe('Erika Mustermann');
 });
 
-test('subsequent contacts do not overwrite the existing primary', function () {
+test('a company without management crisis-role has no primary contact', function () {
     $company = Company::factory()->for(Team::factory())->create();
 
-    Contact::withoutGlobalScope(CurrentCompanyScope::class)
-        ->create(['company_id' => $company->id, 'name' => 'Erika', 'type' => 'intern']);
+    Employee::factory()->for($company)->create();
 
-    $second = Contact::withoutGlobalScope(CurrentCompanyScope::class)
-        ->create(['company_id' => $company->id, 'name' => 'Max', 'type' => 'intern']);
-
-    expect($second->fresh()->is_primary)->toBeFalse()
-        ->and($company->primaryContact()->name)->toBe('Erika');
+    expect($company->hasPrimaryContact())->toBeFalse()
+        ->and($company->primaryContact())->toBeNull();
 });

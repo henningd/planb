@@ -92,14 +92,13 @@ test('sidebar shows admin sections for owner', function () {
         ->assertSee('Aktivitäten');
 });
 
-test('member can still access shared domain data like contacts and scenarios', function () {
+test('member can still access shared domain data', function () {
     $owner = User::factory()->create();
     Company::factory()->for($owner->currentTeam)->create();
 
     $member = memberOf($owner);
 
     foreach ([
-        'contacts.index',
         'scenarios.index',
         'systems.index',
         'employees.index',

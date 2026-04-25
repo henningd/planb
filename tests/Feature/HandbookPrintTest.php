@@ -1,7 +1,8 @@
 <?php
 
+use App\Enums\CrisisRole;
 use App\Models\Company;
-use App\Models\Contact;
+use App\Models\Employee;
 use App\Models\ServiceProvider;
 use App\Models\System;
 use App\Models\User;
@@ -17,7 +18,9 @@ test('handbook print view renders with full data', function () {
     $user = User::factory()->create();
     $company = Company::factory()->for($user->currentTeam)->create(['name' => 'Musterfirma GmbH']);
 
-    Contact::factory()->for($company)->create(['name' => 'Erika Mustermann']);
+    Employee::factory()->for($company)->withCrisisRole(CrisisRole::Management)->create([
+        'first_name' => 'Erika', 'last_name' => 'Mustermann',
+    ]);
 
     $provider = ServiceProvider::withoutGlobalScope(CurrentCompanyScope::class)->create([
         'company_id' => $company->id,

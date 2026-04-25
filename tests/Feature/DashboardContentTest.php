@@ -1,7 +1,8 @@
 <?php
 
+use App\Enums\CrisisRole;
 use App\Models\Company;
-use App\Models\Contact;
+use App\Models\Employee;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -17,10 +18,12 @@ test('dashboard shows onboarding hint when no company exists', function () {
         ->assertSee('Willkommen');
 });
 
-test('dashboard shows company name and counts once a company is set up', function () {
+test('dashboard shows company name and crisis-role holder once a company is set up', function () {
     $user = User::factory()->create();
     $company = Company::factory()->for($user->currentTeam)->create(['name' => 'Musterfirma GmbH']);
-    Contact::factory()->for($company)->create(['name' => 'Erika Mustermann']);
+    Employee::factory()->for($company)->withCrisisRole(CrisisRole::Management)->create([
+        'first_name' => 'Erika', 'last_name' => 'Mustermann',
+    ]);
 
     $this->actingAs($user->fresh())
         ->get(route('dashboard'))
@@ -30,12 +33,12 @@ test('dashboard shows company name and counts once a company is set up', functio
         ->assertSee('Hauptansprechpartner');
 });
 
-test('dashboard warns when a company has no primary contact', function () {
+test('dashboard warns when no management crisis-role is assigned', function () {
     $user = User::factory()->create();
     Company::factory()->for($user->currentTeam)->create();
 
     $this->actingAs($user->fresh())
         ->get(route('dashboard'))
         ->assertOk()
-        ->assertSee('Noch kein Hauptansprechpartner festgelegt');
+        ->assertSee('Noch keine Geschäftsführung als Krisenrolle hinterlegt');
 });

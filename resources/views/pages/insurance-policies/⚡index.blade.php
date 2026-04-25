@@ -24,6 +24,8 @@ new #[Title('Versicherungen')] class extends Component {
 
     public string $reporting_window = '';
 
+    public string $deductible = '';
+
     public string $contact_name = '';
 
     public string $notes = '';
@@ -70,6 +72,7 @@ new #[Title('Versicherungen')] class extends Component {
         $this->hotline = (string) $policy->hotline;
         $this->email = (string) $policy->email;
         $this->reporting_window = (string) $policy->reporting_window;
+        $this->deductible = (string) $policy->deductible;
         $this->contact_name = (string) $policy->contact_name;
         $this->notes = (string) $policy->notes;
 
@@ -91,6 +94,7 @@ new #[Title('Versicherungen')] class extends Component {
             'hotline' => ['nullable', 'string', 'max:50'],
             'email' => ['nullable', 'email', 'max:255'],
             'reporting_window' => ['nullable', 'string', 'max:100'],
+            'deductible' => ['nullable', 'string', 'max:100'],
             'contact_name' => ['nullable', 'string', 'max:255'],
             'notes' => ['nullable', 'string', 'max:2000'],
         ]);
@@ -127,7 +131,7 @@ new #[Title('Versicherungen')] class extends Component {
 
     protected function resetForm(): void
     {
-        $this->reset(['editingId', 'insurer', 'policy_number', 'hotline', 'email', 'reporting_window', 'contact_name', 'notes']);
+        $this->reset(['editingId', 'insurer', 'policy_number', 'hotline', 'email', 'reporting_window', 'deductible', 'contact_name', 'notes']);
         $this->type = InsuranceType::Cyber->value;
     }
 }; ?>
@@ -220,6 +224,15 @@ new #[Title('Versicherungen')] class extends Component {
                             </div>
                         </div>
                     @endif
+                    @if ($policy->deductible)
+                        <div class="flex items-start gap-2">
+                            <flux:icon.banknotes class="mt-0.5 h-4 w-4 shrink-0 text-zinc-400" />
+                            <div>
+                                <div class="text-xs uppercase text-zinc-500 dark:text-zinc-400">{{ __('Selbstbehalt') }}</div>
+                                <span class="text-zinc-700 dark:text-zinc-200">{{ $policy->deductible }}</span>
+                            </div>
+                        </div>
+                    @endif
                 </div>
 
                 @if ($policy->notes)
@@ -263,7 +276,10 @@ new #[Title('Versicherungen')] class extends Component {
                 <flux:input wire:model="reporting_window" :label="__('Meldefrist')" type="text" placeholder="z. B. 24h, unverzüglich" />
             </div>
 
-            <flux:input wire:model="email" :label="__('E-Mail')" type="email" />
+            <div class="grid gap-4 sm:grid-cols-2">
+                <flux:input wire:model="email" :label="__('E-Mail')" type="email" />
+                <flux:input wire:model="deductible" :label="__('Selbstbehalt')" type="text" placeholder="z. B. 1.500 €" />
+            </div>
 
             <flux:textarea wire:model="notes" :label="__('Notizen')" rows="3" />
 

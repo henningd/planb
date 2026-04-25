@@ -19,15 +19,25 @@ class HandbookData
     public static function forCompany(Company $company, ?HandbookShare $share = null): array
     {
         $company->loadMissing([
-            'contacts' => fn ($q) => $q->orderByDesc('is_primary')->orderBy('name'),
+            'employees',
+            'locations',
             'emergencyLevels',
             'systems.priority',
+            'systems.emergencyLevel',
             'systems.serviceProviders',
             'systems.dependencies',
             'systemPriorities',
             'scenarios.steps',
             'communicationTemplates.scenario',
             'insurancePolicies',
+            'handbookVersions.changedBy',
+            'handbookVersions.approvedBy',
+            'emergencyResources',
+            'handbookTests.responsible',
+            'incidentReports.obligations',
+            'incidentReports.scenarioRun.scenario',
+            'scenarioRuns.scenario',
+            'scenarioRuns.steps',
         ]);
 
         $providersQuery = ServiceProvider::with('systems')

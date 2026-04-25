@@ -1,8 +1,8 @@
 <?php
 
 use App\Models\Company;
-use App\Models\Contact;
 use App\Models\EmergencyLevel;
+use App\Models\Employee;
 use App\Models\User;
 use App\Scopes\CurrentCompanyScope;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -13,14 +13,14 @@ test('queries are automatically scoped to the authenticated user\'s company', fu
     [$userA, $companyA] = makeUserWithCompany();
     [$userB, $companyB] = makeUserWithCompany();
 
-    Contact::factory()->for($companyA)->create(['name' => 'Alice']);
-    Contact::factory()->for($companyB)->create(['name' => 'Bob']);
+    Employee::factory()->for($companyA)->create(['first_name' => 'Alice', 'last_name' => 'A']);
+    Employee::factory()->for($companyB)->create(['first_name' => 'Bob', 'last_name' => 'B']);
 
     $this->actingAs($userA);
-    expect(Contact::pluck('name')->all())->toBe(['Alice']);
+    expect(Employee::pluck('first_name')->all())->toBe(['Alice']);
 
     $this->actingAs($userB);
-    expect(Contact::pluck('name')->all())->toBe(['Bob']);
+    expect(Employee::pluck('first_name')->all())->toBe(['Bob']);
 });
 
 test('company_id is auto-filled on create from the authenticated user', function () {
@@ -28,12 +28,13 @@ test('company_id is auto-filled on create from the authenticated user', function
 
     $this->actingAs($user);
 
-    $contact = Contact::create([
-        'name' => 'Erika Mustermann',
-        'role' => 'Geschäftsführung',
+    $employee = Employee::create([
+        'first_name' => 'Erika',
+        'last_name' => 'Mustermann',
+        'position' => 'Geschäftsführung',
     ]);
 
-    expect($contact->company_id)->toBe($company->id);
+    expect($employee->company_id)->toBe($company->id);
 });
 
 test('emergency levels are scoped per company', function () {
@@ -51,13 +52,13 @@ test('scope can be bypassed explicitly for admin or console contexts', function 
     [$userA, $companyA] = makeUserWithCompany();
     [, $companyB] = makeUserWithCompany();
 
-    Contact::factory()->for($companyA)->create();
-    Contact::factory()->for($companyB)->create();
+    Employee::factory()->for($companyA)->create();
+    Employee::factory()->for($companyB)->create();
 
     $this->actingAs($userA);
 
-    expect(Contact::count())->toBe(1)
-        ->and(Contact::withoutGlobalScope(CurrentCompanyScope::class)->count())->toBe(2);
+    expect(Employee::count())->toBe(1)
+        ->and(Employee::withoutGlobalScope(CurrentCompanyScope::class)->count())->toBe(2);
 });
 
 /**

@@ -1,8 +1,10 @@
 <?php
 
+use App\Enums\CrisisRole;
 use App\Models\Employee;
 use Flux\Flux;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -33,6 +35,10 @@ new #[Title('Mitarbeiter')] class extends Component {
     public ?string $manager_id = null;
 
     public bool $is_key_personnel = false;
+
+    public string $crisis_role = '';
+
+    public bool $is_crisis_deputy = false;
 
     public string $notes = '';
 
@@ -120,6 +126,8 @@ new #[Title('Mitarbeiter')] class extends Component {
         $this->emergency_contact = (string) $e->emergency_contact;
         $this->manager_id = $e->manager_id;
         $this->is_key_personnel = (bool) $e->is_key_personnel;
+        $this->crisis_role = $e->crisis_role?->value ?? '';
+        $this->is_crisis_deputy = (bool) $e->is_crisis_deputy;
         $this->notes = (string) $e->notes;
 
         Flux::modal('employee-form')->show();
@@ -146,8 +154,27 @@ new #[Title('Mitarbeiter')] class extends Component {
             'emergency_contact' => ['nullable', 'string', 'max:1000'],
             'manager_id' => ['nullable', 'uuid', 'exists:employees,id'],
             'is_key_personnel' => ['boolean'],
+            'crisis_role' => ['nullable', 'string', Rule::in(collect(CrisisRole::cases())->pluck('value'))],
+            'is_crisis_deputy' => ['boolean'],
             'notes' => ['nullable', 'string', 'max:2000'],
         ]);
+
+        if (! empty($validated['crisis_role'])) {
+            $conflict = Employee::query()
+                ->where('crisis_role', $validated['crisis_role'])
+                ->where('is_crisis_deputy', $validated['is_crisis_deputy'] ?? false)
+                ->when($this->editingId, fn ($q) => $q->where('id', '!=', $this->editingId))
+                ->exists();
+
+            if ($conflict) {
+                $this->addError('crisis_role', __('Diese Krisenrolle ist bereits vergeben. Lösen Sie zuerst die andere Zuordnung oder markieren Sie diese Person als Vertretung.'));
+
+                return;
+            }
+        } else {
+            $validated['crisis_role'] = null;
+            $validated['is_crisis_deputy'] = false;
+        }
 
         if ($this->editingId) {
             Employee::findOrFail($this->editingId)->update($validated);
@@ -184,8 +211,17 @@ new #[Title('Mitarbeiter')] class extends Component {
         $this->reset([
             'editingId', 'first_name', 'last_name', 'position', 'department',
             'work_phone', 'mobile_phone', 'private_phone', 'email', 'location',
-            'emergency_contact', 'manager_id', 'is_key_personnel', 'notes',
+            'emergency_contact', 'manager_id', 'is_key_personnel',
+            'crisis_role', 'is_crisis_deputy', 'notes',
         ]);
+    }
+
+    /**
+     * @return array<int, array{value: string, label: string}>
+     */
+    public function crisisRoleOptions(): array
+    {
+        return CrisisRole::options();
     }
 }; ?>
 
@@ -248,6 +284,11 @@ new #[Title('Mitarbeiter')] class extends Component {
                                 <div class="mt-1 flex flex-wrap items-center gap-1.5">
                                     @if ($employee->is_key_personnel)
                                         <flux:badge color="amber" size="sm">{{ __('Schlüsselmitarbeiter') }}</flux:badge>
+                                    @endif
+                                    @if ($employee->crisis_role)
+                                        <flux:badge color="red" size="sm">
+                                            {{ $employee->crisis_role->label() }}@if ($employee->is_crisis_deputy) ({{ __('Vertretung') }})@endif
+                                        </flux:badge>
                                     @endif
                                     @if ($employee->department)
                                         <flux:badge color="zinc" size="sm">{{ $employee->department }}</flux:badge>
@@ -355,6 +396,26 @@ new #[Title('Mitarbeiter')] class extends Component {
             </flux:select>
 
             <flux:switch wire:model="is_key_personnel" :label="__('Schlüsselmitarbeiter – besonders wichtig für den Betrieb')" />
+
+            <div class="space-y-3 rounded-lg border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-700 dark:bg-zinc-800/50">
+                <div>
+                    <flux:heading size="base">{{ __('Krisenrolle') }}</flux:heading>
+                    <flux:subheading>
+                        {{ __('Pflicht-Rollen aus Kapitel 4 des Notfallhandbuchs. Pro Rolle: eine Hauptperson und eine Vertretung.') }}
+                    </flux:subheading>
+                </div>
+
+                <flux:select wire:model.live="crisis_role" :label="__('Rolle')">
+                    <flux:select.option value="">{{ __('— keine —') }}</flux:select.option>
+                    @foreach ($this->crisisRoleOptions() as $option)
+                        <flux:select.option value="{{ $option['value'] }}">{{ $option['label'] }}</flux:select.option>
+                    @endforeach
+                </flux:select>
+
+                @if ($crisis_role !== '')
+                    <flux:switch wire:model="is_crisis_deputy" :label="__('Vertretung (statt Hauptperson)')" />
+                @endif
+            </div>
 
             <flux:textarea wire:model="notes" :label="__('Notizen')" rows="2" />
 

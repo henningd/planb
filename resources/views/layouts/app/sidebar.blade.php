@@ -23,11 +23,11 @@
                     <flux:sidebar.item icon="building-office-2" :href="route('company.edit')" :current="request()->routeIs('company.*')" wire:navigate>
                         {{ __('Firma') }}
                     </flux:sidebar.item>
+                    <flux:sidebar.item icon="map-pin" :href="route('locations.index')" :current="request()->routeIs('locations.*')" wire:navigate>
+                        {{ __('Standorte') }}
+                    </flux:sidebar.item>
                     <flux:sidebar.item icon="user-group" :href="route('employees.index')" :current="request()->routeIs('employees.*')" wire:navigate>
                         {{ __('Mitarbeiter') }}
-                    </flux:sidebar.item>
-                    <flux:sidebar.item icon="users" :href="route('contacts.index')" :current="request()->routeIs('contacts.*')" wire:navigate>
-                        {{ __('Ansprechpartner') }}
                     </flux:sidebar.item>
                     <flux:sidebar.item icon="wrench-screwdriver" :href="route('service-providers.index')" :current="request()->routeIs('service-providers.*')" wire:navigate>
                         {{ __('Dienstleister') }}
@@ -40,6 +40,9 @@
                             {{ __('Versicherungen') }}
                         </flux:sidebar.item>
                     @endif
+                    <flux:sidebar.item icon="briefcase" :href="route('emergency-resources.index')" :current="request()->routeIs('emergency-resources.*')" wire:navigate>
+                        {{ __('Sofortmittel') }}
+                    </flux:sidebar.item>
                     <flux:sidebar.item icon="shield-exclamation" :href="route('emergency-levels.index')" :current="request()->routeIs('emergency-levels.*')" wire:navigate>
                         {{ __('Notfall-Level') }}
                     </flux:sidebar.item>
@@ -62,6 +65,9 @@
                         <flux:sidebar.item icon="document-duplicate" :href="route('communication-templates.index')" :current="request()->routeIs('communication-templates.*')" wire:navigate>
                             {{ __('Vorlagen') }}
                         </flux:sidebar.item>
+                        <flux:sidebar.item icon="calendar-days" :href="route('handbook-tests.index')" :current="request()->routeIs('handbook-tests.*')" wire:navigate>
+                            {{ __('Testplan') }}
+                        </flux:sidebar.item>
                     @endif
                 </flux:sidebar.group>
 
@@ -80,6 +86,9 @@
                         </flux:sidebar.item>
                         <flux:sidebar.item icon="clock" :href="route('audit-log.index')" :current="request()->routeIs('audit-log.*')" wire:navigate>
                             {{ __('Aktivitäten') }}
+                        </flux:sidebar.item>
+                        <flux:sidebar.item icon="document-text" :href="route('handbook-versions.index')" :current="request()->routeIs('handbook-versions.*')" wire:navigate>
+                            {{ __('Versionshistorie') }}
                         </flux:sidebar.item>
                     @endif
                 </flux:sidebar.group>

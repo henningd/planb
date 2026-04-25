@@ -1,8 +1,9 @@
 <?php
 
+use App\Enums\CrisisRole;
 use App\Models\Company;
-use App\Models\Contact;
 use App\Models\EmergencyLevel;
+use App\Models\Employee;
 use App\Models\ScenarioRun;
 use Flux\Flux;
 use Illuminate\Support\Facades\Auth;
@@ -35,13 +36,13 @@ new #[Title('Dashboard')] class extends Component {
     }
 
     #[Computed]
-    public function contactCount(): int
+    public function employeeCount(): int
     {
-        return $this->company ? Contact::count() : 0;
+        return $this->company ? Employee::count() : 0;
     }
 
     #[Computed]
-    public function primaryContact(): ?Contact
+    public function primaryContact(): ?Employee
     {
         return $this->company?->primaryContact();
     }
@@ -53,13 +54,29 @@ new #[Title('Dashboard')] class extends Component {
     }
 
     #[Computed]
-    public function recentContacts()
+    public function crisisRoleHolders()
     {
         if (! $this->company) {
             return collect();
         }
 
-        return Contact::orderByDesc('is_primary')->orderByDesc('created_at')->limit(5)->get();
+        $order = [
+            CrisisRole::Management->value => 1,
+            CrisisRole::EmergencyOfficer->value => 2,
+            CrisisRole::ItLead->value => 3,
+            CrisisRole::DataProtectionOfficer->value => 4,
+            CrisisRole::CommunicationsLead->value => 5,
+        ];
+
+        return Employee::query()
+            ->whereNotNull('crisis_role')
+            ->get()
+            ->sortBy(fn (Employee $e) => sprintf(
+                '%d-%d',
+                $order[$e->crisis_role->value] ?? 99,
+                $e->is_crisis_deputy ? 1 : 0,
+            ))
+            ->values();
     }
 
     #[Computed]
@@ -167,7 +184,7 @@ new #[Title('Dashboard')] class extends Component {
                         {{ __('Firmenprofil anlegen') }}
                     </flux:heading>
                     <flux:text class="mt-1 text-sm text-indigo-900/80 dark:text-indigo-200/80">
-                        {{ __('Legen Sie zuerst die Basisdaten Ihres Unternehmens an. Danach können Sie Ansprechpartner und Eskalationsstufen pflegen.') }}
+                        {{ __('Legen Sie zuerst die Basisdaten Ihres Unternehmens an. Danach können Sie Mitarbeiter, Krisenrollen und Eskalationsstufen pflegen.') }}
                     </flux:text>
                 </div>
                 <flux:button variant="primary" :href="route('company.edit')" wire:navigate>
@@ -181,14 +198,14 @@ new #[Title('Dashboard')] class extends Component {
                 <flux:icon.exclamation-triangle class="mt-0.5 h-6 w-6 shrink-0 text-amber-600 dark:text-amber-300" />
                 <div class="flex-1">
                     <flux:heading size="base" class="text-amber-900 dark:text-amber-100">
-                        {{ __('Noch kein Hauptansprechpartner festgelegt') }}
+                        {{ __('Noch keine Geschäftsführung als Krisenrolle hinterlegt') }}
                     </flux:heading>
                     <flux:text class="mt-1 text-sm text-amber-900/80 dark:text-amber-200/80">
-                        {{ __('Im Ernstfall muss klar sein, wer entscheidet. Legen Sie einen ersten Ansprechpartner an – er wird automatisch als Hauptansprechpartner markiert.') }}
+                        {{ __('Im Ernstfall muss klar sein, wer entscheidet. Weisen Sie einem Mitarbeiter die Krisenrolle „Geschäftsführung" zu.') }}
                     </flux:text>
                 </div>
-                <flux:button variant="primary" :href="route('contacts.index')" wire:navigate>
-                    {{ __('Kontakt anlegen') }}
+                <flux:button variant="primary" :href="route('employees.index')" wire:navigate>
+                    {{ __('Mitarbeiter') }}
                 </flux:button>
             </div>
         </div>
@@ -216,17 +233,17 @@ new #[Title('Dashboard')] class extends Component {
 
         <div class="rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
             <div class="flex items-center justify-between">
-                <flux:text class="text-sm text-zinc-500 dark:text-zinc-400">{{ __('Ansprechpartner') }}</flux:text>
-                <flux:icon.users class="h-5 w-5 text-zinc-400" />
+                <flux:text class="text-sm text-zinc-500 dark:text-zinc-400">{{ __('Mitarbeiter') }}</flux:text>
+                <flux:icon.user-group class="h-5 w-5 text-zinc-400" />
             </div>
             <div class="mt-3 flex items-baseline gap-2">
-                <span class="text-3xl font-semibold">{{ $this->contactCount }}</span>
+                <span class="text-3xl font-semibold">{{ $this->employeeCount }}</span>
                 <flux:text class="text-sm text-zinc-500 dark:text-zinc-400">{{ __('angelegt') }}</flux:text>
             </div>
             @if ($this->primaryContact)
                 <div class="mt-2 flex items-center gap-2 text-sm">
-                    <flux:badge color="emerald" size="sm">{{ __('Hauptkontakt') }}</flux:badge>
-                    <span class="truncate text-zinc-700 dark:text-zinc-200">{{ $this->primaryContact->name }}</span>
+                    <flux:badge color="emerald" size="sm">{{ __('Hauptansprechpartner') }}</flux:badge>
+                    <span class="truncate text-zinc-700 dark:text-zinc-200">{{ $this->primaryContact->fullName() }}</span>
                 </div>
             @else
                 <flux:text class="mt-2 text-sm text-amber-700 dark:text-amber-300">
@@ -250,37 +267,37 @@ new #[Title('Dashboard')] class extends Component {
         </div>
     </div>
 
-    {{-- Two columns: recent contacts + quick actions --}}
+    {{-- Two columns: crisis roles + quick actions --}}
     <div class="grid gap-4 lg:grid-cols-3">
         <div class="rounded-xl border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-900 lg:col-span-2">
             <div class="flex items-center justify-between border-b border-zinc-100 px-5 py-4 dark:border-zinc-800">
-                <flux:heading size="base">{{ __('Zuletzt angelegte Kontakte') }}</flux:heading>
-                <flux:link :href="route('contacts.index')" wire:navigate class="text-sm">
-                    {{ __('Alle anzeigen') }}
+                <flux:heading size="base">{{ __('Krisenrollen') }}</flux:heading>
+                <flux:link :href="route('employees.index')" wire:navigate class="text-sm">
+                    {{ __('Alle Mitarbeiter') }}
                 </flux:link>
             </div>
-            @forelse ($this->recentContacts as $contact)
+            @forelse ($this->crisisRoleHolders as $employee)
                 <div class="flex items-center justify-between gap-4 border-b border-zinc-100 px-5 py-4 last:border-b-0 dark:border-zinc-800">
                     <div class="flex items-center gap-3">
-                        <flux:avatar :name="$contact->name" size="sm" />
+                        <flux:avatar :name="$employee->fullName()" size="sm" />
                         <div>
                             <div class="flex items-center gap-2">
-                                <span class="font-medium">{{ $contact->name }}</span>
-                                @if ($contact->is_primary)
-                                    <flux:badge color="emerald" size="sm">{{ __('Hauptansprechpartner') }}</flux:badge>
+                                <span class="font-medium">{{ $employee->fullName() }}</span>
+                                @if ($employee->is_crisis_deputy)
+                                    <flux:badge color="zinc" size="sm">{{ __('Vertretung') }}</flux:badge>
                                 @endif
                             </div>
                             <flux:text class="text-sm text-zinc-500 dark:text-zinc-400">
-                                {{ $contact->role ?: __('Keine Rolle') }}
+                                {{ $employee->position ?: '—' }}
                             </flux:text>
                         </div>
                     </div>
-                    <flux:badge color="zinc" size="sm">{{ $contact->type->label() }}</flux:badge>
+                    <flux:badge color="red" size="sm">{{ $employee->crisis_role->label() }}</flux:badge>
                 </div>
             @empty
                 <div class="px-5 py-12 text-center">
                     <flux:text class="text-zinc-500 dark:text-zinc-400">
-                        {{ __('Noch keine Ansprechpartner angelegt.') }}
+                        {{ __('Noch keine Krisenrollen vergeben.') }}
                     </flux:text>
                 </div>
             @endforelse
@@ -296,9 +313,9 @@ new #[Title('Dashboard')] class extends Component {
                     <span class="flex-1 font-medium">{{ __('Firmenprofil') }}</span>
                     <flux:icon.chevron-right class="h-4 w-4 text-zinc-400" />
                 </a>
-                <a href="{{ route('contacts.index') }}" wire:navigate class="flex items-center gap-3 px-5 py-4 text-zinc-900 no-underline hover:bg-zinc-50 dark:text-zinc-100 dark:hover:bg-zinc-800">
-                    <flux:icon.users class="h-5 w-5 text-zinc-500" />
-                    <span class="flex-1 font-medium">{{ __('Ansprechpartner') }}</span>
+                <a href="{{ route('employees.index') }}" wire:navigate class="flex items-center gap-3 px-5 py-4 text-zinc-900 no-underline hover:bg-zinc-50 dark:text-zinc-100 dark:hover:bg-zinc-800">
+                    <flux:icon.user-group class="h-5 w-5 text-zinc-500" />
+                    <span class="flex-1 font-medium">{{ __('Mitarbeiter') }}</span>
                     <flux:icon.chevron-right class="h-4 w-4 text-zinc-400" />
                 </a>
                 <a href="{{ route('emergency-levels.index') }}" wire:navigate class="flex items-center gap-3 px-5 py-4 text-zinc-900 no-underline hover:bg-zinc-50 dark:text-zinc-100 dark:hover:bg-zinc-800">

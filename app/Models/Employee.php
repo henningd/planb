@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Concerns\BelongsToCurrentCompany;
 use App\Concerns\LogsAudit;
+use App\Enums\CrisisRole;
 use Database\Factories\EmployeeFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -27,6 +28,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'emergency_contact',
     'manager_id',
     'is_key_personnel',
+    'crisis_role',
+    'is_crisis_deputy',
     'notes',
 ])]
 class Employee extends Model
@@ -77,6 +80,8 @@ class Employee extends Model
     {
         return [
             'is_key_personnel' => 'boolean',
+            'is_crisis_deputy' => 'boolean',
+            'crisis_role' => CrisisRole::class,
         ];
     }
 }

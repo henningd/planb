@@ -49,7 +49,7 @@ class TemplatePlaceholders
      */
     protected static function buildValues(?Company $company, array $overrides): array
     {
-        $primary = $company?->contacts()->where('is_primary', true)->first();
+        $primary = $company?->primaryContact();
         $now = Carbon::now();
 
         $values = [
@@ -57,7 +57,7 @@ class TemplatePlaceholders
             'zeitpunkt' => $now->translatedFormat('d.m.Y, H:i').' Uhr',
             'datum' => $now->translatedFormat('d.m.Y'),
             'vorfall' => '',
-            'ansprechpartner' => (string) ($primary?->name ?? ''),
+            'ansprechpartner' => (string) ($primary?->fullName() ?? ''),
         ];
 
         foreach ($overrides as $key => $value) {

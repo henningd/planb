@@ -25,7 +25,7 @@ new #[Title('Admin · Kunden')] class extends Component {
     public function companies()
     {
         return Company::withoutGlobalScope(CurrentCompanyScope::class)
-            ->with(['team', 'contacts', 'systems'])
+            ->with(['team', 'employees', 'systems'])
             ->orderBy('name')
             ->get();
     }
@@ -99,7 +99,7 @@ new #[Title('Admin · Kunden')] class extends Component {
                     <th class="px-5 py-3">{{ __('Firma') }}</th>
                     <th class="px-5 py-3">{{ __('Branche') }}</th>
                     <th class="px-5 py-3">{{ __('Team') }}</th>
-                    <th class="px-5 py-3 text-right">{{ __('Kontakte') }}</th>
+                    <th class="px-5 py-3 text-right">{{ __('Mitarbeiter') }}</th>
                     <th class="px-5 py-3 text-right">{{ __('Systeme') }}</th>
                     <th class="px-5 py-3"></th>
                 </tr>
@@ -117,7 +117,7 @@ new #[Title('Admin · Kunden')] class extends Component {
                         <td class="px-5 py-3">
                             <span class="text-zinc-600 dark:text-zinc-300">{{ $company->team->name ?? '—' }}</span>
                         </td>
-                        <td class="px-5 py-3 text-right tabular-nums">{{ $company->contacts->count() }}</td>
+                        <td class="px-5 py-3 text-right tabular-nums">{{ $company->employees->count() }}</td>
                         <td class="px-5 py-3 text-right tabular-nums">{{ $company->systems->count() }}</td>
                         <td class="px-5 py-3 text-right">
                             <flux:dropdown align="end">

@@ -115,53 +115,6 @@ class IndustryTemplates
     ];
 
     /**
-     * Typical contact roles for each industry – seeded as placeholder
-     * contacts so the user only has to add names and phone numbers.
-     *
-     * @var array<string, array<int, array{role: string, type: string}>>
-     */
-    public const CONTACT_ROLES = [
-        Industry::Handwerk->value => [
-            ['role' => 'Geschäftsführung / Inhaber', 'type' => 'intern'],
-            ['role' => 'Werkstatt- / Betriebsleitung', 'type' => 'intern'],
-            ['role' => 'Baustellenleitung (Rufbereitschaft)', 'type' => 'intern'],
-            ['role' => 'Büro / Auftragsabwicklung', 'type' => 'intern'],
-            ['role' => 'IT-Dienstleister', 'type' => 'extern'],
-            ['role' => 'Steuerberater / Buchhaltung', 'type' => 'extern'],
-            ['role' => 'Datenschutzbeauftragter', 'type' => 'extern'],
-        ],
-        Industry::Handel->value => [
-            ['role' => 'Geschäftsführung / Inhaber', 'type' => 'intern'],
-            ['role' => 'Filial- / Marktleitung', 'type' => 'intern'],
-            ['role' => 'Verantwortlicher Kassensystem', 'type' => 'intern'],
-            ['role' => 'IT-Beauftragter', 'type' => 'intern'],
-            ['role' => 'IT-Dienstleister', 'type' => 'extern'],
-            ['role' => 'Zahlungsdienstleister / Kartenterminal', 'type' => 'extern'],
-            ['role' => 'Shop-/Warenwirtschafts-Support', 'type' => 'extern'],
-            ['role' => 'Datenschutzbeauftragter', 'type' => 'extern'],
-        ],
-        Industry::Dienstleistung->value => [
-            ['role' => 'Geschäftsführung / Partner', 'type' => 'intern'],
-            ['role' => 'IT-Beauftragter', 'type' => 'intern'],
-            ['role' => 'Sekretariat / Empfang', 'type' => 'intern'],
-            ['role' => 'IT-Dienstleister', 'type' => 'extern'],
-            ['role' => 'Datenschutzbeauftragter', 'type' => 'extern'],
-            ['role' => 'Branchensoftware-Support', 'type' => 'extern'],
-            ['role' => 'Steuerberater / Buchhaltung', 'type' => 'extern'],
-        ],
-        Industry::Produktion->value => [
-            ['role' => 'Geschäftsführung', 'type' => 'intern'],
-            ['role' => 'Werk- / Produktionsleitung', 'type' => 'intern'],
-            ['role' => 'IT-Leitung', 'type' => 'intern'],
-            ['role' => 'Sicherheitsbeauftragter', 'type' => 'intern'],
-            ['role' => 'Instandhaltung / Betriebstechnik', 'type' => 'intern'],
-            ['role' => 'IT-Dienstleister', 'type' => 'extern'],
-            ['role' => 'ERP/MES-Support', 'type' => 'extern'],
-            ['role' => 'Datenschutzbeauftragter', 'type' => 'extern'],
-        ],
-    ];
-
-    /**
      * @return array<string, array{label: string, hint: string, count: int}>
      */
     public static function catalog(): array
@@ -172,30 +125,6 @@ class IndustryTemplates
                 'label' => $tpl['label'],
                 'hint' => $tpl['hint'],
                 'count' => count($tpl['systems']),
-            ];
-        }
-
-        return $catalog;
-    }
-
-    /**
-     * @return array<int, array{role: string, type: string}>
-     */
-    public static function contactRolesFor(string $industryValue): array
-    {
-        return self::CONTACT_ROLES[$industryValue] ?? [];
-    }
-
-    /**
-     * @return array<string, array{label: string, count: int}>
-     */
-    public static function contactCatalog(): array
-    {
-        $catalog = [];
-        foreach (self::CONTACT_ROLES as $key => $roles) {
-            $catalog[$key] = [
-                'label' => self::TEMPLATES[$key]['label'] ?? $key,
-                'count' => count($roles),
             ];
         }
 

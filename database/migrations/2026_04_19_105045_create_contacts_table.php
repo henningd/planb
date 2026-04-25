@@ -1,6 +1,5 @@
 <?php
 
-use App\Enums\ContactType;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -16,7 +15,7 @@ return new class extends Migration
             $table->string('role')->nullable();
             $table->string('phone')->nullable();
             $table->string('email')->nullable();
-            $table->string('type')->default(ContactType::Internal->value);
+            $table->string('type')->default('intern');
             $table->boolean('is_primary')->default(false);
             $table->timestamps();
 

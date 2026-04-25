@@ -2,7 +2,11 @@
 
 namespace App\Models;
 
+use App\Enums\CrisisRole;
 use App\Enums\Industry;
+use App\Enums\KritisRelevance;
+use App\Enums\LegalForm;
+use App\Enums\Nis2Classification;
 use App\Observers\CompanyObserver;
 use Carbon\CarbonInterface;
 use Database\Factories\CompanyFactory;
@@ -15,7 +19,27 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-#[Fillable(['team_id', 'name', 'industry', 'employee_count', 'locations_count', 'review_cycle_months', 'last_reviewed_at', 'last_reminder_sent_at'])]
+#[Fillable([
+    'team_id',
+    'name',
+    'industry',
+    'legal_form',
+    'kritis_relevant',
+    'nis2_classification',
+    'valid_from',
+    'cyber_insurance_deductible',
+    'budget_it_lead',
+    'budget_emergency_officer',
+    'budget_management',
+    'data_protection_authority_name',
+    'data_protection_authority_phone',
+    'data_protection_authority_website',
+    'employee_count',
+    'locations_count',
+    'review_cycle_months',
+    'last_reviewed_at',
+    'last_reminder_sent_at',
+])]
 #[ObservedBy([CompanyObserver::class])]
 class Company extends Model
 {
@@ -31,11 +55,19 @@ class Company extends Model
     }
 
     /**
-     * @return HasMany<Contact, $this>
+     * @return HasMany<Location, $this>
      */
-    public function contacts(): HasMany
+    public function locations(): HasMany
     {
-        return $this->hasMany(Contact::class);
+        return $this->hasMany(Location::class)->orderBy('sort')->orderBy('name');
+    }
+
+    /**
+     * @return HasMany<Employee, $this>
+     */
+    public function employees(): HasMany
+    {
+        return $this->hasMany(Employee::class)->orderBy('last_name')->orderBy('first_name');
     }
 
     /**
@@ -110,14 +142,65 @@ class Company extends Model
         return $this->hasMany(HandbookShare::class)->orderByDesc('created_at');
     }
 
-    public function primaryContact(): ?Contact
+    /**
+     * @return HasMany<EmergencyResource, $this>
+     */
+    public function emergencyResources(): HasMany
     {
-        return $this->contacts()->where('is_primary', true)->first();
+        return $this->hasMany(EmergencyResource::class)->orderBy('type')->orderBy('sort');
+    }
+
+    /**
+     * @return HasMany<HandbookVersion, $this>
+     */
+    public function handbookVersions(): HasMany
+    {
+        return $this->hasMany(HandbookVersion::class)->orderByDesc('changed_at');
+    }
+
+    /**
+     * @return HasMany<HandbookTest, $this>
+     */
+    public function handbookTests(): HasMany
+    {
+        return $this->hasMany(HandbookTest::class)->orderBy('next_due_at');
+    }
+
+    public function currentHandbookVersion(): ?HandbookVersion
+    {
+        return $this->handbookVersions()
+            ->whereNotNull('approved_at')
+            ->orderByDesc('approved_at')
+            ->orderByDesc('changed_at')
+            ->first();
+    }
+
+    public function crisisRoleHolder(CrisisRole $role, bool $deputy = false): ?Employee
+    {
+        return Employee::query()
+            ->where('company_id', $this->id)
+            ->where('crisis_role', $role->value)
+            ->where('is_crisis_deputy', $deputy)
+            ->first();
+    }
+
+    /**
+     * Hauptansprechperson der Firma: Mitarbeiter mit Krisenrolle „Geschäftsführung"
+     * (Hauptperson, nicht Vertretung). Fällt zurück auf irgendeinen Geschäftsführungs-
+     * Mitarbeiter, wenn keine Hauptperson markiert ist.
+     */
+    public function primaryContact(): ?Employee
+    {
+        return $this->crisisRoleHolder(CrisisRole::Management)
+            ?? Employee::query()
+                ->where('company_id', $this->id)
+                ->where('crisis_role', CrisisRole::Management->value)
+                ->first();
     }
 
     public function hasPrimaryContact(): bool
     {
-        return $this->contacts()->where('is_primary', true)->exists();
+        return $this->primaryContact() !== null;
     }
 
     /**
@@ -147,6 +230,13 @@ class Company extends Model
     {
         return [
             'industry' => Industry::class,
+            'legal_form' => LegalForm::class,
+            'kritis_relevant' => KritisRelevance::class,
+            'nis2_classification' => Nis2Classification::class,
+            'valid_from' => 'date',
+            'budget_it_lead' => 'decimal:2',
+            'budget_emergency_officer' => 'decimal:2',
+            'budget_management' => 'decimal:2',
             'employee_count' => 'integer',
             'locations_count' => 'integer',
             'review_cycle_months' => 'integer',
