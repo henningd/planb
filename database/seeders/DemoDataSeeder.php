@@ -29,6 +29,7 @@ use App\Models\IncidentReport;
 use App\Models\IncidentReportObligation;
 use App\Models\InsurancePolicy;
 use App\Models\Location;
+use App\Models\Role;
 use App\Models\Scenario;
 use App\Models\ScenarioRun;
 use App\Models\ScenarioRunStep;
@@ -105,6 +106,7 @@ class DemoDataSeeder extends Seeder
 
         $this->seedLocations($company);
         $this->seedEmployees($company);
+        $this->seedRoles($company);
         $itProvider = $this->seedServiceProviders($company);
         $this->seedInsurancePolicy($company);
         $this->seedSystems($company, $itProvider);
@@ -242,6 +244,37 @@ class DemoDataSeeder extends Seeder
                 ],
                 array_merge(['company_id' => $company->id], $data),
             );
+        }
+    }
+
+    private function seedRoles(Company $company): void
+    {
+        $roleEmployeeMap = [
+            ['name' => 'Geschäftsleitung', 'description' => 'Geschäftsführung und Prokura.', 'sort' => 0, 'emails' => ['max@mustermann.de', 'sabine@mustermann.de']],
+            ['name' => 'Buchhaltung', 'description' => 'Finanzbuchhaltung, Lohn, DATEV.', 'sort' => 1, 'emails' => ['tobias.fischer@mustermann.de']],
+            ['name' => 'Verwaltung & Empfang', 'description' => 'Büroleitung, Auftragsannahme, Kommunikation.', 'sort' => 2, 'emails' => ['anna@mustermann.de', 'eva.kommer@mustermann.de']],
+            ['name' => 'Werkstatt', 'description' => 'Werkstattleitung und Gesellen.', 'sort' => 3, 'emails' => ['bernd.schneider@mustermann.de', 'jonas.mueller@mustermann.de']],
+            ['name' => 'IT', 'description' => 'IT-Beauftragter intern, Schnittstelle zum IT-Dienstleister.', 'sort' => 4, 'emails' => ['dieter.klein@mustermann.de']],
+            ['name' => 'Datenschutz & Compliance', 'description' => 'Externe DSB und Compliance-Themen.', 'sort' => 5, 'emails' => ['wagner@datenschutz-extern.example']],
+        ];
+
+        foreach ($roleEmployeeMap as $data) {
+            $role = Role::withoutGlobalScope(CurrentCompanyScope::class)->updateOrCreate(
+                ['company_id' => $company->id, 'name' => $data['name']],
+                [
+                    'company_id' => $company->id,
+                    'description' => $data['description'],
+                    'sort' => $data['sort'],
+                ],
+            );
+
+            $employeeIds = Employee::withoutGlobalScope(CurrentCompanyScope::class)
+                ->where('company_id', $company->id)
+                ->whereIn('email', $data['emails'])
+                ->pluck('id')
+                ->all();
+
+            $role->employees()->syncWithoutDetaching($employeeIds);
         }
     }
 

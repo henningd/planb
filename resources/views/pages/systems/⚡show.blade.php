@@ -2,6 +2,7 @@
 
 use App\Enums\RaciRole;
 use App\Models\Employee;
+use App\Models\Role;
 use App\Models\ServiceProvider;
 use App\Models\System;
 use App\Models\SystemTask;
@@ -28,6 +29,9 @@ new #[Title('System')] class extends Component {
     /** @var array<int, array{provider_id: string, raci_role: string}> */
     public array $newTaskProviders = [];
 
+    /** @var array<int, array{role_id: string, raci_role: string}> */
+    public array $newTaskRoles = [];
+
     public ?string $editingTaskId = null;
 
     public string $editTitle = '';
@@ -41,6 +45,9 @@ new #[Title('System')] class extends Component {
 
     /** @var array<int, array{provider_id: string, raci_role: string}> */
     public array $editProviders = [];
+
+    /** @var array<int, array{role_id: string, raci_role: string}> */
+    public array $editRoles = [];
 
     public function mount(System $system): void
     {
@@ -64,7 +71,7 @@ new #[Title('System')] class extends Component {
     #[Computed]
     public function tasks(): Collection
     {
-        return SystemTask::with(['assignees', 'providerAssignees'])
+        return SystemTask::with(['assignees', 'providerAssignees', 'roleAssignees.employees'])
             ->where('system_id', $this->system->id)
             ->orderBy('sort')
             ->orderBy('created_at')
@@ -95,6 +102,31 @@ new #[Title('System')] class extends Component {
     public function providersForSelect(): Collection
     {
         return ServiceProvider::orderBy('name')->get();
+    }
+
+    /**
+     * @return Collection<int, Role>
+     */
+    #[Computed]
+    public function rolesForSelect(): Collection
+    {
+        return Role::with('employees')->orderBy('sort')->orderBy('name')->get();
+    }
+
+    public function roleMembersText(?string $roleId): string
+    {
+        if (! $roleId) {
+            return '';
+        }
+
+        $role = $this->rolesForSelect->firstWhere('id', $roleId);
+        if (! $role) {
+            return '';
+        }
+
+        $names = $role->employees->map(fn ($m) => $m->fullName())->implode(', ');
+
+        return $names !== '' ? $names : __('Diese Rolle hat noch keine Mitglieder.');
     }
 
     public function addNewTaskAssignee(): void
@@ -161,6 +193,38 @@ new #[Title('System')] class extends Component {
         }
     }
 
+    public function addNewTaskRole(): void
+    {
+        $this->newTaskRoles[] = [
+            'role_id' => '',
+            'raci_role' => RaciRole::Responsible->value,
+        ];
+    }
+
+    public function removeNewTaskRole(int $index): void
+    {
+        if (isset($this->newTaskRoles[$index])) {
+            unset($this->newTaskRoles[$index]);
+            $this->newTaskRoles = array_values($this->newTaskRoles);
+        }
+    }
+
+    public function addEditRole(): void
+    {
+        $this->editRoles[] = [
+            'role_id' => '',
+            'raci_role' => RaciRole::Responsible->value,
+        ];
+    }
+
+    public function removeEditRole(int $index): void
+    {
+        if (isset($this->editRoles[$index])) {
+            unset($this->editRoles[$index]);
+            $this->editRoles = array_values($this->editRoles);
+        }
+    }
+
     public function addTask(): void
     {
         $raciValues = implode(',', array_column(RaciRole::cases(), 'value'));
@@ -175,6 +239,9 @@ new #[Title('System')] class extends Component {
             'newTaskProviders' => ['array'],
             'newTaskProviders.*.provider_id' => ['required', 'uuid', 'exists:service_providers,id'],
             'newTaskProviders.*.raci_role' => ['required', 'in:'.$raciValues],
+            'newTaskRoles' => ['array'],
+            'newTaskRoles.*.role_id' => ['required', 'uuid', 'exists:roles,id'],
+            'newTaskRoles.*.raci_role' => ['required', 'in:'.$raciValues],
         ]);
 
         $nextSort = (int) SystemTask::where('system_id', $this->system->id)->max('sort') + 1;
@@ -189,8 +256,9 @@ new #[Title('System')] class extends Component {
 
         $this->syncAssignees($task, $validated['newTaskAssignees'] ?? []);
         $this->syncProviderAssignees($task, $validated['newTaskProviders'] ?? []);
+        $this->syncRoleAssignees($task, $validated['newTaskRoles'] ?? []);
 
-        $this->reset(['newTaskTitle', 'newTaskDescription', 'newTaskDueDate', 'newTaskAssignees', 'newTaskProviders']);
+        $this->reset(['newTaskTitle', 'newTaskDescription', 'newTaskDueDate', 'newTaskAssignees', 'newTaskProviders', 'newTaskRoles']);
         unset($this->tasks);
 
         $this->dispatch('task-saved');
@@ -256,7 +324,7 @@ new #[Title('System')] class extends Component {
 
     public function openEditTask(string $id): void
     {
-        $task = SystemTask::with(['assignees', 'providerAssignees'])
+        $task = SystemTask::with(['assignees', 'providerAssignees', 'roleAssignees'])
             ->where('system_id', $this->system->id)
             ->findOrFail($id);
 
@@ -278,6 +346,13 @@ new #[Title('System')] class extends Component {
             ])
             ->values()
             ->all();
+        $this->editRoles = $task->roleAssignees
+            ->map(fn (Role $r) => [
+                'role_id' => $r->id,
+                'raci_role' => (string) $r->pivot->raci_role,
+            ])
+            ->values()
+            ->all();
 
         Flux::modal('task-edit')->show();
     }
@@ -296,6 +371,9 @@ new #[Title('System')] class extends Component {
             'editProviders' => ['array'],
             'editProviders.*.provider_id' => ['required', 'uuid', 'exists:service_providers,id'],
             'editProviders.*.raci_role' => ['required', 'in:'.$raciValues],
+            'editRoles' => ['array'],
+            'editRoles.*.role_id' => ['required', 'uuid', 'exists:roles,id'],
+            'editRoles.*.raci_role' => ['required', 'in:'.$raciValues],
         ]);
 
         $task = SystemTask::where('system_id', $this->system->id)
@@ -309,9 +387,10 @@ new #[Title('System')] class extends Component {
 
         $this->syncAssignees($task, $validated['editAssignees'] ?? []);
         $this->syncProviderAssignees($task, $validated['editProviders'] ?? []);
+        $this->syncRoleAssignees($task, $validated['editRoles'] ?? []);
 
         Flux::modal('task-edit')->close();
-        $this->reset(['editingTaskId', 'editTitle', 'editDescription', 'editDueDate', 'editAssignees', 'editProviders']);
+        $this->reset(['editingTaskId', 'editTitle', 'editDescription', 'editDueDate', 'editAssignees', 'editProviders', 'editRoles']);
         unset($this->tasks);
 
         Flux::toast(variant: 'success', text: __('Aufgabe gespeichert.'));
@@ -347,6 +426,25 @@ new #[Title('System')] class extends Component {
         }
 
         $task->providerAssignees()->sync($sync);
+    }
+
+    /**
+     * @param  array<int, array{role_id: string, raci_role: string}>  $rows
+     */
+    protected function syncRoleAssignees(SystemTask $task, array $rows): void
+    {
+        $sync = [];
+        foreach (array_values($rows) as $index => $row) {
+            if (empty($row['role_id'])) {
+                continue;
+            }
+            $sync[$row['role_id']] = [
+                'raci_role' => $row['raci_role'],
+                'sort' => $index,
+            ];
+        }
+
+        $task->roleAssignees()->sync($sync);
     }
 }; ?>
 
@@ -960,6 +1058,50 @@ new #[Title('System')] class extends Component {
                     @endif
                 </div>
 
+                <div class="space-y-2">
+                    <div class="flex items-center justify-between">
+                        <flux:label>{{ __('Rollen (RACI)') }}</flux:label>
+                        <flux:button type="button" size="sm" variant="filled" icon="plus" wire:click.prevent="addNewTaskRole">
+                            {{ __('Rolle hinzufügen') }}
+                        </flux:button>
+                    </div>
+                    <flux:description>
+                        {{ __('Mitglieder der gewählten Rolle werden automatisch als verantwortliche Personen angezeigt.') }}
+                    </flux:description>
+
+                    @if (empty($newTaskRoles))
+                        <flux:text class="text-xs text-zinc-500 dark:text-zinc-400">
+                            {{ __('Noch keine Rollen zugeordnet.') }}
+                        </flux:text>
+                    @else
+                        <div class="space-y-2">
+                            @foreach ($newTaskRoles as $i => $row)
+                                <div wire:key="new-role-{{ $i }}" class="space-y-1.5 rounded-md border border-zinc-200 bg-white p-2 dark:border-zinc-700 dark:bg-zinc-900">
+                                    <div class="flex flex-col gap-2 sm:flex-row sm:items-end">
+                                        <flux:select wire:model.live="newTaskRoles.{{ $i }}.role_id" class="flex-1" required>
+                                            <flux:select.option value="">{{ __('Rolle wählen') }}</flux:select.option>
+                                            @foreach ($this->rolesForSelect as $r)
+                                                <flux:select.option value="{{ $r->id }}">{{ $r->name }} ({{ $r->employees->count() }})</flux:select.option>
+                                            @endforeach
+                                        </flux:select>
+                                        <flux:select wire:model="newTaskRoles.{{ $i }}.raci_role" class="sm:w-64">
+                                            @foreach (\App\Enums\RaciRole::cases() as $r)
+                                                <flux:select.option value="{{ $r->value }}">{{ $r->value }} – {{ $r->label() }}</flux:select.option>
+                                            @endforeach
+                                        </flux:select>
+                                        <flux:button type="button" size="sm" variant="ghost" icon="x-mark" wire:click.prevent="removeNewTaskRole({{ $i }})" />
+                                    </div>
+                                    @if ($row['role_id'])
+                                        <div class="px-1 text-xs text-zinc-500 dark:text-zinc-400">
+                                            {{ $this->roleMembersText($row['role_id']) }}
+                                        </div>
+                                    @endif
+                                </div>
+                            @endforeach
+                        </div>
+                    @endif
+                </div>
+
                 <div class="flex justify-end gap-2 border-t border-zinc-200 pt-3 dark:border-zinc-700">
                     <flux:button type="button" variant="filled" @click="showTaskForm = false">
                         {{ __('Abbrechen') }}
@@ -1013,13 +1155,13 @@ new #[Title('System')] class extends Component {
                                         {{ $task->description }}
                                     </div>
                                 @endif
-                                @if ($task->assignees->isNotEmpty() || $task->providerAssignees->isNotEmpty())
-                                    @php
-                                        $taskEmpGroups = $task->assignees->groupBy(fn ($e) => $e->pivot->raci_role ?? '');
-                                        $taskProvGroups = $task->providerAssignees->groupBy(fn ($p) => $p->pivot->raci_role ?? '');
-                                        $taskAccountableCount = ($taskEmpGroups->get('A') ?? collect())->count() + ($taskProvGroups->get('A') ?? collect())->count();
-                                        $taskResponsibleCount = ($taskEmpGroups->get('R') ?? collect())->count() + ($taskProvGroups->get('R') ?? collect())->count();
-                                    @endphp
+                                @if ($task->assignees->isNotEmpty() || $task->providerAssignees->isNotEmpty() || $task->roleAssignees->isNotEmpty())
+                                    @php($taskEmpGroups = $task->assignees->groupBy(fn ($e) => $e->pivot->raci_role ?? ''))
+                                    @php($taskProvGroups = $task->providerAssignees->groupBy(fn ($p) => $p->pivot->raci_role ?? ''))
+                                    @php($taskRoleGroups = $task->roleAssignees->groupBy(fn ($r) => $r->pivot->raci_role ?? ''))
+                                    @php($roleMembersFor = fn (string $code) => ($taskRoleGroups->get($code) ?? collect())->flatMap(fn ($role) => $role->employees))
+                                    @php($taskAccountableCount = ($taskEmpGroups->get('A') ?? collect())->count() + ($taskProvGroups->get('A') ?? collect())->count() + $roleMembersFor('A')->count())
+                                    @php($taskResponsibleCount = ($taskEmpGroups->get('R') ?? collect())->count() + ($taskProvGroups->get('R') ?? collect())->count() + $roleMembersFor('R')->count())
 
                                     @if (! $task->isDone() && ($taskAccountableCount === 0 || $taskResponsibleCount === 0 || $taskAccountableCount > 1))
                                         <div class="mt-2 flex items-start gap-2 rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-xs dark:border-rose-900 dark:bg-rose-950/40">
@@ -1039,11 +1181,10 @@ new #[Title('System')] class extends Component {
 
                                     <div class="grid gap-2 pt-2 sm:grid-cols-2 lg:grid-cols-4">
                                         @foreach (\App\Enums\RaciRole::cases() as $r)
-                                            @php
-                                                $emps = $taskEmpGroups->get($r->value) ?? collect();
-                                                $provs = $taskProvGroups->get($r->value) ?? collect();
-                                                $isEmpty = $emps->isEmpty() && $provs->isEmpty();
-                                            @endphp
+                                            @php($emps = $taskEmpGroups->get($r->value) ?? collect())
+                                            @php($provs = $taskProvGroups->get($r->value) ?? collect())
+                                            @php($rolesAtR = $taskRoleGroups->get($r->value) ?? collect())
+                                            @php($isEmpty = $emps->isEmpty() && $provs->isEmpty() && $rolesAtR->isEmpty())
                                             <div class="rounded-md border border-zinc-200 bg-white p-2 dark:border-zinc-700 dark:bg-zinc-900">
                                                 <div class="mb-1">
                                                     <flux:badge :color="$r->badgeColor()" size="sm" :title="$r->description()">
@@ -1068,6 +1209,14 @@ new #[Title('System')] class extends Component {
                                                             <li class="flex items-center gap-1 text-zinc-700 dark:text-zinc-200">
                                                                 <flux:icon.wrench-screwdriver class="h-3 w-3 shrink-0 text-zinc-400" />
                                                                 <span class="truncate">{{ $prov->name }}</span>
+                                                            </li>
+                                                        @endforeach
+                                                        @foreach ($rolesAtR as $roleAssignee)
+                                                            <li class="text-zinc-700 dark:text-zinc-200">
+                                                                <div class="font-medium">{{ $roleAssignee->name }}</div>
+                                                                <div class="ml-2 text-[11px] text-zinc-500 dark:text-zinc-400">
+                                                                    {{ $this->roleMembersText($roleAssignee->id) }}
+                                                                </div>
                                                             </li>
                                                         @endforeach
                                                     </ul>
@@ -1193,6 +1342,50 @@ new #[Title('System')] class extends Component {
                                 </flux:select>
                                 <flux:button type="button" size="sm" variant="ghost" icon="x-mark"
                                     wire:click.prevent="removeEditProvider({{ $i }})" />
+                            </div>
+                        @endforeach
+                    </div>
+                @endif
+            </div>
+
+            <div class="space-y-2">
+                <div class="flex items-center justify-between">
+                    <flux:label>{{ __('Rollen (RACI)') }}</flux:label>
+                    <flux:button type="button" size="sm" variant="filled" icon="plus" wire:click.prevent="addEditRole">
+                        {{ __('Rolle hinzufügen') }}
+                    </flux:button>
+                </div>
+                <flux:description>
+                    {{ __('Mitglieder der gewählten Rolle werden automatisch als verantwortliche Personen angezeigt.') }}
+                </flux:description>
+
+                @if (empty($editRoles))
+                    <flux:text class="text-xs text-zinc-500 dark:text-zinc-400">
+                        {{ __('Noch keine Rollen zugeordnet.') }}
+                    </flux:text>
+                @else
+                    <div class="space-y-2">
+                        @foreach ($editRoles as $i => $row)
+                            <div wire:key="edit-role-{{ $i }}" class="space-y-1.5 rounded-md border border-zinc-200 bg-white p-2 dark:border-zinc-700 dark:bg-zinc-900">
+                                <div class="flex flex-col gap-2 sm:flex-row sm:items-end">
+                                    <flux:select wire:model.live="editRoles.{{ $i }}.role_id" class="flex-1" required>
+                                        <flux:select.option value="">{{ __('Rolle wählen') }}</flux:select.option>
+                                        @foreach ($this->rolesForSelect as $r)
+                                            <flux:select.option value="{{ $r->id }}">{{ $r->name }} ({{ $r->employees->count() }})</flux:select.option>
+                                        @endforeach
+                                    </flux:select>
+                                    <flux:select wire:model="editRoles.{{ $i }}.raci_role" class="sm:w-64">
+                                        @foreach (\App\Enums\RaciRole::cases() as $r)
+                                            <flux:select.option value="{{ $r->value }}">{{ $r->value }} – {{ $r->label() }}</flux:select.option>
+                                        @endforeach
+                                    </flux:select>
+                                    <flux:button type="button" size="sm" variant="ghost" icon="x-mark" wire:click.prevent="removeEditRole({{ $i }})" />
+                                </div>
+                                @if ($row['role_id'])
+                                    <div class="px-1 text-xs text-zinc-500 dark:text-zinc-400">
+                                        {{ $this->roleMembersText($row['role_id']) }}
+                                    </div>
+                                @endif
                             </div>
                         @endforeach
                     </div>

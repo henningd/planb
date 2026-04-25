@@ -52,6 +52,16 @@ class SystemTask extends Model
             ->withTimestamps();
     }
 
+    /**
+     * @return BelongsToMany<Role, $this>
+     */
+    public function roleAssignees(): BelongsToMany
+    {
+        return $this->belongsToMany(Role::class, 'role_system_task')
+            ->withPivot(['raci_role', 'sort'])
+            ->withTimestamps();
+    }
+
     public function isDone(): bool
     {
         return $this->completed_at !== null;

@@ -74,6 +74,17 @@ class Employee extends Model
     }
 
     /**
+     * @return BelongsToMany<Role, $this>
+     */
+    public function roles(): BelongsToMany
+    {
+        return $this->belongsToMany(Role::class)
+            ->withTimestamps()
+            ->orderBy('sort')
+            ->orderBy('name');
+    }
+
+    /**
      * @return array<string, string>
      */
     protected function casts(): array

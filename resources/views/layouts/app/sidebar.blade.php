@@ -29,6 +29,9 @@
                     <flux:sidebar.item icon="user-group" :href="route('employees.index')" :current="request()->routeIs('employees.*')" wire:navigate>
                         {{ __('Mitarbeiter') }}
                     </flux:sidebar.item>
+                    <flux:sidebar.item icon="identification" :href="route('roles.index')" :current="request()->routeIs('roles.*')" wire:navigate>
+                        {{ __('Rollen') }}
+                    </flux:sidebar.item>
                     <flux:sidebar.item icon="wrench-screwdriver" :href="route('service-providers.index')" :current="request()->routeIs('service-providers.*')" wire:navigate>
                         {{ __('Dienstleister') }}
                     </flux:sidebar.item>

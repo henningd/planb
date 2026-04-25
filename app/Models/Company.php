@@ -71,6 +71,14 @@ class Company extends Model
     }
 
     /**
+     * @return HasMany<Role, $this>
+     */
+    public function roles(): HasMany
+    {
+        return $this->hasMany(Role::class)->orderBy('sort')->orderBy('name');
+    }
+
+    /**
      * @return HasMany<EmergencyLevel, $this>
      */
     public function emergencyLevels(): HasMany

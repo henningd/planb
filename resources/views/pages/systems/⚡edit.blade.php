@@ -3,6 +3,7 @@
 use App\Enums\SystemCategory;
 use App\Models\Employee;
 use App\Models\EmergencyLevel;
+use App\Models\Role;
 use App\Models\ServiceProvider;
 use App\Models\System;
 use App\Models\SystemPriority;
@@ -49,6 +50,11 @@ new #[Title('System bearbeiten')] class extends Component {
 
     public string $employeeSearch = '';
 
+    /** @var array<int, array{role_id: string, raci_role: string, note: string}> */
+    public array $roleAssignments = [];
+
+    public string $roleSearch = '';
+
     /** @var array<int, array{dependency_id: string, note: string}> */
     public array $dependencyAssignments = [];
 
@@ -59,7 +65,7 @@ new #[Title('System bearbeiten')] class extends Component {
         abort_unless(Auth::user()->currentCompany(), 403);
 
         if ($system && $system->exists) {
-            $system->load(['serviceProviders', 'employees', 'dependencies']);
+            $system->load(['serviceProviders', 'employees', 'roles', 'dependencies']);
 
             $this->system = $system;
             $this->name = $system->name;
@@ -92,6 +98,14 @@ new #[Title('System bearbeiten')] class extends Component {
                 ->map(fn (System $s) => [
                     'dependency_id' => $s->id,
                     'note' => (string) ($s->pivot->note ?? ''),
+                ])
+                ->values()
+                ->all();
+            $this->roleAssignments = $system->roles
+                ->map(fn (Role $r) => [
+                    'role_id' => $r->id,
+                    'raci_role' => (string) ($r->pivot->raci_role ?? ''),
+                    'note' => (string) ($r->pivot->note ?? ''),
                 ])
                 ->values()
                 ->all();
@@ -335,6 +349,97 @@ new #[Title('System bearbeiten')] class extends Component {
     }
 
     /**
+     * @return Collection<int, Role>
+     */
+    #[Computed]
+    public function roles(): Collection
+    {
+        return Role::with('employees')->orderBy('sort')->orderBy('name')->get();
+    }
+
+    /**
+     * @return array<string, Role>
+     */
+    #[Computed]
+    public function rolesById(): array
+    {
+        return $this->roles->keyBy('id')->all();
+    }
+
+    /**
+     * @return Collection<int, Role>
+     */
+    #[Computed]
+    public function availableRoles(): Collection
+    {
+        $taken = collect($this->roleAssignments)->pluck('role_id')->all();
+        $needle = mb_strtolower(trim($this->roleSearch));
+
+        return $this->roles
+            ->reject(fn (Role $r) => in_array($r->id, $taken, true))
+            ->filter(function (Role $r) use ($needle) {
+                if ($needle === '') {
+                    return true;
+                }
+
+                $hay = mb_strtolower($r->name.' '.$r->description);
+
+                return str_contains($hay, $needle);
+            })
+            ->values();
+    }
+
+    public function addRoleById(string $id): void
+    {
+        if (collect($this->roleAssignments)->pluck('role_id')->contains($id)) {
+            return;
+        }
+        if (! array_key_exists($id, $this->rolesById)) {
+            return;
+        }
+
+        $this->roleAssignments[] = [
+            'role_id' => $id,
+            'raci_role' => '',
+            'note' => '',
+        ];
+        $this->roleSearch = '';
+    }
+
+    public function removeRole(int $index): void
+    {
+        if (! isset($this->roleAssignments[$index])) {
+            return;
+        }
+        unset($this->roleAssignments[$index]);
+        $this->roleAssignments = array_values($this->roleAssignments);
+    }
+
+    public function moveRoleUp(int $index): void
+    {
+        if ($index <= 0 || ! isset($this->roleAssignments[$index], $this->roleAssignments[$index - 1])) {
+            return;
+        }
+
+        [$this->roleAssignments[$index - 1], $this->roleAssignments[$index]] = [
+            $this->roleAssignments[$index],
+            $this->roleAssignments[$index - 1],
+        ];
+    }
+
+    public function moveRoleDown(int $index): void
+    {
+        if (! isset($this->roleAssignments[$index], $this->roleAssignments[$index + 1])) {
+            return;
+        }
+
+        [$this->roleAssignments[$index], $this->roleAssignments[$index + 1]] = [
+            $this->roleAssignments[$index + 1],
+            $this->roleAssignments[$index],
+        ];
+    }
+
+    /**
      * @return Collection<int, System>
      */
     #[Computed]
@@ -494,12 +599,17 @@ new #[Title('System bearbeiten')] class extends Component {
             'dependencyAssignments' => ['array'],
             'dependencyAssignments.*.dependency_id' => ['required', 'uuid', 'exists:systems,id'],
             'dependencyAssignments.*.note' => ['nullable', 'string', 'max:500'],
+            'roleAssignments' => ['array'],
+            'roleAssignments.*.role_id' => ['required', 'uuid', 'exists:roles,id'],
+            'roleAssignments.*.raci_role' => ['nullable', 'in:'.$raciValues],
+            'roleAssignments.*.note' => ['nullable', 'string', 'max:500'],
         ]);
 
         $providerAssignments = $validated['providerAssignments'] ?? [];
         $responsibles = $validated['responsibles'] ?? [];
         $dependencyAssignments = $validated['dependencyAssignments'] ?? [];
-        unset($validated['providerAssignments'], $validated['responsibles'], $validated['dependencyAssignments']);
+        $roleAssignments = $validated['roleAssignments'] ?? [];
+        unset($validated['providerAssignments'], $validated['responsibles'], $validated['dependencyAssignments'], $validated['roleAssignments']);
 
         if ($this->system !== null) {
             $forbidden = $this->descendantIds($this->system->id);
@@ -541,8 +651,18 @@ new #[Title('System bearbeiten')] class extends Component {
             ];
         }
 
+        $roleSync = [];
+        foreach (array_values($roleAssignments) as $index => $row) {
+            $roleSync[$row['role_id']] = [
+                'sort' => $index,
+                'raci_role' => ($row['raci_role'] ?? '') !== '' ? $row['raci_role'] : null,
+                'note' => ($row['note'] ?? '') !== '' ? $row['note'] : null,
+            ];
+        }
+
         $system->serviceProviders()->sync($providerSync);
         $system->employees()->sync($employeeSync);
+        $system->roles()->sync($roleSync);
         $system->dependencies()->sync($dependencySync);
 
         Flux::toast(variant: 'success', text: __('System gespeichert.'));
@@ -716,8 +836,8 @@ new #[Title('System bearbeiten')] class extends Component {
                 </flux:field>
             </div>
 
-            @if ($this->employees->isNotEmpty() || $this->providers->isNotEmpty() || $this->dependencyCandidates->isNotEmpty())
-                @php($defaultTab = $this->employees->isNotEmpty() ? 'employees' : ($this->providers->isNotEmpty() ? 'providers' : 'dependencies'))
+            @if ($this->employees->isNotEmpty() || $this->providers->isNotEmpty() || $this->roles->isNotEmpty() || $this->dependencyCandidates->isNotEmpty())
+                @php($defaultTab = $this->employees->isNotEmpty() ? 'employees' : ($this->roles->isNotEmpty() ? 'roles' : ($this->providers->isNotEmpty() ? 'providers' : 'dependencies')))
                 <div x-data="{ tab: '{{ $defaultTab }}' }" class="space-y-3">
                     <div role="tablist" class="flex gap-1 border-b border-zinc-200 dark:border-zinc-700">
                         @if ($this->employees->isNotEmpty())
@@ -753,6 +873,24 @@ new #[Title('System bearbeiten')] class extends Component {
                                 {{ __('Dienstleister') }}
                                 @if (count($providerAssignments) > 0)
                                     <flux:badge color="teal" size="sm">{{ count($providerAssignments) }}</flux:badge>
+                                @endif
+                            </button>
+                        @endif
+                        @if ($this->roles->isNotEmpty())
+                            <button
+                                type="button"
+                                role="tab"
+                                :aria-selected="tab === 'roles'"
+                                @click="tab = 'roles'"
+                                :class="tab === 'roles'
+                                    ? 'border-b-2 border-zinc-900 text-zinc-900 dark:border-white dark:text-white'
+                                    : 'border-b-2 border-transparent text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200'"
+                                class="flex items-center gap-2 px-4 py-2 text-sm font-medium"
+                            >
+                                <flux:icon.identification class="h-4 w-4" />
+                                {{ __('Rollen') }}
+                                @if (count($roleAssignments) > 0)
+                                    <flux:badge color="teal" size="sm">{{ count($roleAssignments) }}</flux:badge>
                                 @endif
                             </button>
                         @endif
@@ -1185,6 +1323,171 @@ new #[Title('System bearbeiten')] class extends Component {
                                                     placeholder="{{ __('Notiz (optional, z. B. „Nur Schreibzugriff nötig")') }}"
                                                     class="block w-full rounded-md border border-zinc-200 bg-white px-2.5 py-1 text-sm shadow-sm placeholder:text-zinc-400 focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white"
                                                 />
+                                            </div>
+
+                                            <div class="flex shrink-0 items-center gap-1">
+                                                <button type="button" @click="moveUp(index)" :disabled="index === 0"
+                                                        class="inline-flex h-8 w-8 items-center justify-center rounded-md text-zinc-500 hover:bg-zinc-100 disabled:opacity-40 dark:hover:bg-zinc-800">
+                                                    <flux:icon.arrow-up class="h-4 w-4" />
+                                                </button>
+                                                <button type="button" @click="moveDown(index)" :disabled="index === rows.length - 1"
+                                                        class="inline-flex h-8 w-8 items-center justify-center rounded-md text-zinc-500 hover:bg-zinc-100 disabled:opacity-40 dark:hover:bg-zinc-800">
+                                                    <flux:icon.arrow-down class="h-4 w-4" />
+                                                </button>
+                                                <button type="button" @click="remove(index)"
+                                                        class="inline-flex h-8 w-8 items-center justify-center rounded-md text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800">
+                                                    <flux:icon.x-mark class="h-4 w-4" />
+                                                </button>
+                                            </div>
+                                        </li>
+                                    </template>
+                                </ol>
+                            </div>
+                        </div>
+                    @endif
+
+                    @if ($this->roles->isNotEmpty())
+                        <div x-show="tab === 'roles'" x-cloak class="space-y-4">
+                            <flux:description>
+                                {{ __('Zuweisung über Rollen statt einzelner Personen. Mitglieder der Rolle werden automatisch unter dem Eintrag aufgelistet — Änderungen an der Rollenmitgliedschaft wirken sich direkt aus.') }}
+                            </flux:description>
+
+                            @php($rolesRemaining = $this->roles->count() - count($roleAssignments))
+
+                            @if ($rolesRemaining > 0)
+                                <div
+                                    x-data="{ open: false }"
+                                    @focusin="open = true"
+                                    @click.outside="open = false"
+                                    class="relative"
+                                >
+                                    <flux:field>
+                                        <flux:label>{{ __('Rolle hinzufügen') }}</flux:label>
+                                        <flux:input
+                                            type="search"
+                                            wire:model.live.debounce.150ms="roleSearch"
+                                            autocomplete="off"
+                                            icon="magnifying-glass"
+                                            :placeholder="__('Rollenname tippen …')"
+                                        />
+                                    </flux:field>
+
+                                    <div
+                                        x-show="open"
+                                        x-cloak
+                                        class="absolute left-0 right-0 z-20 mt-1 max-h-64 overflow-y-auto rounded-lg border border-zinc-200 bg-white shadow-lg dark:border-zinc-700 dark:bg-zinc-900"
+                                    >
+                                        @forelse ($this->availableRoles as $role)
+                                            <button
+                                                type="button"
+                                                wire:click="addRoleById('{{ $role->id }}')"
+                                                class="flex w-full items-center gap-3 border-b border-zinc-100 px-3 py-2 text-left text-sm last:border-b-0 hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-800"
+                                            >
+                                                <flux:icon.identification class="h-4 w-4 text-zinc-400" />
+                                                <div class="min-w-0 flex-1">
+                                                    <div class="truncate font-medium">{{ $role->name }}</div>
+                                                    <div class="truncate text-xs text-zinc-500 dark:text-zinc-400">
+                                                        {{ trans_choice(':count Mitarbeitender|:count Mitarbeitende', $role->employees->count(), ['count' => $role->employees->count()]) }}
+                                                        @if ($role->employees->isNotEmpty())
+                                                            · {{ $role->employees->take(3)->map(fn ($e) => $e->fullName())->join(', ') }}@if ($role->employees->count() > 3) · …@endif
+                                                        @endif
+                                                    </div>
+                                                </div>
+                                                <flux:icon.plus class="h-4 w-4 text-zinc-400" />
+                                            </button>
+                                        @empty
+                                            <div class="px-3 py-3 text-sm text-zinc-500 dark:text-zinc-400">
+                                                {{ __('Keine passenden Rollen.') }}
+                                            </div>
+                                        @endforelse
+                                    </div>
+                                </div>
+                            @endif
+
+                            @php($roleLookup = $this->roles->mapWithKeys(fn ($r) => [
+                                $r->id => [
+                                    'name' => $r->name,
+                                    'description' => (string) $r->description,
+                                    'members' => $r->employees->map(fn ($e) => $e->fullName())->all(),
+                                ],
+                            ])->all())
+
+                            <div
+                                wire:key="roles-list"
+                                x-data="{
+                                    rows: $wire.entangle('roleAssignments'),
+                                    directory: @js((object) $roleLookup),
+                                    moveUp(i) {
+                                        if (i <= 0) return;
+                                        const copy = [...this.rows];
+                                        [copy[i - 1], copy[i]] = [copy[i], copy[i - 1]];
+                                        this.rows = copy;
+                                    },
+                                    moveDown(i) {
+                                        if (i >= this.rows.length - 1) return;
+                                        const copy = [...this.rows];
+                                        [copy[i], copy[i + 1]] = [copy[i + 1], copy[i]];
+                                        this.rows = copy;
+                                    },
+                                    remove(i) {
+                                        this.rows = this.rows.filter((_, idx) => idx !== i);
+                                    },
+                                    meta(id) {
+                                        return this.directory[id] || { name: 'Unbekannte Rolle', description: '', members: [] };
+                                    },
+                                }"
+                            >
+                                <template x-if="rows.length === 0">
+                                    <div class="rounded-lg border border-dashed border-zinc-300 p-4 text-center text-sm text-zinc-500 dark:border-zinc-700 dark:text-zinc-400">
+                                        {{ __('Noch keine Rollen zugewiesen.') }}
+                                    </div>
+                                </template>
+
+                                <ol x-show="rows.length > 0" class="space-y-2">
+                                    <template x-for="(row, index) in rows" :key="row.role_id">
+                                        <li class="flex items-start gap-3 rounded-lg border border-zinc-200 bg-white p-3 dark:border-zinc-700 dark:bg-zinc-900">
+                                            <span class="mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-teal-100 text-xs font-semibold text-teal-800 dark:bg-teal-900 dark:text-teal-100"
+                                                  x-text="index + 1"></span>
+
+                                            <div class="min-w-0 flex-1 space-y-1.5">
+                                                <div class="flex items-center gap-2 text-sm">
+                                                    <flux:icon.identification class="h-4 w-4 text-zinc-400" />
+                                                    <span class="font-medium" x-text="meta(row.role_id).name"></span>
+                                                    <span x-show="meta(row.role_id).description" class="text-xs text-zinc-500 dark:text-zinc-400" x-text="'· ' + meta(row.role_id).description"></span>
+                                                </div>
+                                                <div class="flex flex-col gap-2 sm:flex-row">
+                                                    <select
+                                                        x-model="row.raci_role"
+                                                        class="w-full rounded-md border border-zinc-200 bg-white px-2.5 py-1 text-sm shadow-sm focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500 sm:w-56 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white"
+                                                    >
+                                                        <option value="">{{ __('System-Zuständigkeit (optional)') }}</option>
+                                                        @foreach (\App\Enums\RaciRole::cases() as $r)
+                                                            <option value="{{ $r->value }}">{{ $r->value }} – {{ $r->label() }}</option>
+                                                        @endforeach
+                                                    </select>
+                                                    <input
+                                                        type="text"
+                                                        x-model="row.note"
+                                                        @keydown.enter.prevent
+                                                        placeholder="{{ __('Notiz (optional)') }}"
+                                                        class="block w-full rounded-md border border-zinc-200 bg-white px-2.5 py-1 text-sm shadow-sm placeholder:text-zinc-400 focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white"
+                                                    />
+                                                </div>
+                                                <template x-if="meta(row.role_id).members.length > 0">
+                                                    <div class="flex flex-wrap gap-1.5 pt-1">
+                                                        <template x-for="member in meta(row.role_id).members" :key="member">
+                                                            <span class="inline-flex items-center gap-1 rounded-md bg-zinc-100 px-1.5 py-0.5 text-xs text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">
+                                                                <flux:icon.user class="h-3 w-3 text-zinc-400" />
+                                                                <span x-text="member"></span>
+                                                            </span>
+                                                        </template>
+                                                    </div>
+                                                </template>
+                                                <template x-if="meta(row.role_id).members.length === 0">
+                                                    <div class="text-xs italic text-zinc-500 dark:text-zinc-400">
+                                                        {{ __('Rolle hat keine Mitglieder.') }}
+                                                    </div>
+                                                </template>
                                             </div>
 
                                             <div class="flex shrink-0 items-center gap-1">

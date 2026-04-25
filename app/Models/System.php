@@ -59,6 +59,17 @@ class System extends Model
     }
 
     /**
+     * @return BelongsToMany<Role, $this>
+     */
+    public function roles(): BelongsToMany
+    {
+        return $this->belongsToMany(Role::class)
+            ->withPivot(['raci_role', 'sort', 'note'])
+            ->withTimestamps()
+            ->orderBy('role_system.sort');
+    }
+
+    /**
      * @return HasMany<SystemTask, $this>
      */
     public function tasks(): HasMany
