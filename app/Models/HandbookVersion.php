@@ -4,12 +4,17 @@ namespace App\Models;
 
 use App\Concerns\BelongsToCurrentCompany;
 use App\Concerns\LogsAudit;
+use App\Scopes\CurrentCompanyScope;
+use App\Support\HandbookPdfGenerator;
+use App\Support\Settings\CompanySetting;
 use Database\Factories\HandbookVersionFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\Storage;
+use Throwable;
 
 #[Fillable([
     'company_id',
@@ -20,6 +25,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'approved_at',
     'approved_by_employee_id',
     'approved_by_name',
+    'pdf_path',
+    'pdf_hash',
+    'pdf_size',
+    'pdf_generated_at',
 ])]
 class HandbookVersion extends Model
 {
@@ -52,6 +61,52 @@ class HandbookVersion extends Model
         return $this->approved_at !== null;
     }
 
+    public function hasPdf(): bool
+    {
+        return $this->pdf_path !== null;
+    }
+
+    /**
+     * Eloquent-Lifecycle-Hooks:
+     *  - deleted: räumt das hinterlegte PDF auf der privaten Disk auf
+     *    (wirkt nur bei expliziten Eloquent-Deletes; DB-Cascades vom Parent
+     *    lösen keine Eloquent-Events aus).
+     *  - created: erzeugt ein revisionssicheres PDF, wenn der Mandant
+     *    `auto_pdf_enabled` gesetzt hat. Fehler werden geschluckt – die
+     *    manuelle Freigabe bleibt verfügbar.
+     */
+    protected static function booted(): void
+    {
+        static::deleted(function (self $version) {
+            if ($version->pdf_path) {
+                Storage::disk('handbook')->delete($version->pdf_path);
+            }
+        });
+
+        static::created(function (self $version) {
+            $company = $version->company()
+                ->withoutGlobalScope(CurrentCompanyScope::class)
+                ->first();
+            if ($company === null) {
+                return;
+            }
+
+            if (! CompanySetting::for($company)->get('auto_pdf_enabled', false)) {
+                return;
+            }
+
+            if ($version->hasPdf()) {
+                return;
+            }
+
+            try {
+                HandbookPdfGenerator::generate($version);
+            } catch (Throwable) {
+                // best-effort; manuelle Freigabe bleibt möglich
+            }
+        });
+    }
+
     /**
      * @return array<string, string>
      */
@@ -60,6 +115,8 @@ class HandbookVersion extends Model
         return [
             'changed_at' => 'date',
             'approved_at' => 'date',
+            'pdf_generated_at' => 'datetime',
+            'pdf_size' => 'integer',
         ];
     }
 }

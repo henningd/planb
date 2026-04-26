@@ -2,9 +2,11 @@
 
 namespace App\Providers;
 
+use App\Support\Settings\SystemSetting;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 
@@ -24,6 +26,24 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureDefaults();
+        $this->applyPlatformOverrides();
+    }
+
+    /**
+     * Setzt config('app.name') zur Laufzeit auf den Wert aus den
+     * Systemeinstellungen, sofern dort ein Override hinterlegt ist.
+     * Greift nicht während der Migration (Tabelle existiert noch nicht).
+     */
+    protected function applyPlatformOverrides(): void
+    {
+        if (! Schema::hasTable('system_settings')) {
+            return;
+        }
+
+        $name = SystemSetting::get('platform_name', '');
+        if (filled($name)) {
+            config(['app.name' => $name]);
+        }
     }
 
     /**

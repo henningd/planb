@@ -84,6 +84,8 @@ class DemoDataSeeder extends Seeder
             $user->forceFill(['current_team_id' => $team->id])->save();
         }
 
+        $this->ensureSecondaryUser($team);
+
         $company = Company::updateOrCreate(
             ['team_id' => $team->id],
             [
@@ -121,7 +123,32 @@ class DemoDataSeeder extends Seeder
         $this->seedEmergencyResources($company);
         $this->seedHandbookTests($company);
 
-        $this->command?->info('Demo-Daten bereit. Login: max@mustermann.de / password');
+        $this->command?->info('Demo-Daten bereit. Logins: max@mustermann.de / password · maxigreis@icloud.com / passworD321!1');
+    }
+
+    /**
+     * Stellt sicher, dass der zweite Demo-Nutzer existiert und Mitglied
+     * (Admin) des Demo-Teams ist. Admin, damit er die admin-gegateten
+     * Bereiche (Versicherungen, Audit-Log, Vorlagen) sieht.
+     */
+    private function ensureSecondaryUser(Team $team): void
+    {
+        $secondary = User::firstOrCreate(
+            ['email' => 'maxigreis@icloud.com'],
+            [
+                'name' => 'Maxi Greis',
+                'password' => Hash::make('passworD321!1'),
+                'email_verified_at' => now(),
+            ],
+        );
+
+        if (! $secondary->belongsToTeam($team)) {
+            $team->members()->attach($secondary, ['role' => TeamRole::Admin->value]);
+        }
+
+        if ($secondary->current_team_id === null) {
+            $secondary->forceFill(['current_team_id' => $team->id])->save();
+        }
     }
 
     private function seedLocations(Company $company): void

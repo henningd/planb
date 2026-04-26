@@ -78,7 +78,7 @@
                 padding-bottom: 2mm;
             }
             @bottom-left {
-                content: '{{ $company->name }} · Vertraulich';
+                content: '{{ $company->name }} · Vertraulich{{ ($showPdfHashFooter ?? false) ? ' · Revisionsdokument' : '' }}';
                 font-family: Arial, Helvetica, sans-serif;
                 font-size: 8.5pt;
                 color: #888;

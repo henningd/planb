@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\HandbookVersionPdfController;
+use App\Http\Controllers\PreferenceController;
 use App\Http\Middleware\EnsureSuperAdmin;
 use App\Http\Middleware\EnsureTeamMembership;
 use App\Http\Middleware\SetTeamUrlDefaults;
@@ -9,13 +11,17 @@ use App\Models\System;
 use App\Scopes\CurrentCompanyScope;
 use App\Support\CurrentCompany;
 use App\Support\HandbookData;
+use App\Support\Settings\SystemSetting;
 use App\Support\SystemImport;
 use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Features;
 
-Route::view('/', 'welcome', [
-    'canRegister' => Features::enabled(Features::registration()),
-])->name('home');
+Route::get('/', function () {
+    return view('welcome', [
+        'canRegister' => Features::enabled(Features::registration())
+            && SystemSetting::get('registration_enabled', true),
+    ]);
+})->name('home');
 
 Route::prefix('{current_team}')
     ->middleware(['auth', 'verified', EnsureTeamMembership::class])
@@ -52,7 +58,11 @@ Route::prefix('{current_team}')
             Route::livewire('communication-templates', 'pages::communication-templates.index')->name('communication-templates.index');
             Route::livewire('audit-log', 'pages::audit-log.index')->name('audit-log.index');
             Route::livewire('handbook-shares', 'pages::handbook-shares.index')->name('handbook-shares.index');
+            Route::livewire('system-settings', 'pages::system-settings.index')->name('system-settings.index');
             Route::livewire('handbook-versions', 'pages::handbook-versions.index')->name('handbook-versions.index');
+            Route::get('handbook-versions/{version}/pdf', HandbookVersionPdfController::class)
+                ->where('version', '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}')
+                ->name('handbook-versions.pdf');
             Route::livewire('handbook-tests', 'pages::handbook-tests.index')->name('handbook-tests.index');
         });
 
@@ -118,7 +128,14 @@ Route::prefix('admin')
         Route::livewire('companies', 'pages::admin.companies.index')->name('companies.index');
         Route::livewire('scenarios', 'pages::admin.scenarios.index')->name('scenarios.index');
         Route::livewire('scenarios/{globalScenario}', 'pages::admin.scenarios.show')->name('scenarios.show');
+        Route::livewire('demo', 'pages::admin.demo.index')->name('demo.index');
+        Route::livewire('settings/system', 'pages::admin.settings.system.index')->name('settings.system.index');
     });
+
+Route::middleware(['auth'])->group(function () {
+    Route::patch('preferences/sidebar-group', [PreferenceController::class, 'updateSidebarGroup'])
+        ->name('preferences.sidebar-group');
+});
 
 Route::livewire('invitations/{invitation}/accept', 'pages::teams.accept-invitation')->name('invitations.accept');
 

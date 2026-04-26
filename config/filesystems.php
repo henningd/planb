@@ -38,6 +38,15 @@ return [
             'report' => false,
         ],
 
+        'handbook' => [
+            'driver' => 'local',
+            'root' => storage_path('app/private/handbooks'),
+            'serve' => false,
+            'visibility' => 'private',
+            'throw' => true,
+            'report' => false,
+        ],
+
         'public' => [
             'driver' => 'local',
             'root' => storage_path('app/public'),

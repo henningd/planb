@@ -34,7 +34,28 @@ class User extends Authenticatable
             'password' => 'hashed',
             'two_factor_confirmed_at' => 'datetime',
             'is_super_admin' => 'boolean',
+            'preferences' => 'array',
         ];
+    }
+
+    /**
+     * Whether the named sidebar group is expanded for this user.
+     * Defaults to false (collapsed) so first-time users always see the
+     * compact sidebar.
+     */
+    public function isSidebarGroupExpanded(string $key): bool
+    {
+        return (bool) data_get($this->preferences ?? [], "sidebar.groups.{$key}", false);
+    }
+
+    /**
+     * Persist the expanded/collapsed state of a sidebar group.
+     */
+    public function setSidebarGroupExpanded(string $key, bool $expanded): void
+    {
+        $preferences = $this->preferences ?? [];
+        data_set($preferences, "sidebar.groups.{$key}", $expanded);
+        $this->forceFill(['preferences' => $preferences])->save();
     }
 
     public function isSuperAdmin(): bool

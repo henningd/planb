@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\HandbookShare;
+use App\Support\Settings\CompanySetting;
 use Flux\Flux;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Carbon;
@@ -15,6 +16,14 @@ new #[Title('Freigabelinks')] class extends Component {
     public int $validDays = 14;
 
     public ?string $revokingId = null;
+
+    public function mount(): void
+    {
+        $company = Auth::user()->currentCompany();
+        if ($company !== null) {
+            $this->validDays = (int) CompanySetting::for($company)->get('share_link_default_days', 30);
+        }
+    }
 
     #[Computed]
     public function hasCompany(): bool
@@ -52,7 +61,7 @@ new #[Title('Freigabelinks')] class extends Component {
         ]);
 
         $this->reset(['label']);
-        $this->validDays = 14;
+        $this->validDays = (int) CompanySetting::for(Auth::user()->currentCompany())->get('share_link_default_days', 30);
         unset($this->shares);
 
         Flux::toast(variant: 'success', text: __('Freigabelink erstellt.'));

@@ -2,6 +2,7 @@
 
 use App\Models\Employee;
 use App\Models\HandbookVersion;
+use App\Support\HandbookPdfGenerator;
 use Flux\Flux;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Auth;
@@ -123,13 +124,56 @@ new #[Title('Versionshistorie')] class extends Component {
 
     public function delete(): void
     {
-        if ($this->deletingId) {
-            HandbookVersion::findOrFail($this->deletingId)->delete();
-            $this->deletingId = null;
-            unset($this->versions);
-            Flux::modal('version-delete')->close();
-            Flux::toast(variant: 'success', text: __('Version gelöscht.'));
+        if (! $this->deletingId) {
+            return;
         }
+
+        $version = HandbookVersion::findOrFail($this->deletingId);
+
+        if ($version->hasPdf()) {
+            Flux::toast(variant: 'warning', text: __('Versionen mit revisionssicherem PDF können nicht gelöscht werden.'));
+            $this->deletingId = null;
+            Flux::modal('version-delete')->close();
+
+            return;
+        }
+
+        $version->delete();
+        $this->deletingId = null;
+        unset($this->versions);
+        Flux::modal('version-delete')->close();
+        Flux::toast(variant: 'success', text: __('Version gelöscht.'));
+    }
+
+    /**
+     * Erzeugt das revisionssichere PDF einmalig pro Version. Setzt
+     * approved_at automatisch, falls noch leer (Freigabe + PDF in einem
+     * Schritt). Wirft eine Toast-Warnung bei Fehlern.
+     */
+    public function releasePdf(string $id): void
+    {
+        $version = HandbookVersion::findOrFail($id);
+
+        if ($version->hasPdf()) {
+            Flux::toast(variant: 'warning', text: __('Diese Version besitzt bereits ein freigegebenes PDF.'));
+
+            return;
+        }
+
+        try {
+            HandbookPdfGenerator::generate($version);
+        } catch (\Throwable $e) {
+            Flux::toast(variant: 'danger', text: __('PDF konnte nicht erzeugt werden: :msg', ['msg' => $e->getMessage()]));
+
+            return;
+        }
+
+        if ($version->approved_at === null) {
+            $version->forceFill(['approved_at' => now()->toDateString()])->save();
+        }
+
+        unset($this->versions);
+        Flux::toast(variant: 'success', text: __('Version freigegeben und PDF revisionssicher abgelegt.'));
     }
 
     protected function resetForm(): void
@@ -185,10 +229,12 @@ new #[Title('Versionshistorie')] class extends Component {
                             <flux:menu.item icon="pencil" wire:click="openEdit('{{ $version->id }}')">
                                 {{ __('Bearbeiten') }}
                             </flux:menu.item>
-                            <flux:menu.separator />
-                            <flux:menu.item icon="trash" variant="danger" wire:click="confirmDelete('{{ $version->id }}')">
-                                {{ __('Löschen') }}
-                            </flux:menu.item>
+                            @unless ($version->hasPdf())
+                                <flux:menu.separator />
+                                <flux:menu.item icon="trash" variant="danger" wire:click="confirmDelete('{{ $version->id }}')">
+                                    {{ __('Löschen') }}
+                                </flux:menu.item>
+                            @endunless
                         </flux:menu>
                     </flux:dropdown>
                 </div>
@@ -202,6 +248,45 @@ new #[Title('Versionshistorie')] class extends Component {
                         {{ __('Freigegeben durch') }}: {{ $version->approvedBy?->fullName() ?? $version->approved_by_name }}
                     </flux:text>
                 @endif
+
+                <div class="mt-4 border-t border-zinc-100 pt-3 dark:border-zinc-800">
+                    @if ($version->hasPdf())
+                        <div class="flex flex-col gap-2 text-xs text-zinc-500 dark:text-zinc-400">
+                            <div class="flex items-center justify-between gap-2">
+                                <flux:text class="text-xs font-semibold text-emerald-700 dark:text-emerald-400">
+                                    {{ __('PDF revisionssicher') }}
+                                </flux:text>
+                                <flux:button
+                                    size="sm"
+                                    variant="primary"
+                                    icon="arrow-down-tray"
+                                    :href="route('handbook-versions.pdf', ['current_team' => auth()->user()->currentTeam->slug, 'version' => $version->id])"
+                                >
+                                    {{ __('PDF herunterladen') }}
+                                </flux:button>
+                            </div>
+                            <div class="flex flex-wrap gap-x-3 gap-y-1">
+                                <span>{{ $version->pdf_generated_at?->format('d.m.Y H:i') }}</span>
+                                <span>{{ number_format($version->pdf_size / 1024, 0, ',', '.') }} KB</span>
+                                <span class="font-mono">SHA-256: {{ substr($version->pdf_hash, 0, 12) }}…</span>
+                            </div>
+                        </div>
+                    @else
+                        <div class="flex items-center justify-between gap-2">
+                            <flux:text class="text-xs text-zinc-500 dark:text-zinc-400">
+                                {{ __('Noch kein PDF erzeugt.') }}
+                            </flux:text>
+                            <flux:button
+                                size="sm"
+                                variant="filled"
+                                icon="document-arrow-down"
+                                wire:click="releasePdf('{{ $version->id }}')"
+                            >
+                                {{ __('Freigeben & PDF erzeugen') }}
+                            </flux:button>
+                        </div>
+                    @endif
+                </div>
             </div>
         @empty
             <div class="col-span-full rounded-xl border border-dashed border-zinc-300 bg-white px-5 py-12 text-center dark:border-zinc-700 dark:bg-zinc-900">

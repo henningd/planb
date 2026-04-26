@@ -19,7 +19,13 @@
                     </flux:sidebar.item>
                 </flux:sidebar.group>
 
-                <flux:sidebar.group :heading="__('Notfallhandbuch')" class="grid">
+                <flux:sidebar.group
+                    :heading="__('Notfallhandbuch')"
+                    expandable
+                    :expanded="auth()->user()?->isSidebarGroupExpanded('handbook') ?? false"
+                    data-sidebar-key="handbook"
+                    class="grid"
+                >
                     <flux:sidebar.item icon="building-office-2" :href="route('company.edit')" :current="request()->routeIs('company.*')" wire:navigate>
                         {{ __('Firma') }}
                     </flux:sidebar.item>
@@ -51,7 +57,13 @@
                     </flux:sidebar.item>
                 </flux:sidebar.group>
 
-                <flux:sidebar.group :heading="__('Ernstfall')" class="grid">
+                <flux:sidebar.group
+                    :heading="__('Ernstfall')"
+                    expandable
+                    :expanded="auth()->user()?->isSidebarGroupExpanded('emergency') ?? false"
+                    data-sidebar-key="emergency"
+                    class="grid"
+                >
                     <flux:sidebar.item icon="bolt" :href="route('scenarios.index')" :current="request()->routeIs('scenarios.*')" wire:navigate>
                         {{ __('Szenarien') }}
                     </flux:sidebar.item>
@@ -74,7 +86,13 @@
                     @endif
                 </flux:sidebar.group>
 
-                <flux:sidebar.group :heading="__('Team & Freigaben')" class="grid">
+                <flux:sidebar.group
+                    :heading="__('Team & Freigaben')"
+                    expandable
+                    :expanded="auth()->user()?->isSidebarGroupExpanded('team') ?? false"
+                    data-sidebar-key="team"
+                    class="grid"
+                >
                     <flux:sidebar.item
                         icon="key"
                         :href="auth()->user()?->currentTeam ? route('teams.edit', auth()->user()->currentTeam) : route('teams.index')"
@@ -96,8 +114,33 @@
                     @endif
                 </flux:sidebar.group>
 
+                @if (auth()->user()?->isCurrentTeamAdmin())
+                    <flux:sidebar.group
+                        :heading="__('Einstellungen')"
+                        expandable
+                        :expanded="auth()->user()->isSidebarGroupExpanded('settings')"
+                        data-sidebar-key="settings"
+                        class="grid"
+                    >
+                        <flux:sidebar.item icon="cog-8-tooth" :href="route('system-settings.index')" :current="request()->routeIs('system-settings.*')" wire:navigate>
+                            {{ __('System') }}
+                        </flux:sidebar.item>
+                        @if (auth()->user()?->isSuperAdmin())
+                            <flux:sidebar.item icon="globe-alt" :href="route('admin.settings.system.index')" :current="request()->routeIs('admin.settings.system.*')" wire:navigate>
+                                {{ __('Plattform') }}
+                            </flux:sidebar.item>
+                        @endif
+                    </flux:sidebar.group>
+                @endif
+
                 @if (auth()->user()?->isSuperAdmin())
-                    <flux:sidebar.group :heading="__('Administration')" class="grid">
+                    <flux:sidebar.group
+                        :heading="__('Administration')"
+                        expandable
+                        :expanded="auth()->user()->isSidebarGroupExpanded('administration')"
+                        data-sidebar-key="administration"
+                        class="grid"
+                    >
                         <flux:sidebar.item icon="shield-check" :href="route('admin.index')" :current="request()->routeIs('admin.index')" wire:navigate>
                             {{ __('Übersicht') }}
                         </flux:sidebar.item>
@@ -107,11 +150,23 @@
                         <flux:sidebar.item icon="document-duplicate" :href="route('admin.scenarios.index')" :current="request()->routeIs('admin.scenarios.*')" wire:navigate>
                             {{ __('Globale Szenarien') }}
                         </flux:sidebar.item>
+                        <flux:sidebar.item icon="sparkles" :href="route('admin.demo.index')" :current="request()->routeIs('admin.demo.*')" wire:navigate>
+                            {{ __('Demo-Firma') }}
+                        </flux:sidebar.item>
                     </flux:sidebar.group>
                 @endif
             </flux:sidebar.nav>
 
             <flux:spacer />
+
+            @php
+                $platformFooter = \App\Support\Settings\SystemSetting::get('platform_footer', '');
+            @endphp
+            @if (filled($platformFooter))
+                <div class="px-3 pb-2 text-xs text-zinc-500 dark:text-zinc-400">
+                    {!! e($platformFooter) !!}
+                </div>
+            @endif
 
             <x-desktop-user-menu class="hidden lg:block" :name="auth()->user()->name" />
         </flux:sidebar>
@@ -178,6 +233,47 @@
                 <flux:toast />
             </flux:toast.group>
         @endpersist
+
+        @auth
+            <script data-navigate-once>
+                (function () {
+                    if (window.__sidebarGroupListenerAttached) return;
+                    window.__sidebarGroupListenerAttached = true;
+
+                    // Persistiert nur echte Toggle-Klicks auf den Disclosure-
+                    // Button der Sidebar-Gruppe – nicht das `lofi-disclosable-
+                    // change` Event, das beim wire:navigate-Morph fälschlich
+                    // mit "zu" feuern und den Zustand überschreiben würde.
+                    document.addEventListener('click', function (event) {
+                        const group = event.target.closest('[data-sidebar-key]');
+                        if (!group) return;
+
+                        const button = event.target.closest('button');
+                        if (!button || button.parentElement !== group) return;
+
+                        const token = document.querySelector('meta[name="csrf-token"]')?.content;
+                        if (!token) return;
+
+                        // Nach Toggle-Click den neuen Zustand lesen (kurzer
+                        // Tick, damit die Disclosure data-open setzen konnte).
+                        setTimeout(function () {
+                            fetch('{{ route('preferences.sidebar-group') }}', {
+                                method: 'PATCH',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Accept': 'application/json',
+                                    'X-CSRF-TOKEN': token,
+                                },
+                                body: JSON.stringify({
+                                    key: group.dataset.sidebarKey,
+                                    expanded: group.hasAttribute('data-open'),
+                                }),
+                            }).catch(function () { /* best-effort, ignore */ });
+                        }, 50);
+                    });
+                })();
+            </script>
+        @endauth
 
         @fluxScripts
     </body>
