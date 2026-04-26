@@ -1310,7 +1310,16 @@ new #[Title('System')] class extends Component {
                                         {{ $task->description }}
                                     </div>
                                 @endif
-                                @if ($task->assignees->isNotEmpty() || $task->providerAssignees->isNotEmpty() || $task->roleAssignees->isNotEmpty())
+                                @if ($task->assignees->isEmpty() && $task->providerAssignees->isEmpty() && $task->roleAssignees->isEmpty())
+                                    @if (! $task->isDone())
+                                        <div class="mt-2 flex items-start gap-2 rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-xs dark:border-rose-900 dark:bg-rose-950/40">
+                                            <flux:icon.exclamation-triangle class="mt-0.5 h-4 w-4 shrink-0 text-rose-600 dark:text-rose-400" />
+                                            <div class="text-rose-800 dark:text-rose-200">
+                                                {{ __('Keine RACI-Zuordnung — mindestens eine Person als „R" (Responsible) und genau eine als „A" (Accountable) hinterlegen.') }}
+                                            </div>
+                                        </div>
+                                    @endif
+                                @else
                                     @php($taskEmpGroups = $task->assignees->groupBy(fn ($e) => $e->pivot->raci_role ?? ''))
                                     @php($taskProvGroups = $task->providerAssignees->groupBy(fn ($p) => $p->pivot->raci_role ?? ''))
                                     @php($taskRoleGroups = $task->roleAssignees->groupBy(fn ($r) => $r->pivot->raci_role ?? ''))
