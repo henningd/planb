@@ -5,13 +5,15 @@ use App\Models\Company;
 use App\Models\EmergencyLevel;
 use App\Models\Employee;
 use App\Models\ScenarioRun;
+use App\Support\DashboardActions;
 use Flux\Flux;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 
-new #[Title('Dashboard')] class extends Component {
+new #[Title('Dashboard')] class extends Component
+{
     #[Computed]
     public function company(): ?Company
     {
@@ -91,6 +93,19 @@ new #[Title('Dashboard')] class extends Component {
             ->orderByDesc('started_at')
             ->get();
     }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    #[Computed]
+    public function dueItems(): array
+    {
+        if (! $this->company) {
+            return [];
+        }
+
+        return DashboardActions::for($this->company);
+    }
 }; ?>
 
 <section class="flex w-full flex-1 flex-col gap-6">
@@ -105,6 +120,70 @@ new #[Title('Dashboard')] class extends Component {
             @endif
         </flux:subheading>
     </div>
+
+    {{-- Was muss ich heute tun? --}}
+    @if ($this->company)
+        <div class="rounded-xl border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-900">
+            <div class="flex items-center gap-2 border-b border-zinc-100 px-5 py-4 dark:border-zinc-800">
+                <flux:icon.clipboard-document-check class="h-5 w-5 text-zinc-500" />
+                <flux:heading size="base">{{ __('Was muss ich heute tun?') }}</flux:heading>
+                @if (count($this->dueItems) > 0)
+                    <flux:badge color="zinc" size="sm">{{ count($this->dueItems) }}</flux:badge>
+                @endif
+            </div>
+            @if (count($this->dueItems) === 0)
+                <div class="flex items-center gap-3 px-5 py-6">
+                    <flux:icon.check-circle class="h-5 w-5 text-emerald-500" />
+                    <flux:text class="text-zinc-600 dark:text-zinc-300">
+                        {{ __('Alles im grünen Bereich.') }}
+                    </flux:text>
+                </div>
+            @else
+                <div class="divide-y divide-zinc-100 dark:divide-zinc-800">
+                    @foreach ($this->dueItems as $item)
+                        @php($severity = $item['severity'])
+                        @php($badgeColor = match ($severity) {
+                            'overdue' => 'rose',
+                            'today' => 'amber',
+                            'soon' => 'yellow',
+                            'active' => 'rose',
+                            default => 'zinc',
+                        })
+                        @php($severityLabel = match ($severity) {
+                            'overdue' => __('Überfällig'),
+                            'today' => __('Heute'),
+                            'soon' => __('Demnächst'),
+                            'active' => __('Aktive Lage'),
+                            default => '',
+                        })
+                        <a
+                            href="{{ route($item['route'], $item['route_params']) }}"
+                            wire:navigate
+                            class="flex items-start gap-3 px-5 py-3 text-zinc-900 no-underline hover:bg-zinc-50 dark:text-zinc-100 dark:hover:bg-zinc-800"
+                        >
+                            <div class="mt-1 shrink-0">
+                                @if ($severity === 'active')
+                                    <span class="relative flex h-2.5 w-2.5">
+                                        <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-rose-400 opacity-75"></span>
+                                        <span class="relative inline-flex h-2.5 w-2.5 rounded-full bg-rose-500"></span>
+                                    </span>
+                                @else
+                                    <flux:badge :color="$badgeColor" size="sm">{{ $severityLabel }}</flux:badge>
+                                @endif
+                            </div>
+                            <div class="min-w-0 flex-1">
+                                <div class="truncate font-medium">{{ $item['label'] }}</div>
+                                <flux:text class="text-sm text-zinc-500 dark:text-zinc-400">
+                                    {{ $item['subtitle'] }}
+                                </flux:text>
+                            </div>
+                            <flux:icon.chevron-right class="mt-1 h-4 w-4 shrink-0 text-zinc-400" />
+                        </a>
+                    @endforeach
+                </div>
+            @endif
+        </div>
+    @endif
 
     {{-- Review reminder --}}
     @if ($this->company)
