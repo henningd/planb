@@ -2,6 +2,7 @@
 
 use App\Models\Employee;
 use App\Models\HandbookVersion;
+use App\Models\HandbookVersionAcknowledgement;
 use App\Support\HandbookPdfGenerator;
 use Flux\Flux;
 use Illuminate\Database\Eloquent\Collection;
@@ -29,6 +30,12 @@ new #[Title('Versionshistorie')] class extends Component {
 
     public ?string $deletingId = null;
 
+    public ?string $ackVersionId = null;
+
+    public ?string $ackEmployeeId = null;
+
+    public string $ackNotes = '';
+
     public function mount(): void
     {
         $this->changed_at = now()->toDateString();
@@ -46,7 +53,7 @@ new #[Title('Versionshistorie')] class extends Component {
     #[Computed]
     public function versions(): Collection
     {
-        return HandbookVersion::with(['changedBy', 'approvedBy'])
+        return HandbookVersion::with(['changedBy', 'approvedBy', 'acknowledgements.employee'])
             ->orderByDesc('changed_at')
             ->orderByDesc('created_at')
             ->get();
@@ -176,6 +183,63 @@ new #[Title('Versionshistorie')] class extends Component {
         Flux::toast(variant: 'success', text: __('Version freigegeben und PDF revisionssicher abgelegt.'));
     }
 
+    public function openAcks(string $id): void
+    {
+        $version = HandbookVersion::findOrFail($id);
+
+        $this->ackVersionId = $version->id;
+        $this->ackEmployeeId = null;
+        $this->ackNotes = '';
+
+        Flux::modal('version-acks')->show();
+    }
+
+    public function acknowledge(): void
+    {
+        if (! $this->ackVersionId || ! $this->ackEmployeeId) {
+            return;
+        }
+
+        $version = HandbookVersion::findOrFail($this->ackVersionId);
+        $employee = Employee::find($this->ackEmployeeId);
+
+        // Mandanten-Isolation: Mitarbeiter muss zur gleichen Firma wie die Version gehören.
+        if (! $employee || $employee->company_id !== $version->company_id) {
+            Flux::toast(variant: 'warning', text: __('Mitarbeiter gehört nicht zu dieser Firma.'));
+
+            return;
+        }
+
+        if ($version->acknowledgements()->where('employee_id', $employee->id)->exists()) {
+            Flux::toast(variant: 'warning', text: __('Mitarbeiter hat bereits bestätigt.'));
+
+            return;
+        }
+
+        HandbookVersionAcknowledgement::create([
+            'handbook_version_id' => $version->id,
+            'employee_id' => $employee->id,
+            'acknowledged_at' => now(),
+            'notes' => $this->ackNotes !== '' ? $this->ackNotes : null,
+        ]);
+
+        $this->ackEmployeeId = null;
+        $this->ackNotes = '';
+        unset($this->versions);
+
+        Flux::toast(variant: 'success', text: __('Lesebestätigung gespeichert.'));
+    }
+
+    /**
+     * @return Collection<int, Employee>
+     */
+    public function pendingEmployees(HandbookVersion $version): Collection
+    {
+        $confirmed = $version->acknowledgements->pluck('employee_id')->all();
+
+        return $this->employeeOptions->reject(fn (Employee $e) => in_array($e->id, $confirmed, true))->values();
+    }
+
     protected function resetForm(): void
     {
         $this->reset(['editingId', 'version', 'changed_by_employee_id', 'change_reason', 'approved_at', 'approved_by_employee_id', 'approved_by_name']);
@@ -247,6 +311,28 @@ new #[Title('Versionshistorie')] class extends Component {
                     <flux:text class="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
                         {{ __('Freigegeben durch') }}: {{ $version->approvedBy?->fullName() ?? $version->approved_by_name }}
                     </flux:text>
+                @endif
+
+                @if ($version->isApproved())
+                    @php
+                        $ackCount = $version->acknowledgements->count();
+                        $ackTotal = $this->employeeOptions
+                            ->where('is_key_personnel', true)
+                            ->count();
+                        if ($ackTotal === 0) {
+                            $ackTotal = $this->employeeOptions->count();
+                        }
+                        $ackPct = $ackTotal > 0 ? (int) round(($ackCount / $ackTotal) * 100) : 0;
+                        $ackColor = $ackTotal > 0 && $ackCount >= $ackTotal ? 'emerald' : ($ackCount > 0 ? 'amber' : 'zinc');
+                    @endphp
+                    <div class="mt-3 flex items-center gap-2 border-t border-zinc-100 pt-3 dark:border-zinc-800">
+                        <flux:text class="text-xs text-zinc-500 dark:text-zinc-400">{{ __('Lesebestätigungen') }}:</flux:text>
+                        <button type="button" wire:click="openAcks('{{ $version->id }}')" class="cursor-pointer">
+                            <flux:badge :color="$ackColor" size="sm">
+                                {{ $ackCount }} {{ __('von') }} {{ $ackTotal }} ({{ $ackPct }} %)
+                            </flux:badge>
+                        </button>
+                    </div>
                 @endif
 
                 <div class="mt-4 border-t border-zinc-100 pt-3 dark:border-zinc-800">
@@ -344,6 +430,78 @@ new #[Title('Versionshistorie')] class extends Component {
                 </flux:button>
             </div>
         </form>
+    </flux:modal>
+
+    <flux:modal name="version-acks" class="max-w-2xl">
+        @php
+            $ackVersion = $ackVersionId ? $this->versions->firstWhere('id', $ackVersionId) : null;
+        @endphp
+        <div class="space-y-5">
+            <div>
+                <flux:heading size="lg">{{ __('Lesebestätigungen') }}</flux:heading>
+                <flux:subheading>
+                    @if ($ackVersion)
+                        {{ __('Version') }} {{ $ackVersion->version }}
+                    @endif
+                </flux:subheading>
+            </div>
+
+            @if ($ackVersion)
+                <div class="space-y-2">
+                    <flux:heading size="base">{{ __('Bereits bestätigt') }}</flux:heading>
+                    @if ($ackVersion->acknowledgements->isEmpty())
+                        <flux:text class="text-sm text-zinc-500 dark:text-zinc-400">
+                            {{ __('Noch keine Bestätigungen.') }}
+                        </flux:text>
+                    @else
+                        <ul class="divide-y divide-zinc-100 rounded-lg border border-zinc-200 bg-white dark:divide-zinc-800 dark:border-zinc-700 dark:bg-zinc-900">
+                            @foreach ($ackVersion->acknowledgements->sortBy('acknowledged_at') as $ack)
+                                <li class="flex items-center justify-between gap-2 px-4 py-2 text-sm">
+                                    <span class="text-zinc-900 dark:text-zinc-100">
+                                        {{ $ack->employee?->fullName() ?? __('— unbekannt —') }}
+                                    </span>
+                                    <span class="text-xs text-zinc-500 dark:text-zinc-400">
+                                        {{ $ack->acknowledged_at?->format('d.m.Y H:i') }}
+                                    </span>
+                                </li>
+                            @endforeach
+                        </ul>
+                    @endif
+                </div>
+
+                @php
+                    $pending = $this->pendingEmployees($ackVersion);
+                @endphp
+
+                @if ($pending->isNotEmpty())
+                    <div class="space-y-3 border-t border-zinc-100 pt-4 dark:border-zinc-800">
+                        <flux:heading size="base">{{ __('Mitarbeiter als bestätigt markieren') }}</flux:heading>
+                        <flux:select wire:model="ackEmployeeId" :label="__('Mitarbeiter')">
+                            <flux:select.option value="">{{ __('— bitte wählen —') }}</flux:select.option>
+                            @foreach ($pending as $emp)
+                                <flux:select.option value="{{ $emp->id }}">{{ $emp->fullName() }}</flux:select.option>
+                            @endforeach
+                        </flux:select>
+                        <flux:textarea wire:model="ackNotes" :label="__('Notiz (optional)')" rows="2" />
+                        <div class="flex justify-end">
+                            <flux:button variant="primary" type="button" wire:click="acknowledge">
+                                {{ __('Bestätigen') }}
+                            </flux:button>
+                        </div>
+                    </div>
+                @else
+                    <flux:text class="text-sm text-emerald-600 dark:text-emerald-400">
+                        {{ __('Alle Mitarbeiter haben bestätigt.') }}
+                    </flux:text>
+                @endif
+            @endif
+
+            <div class="flex items-center justify-end gap-2 border-t border-zinc-100 pt-4 dark:border-zinc-800">
+                <flux:modal.close>
+                    <flux:button variant="filled" type="button">{{ __('Schließen') }}</flux:button>
+                </flux:modal.close>
+            </div>
+        </div>
     </flux:modal>
 
     <flux:modal name="version-delete" class="max-w-md">
