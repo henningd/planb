@@ -2,6 +2,9 @@
 
 namespace App\Providers;
 
+use App\Services\Sms\NullSmsGateway;
+use App\Services\Sms\SevenIoGateway;
+use App\Services\Sms\SmsGatewayContract;
 use App\Support\Settings\SystemSetting;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
@@ -17,7 +20,19 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->singleton(SmsGatewayContract::class, function ($app) {
+            $key = config('services.sevenio.key');
+
+            if (blank($key)) {
+                return new NullSmsGateway;
+            }
+
+            return new SevenIoGateway(
+                apiKey: $key,
+                defaultSender: config('services.sevenio.sender'),
+                endpoint: (string) config('services.sevenio.endpoint', 'https://gateway.seven.io/api/sms'),
+            );
+        });
     }
 
     /**

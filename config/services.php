@@ -35,4 +35,10 @@ return [
         ],
     ],
 
+    'sevenio' => [
+        'key' => env('SEVENIO_API_KEY'),
+        'sender' => env('SEVENIO_SENDER'), // optional: Absender (z. B. Firmenname, max. 11 Zeichen)
+        'endpoint' => env('SEVENIO_ENDPOINT', 'https://gateway.seven.io/api/sms'),
+    ],
+
 ];

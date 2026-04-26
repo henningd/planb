@@ -3,11 +3,15 @@
 use App\Enums\CommunicationAudience;
 use App\Enums\CommunicationChannel;
 use App\Models\CommunicationTemplate;
+use App\Models\Employee;
 use App\Models\Scenario;
+use App\Services\Sms\SmsGatewayContract;
+use App\Services\Sms\SmsResult;
 use App\Support\TemplatePlaceholders;
 use Flux\Flux;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -32,6 +36,18 @@ new #[Title('Kommunikations-Vorlagen')] class extends Component {
     public ?string $deletingId = null;
 
     public ?string $previewId = null;
+
+    public ?string $smsTemplateId = null;
+
+    /**
+     * @var list<string>
+     */
+    public array $smsRecipients = [];
+
+    /**
+     * @var list<array{to: string, name: string, success: bool, error: ?string}>
+     */
+    public array $smsResults = [];
 
     public function mount(): void
     {
@@ -177,6 +193,119 @@ new #[Title('Kommunikations-Vorlagen')] class extends Component {
         Flux::modal('template-preview')->show();
     }
 
+    /**
+     * Öffnet das SMS-Versand-Modal und prefilled alle Mitarbeiter mit
+     * gepflegter Mobilnummer als Empfänger.
+     */
+    public function openSmsSend(string $id): void
+    {
+        $this->smsTemplateId = $id;
+        $this->smsResults = [];
+        $this->smsRecipients = Employee::query()
+            ->whereNotNull('mobile_phone')
+            ->where('mobile_phone', '!=', '')
+            ->orderBy('last_name')
+            ->orderBy('first_name')
+            ->pluck('id')
+            ->all();
+
+        Flux::modal('template-sms-send')->show();
+    }
+
+    public function sendSms(SmsGatewayContract $gateway): void
+    {
+        if (! $this->smsTemplateId) {
+            return;
+        }
+
+        $template = CommunicationTemplate::findOrFail($this->smsTemplateId);
+        if ($template->channel !== CommunicationChannel::Sms) {
+            Flux::toast(variant: 'warning', text: __('Diese Vorlage ist kein SMS-Kanal.'));
+
+            return;
+        }
+
+        $body = TemplatePlaceholders::resolve($template->body, Auth::user()->currentCompany());
+        $recipients = Employee::query()
+            ->whereIn('id', $this->smsRecipients)
+            ->whereNotNull('mobile_phone')
+            ->where('mobile_phone', '!=', '')
+            ->get();
+
+        if ($recipients->isEmpty()) {
+            Flux::toast(variant: 'warning', text: __('Keine gültigen Empfänger ausgewählt.'));
+
+            return;
+        }
+
+        $results = [];
+        foreach ($recipients as $employee) {
+            $result = $gateway->send($employee->mobile_phone, $body);
+            $results[] = [
+                'to' => $result->to,
+                'name' => $employee->fullName(),
+                'success' => $result->success,
+                'error' => $result->errorMessage,
+            ];
+        }
+
+        $this->smsResults = $results;
+
+        $ok = collect($results)->where('success', true)->count();
+        $err = count($results) - $ok;
+
+        DB::table('audit_log_entries')->insert([
+            'id' => (string) \Illuminate\Support\Str::uuid(),
+            'company_id' => $template->company_id,
+            'user_id' => Auth::id(),
+            'entity_type' => 'CommunicationTemplate',
+            'entity_id' => $template->id,
+            'entity_label' => $template->name,
+            'action' => 'sms.sent',
+            'changes' => json_encode([
+                'sent' => $ok,
+                'failed' => $err,
+                'recipients' => collect($results)->pluck('to')->all(),
+            ]),
+            'created_at' => now(),
+        ]);
+
+        Flux::toast(
+            variant: $err === 0 ? 'success' : 'warning',
+            text: __(':ok von :total SMS verschickt.', ['ok' => $ok, 'total' => count($results)]),
+        );
+    }
+
+    /**
+     * Liste aller Mitarbeiter mit Mobilnummer für den Empfänger-Picker.
+     *
+     * @return Collection<int, Employee>
+     */
+    #[Computed]
+    public function smsCandidates(): Collection
+    {
+        return Employee::query()
+            ->whereNotNull('mobile_phone')
+            ->where('mobile_phone', '!=', '')
+            ->orderBy('last_name')
+            ->orderBy('first_name')
+            ->get();
+    }
+
+    public function smsBodyPreview(): string
+    {
+        if (! $this->smsTemplateId) {
+            return '';
+        }
+
+        $template = CommunicationTemplate::find($this->smsTemplateId);
+        if (! $template) {
+            return '';
+        }
+
+        return TemplatePlaceholders::resolve($template->body, Auth::user()->currentCompany());
+    }
+
     public function confirmDelete(string $id): void
     {
         $this->deletingId = $id;
@@ -257,6 +386,11 @@ new #[Title('Kommunikations-Vorlagen')] class extends Component {
                         </div>
 
                         <div class="flex items-center gap-2">
+                            @if ($template->channel === \App\Enums\CommunicationChannel::Sms)
+                                <flux:button size="sm" variant="primary" icon="paper-airplane" wire:click="openSmsSend('{{ $template->id }}')">
+                                    {{ __('SMS senden') }}
+                                </flux:button>
+                            @endif
                             <flux:button size="sm" variant="filled" icon="eye" wire:click="openPreview('{{ $template->id }}')">
                                 {{ __('Vorschau') }}
                             </flux:button>
@@ -399,6 +533,78 @@ new #[Title('Kommunikations-Vorlagen')] class extends Component {
                     <flux:button variant="filled">{{ __('Abbrechen') }}</flux:button>
                 </flux:modal.close>
                 <flux:button variant="danger" wire:click="delete">{{ __('Löschen') }}</flux:button>
+            </div>
+        </div>
+    </flux:modal>
+
+    <flux:modal name="template-sms-send" class="max-w-2xl">
+        <div class="space-y-5">
+            <div>
+                <flux:heading size="lg">{{ __('SMS senden') }}</flux:heading>
+                <flux:subheading>
+                    {{ __('Versand über seven.io. Mitarbeiter ohne Mobilnummer werden hier nicht angeboten.') }}
+                </flux:subheading>
+            </div>
+
+            <div class="rounded-lg border border-zinc-200 bg-zinc-50 p-3 text-sm dark:border-zinc-700 dark:bg-zinc-800/50">
+                <flux:text class="text-xs uppercase tracking-wide text-zinc-500 dark:text-zinc-400">{{ __('Nachricht') }}</flux:text>
+                <div class="mt-1 whitespace-pre-line">{{ $this->smsBodyPreview() }}</div>
+            </div>
+
+            <div class="max-h-72 overflow-y-auto rounded-lg border border-zinc-200 dark:border-zinc-700">
+                @forelse ($this->smsCandidates as $candidate)
+                    <label class="flex items-center justify-between gap-3 border-b border-zinc-100 px-4 py-2 last:border-b-0 dark:border-zinc-800">
+                        <div class="flex items-center gap-3">
+                            <input
+                                type="checkbox"
+                                wire:model="smsRecipients"
+                                value="{{ $candidate->id }}"
+                                class="rounded border-zinc-300 dark:border-zinc-600"
+                            >
+                            <div>
+                                <div class="text-sm font-medium">{{ $candidate->fullName() }}</div>
+                                <div class="text-xs text-zinc-500 dark:text-zinc-400">{{ $candidate->mobile_phone }}</div>
+                            </div>
+                        </div>
+                        @if ($candidate->is_key_personnel)
+                            <flux:badge color="amber" size="sm">{{ __('Schlüssel') }}</flux:badge>
+                        @endif
+                    </label>
+                @empty
+                    <div class="px-4 py-8 text-center text-sm text-zinc-500 dark:text-zinc-400">
+                        {{ __('Keine Mitarbeiter mit gepflegter Mobilnummer.') }}
+                    </div>
+                @endforelse
+            </div>
+
+            @if (! empty($smsResults))
+                <div class="rounded-lg border border-zinc-200 dark:border-zinc-700">
+                    <div class="border-b border-zinc-100 px-4 py-2 text-xs uppercase tracking-wide text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
+                        {{ __('Versand-Ergebnis') }}
+                    </div>
+                    @foreach ($smsResults as $r)
+                        <div class="flex items-center justify-between gap-3 border-b border-zinc-100 px-4 py-2 text-sm last:border-b-0 dark:border-zinc-800">
+                            <div>
+                                <div class="font-medium">{{ $r['name'] }}</div>
+                                <div class="text-xs text-zinc-500 dark:text-zinc-400">{{ $r['to'] }}</div>
+                            </div>
+                            @if ($r['success'])
+                                <flux:badge color="emerald" size="sm" icon="check">{{ __('OK') }}</flux:badge>
+                            @else
+                                <flux:badge color="rose" size="sm" icon="x-mark">{{ $r['error'] ?? __('Fehler') }}</flux:badge>
+                            @endif
+                        </div>
+                    @endforeach
+                </div>
+            @endif
+
+            <div class="flex items-center justify-end gap-2 border-t border-zinc-100 pt-4 dark:border-zinc-800">
+                <flux:modal.close>
+                    <flux:button variant="filled" type="button">{{ __('Schließen') }}</flux:button>
+                </flux:modal.close>
+                <flux:button variant="primary" type="button" icon="paper-airplane" wire:click="sendSms">
+                    {{ __('Jetzt senden') }} ({{ count($smsRecipients) }})
+                </flux:button>
             </div>
         </div>
     </flux:modal>
