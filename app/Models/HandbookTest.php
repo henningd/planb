@@ -25,6 +25,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'next_due_at',
     'responsible_employee_id',
     'result_notes',
+    'last_reminder_sent_at',
     'sort',
 ])]
 class HandbookTest extends Model
@@ -73,6 +74,7 @@ class HandbookTest extends Model
             'interval' => HandbookTestInterval::class,
             'last_executed_at' => 'date',
             'next_due_at' => 'date',
+            'last_reminder_sent_at' => 'datetime',
             'sort' => 'integer',
         ];
     }
