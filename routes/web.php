@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuditLogExportController;
+use App\Http\Controllers\BackupController;
 use App\Http\Controllers\HandbookVersionPdfController;
 use App\Http\Controllers\PreferenceController;
 use App\Http\Middleware\EnsureSuperAdmin;
@@ -64,6 +65,7 @@ Route::prefix('{current_team}')
                 ->name('audit-log.export.pdf');
             Route::livewire('handbook-shares', 'pages::handbook-shares.index')->name('handbook-shares.index');
             Route::livewire('system-settings', 'pages::system-settings.index')->name('system-settings.index');
+            Route::get('system-settings/backup', [BackupController::class, 'download'])->name('system-settings.backup.download');
             Route::livewire('handbook-versions', 'pages::handbook-versions.index')->name('handbook-versions.index');
             Route::get('handbook-versions/{version}/pdf', HandbookVersionPdfController::class)
                 ->where('version', '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}')
