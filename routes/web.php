@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AuditLogExportController;
 use App\Http\Controllers\HandbookVersionPdfController;
 use App\Http\Controllers\PreferenceController;
 use App\Http\Middleware\EnsureSuperAdmin;
@@ -57,6 +58,10 @@ Route::prefix('{current_team}')
             Route::livewire('insurance-policies', 'pages::insurance-policies.index')->name('insurance-policies.index');
             Route::livewire('communication-templates', 'pages::communication-templates.index')->name('communication-templates.index');
             Route::livewire('audit-log', 'pages::audit-log.index')->name('audit-log.index');
+            Route::get('handbook-export/audit-log.csv', [AuditLogExportController::class, 'csv'])
+                ->name('audit-log.export.csv');
+            Route::get('handbook-export/audit-log.pdf', [AuditLogExportController::class, 'pdf'])
+                ->name('audit-log.export.pdf');
             Route::livewire('handbook-shares', 'pages::handbook-shares.index')->name('handbook-shares.index');
             Route::livewire('system-settings', 'pages::system-settings.index')->name('system-settings.index');
             Route::livewire('handbook-versions', 'pages::handbook-versions.index')->name('handbook-versions.index');
