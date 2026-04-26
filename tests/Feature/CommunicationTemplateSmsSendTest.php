@@ -118,6 +118,50 @@ test('sendSms surfaces provider failures per recipient', function () {
     expect($results[0]['error'])->toContain('301');
 });
 
+test('confirmSendSms toggles confirming state and cancel resets it', function () {
+    [$user, , $template] = smsTestSetup();
+
+    $component = Livewire\Livewire::actingAs($user)
+        ->test('pages::communication-templates.index')
+        ->call('openSmsSend', $template->id)
+        ->assertSet('smsConfirming', false)
+        ->call('confirmSendSms')
+        ->assertSet('smsConfirming', true)
+        ->call('cancelSendSms')
+        ->assertSet('smsConfirming', false);
+
+    expect($component->get('smsRecipients'))->not->toBeEmpty();
+});
+
+test('confirmSendSms refuses when no recipients selected', function () {
+    [$user, , $template] = smsTestSetup();
+
+    Livewire\Livewire::actingAs($user)
+        ->test('pages::communication-templates.index')
+        ->call('openSmsSend', $template->id)
+        ->set('smsRecipients', [])
+        ->call('confirmSendSms')
+        ->assertSet('smsConfirming', false);
+});
+
+test('sendSms resets the confirming flag after a successful run', function () {
+    [$user, , $template] = smsTestSetup();
+
+    Http::fake([
+        'gateway.seven.io/*' => Http::response(['success' => '100', 'messages' => [['id' => 'm1']]], 200),
+    ]);
+    config(['services.sevenio.key' => 'key-test']);
+    app()->forgetInstance(SmsGatewayContract::class);
+
+    Livewire\Livewire::actingAs($user)
+        ->test('pages::communication-templates.index')
+        ->call('openSmsSend', $template->id)
+        ->call('confirmSendSms')
+        ->assertSet('smsConfirming', true)
+        ->call('sendSms')
+        ->assertSet('smsConfirming', false);
+});
+
 test('sendSms refuses non-sms templates', function () {
     [$user, , $smsTemplate] = smsTestSetup();
 

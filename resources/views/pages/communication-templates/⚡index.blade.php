@@ -49,6 +49,8 @@ new #[Title('Kommunikations-Vorlagen')] class extends Component {
      */
     public array $smsResults = [];
 
+    public bool $smsConfirming = false;
+
     public function mount(): void
     {
         $this->audience = CommunicationAudience::Employees->value;
@@ -201,6 +203,7 @@ new #[Title('Kommunikations-Vorlagen')] class extends Component {
     {
         $this->smsTemplateId = $id;
         $this->smsResults = [];
+        $this->smsConfirming = false;
         $this->smsRecipients = Employee::query()
             ->whereNotNull('mobile_phone')
             ->where('mobile_phone', '!=', '')
@@ -210,6 +213,26 @@ new #[Title('Kommunikations-Vorlagen')] class extends Component {
             ->all();
 
         Flux::modal('template-sms-send')->show();
+    }
+
+    /**
+     * Erste Stufe: bei Klick auf „Jetzt senden" wird die Confirm-Stufe
+     * aktiviert. Erst der zweite Klick (`sendSms`) löst den Versand aus.
+     */
+    public function confirmSendSms(): void
+    {
+        if (empty($this->smsRecipients)) {
+            Flux::toast(variant: 'warning', text: __('Keine Empfänger ausgewählt.'));
+
+            return;
+        }
+
+        $this->smsConfirming = true;
+    }
+
+    public function cancelSendSms(): void
+    {
+        $this->smsConfirming = false;
     }
 
     public function sendSms(SmsGatewayContract $gateway): void
@@ -250,6 +273,7 @@ new #[Title('Kommunikations-Vorlagen')] class extends Component {
         }
 
         $this->smsResults = $results;
+        $this->smsConfirming = false;
 
         $ok = collect($results)->where('success', true)->count();
         $err = count($results) - $ok;
@@ -598,13 +622,33 @@ new #[Title('Kommunikations-Vorlagen')] class extends Component {
                 </div>
             @endif
 
+            @if ($smsConfirming)
+                <div class="rounded-lg border border-rose-300 bg-rose-50 p-4 text-sm text-rose-900 dark:border-rose-800 dark:bg-rose-950/50 dark:text-rose-100">
+                    <strong>{{ __('Wirklich senden?') }}</strong>
+                    {{ __('Du verschickst gleich :n SMS. Das kann nicht zurückgenommen werden und kostet pro Empfänger.', ['n' => count($smsRecipients)]) }}
+                </div>
+            @endif
+
             <div class="flex items-center justify-end gap-2 border-t border-zinc-100 pt-4 dark:border-zinc-800">
-                <flux:modal.close>
-                    <flux:button variant="filled" type="button">{{ __('Schließen') }}</flux:button>
-                </flux:modal.close>
-                <flux:button variant="primary" type="button" icon="paper-airplane" wire:click="sendSms">
-                    {{ __('Jetzt senden') }} ({{ count($smsRecipients) }})
-                </flux:button>
+                @if ($smsConfirming)
+                    <flux:button variant="filled" type="button" wire:click="cancelSendSms">{{ __('Abbrechen') }}</flux:button>
+                    <flux:button variant="danger" type="button" icon="paper-airplane" wire:click="sendSms">
+                        {{ __(':n SMS jetzt verschicken', ['n' => count($smsRecipients)]) }}
+                    </flux:button>
+                @else
+                    <flux:modal.close>
+                        <flux:button variant="filled" type="button">{{ __('Schließen') }}</flux:button>
+                    </flux:modal.close>
+                    <flux:button
+                        variant="primary"
+                        type="button"
+                        icon="paper-airplane"
+                        wire:click="confirmSendSms"
+                        :disabled="empty($smsRecipients)"
+                    >
+                        {{ __('Senden vorbereiten') }} ({{ count($smsRecipients) }})
+                    </flux:button>
+                @endif
             </div>
         </div>
     </flux:modal>
