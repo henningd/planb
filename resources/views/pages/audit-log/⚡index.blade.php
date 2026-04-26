@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\AuditLogEntry;
+use App\Support\AuditLogFilter;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Computed;
@@ -22,26 +23,28 @@ new #[Title('Aktivitäten')] class extends Component {
     }
 
     /**
+     * Aktuelle Filter als Query-Parameter, wie sie der Export-Controller erwartet.
+     *
+     * @return array<string, string>
+     */
+    #[Computed]
+    public function exportQuery(): array
+    {
+        return [
+            'entity_type' => $this->entityType,
+            'action' => $this->action,
+        ];
+    }
+
+    /**
      * @return LengthAwarePaginator<AuditLogEntry>
      */
     public function entries(): LengthAwarePaginator
     {
-        $query = AuditLogEntry::with('user')->orderByDesc('created_at');
-
-        if ($this->entityType !== '') {
-            $query->where('entity_type', $this->entityType);
-        }
-
-        if ($this->action === 'assignments') {
-            $query->where(function ($q) {
-                $q->where('action', 'like', '%.assigned')
-                    ->orWhere('action', 'like', '%.unassigned');
-            });
-        } elseif ($this->action !== '') {
-            $query->where('action', $this->action);
-        }
-
-        return $query->paginate(25);
+        return AuditLogFilter::build([
+            'entity_type' => $this->entityType,
+            'action' => $this->action,
+        ])->paginate(25);
     }
 
     /**
@@ -139,6 +142,25 @@ new #[Title('Aktivitäten')] class extends Component {
                     {{ __('Filter zurücksetzen') }}
                 </flux:button>
             @endif
+
+            <div class="ml-auto flex items-center gap-2">
+                <flux:button
+                    size="sm"
+                    variant="ghost"
+                    icon="arrow-down-tray"
+                    :href="route('audit-log.export.csv', $this->exportQuery)"
+                >
+                    {{ __('Als CSV') }}
+                </flux:button>
+                <flux:button
+                    size="sm"
+                    variant="ghost"
+                    icon="document-text"
+                    :href="route('audit-log.export.pdf', $this->exportQuery)"
+                >
+                    {{ __('Als PDF') }}
+                </flux:button>
+            </div>
         </div>
 
         @php($entries = $this->entries())
