@@ -666,7 +666,7 @@ new #[Title('System')] class extends Component {
                         <div class="mb-1 flex flex-wrap items-center justify-between gap-2">
                             <flux:heading size="sm">{{ __('Zuständigkeiten auf System-Ebene') }}</flux:heading>
                             <flux:text class="text-xs text-zinc-500 dark:text-zinc-400">
-                                {{ __('Pflicht: genau 1 × A (Accountable), mind. 1 × R (Responsible).') }}
+                                {{ __('Pflicht: genau 1 × A (Verantwortlich), mind. 1 × R (Durchführend).') }}
                             </flux:text>
                         </div>
                         <flux:text class="mb-3 text-xs text-zinc-500 dark:text-zinc-400">
@@ -678,12 +678,12 @@ new #[Title('System')] class extends Component {
                                 <flux:icon.exclamation-triangle class="mt-0.5 h-4 w-4 shrink-0 text-rose-600 dark:text-rose-400" />
                                 <div class="space-y-0.5 text-rose-800 dark:text-rose-200">
                                     @if ($accountableCountEmp === 0)
-                                        <div>{{ __('Kein „A" (Accountable) zugewiesen – genau eine Person wird erwartet.') }}</div>
+                                        <div>{{ __('Kein „A" (Verantwortlich) zugewiesen – genau eine Person wird erwartet.') }}</div>
                                     @elseif ($accountableCountEmp > 1)
-                                        <div>{{ __(':n Personen mit „A" (Accountable) – klassisch nur eine Person.', ['n' => $accountableCountEmp]) }}</div>
+                                        <div>{{ __(':n Personen mit „A" (Verantwortlich) – klassisch nur eine Person.', ['n' => $accountableCountEmp]) }}</div>
                                     @endif
                                     @if ($responsibleCountEmp === 0)
-                                        <div>{{ __('Kein „R" (Responsible) zugewiesen – mindestens eine Person wird erwartet.') }}</div>
+                                        <div>{{ __('Kein „R" (Durchführend) zugewiesen – mindestens eine Person wird erwartet.') }}</div>
                                     @endif
                                 </div>
                             </div>
@@ -1315,7 +1315,7 @@ new #[Title('System')] class extends Component {
                                         <div class="mt-2 flex items-start gap-2 rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-xs dark:border-rose-900 dark:bg-rose-950/40">
                                             <flux:icon.exclamation-triangle class="mt-0.5 h-4 w-4 shrink-0 text-rose-600 dark:text-rose-400" />
                                             <div class="text-rose-800 dark:text-rose-200">
-                                                {{ __('Keine RACI-Zuordnung — mindestens eine Person als „R" (Responsible) und genau eine als „A" (Accountable) hinterlegen.') }}
+                                                {{ __('Keine RACI-Zuordnung — mindestens eine Person als „R" (Durchführend) und genau eine als „A" (Verantwortlich) hinterlegen.') }}
                                             </div>
                                         </div>
                                     @endif
@@ -1332,12 +1332,12 @@ new #[Title('System')] class extends Component {
                                             <flux:icon.exclamation-triangle class="mt-0.5 h-4 w-4 shrink-0 text-rose-600 dark:text-rose-400" />
                                             <div class="space-y-0.5 text-rose-800 dark:text-rose-200">
                                                 @if ($taskAccountableCount === 0)
-                                                    <div>{{ __('Kein „A" (Accountable) zugewiesen – genau eine Person wird erwartet.') }}</div>
+                                                    <div>{{ __('Kein „A" (Verantwortlich) zugewiesen – genau eine Person wird erwartet.') }}</div>
                                                 @elseif ($taskAccountableCount > 1)
-                                                    <div>{{ __(':n × „A" (Accountable) zugewiesen – klassisch nur eine Person.', ['n' => $taskAccountableCount]) }}</div>
+                                                    <div>{{ __(':n × „A" (Verantwortlich) zugewiesen – klassisch nur eine Person.', ['n' => $taskAccountableCount]) }}</div>
                                                 @endif
                                                 @if ($taskResponsibleCount === 0)
-                                                    <div>{{ __('Kein „R" (Responsible) zugewiesen – mindestens eine Person wird erwartet.') }}</div>
+                                                    <div>{{ __('Kein „R" (Durchführend) zugewiesen – mindestens eine Person wird erwartet.') }}</div>
                                                 @endif
                                             </div>
                                         </div>
