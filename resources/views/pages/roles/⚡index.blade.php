@@ -36,7 +36,7 @@ new #[Title('Rollen')] class extends Component {
     #[Computed]
     public function roles(): Collection
     {
-        return Role::with('employees')->orderBy('sort')->orderBy('name')->get();
+        return Role::with('employees')->orderBy('name')->get();
     }
 
     /**
