@@ -46,6 +46,8 @@ new #[Title('Admin · Branchen-Templates')] class extends Component {
 
     public bool $applyConfirming = false;
 
+    public ?string $previewingId = null;
+
     /**
      * @return \Illuminate\Database\Eloquent\Collection<int, IndustryTemplate>
      */
@@ -179,6 +181,76 @@ new #[Title('Admin · Branchen-Templates')] class extends Component {
         }
     }
 
+    public function openPreview(string $id): void
+    {
+        $this->previewingId = $id;
+        Flux::modal('template-preview')->show();
+    }
+
+    /**
+     * Strukturierte Vorschau-Daten pro Bereich für das Preview-Modal:
+     * pro Catalog-Key Anzahl + Liste von Vorschau-Labels (Name oder Titel
+     * je nach Tabelle).
+     *
+     * @return list<array{key: string, label: string, count: int, items: list<string>}>
+     */
+    public function previewSections(): array
+    {
+        if (! $this->previewingId) {
+            return [];
+        }
+
+        $tpl = IndustryTemplate::find($this->previewingId);
+        if (! $tpl) {
+            return [];
+        }
+
+        $catalog = BackupCatalog::all();
+        $payload = $tpl->payload ?? ['areas' => []];
+        $areas = $payload['areas'] ?? [];
+
+        $labelers = [
+            'company' => fn ($r) => $r['name'] ?? '—',
+            'locations' => fn ($r) => ($r['name'] ?? '—').(! empty($r['city']) ? ', '.$r['city'] : ''),
+            'employees' => fn ($r) => trim(($r['first_name'] ?? '').' '.($r['last_name'] ?? '')).(! empty($r['position']) ? ' ('.$r['position'].')' : ''),
+            'system_priorities' => fn ($r) => $r['name'] ?? '—',
+            'emergency_levels' => fn ($r) => $r['name'] ?? '—',
+            'service_providers' => fn ($r) => $r['name'] ?? '—',
+            'roles' => fn ($r) => $r['name'] ?? '—',
+            'insurance_policies' => fn ($r) => ($r['type'] ?? '—').' — '.($r['insurer'] ?? '—'),
+            'emergency_resources' => fn ($r) => $r['name'] ?? '—',
+            'scenarios' => fn ($r) => $r['name'] ?? '—',
+            'employees_default' => fn ($r) => $r['name'] ?? ($r['title'] ?? '—'),
+            'communication_templates' => fn ($r) => $r['name'] ?? '—',
+            'systems' => fn ($r) => $r['name'] ?? '—',
+            'system_tasks' => fn ($r) => $r['title'] ?? '—',
+            'system_dependencies' => fn ($r) => '—',
+            'scenario_runs' => fn ($r) => $r['title'] ?? '—',
+            'incident_reports' => fn ($r) => $r['title'] ?? '—',
+            'handbook_versions' => fn ($r) => 'v'.($r['version'] ?? '—'),
+            'handbook_tests' => fn ($r) => $r['name'] ?? '—',
+        ];
+
+        $sections = [];
+        foreach ($catalog as $key => $area) {
+            $rows = $areas[$key] ?? [];
+            if (! is_array($rows) || $rows === []) {
+                continue;
+            }
+            $labeler = $labelers[$key] ?? fn ($r) => $r['name'] ?? ($r['title'] ?? '—');
+            $items = array_map($labeler, $rows);
+
+            $sections[] = [
+                'key' => $key,
+                'label' => $area['label'],
+                'count' => count($rows),
+                'items' => array_values($items),
+            ];
+        }
+
+        return $sections;
+    }
+
     public function openApply(string $id): void
     {
         $this->applyingId = $id;
@@ -281,6 +353,9 @@ new #[Title('Admin · Branchen-Templates')] class extends Component {
                         <flux:dropdown align="end">
                             <flux:button size="sm" variant="ghost" icon="ellipsis-vertical" />
                             <flux:menu>
+                                <flux:menu.item icon="eye" wire:click="openPreview('{{ $tpl->id }}')">
+                                    {{ __('Inhalte ansehen') }}
+                                </flux:menu.item>
                                 <flux:menu.item icon="play" wire:click="openApply('{{ $tpl->id }}')">
                                     {{ __('Auf Firma anwenden') }}
                                 </flux:menu.item>
@@ -427,6 +502,45 @@ new #[Title('Admin · Branchen-Templates')] class extends Component {
                     <flux:button variant="filled" type="button">{{ __('Abbrechen') }}</flux:button>
                 </flux:modal.close>
                 <flux:button variant="danger" type="button" wire:click="delete">{{ __('Löschen') }}</flux:button>
+            </div>
+        </div>
+    </flux:modal>
+
+    {{-- Preview-Modal --}}
+    <flux:modal name="template-preview" class="max-w-4xl">
+        <div class="space-y-5">
+            <div>
+                <flux:heading size="lg">{{ __('Template-Inhalte') }}</flux:heading>
+                <flux:subheading>{{ __('Was bringt dieses Template mit. Beim Apply landen genau diese Datensätze in der Ziel-Firma (mit neuen UUIDs + remappten FKs).') }}</flux:subheading>
+            </div>
+
+            @php($sections = $this->previewSections())
+            @if (empty($sections))
+                <flux:text class="text-sm text-zinc-500 dark:text-zinc-400">
+                    {{ __('Kein Payload vorhanden.') }}
+                </flux:text>
+            @else
+                <div class="max-h-[60vh] space-y-3 overflow-y-auto">
+                    @foreach ($sections as $section)
+                        <div class="rounded-lg border border-zinc-200 dark:border-zinc-700">
+                            <div class="flex items-center justify-between gap-2 border-b border-zinc-100 bg-zinc-50 px-4 py-2 dark:border-zinc-800 dark:bg-zinc-800/30">
+                                <flux:text class="font-medium text-sm">{{ __($section['label']) }}</flux:text>
+                                <flux:badge color="zinc" size="sm">{{ $section['count'] }}</flux:badge>
+                            </div>
+                            <ul class="space-y-0.5 px-4 py-2 text-xs text-zinc-700 dark:text-zinc-300">
+                                @foreach ($section['items'] as $item)
+                                    <li>{{ $item }}</li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @endforeach
+                </div>
+            @endif
+
+            <div class="flex items-center justify-end gap-2 border-t border-zinc-100 pt-4 dark:border-zinc-800">
+                <flux:modal.close>
+                    <flux:button variant="filled" type="button">{{ __('Schließen') }}</flux:button>
+                </flux:modal.close>
             </div>
         </div>
     </flux:modal>
