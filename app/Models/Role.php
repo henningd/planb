@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
-#[Fillable(['company_id', 'name', 'description', 'sort'])]
+#[Fillable(['company_id', 'name', 'system_key', 'description', 'sort'])]
 class Role extends Model
 {
     /** @use HasFactory<RoleFactory> */
@@ -20,6 +20,15 @@ class Role extends Model
     public function auditLabel(): string
     {
         return $this->name;
+    }
+
+    /**
+     * Vom System angelegte Rolle (eine pro CrisisRole) — darf nicht
+     * gelöscht werden; Name/Beschreibung sind Vorgaben aus dem Catalog.
+     */
+    public function isSystem(): bool
+    {
+        return $this->system_key !== null;
     }
 
     /**

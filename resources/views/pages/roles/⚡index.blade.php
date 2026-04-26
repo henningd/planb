@@ -122,13 +122,25 @@ new #[Title('Rollen')] class extends Component {
 
     public function delete(): void
     {
-        if ($this->deletingId) {
-            Role::findOrFail($this->deletingId)->delete();
-            $this->deletingId = null;
-            unset($this->roles);
-            Flux::modal('role-delete')->close();
-            Flux::toast(variant: 'success', text: __('Rolle gelöscht.'));
+        if (! $this->deletingId) {
+            return;
         }
+
+        $role = Role::findOrFail($this->deletingId);
+
+        if ($role->isSystem()) {
+            Flux::toast(variant: 'warning', text: __('Systemrollen können nicht gelöscht werden.'));
+            $this->deletingId = null;
+            Flux::modal('role-delete')->close();
+
+            return;
+        }
+
+        $role->delete();
+        $this->deletingId = null;
+        unset($this->roles);
+        Flux::modal('role-delete')->close();
+        Flux::toast(variant: 'success', text: __('Rolle gelöscht.'));
     }
 
     protected function resetForm(): void
@@ -162,7 +174,12 @@ new #[Title('Rollen')] class extends Component {
             <div class="flex flex-col rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
                 <div class="flex items-start justify-between gap-2">
                     <div class="min-w-0 flex-1">
-                        <flux:heading size="base">{{ $role->name }}</flux:heading>
+                        <div class="flex flex-wrap items-center gap-2">
+                            <flux:heading size="base">{{ $role->name }}</flux:heading>
+                            @if ($role->isSystem())
+                                <flux:badge color="indigo" size="sm" icon="shield-check">{{ __('System') }}</flux:badge>
+                            @endif
+                        </div>
                         @if ($role->description)
                             <flux:text class="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
                                 {{ $role->description }}
@@ -180,10 +197,12 @@ new #[Title('Rollen')] class extends Component {
                             <flux:menu.item icon="pencil" wire:click="openEdit('{{ $role->id }}')">
                                 {{ __('Bearbeiten') }}
                             </flux:menu.item>
-                            <flux:menu.separator />
-                            <flux:menu.item icon="trash" variant="danger" wire:click="confirmDelete('{{ $role->id }}')">
-                                {{ __('Löschen') }}
-                            </flux:menu.item>
+                            @unless ($role->isSystem())
+                                <flux:menu.separator />
+                                <flux:menu.item icon="trash" variant="danger" wire:click="confirmDelete('{{ $role->id }}')">
+                                    {{ __('Löschen') }}
+                                </flux:menu.item>
+                            @endunless
                         </flux:menu>
                     </flux:dropdown>
                 </div>

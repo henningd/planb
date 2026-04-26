@@ -52,8 +52,11 @@ test('roles are scoped per company', function () {
 
     $this->actingAs($user->fresh());
 
-    expect(Role::pluck('name')->all())->toBe(['Eigene'])
-        ->and(Role::withoutGlobalScope(CurrentCompanyScope::class)->count())->toBe(2);
+    // System-Rollen (eine pro CrisisRole) werden seit dem Provisioner
+    // automatisch pro Firma angelegt — Test filtert daher auf
+    // user-definierte Rollen (system_key IS NULL).
+    expect(Role::whereNull('system_key')->pluck('name')->all())->toBe(['Eigene'])
+        ->and(Role::withoutGlobalScope(CurrentCompanyScope::class)->whereNull('system_key')->count())->toBe(2);
 });
 
 test('role can be edited and assignments updated', function () {
@@ -89,7 +92,7 @@ test('user can delete a role', function () {
         ->call('confirmDelete', $role->id)
         ->call('delete');
 
-    expect(Role::withoutGlobalScope(CurrentCompanyScope::class)->count())->toBe(0);
+    expect(Role::withoutGlobalScope(CurrentCompanyScope::class)->whereNull('system_key')->count())->toBe(0);
 });
 
 test('roles index page renders with assigned employees', function () {

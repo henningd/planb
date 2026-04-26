@@ -415,26 +415,6 @@ new #[Title('Mitarbeiter')] class extends Component {
 
             <flux:switch wire:model="is_key_personnel" :label="__('Schlüsselmitarbeiter – besonders wichtig für den Betrieb')" />
 
-            <div class="space-y-3 rounded-lg border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-700 dark:bg-zinc-800/50">
-                <div>
-                    <flux:heading size="base">{{ __('Krisenrolle') }}</flux:heading>
-                    <flux:subheading>
-                        {{ __('Pflicht-Rollen aus Kapitel 4 des Notfallhandbuchs. Pro Rolle: eine Hauptperson und eine Vertretung.') }}
-                    </flux:subheading>
-                </div>
-
-                <flux:select wire:model.live="crisis_role" :label="__('Rolle')">
-                    <flux:select.option value="">{{ __('— keine —') }}</flux:select.option>
-                    @foreach ($this->crisisRoleOptions() as $option)
-                        <flux:select.option value="{{ $option['value'] }}">{{ $option['label'] }}</flux:select.option>
-                    @endforeach
-                </flux:select>
-
-                @if ($crisis_role !== '')
-                    <flux:switch wire:model="is_crisis_deputy" :label="__('Vertretung (statt Hauptperson)')" />
-                @endif
-            </div>
-
             <flux:textarea wire:model="notes" :label="__('Notizen')" rows="2" />
 
             <div class="flex items-center justify-end gap-2 border-t border-zinc-100 pt-4 dark:border-zinc-800">

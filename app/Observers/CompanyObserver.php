@@ -4,6 +4,7 @@ namespace App\Observers;
 
 use App\Models\Company;
 use App\Models\GlobalScenario;
+use App\Support\SystemRoleProvisioner;
 
 class CompanyObserver
 {
@@ -78,5 +79,7 @@ class CompanyObserver
                 ]);
             }
         }
+
+        SystemRoleProvisioner::ensureFor($company);
     }
 }
