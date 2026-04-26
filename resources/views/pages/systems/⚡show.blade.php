@@ -182,9 +182,11 @@ new #[Title('System')] class extends Component {
 
     public function addNewTaskProvider(): void
     {
+        // Dienstleister stehen typischerweise als Konsultierte beratend zur
+        // Seite — Standard daher C statt R, das in der Regel intern bleibt.
         $this->newTaskProviders[] = [
             'provider_id' => '',
-            'raci_role' => RaciRole::Responsible->value,
+            'raci_role' => RaciRole::Consulted->value,
         ];
     }
 
@@ -214,9 +216,11 @@ new #[Title('System')] class extends Component {
 
     public function addEditProvider(): void
     {
+        // Vgl. addNewTaskProvider: C ist sinnvoller Default für externe
+        // Dienstleister.
         $this->editProviders[] = [
             'provider_id' => '',
-            'raci_role' => RaciRole::Responsible->value,
+            'raci_role' => RaciRole::Consulted->value,
         ];
     }
 
