@@ -27,7 +27,7 @@ class EmployeeFactory extends Factory
             'mobile_phone' => fake()->phoneNumber(),
             'private_phone' => null,
             'email' => fake()->safeEmail(),
-            'location' => null,
+            'location_id' => null,
             'emergency_contact' => null,
             'manager_id' => null,
             'is_key_personnel' => false,

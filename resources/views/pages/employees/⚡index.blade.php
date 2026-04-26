@@ -2,6 +2,7 @@
 
 use App\Enums\CrisisRole;
 use App\Models\Employee;
+use App\Models\Location;
 use Flux\Flux;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
@@ -28,7 +29,7 @@ new #[Title('Mitarbeiter')] class extends Component {
 
     public string $email = '';
 
-    public string $location = '';
+    public ?string $location_id = null;
 
     public string $emergency_contact = '';
 
@@ -52,7 +53,7 @@ new #[Title('Mitarbeiter')] class extends Component {
     public function employees()
     {
         return Employee::query()
-            ->with('manager')
+            ->with(['manager', 'location'])
             ->when($this->search !== '', function ($q) {
                 $term = '%'.$this->search.'%';
                 $q->where(function ($q) use ($term) {
@@ -103,6 +104,18 @@ new #[Title('Mitarbeiter')] class extends Component {
             ->get();
     }
 
+    /**
+     * @return \Illuminate\Database\Eloquent\Collection<int, Location>
+     */
+    #[Computed]
+    public function locationOptions(): \Illuminate\Database\Eloquent\Collection
+    {
+        return Location::query()
+            ->orderBy('sort')
+            ->orderBy('name')
+            ->get();
+    }
+
     public function openCreate(): void
     {
         $this->resetForm();
@@ -122,7 +135,7 @@ new #[Title('Mitarbeiter')] class extends Component {
         $this->mobile_phone = (string) $e->mobile_phone;
         $this->private_phone = (string) $e->private_phone;
         $this->email = (string) $e->email;
-        $this->location = (string) $e->location;
+        $this->location_id = $e->location_id;
         $this->emergency_contact = (string) $e->emergency_contact;
         $this->manager_id = $e->manager_id;
         $this->is_key_personnel = (bool) $e->is_key_personnel;
@@ -150,7 +163,7 @@ new #[Title('Mitarbeiter')] class extends Component {
             'mobile_phone' => ['nullable', 'string', 'max:50'],
             'private_phone' => ['nullable', 'string', 'max:50'],
             'email' => ['nullable', 'email', 'max:255'],
-            'location' => ['nullable', 'string', 'max:255'],
+            'location_id' => ['nullable', 'uuid', 'exists:locations,id'],
             'emergency_contact' => ['nullable', 'string', 'max:1000'],
             'manager_id' => ['nullable', 'uuid', 'exists:employees,id'],
             'is_key_personnel' => ['boolean'],
@@ -184,7 +197,7 @@ new #[Title('Mitarbeiter')] class extends Component {
 
         Flux::modal('employee-form')->close();
         $this->resetForm();
-        unset($this->employees, $this->departments, $this->managerOptions);
+        unset($this->employees, $this->departments, $this->managerOptions, $this->locationOptions);
 
         Flux::toast(variant: 'success', text: __('Mitarbeiter gespeichert.'));
     }
@@ -200,7 +213,7 @@ new #[Title('Mitarbeiter')] class extends Component {
         if ($this->deletingId) {
             Employee::findOrFail($this->deletingId)->delete();
             $this->deletingId = null;
-            unset($this->employees, $this->departments, $this->managerOptions);
+            unset($this->employees, $this->departments, $this->managerOptions, $this->locationOptions);
             Flux::modal('employee-delete')->close();
             Flux::toast(variant: 'success', text: __('Mitarbeiter gelöscht.'));
         }
@@ -210,7 +223,7 @@ new #[Title('Mitarbeiter')] class extends Component {
     {
         $this->reset([
             'editingId', 'first_name', 'last_name', 'position', 'department',
-            'work_phone', 'mobile_phone', 'private_phone', 'email', 'location',
+            'work_phone', 'mobile_phone', 'private_phone', 'email', 'location_id',
             'emergency_contact', 'manager_id', 'is_key_personnel',
             'crisis_role', 'is_crisis_deputy', 'notes',
         ]);
@@ -310,7 +323,7 @@ new #[Title('Mitarbeiter')] class extends Component {
                         </flux:dropdown>
                     </div>
 
-                    @if ($employee->mobile_phone || $employee->work_phone || $employee->email || $employee->location)
+                    @if ($employee->mobile_phone || $employee->work_phone || $employee->email || $employee->location_id)
                         <div class="mt-4 space-y-2 text-sm">
                             @if ($employee->mobile_phone)
                                 <div class="flex items-center gap-2">
@@ -333,7 +346,7 @@ new #[Title('Mitarbeiter')] class extends Component {
                             @if ($employee->location)
                                 <div class="flex items-center gap-2">
                                     <flux:icon.map-pin class="h-4 w-4 shrink-0 text-zinc-400" />
-                                    <span>{{ $employee->location }}</span>
+                                    <span>{{ $employee->location->name }}</span>
                                 </div>
                             @endif
                         </div>
@@ -372,7 +385,12 @@ new #[Title('Mitarbeiter')] class extends Component {
 
             <div class="grid gap-4 sm:grid-cols-2">
                 <flux:input wire:model="email" :label="__('E-Mail')" type="email" />
-                <flux:input wire:model="location" :label="__('Standort')" placeholder="z. B. Hauptsitz" />
+                <flux:select wire:model="location_id" :label="__('Standort')">
+                    <flux:select.option value="">{{ __('— kein Standort —') }}</flux:select.option>
+                    @foreach ($this->locationOptions as $loc)
+                        <flux:select.option value="{{ $loc->id }}">{{ $loc->name }}</flux:select.option>
+                    @endforeach
+                </flux:select>
             </div>
 
             <div class="grid gap-4 sm:grid-cols-3">

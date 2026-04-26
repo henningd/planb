@@ -23,6 +23,7 @@ use App\Models\Company;
 use App\Models\EmergencyResource;
 use App\Models\Employee;
 use App\Models\GlobalScenario;
+use App\Models\HandbookShare;
 use App\Models\HandbookTest;
 use App\Models\HandbookVersion;
 use App\Models\IncidentReport;
@@ -40,11 +41,13 @@ use App\Models\Team;
 use App\Models\User;
 use App\Scopes\CurrentCompanyScope;
 use App\Support\AssignmentSync;
+use App\Support\HandbookPdfGenerator;
 use App\Support\IndustryTemplates;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Throwable;
 
 class DemoDataSeeder extends Seeder
 {
@@ -120,6 +123,8 @@ class DemoDataSeeder extends Seeder
         $this->seedScenarioRuns($company, $user);
         $this->seedIncidentReports($company);
         $this->seedHandbookVersions($company);
+        $this->seedHandbookPdfs($company);
+        $this->seedHandbookShares($company, $user);
         $this->seedEmergencyResources($company);
         $this->seedHandbookTests($company);
 
@@ -184,12 +189,17 @@ class DemoDataSeeder extends Seeder
 
     private function seedEmployees(Company $company): void
     {
+        $locationIdByName = Location::withoutGlobalScope(CurrentCompanyScope::class)
+            ->where('company_id', $company->id)
+            ->pluck('id', 'name');
+
         $employees = [
             [
                 'first_name' => 'Max', 'last_name' => 'Mustermann',
                 'position' => 'Geschäftsführer', 'department' => 'Geschäftsführung',
                 'mobile_phone' => '0171 1234567', 'private_phone' => '07154 555666',
                 'email' => 'max@mustermann.de',
+                'location_name' => 'Hauptsitz',
                 'crisis_role' => CrisisRole::Management,
                 'is_crisis_deputy' => false,
                 'is_key_personnel' => true,
@@ -199,6 +209,7 @@ class DemoDataSeeder extends Seeder
                 'position' => 'Prokuristin', 'department' => 'Geschäftsführung',
                 'mobile_phone' => '0171 1234568',
                 'email' => 'sabine@mustermann.de',
+                'location_name' => 'Hauptsitz',
                 'crisis_role' => CrisisRole::Management,
                 'is_crisis_deputy' => true,
                 'is_key_personnel' => true,
@@ -208,6 +219,7 @@ class DemoDataSeeder extends Seeder
                 'position' => 'Büroleitung', 'department' => 'Verwaltung',
                 'mobile_phone' => '0171 2345678', 'private_phone' => '0711 7778899',
                 'email' => 'anna@mustermann.de',
+                'location_name' => 'Hauptsitz',
                 'crisis_role' => CrisisRole::EmergencyOfficer,
                 'is_crisis_deputy' => false,
                 'is_key_personnel' => true,
@@ -217,6 +229,7 @@ class DemoDataSeeder extends Seeder
                 'position' => 'Werkstattleitung', 'department' => 'Werkstatt',
                 'mobile_phone' => '0171 3456789',
                 'email' => 'bernd.schneider@mustermann.de',
+                'location_name' => 'Werkstatt Vaihingen',
                 'crisis_role' => CrisisRole::EmergencyOfficer,
                 'is_crisis_deputy' => true,
                 'is_key_personnel' => false,
@@ -226,6 +239,7 @@ class DemoDataSeeder extends Seeder
                 'position' => 'IT-Beauftragter (intern)', 'department' => 'Verwaltung',
                 'mobile_phone' => '0171 4567890',
                 'email' => 'dieter.klein@mustermann.de',
+                'location_name' => 'Hauptsitz',
                 'crisis_role' => CrisisRole::ItLead,
                 'is_crisis_deputy' => false,
                 'is_key_personnel' => true,
@@ -235,6 +249,7 @@ class DemoDataSeeder extends Seeder
                 'position' => 'Datenschutzbeauftragte (extern)', 'department' => 'Compliance',
                 'mobile_phone' => '0171 5678901',
                 'email' => 'wagner@datenschutz-extern.example',
+                'location_name' => null,
                 'crisis_role' => CrisisRole::DataProtectionOfficer,
                 'is_crisis_deputy' => false,
                 'is_key_personnel' => true,
@@ -244,6 +259,7 @@ class DemoDataSeeder extends Seeder
                 'position' => 'Marketing & Kommunikation', 'department' => 'Verwaltung',
                 'mobile_phone' => '0171 6789012',
                 'email' => 'eva.kommer@mustermann.de',
+                'location_name' => 'Hauptsitz',
                 'crisis_role' => CrisisRole::CommunicationsLead,
                 'is_crisis_deputy' => false,
                 'is_key_personnel' => false,
@@ -253,6 +269,7 @@ class DemoDataSeeder extends Seeder
                 'position' => 'Buchhaltung', 'department' => 'Verwaltung',
                 'mobile_phone' => '0171 7890123',
                 'email' => 'tobias.fischer@mustermann.de',
+                'location_name' => 'Hauptsitz',
                 'is_key_personnel' => false,
             ],
             [
@@ -260,11 +277,16 @@ class DemoDataSeeder extends Seeder
                 'position' => 'Geselle', 'department' => 'Werkstatt',
                 'mobile_phone' => '0171 8901234',
                 'email' => 'jonas.mueller@mustermann.de',
+                'location_name' => 'Werkstatt Vaihingen',
                 'is_key_personnel' => false,
             ],
         ];
 
         foreach ($employees as $data) {
+            $locationName = $data['location_name'] ?? null;
+            unset($data['location_name']);
+            $data['location_id'] = $locationName !== null ? ($locationIdByName[$locationName] ?? null) : null;
+
             Employee::withoutGlobalScope(CurrentCompanyScope::class)->updateOrCreate(
                 [
                     'company_id' => $company->id,
@@ -1045,6 +1067,74 @@ class DemoDataSeeder extends Seeder
             HandbookTest::withoutGlobalScope(CurrentCompanyScope::class)->updateOrCreate(
                 ['company_id' => $company->id, 'type' => $data['type']->value, 'name' => $data['name']],
                 array_merge(['company_id' => $company->id], $data),
+            );
+        }
+    }
+
+    /**
+     * Erzeugt revisionssichere PDFs für alle bereits freigegebenen
+     * Handbuch-Versionen, die noch keinen Snapshot haben. Idempotent –
+     * ein zweiter Lauf produziert keine Duplikate. Fehler werden
+     * geschluckt, damit ein PDF-Problem die restliche Demo nicht killt.
+     */
+    private function seedHandbookPdfs(Company $company): void
+    {
+        $versions = HandbookVersion::withoutGlobalScope(CurrentCompanyScope::class)
+            ->where('company_id', $company->id)
+            ->whereNotNull('approved_at')
+            ->whereNull('pdf_path')
+            ->orderBy('changed_at')
+            ->get();
+
+        foreach ($versions as $version) {
+            try {
+                HandbookPdfGenerator::generate($version);
+                $this->command?->info("PDF für Version {$version->version} angelegt.");
+            } catch (Throwable $e) {
+                $this->command?->warn("PDF für Version {$version->version} übersprungen: {$e->getMessage()}");
+            }
+        }
+    }
+
+    /**
+     * Stellt drei Demo-Freigabelinks bereit, damit alle Zustände der
+     * Freigabe-UI vorbefüllt sind: aktiv, widerrufen, abgelaufen.
+     * Idempotent über (company_id, label).
+     */
+    private function seedHandbookShares(Company $company, User $user): void
+    {
+        $shares = [
+            [
+                'label' => 'Wirtschaftsprüfer Q2/2026',
+                'expires_at' => now()->addDays(14),
+                'revoked_at' => null,
+                'last_accessed_at' => now()->subHours(6),
+                'access_count' => 4,
+            ],
+            [
+                'label' => 'IT-Audit (manuell widerrufen)',
+                'expires_at' => now()->addDays(30),
+                'revoked_at' => now()->subDays(2),
+                'last_accessed_at' => now()->subDays(3),
+                'access_count' => 2,
+            ],
+            [
+                'label' => 'Versicherungsmakler (abgelaufen)',
+                'expires_at' => now()->subDays(5),
+                'revoked_at' => null,
+                'last_accessed_at' => now()->subDays(8),
+                'access_count' => 11,
+            ],
+        ];
+
+        foreach ($shares as $data) {
+            HandbookShare::withoutGlobalScope(CurrentCompanyScope::class)->updateOrCreate(
+                ['company_id' => $company->id, 'label' => $data['label']],
+                array_merge([
+                    'company_id' => $company->id,
+                    'created_by_user_id' => $user->id,
+                    'token' => HandbookShare::generateToken(),
+                ], $data),
             );
         }
     }

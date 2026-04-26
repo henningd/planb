@@ -24,7 +24,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'mobile_phone',
     'private_phone',
     'email',
-    'location',
+    'location_id',
     'emergency_contact',
     'manager_id',
     'is_key_personnel',
@@ -53,6 +53,14 @@ class Employee extends Model
     public function manager(): BelongsTo
     {
         return $this->belongsTo(Employee::class, 'manager_id');
+    }
+
+    /**
+     * @return BelongsTo<Location, $this>
+     */
+    public function location(): BelongsTo
+    {
+        return $this->belongsTo(Location::class);
     }
 
     /**

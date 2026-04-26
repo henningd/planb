@@ -2,13 +2,22 @@
 
 use App\Models\Company;
 use App\Models\Employee;
+use App\Models\HandbookShare;
+use App\Models\HandbookVersion;
 use App\Models\Team;
 use App\Models\User;
 use App\Scopes\CurrentCompanyScope;
+use App\Support\HandbookPdfGenerator;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 
 uses(RefreshDatabase::class);
+
+beforeEach(function () {
+    // Ohne fake würden DemoDataSeeder-PDFs in echte Storage-Pfade landen.
+    Storage::fake(HandbookPdfGenerator::DISK);
+});
 
 test('non super admins are blocked from the demo reset page', function () {
     $user = User::factory()->create(['is_super_admin' => false]);
@@ -54,6 +63,43 @@ test('seed action creates the demo user, team and company', function () {
         ->where('company_id', $company->id)
         ->count();
     expect($employees)->toBeGreaterThan(0);
+});
+
+test('seed creates revision-safe pdfs for approved handbook versions and shares', function () {
+    $admin = User::factory()->create(['is_super_admin' => true]);
+
+    Livewire\Livewire::actingAs($admin->fresh())
+        ->test('pages::admin.demo.index')
+        ->call('seed')
+        ->assertHasNoErrors();
+
+    $company = Company::withoutGlobalScope(CurrentCompanyScope::class)
+        ->where('name', 'Musterfirma GmbH')
+        ->first();
+
+    $approved = HandbookVersion::withoutGlobalScope(CurrentCompanyScope::class)
+        ->where('company_id', $company->id)
+        ->whereNotNull('approved_at')
+        ->get();
+
+    expect($approved)->toHaveCount(2);
+    foreach ($approved as $v) {
+        expect($v->pdf_path)->not->toBeNull();
+        expect($v->pdf_hash)->toMatch('/^[a-f0-9]{64}$/');
+        Storage::disk(HandbookPdfGenerator::DISK)->assertExists($v->pdf_path);
+    }
+
+    $pending = HandbookVersion::withoutGlobalScope(CurrentCompanyScope::class)
+        ->where('company_id', $company->id)
+        ->whereNull('approved_at')
+        ->first();
+    expect($pending)->not->toBeNull();
+    expect($pending->pdf_path)->toBeNull();
+
+    $shares = HandbookShare::withoutGlobalScope(CurrentCompanyScope::class)
+        ->where('company_id', $company->id)
+        ->get();
+    expect($shares)->toHaveCount(3);
 });
 
 test('seed action also creates the secondary demo user as team admin', function () {
