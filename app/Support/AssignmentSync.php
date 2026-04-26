@@ -31,9 +31,12 @@ class AssignmentSync
      * Spalten, deren Änderung als "neue Zuordnung" gewertet wird (Row-Rotation).
      * sort und note sind annotative und werden in place aktualisiert.
      *
+     * Pivots ohne diese Spalten ignorieren den Eintrag automatisch
+     * (identityChanged prüft via array_key_exists).
+     *
      * @var list<string>
      */
-    private const IDENTITY_COLUMNS = ['raci_role'];
+    private const IDENTITY_COLUMNS = ['raci_role', 'is_deputy'];
 
     /**
      * Synchronisiert die aktive Menge der zugeordneten verbundenen IDs.

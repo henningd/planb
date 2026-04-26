@@ -20,8 +20,8 @@ test('user can create a role with employees', function () {
     Livewire\Livewire::actingAs($user->fresh())
         ->test('pages::roles.index')
         ->set('name', 'Buchhaltung')
-        ->call('toggleAssignedEmployee', $emp1->id)
-        ->call('toggleAssignedEmployee', $emp2->id)
+        ->call('cycleAssignment', $emp1->id)
+        ->call('cycleAssignment', $emp2->id)
         ->call('save')
         ->assertHasNoErrors();
 
@@ -34,10 +34,12 @@ test('toggling an assigned employee removes them', function () {
     $company = Company::factory()->for($user->currentTeam)->create();
     $emp = Employee::factory()->for($company)->create();
 
+    // 3-Stufen-Toggle: nichts → main → deputy → nichts (= 3 Klicks zum Entfernen).
     $component = Livewire\Livewire::actingAs($user->fresh())
         ->test('pages::roles.index')
-        ->call('toggleAssignedEmployee', $emp->id)
-        ->call('toggleAssignedEmployee', $emp->id);
+        ->call('cycleAssignment', $emp->id) // → main
+        ->call('cycleAssignment', $emp->id) // → deputy
+        ->call('cycleAssignment', $emp->id); // → entfernt
 
     expect($component->get('assignedEmployeeIds'))->toBe([]);
 });
@@ -72,8 +74,9 @@ test('role can be edited and assignments updated', function () {
         ->test('pages::roles.index')
         ->call('openEdit', $role->id)
         ->set('name', 'Vertrieb & Marketing')
-        ->call('toggleAssignedEmployee', $oldEmp->id) // remove
-        ->call('toggleAssignedEmployee', $newEmp->id) // add
+        ->call('cycleAssignment', $oldEmp->id) // main → deputy
+        ->call('cycleAssignment', $oldEmp->id) // deputy → entfernt
+        ->call('cycleAssignment', $newEmp->id) // → main
         ->call('save')
         ->assertHasNoErrors();
 

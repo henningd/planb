@@ -39,7 +39,7 @@ class Role extends Model
     public function employees(): BelongsToMany
     {
         return $this->belongsToMany(Employee::class)
-            ->withPivot(['id', 'assigned_at', 'assigned_by_user_id', 'removed_at', 'removed_by_user_id'])
+            ->withPivot(['id', 'is_deputy', 'assigned_at', 'assigned_by_user_id', 'removed_at', 'removed_by_user_id'])
             ->withTimestamps()
             ->wherePivotNull('removed_at')
             ->orderBy('last_name')
@@ -54,7 +54,7 @@ class Role extends Model
     public function employeesHistory(): BelongsToMany
     {
         return $this->belongsToMany(Employee::class)
-            ->withPivot(['id', 'assigned_at', 'assigned_by_user_id', 'removed_at', 'removed_by_user_id'])
+            ->withPivot(['id', 'is_deputy', 'assigned_at', 'assigned_by_user_id', 'removed_at', 'removed_by_user_id'])
             ->withTimestamps();
     }
 

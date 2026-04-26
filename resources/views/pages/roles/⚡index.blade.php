@@ -22,6 +22,14 @@ new #[Title('Rollen')] class extends Component {
     /** @var array<int, string> */
     public array $assignedEmployeeIds = [];
 
+    /**
+     * Zustand pro Employee-ID: 'main' | 'deputy'. Mitarbeiter ohne
+     * Eintrag sind nicht zugeordnet.
+     *
+     * @var array<string, string>
+     */
+    public array $assignmentMode = [];
+
     public ?string $deletingId = null;
 
     #[Computed]
@@ -63,18 +71,37 @@ new #[Title('Rollen')] class extends Component {
         $this->description = (string) $role->description;
         $this->sort = $role->sort;
         $this->assignedEmployeeIds = $role->employees->pluck('id')->all();
+        $this->assignmentMode = $role->employees
+            ->mapWithKeys(fn ($e) => [$e->id => ((bool) ($e->pivot->is_deputy ?? false)) ? 'deputy' : 'main'])
+            ->all();
 
         Flux::modal('role-form')->show();
     }
 
-    public function toggleAssignedEmployee(string $employeeId): void
+    /**
+     * 3-Stufen-Toggle pro Mitarbeiter: nichts → main → deputy → nichts.
+     */
+    public function cycleAssignment(string $employeeId): void
     {
-        if (in_array($employeeId, $this->assignedEmployeeIds, true)) {
+        $current = $this->assignmentMode[$employeeId] ?? null;
+        $next = match ($current) {
+            null => 'main',
+            'main' => 'deputy',
+            default => null,
+        };
+
+        if ($next === null) {
+            unset($this->assignmentMode[$employeeId]);
             $this->assignedEmployeeIds = array_values(array_filter(
                 $this->assignedEmployeeIds,
                 fn ($id) => $id !== $employeeId,
             ));
-        } else {
+
+            return;
+        }
+
+        $this->assignmentMode[$employeeId] = $next;
+        if (! in_array($employeeId, $this->assignedEmployeeIds, true)) {
             $this->assignedEmployeeIds[] = $employeeId;
         }
     }
@@ -105,7 +132,16 @@ new #[Title('Rollen')] class extends Component {
             'sort' => $validated['sort'] ?? 0,
         ])->save();
 
-        AssignmentSync::sync($role, $role->employees(), $validated['assignedEmployeeIds'] ?? []);
+        // Per-Mitarbeiter Attribute aus assignmentMode aufbauen
+        // (Hauptperson = is_deputy=false, Vertretung = true).
+        $desired = [];
+        foreach (($validated['assignedEmployeeIds'] ?? []) as $empId) {
+            $desired[$empId] = [
+                'is_deputy' => ($this->assignmentMode[$empId] ?? 'main') === 'deputy',
+            ];
+        }
+
+        AssignmentSync::sync($role, $role->employees(), $desired);
 
         Flux::modal('role-form')->close();
         $this->resetForm();
@@ -145,7 +181,7 @@ new #[Title('Rollen')] class extends Component {
 
     protected function resetForm(): void
     {
-        $this->reset(['editingId', 'name', 'description', 'sort', 'assignedEmployeeIds']);
+        $this->reset(['editingId', 'name', 'description', 'sort', 'assignedEmployeeIds', 'assignmentMode']);
     }
 }; ?>
 
@@ -207,14 +243,38 @@ new #[Title('Rollen')] class extends Component {
                     </flux:dropdown>
                 </div>
 
+                @php
+                    $mains = $role->employees->where('pivot.is_deputy', false);
+                    $deputies = $role->employees->where('pivot.is_deputy', true);
+                @endphp
                 @if ($role->employees->isNotEmpty())
-                    <div class="mt-4 flex flex-wrap gap-1.5 border-t border-zinc-100 pt-3 dark:border-zinc-800">
-                        @foreach ($role->employees as $emp)
-                            <span class="inline-flex items-center gap-1 rounded-md bg-zinc-100 px-2 py-1 text-xs text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">
-                                <flux:icon.user class="h-3 w-3 text-zinc-400" />
-                                {{ $emp->fullName() }}
-                            </span>
-                        @endforeach
+                    <div class="mt-4 space-y-2 border-t border-zinc-100 pt-3 dark:border-zinc-800">
+                        @if ($mains->isNotEmpty())
+                            <div>
+                                <flux:text class="text-[10px] font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-400">{{ __('Hauptpersonen') }}</flux:text>
+                                <div class="mt-1 flex flex-wrap gap-1.5">
+                                    @foreach ($mains as $emp)
+                                        <span class="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-2 py-1 text-xs text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200">
+                                            <flux:icon.user class="h-3 w-3" />
+                                            {{ $emp->fullName() }}
+                                        </span>
+                                    @endforeach
+                                </div>
+                            </div>
+                        @endif
+                        @if ($deputies->isNotEmpty())
+                            <div>
+                                <flux:text class="text-[10px] font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-400">{{ __('Vertretungen') }}</flux:text>
+                                <div class="mt-1 flex flex-wrap gap-1.5">
+                                    @foreach ($deputies as $emp)
+                                        <span class="inline-flex items-center gap-1 rounded-md bg-amber-50 px-2 py-1 text-xs text-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
+                                            <flux:icon.user-minus class="h-3 w-3" />
+                                            {{ $emp->fullName() }}
+                                        </span>
+                                    @endforeach
+                                </div>
+                            </div>
+                        @endif
                     </div>
                 @else
                     <flux:text class="mt-4 border-t border-zinc-100 pt-3 text-xs italic text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
@@ -253,18 +313,30 @@ new #[Title('Rollen')] class extends Component {
                         {{ __('Noch keine Mitarbeitenden angelegt.') }}
                     </flux:text>
                 @else
+                    <flux:text class="text-xs text-zinc-500 dark:text-zinc-400">
+                        {{ __('Klick zykliert: — → Hauptperson → Vertretung → —. Beliebig viele pro Status.') }}
+                    </flux:text>
                     <div class="max-h-72 space-y-1 overflow-y-auto rounded-lg border border-zinc-200 p-2 dark:border-zinc-700">
                         @foreach ($this->employeeOptions as $emp)
-                            @php($checked = in_array($emp->id, $assignedEmployeeIds, true))
+                            @php
+                                $mode = $assignmentMode[$emp->id] ?? null;
+                                $bg = match ($mode) {
+                                    'main' => 'bg-emerald-50 dark:bg-emerald-950/40',
+                                    'deputy' => 'bg-amber-50 dark:bg-amber-950/40',
+                                    default => '',
+                                };
+                            @endphp
                             <button
                                 type="button"
-                                wire:click.prevent="toggleAssignedEmployee('{{ $emp->id }}')"
-                                class="flex w-full items-center gap-3 rounded-md px-2 py-1.5 text-left text-sm transition hover:bg-zinc-50 dark:hover:bg-zinc-800 {{ $checked ? 'bg-emerald-50 dark:bg-emerald-950/40' : '' }}">
-                                <span class="flex h-4 w-4 shrink-0 items-center justify-center rounded border {{ $checked ? 'border-emerald-600 bg-emerald-600' : 'border-zinc-300 dark:border-zinc-600' }}">
-                                    @if ($checked)
-                                        <flux:icon.check class="h-3 w-3 text-white" />
-                                    @endif
-                                </span>
+                                wire:click.prevent="cycleAssignment('{{ $emp->id }}')"
+                                class="flex w-full items-center gap-3 rounded-md px-2 py-1.5 text-left text-sm transition hover:bg-zinc-50 dark:hover:bg-zinc-800 {{ $bg }}">
+                                @if ($mode === 'main')
+                                    <flux:badge size="sm" color="emerald">{{ __('Haupt') }}</flux:badge>
+                                @elseif ($mode === 'deputy')
+                                    <flux:badge size="sm" color="amber">{{ __('Vertr.') }}</flux:badge>
+                                @else
+                                    <flux:badge size="sm" color="zinc">—</flux:badge>
+                                @endif
                                 <span class="flex-1">
                                     <span class="font-medium">{{ $emp->fullName() }}</span>
                                     @if ($emp->position)
@@ -274,8 +346,12 @@ new #[Title('Rollen')] class extends Component {
                             </button>
                         @endforeach
                     </div>
+                    @php
+                        $mainCount = collect($assignmentMode)->filter(fn ($v) => $v === 'main')->count();
+                        $depCount = collect($assignmentMode)->filter(fn ($v) => $v === 'deputy')->count();
+                    @endphp
                     <flux:text class="text-xs text-zinc-500 dark:text-zinc-400">
-                        {{ trans_choice(':count Mitarbeitender ausgewählt|:count Mitarbeitende ausgewählt', count($assignedEmployeeIds), ['count' => count($assignedEmployeeIds)]) }}
+                        {{ $mainCount }} {{ __('Haupt') }} · {{ $depCount }} {{ __('Vertretung') }}
                     </flux:text>
                 @endif
             </div>
