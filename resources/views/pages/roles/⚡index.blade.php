@@ -333,7 +333,7 @@ new #[Title('Rollen')] class extends Component {
                                 @if ($mode === 'main')
                                     <flux:badge size="sm" color="emerald">{{ __('Haupt') }}</flux:badge>
                                 @elseif ($mode === 'deputy')
-                                    <flux:badge size="sm" color="amber">{{ __('Vertr.') }}</flux:badge>
+                                    <flux:badge size="sm" color="amber">{{ __('Vertretung') }}</flux:badge>
                                 @else
                                     <flux:badge size="sm" color="zinc">—</flux:badge>
                                 @endif
