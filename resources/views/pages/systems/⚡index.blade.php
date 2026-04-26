@@ -42,7 +42,7 @@ new #[Title('Systeme')] class extends Component {
     #[Computed]
     public function systemsByCategory(): array
     {
-        $systems = System::with(['priority'])
+        $systems = System::with(['priority', 'emergencyLevel'])
             ->withCount([
                 'tasks',
                 'tasks as open_tasks_count' => fn ($q) => $q->whereNull('completed_at'),
@@ -291,15 +291,15 @@ new #[Title('Systeme')] class extends Component {
                                     <a href="{{ route('systems.show', ['system' => $system->id]) }}" wire:navigate class="min-w-0 flex-1">
                                         <div class="flex flex-wrap items-center gap-2">
                                             <span class="truncate font-medium text-zinc-900 hover:underline dark:text-white">{{ $system->name }}</span>
-                                            @if ($system->priority)
+                                            @if ($system->emergencyLevel)
                                                 <flux:badge
-                                                    :color="match ($system->priority->sort) { 1 => 'rose', 2 => 'amber', default => 'zinc' }"
+                                                    :color="match ($system->emergencyLevel->sort) { 1 => 'rose', 2 => 'amber', 3 => 'yellow', default => 'zinc' }"
                                                     size="sm"
                                                 >
-                                                    {{ $system->priority->name }}
+                                                    {{ $system->emergencyLevel->name }}
                                                 </flux:badge>
                                             @else
-                                                <flux:badge color="zinc" size="sm">{{ __('Ohne Priorität') }}</flux:badge>
+                                                <flux:badge color="zinc" size="sm">{{ __('Ohne Notfall-Level') }}</flux:badge>
                                             @endif
                                         </div>
                                     </a>
