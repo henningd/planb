@@ -3,15 +3,18 @@
 namespace Database\Seeders;
 
 use App\Models\IndustryTemplate;
+use Database\Seeders\IndustryTemplates\AnwaltskanzleiTemplate;
 use Database\Seeders\IndustryTemplates\ArztpraxisTemplate;
 use Database\Seeders\IndustryTemplates\Contract;
 use Database\Seeders\IndustryTemplates\EinzelhandelTemplate;
 use Database\Seeders\IndustryTemplates\ElektrobetriebTemplate;
 use Database\Seeders\IndustryTemplates\HeizungSanitaerTemplate;
 use Database\Seeders\IndustryTemplates\HotelTemplate;
+use Database\Seeders\IndustryTemplates\ItDienstleisterTemplate;
 use Database\Seeders\IndustryTemplates\KleineFertigungTemplate;
 use Database\Seeders\IndustryTemplates\OnlineshopTemplate;
 use Database\Seeders\IndustryTemplates\PflegedienstTemplate;
+use Database\Seeders\IndustryTemplates\SoftwareUnternehmenTemplate;
 use Database\Seeders\IndustryTemplates\SteuerberatungTemplate;
 use Illuminate\Database\Seeder;
 
@@ -35,6 +38,9 @@ class IndustryTemplatesSeeder extends Seeder
         HotelTemplate::class,
         KleineFertigungTemplate::class,
         PflegedienstTemplate::class,
+        AnwaltskanzleiTemplate::class,
+        ItDienstleisterTemplate::class,
+        SoftwareUnternehmenTemplate::class,
     ];
 
     public function run(): void
