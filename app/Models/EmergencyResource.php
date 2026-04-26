@@ -21,6 +21,7 @@ use Illuminate\Database\Eloquent\Model;
     'last_check_at',
     'next_check_at',
     'notes',
+    'last_reminder_sent_at',
     'sort',
 ])]
 class EmergencyResource extends Model
@@ -47,6 +48,7 @@ class EmergencyResource extends Model
             'type' => EmergencyResourceType::class,
             'last_check_at' => 'date',
             'next_check_at' => 'date',
+            'last_reminder_sent_at' => 'datetime',
             'sort' => 'integer',
         ];
     }
