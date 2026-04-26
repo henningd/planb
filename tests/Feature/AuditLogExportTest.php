@@ -27,7 +27,10 @@ function exportAdminWithCompany(): array
 
 function exportSeedEntry(string $companyId, ?string $userId, array $overrides = []): AuditLogEntry
 {
-    return AuditLogEntry::withoutGlobalScope(CurrentCompanyScope::class)->create(array_merge([
+    $createdAt = $overrides['created_at'] ?? now();
+    unset($overrides['created_at']);
+
+    $entry = AuditLogEntry::withoutGlobalScope(CurrentCompanyScope::class)->create(array_merge([
         'company_id' => $companyId,
         'user_id' => $userId,
         'entity_type' => 'System',
@@ -35,16 +38,23 @@ function exportSeedEntry(string $companyId, ?string $userId, array $overrides = 
         'entity_label' => 'Beispiel-System',
         'action' => 'created',
         'changes' => ['name' => 'Beispiel-System'],
-        'created_at' => now(),
     ], $overrides));
+
+    // created_at ist nicht fillable — explizit über forceFill nachziehen.
+    $entry->forceFill(['created_at' => $createdAt])->save();
+
+    return $entry;
 }
 
 test('admin can download CSV with correct headers and entry rows', function () {
     [$user, $company] = exportAdminWithCompany();
 
+    // Etwas in die Zukunft schieben, damit der Eintrag verlässlich vor den
+    // Auto-Audit-Einträgen aus der Company-Factory (Default-EmergencyLevels)
+    // an Position 1 der nach created_at sortierten Liste landet.
     exportSeedEntry($company->id, $user->id, [
         'entity_label' => 'ERP-Test',
-        'created_at' => now()->setTime(9, 30),
+        'created_at' => now()->addMinute(),
     ]);
 
     $response = $this->actingAs($user)
@@ -108,7 +118,7 @@ test('CSV export is scoped to current company', function () {
     exportSeedEntry($companyB->id, $userB->id, ['entity_label' => 'Firma-B-Eintrag']);
 
     $body = $this->actingAs($userA)
-        ->get(route('audit-log.export.csv'))
+        ->get(route('audit-log.export.csv', ['current_team' => $userA->currentTeam->slug]))
         ->streamedContent();
 
     expect($body)->toContain('Firma-A-Eintrag')

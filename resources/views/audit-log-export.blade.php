@@ -6,7 +6,10 @@
     @php
         $logoDataUri = null;
         $logoPath = public_path('wappen.png');
-        if (is_file($logoPath)) {
+        // dompdf braucht die GD-Erweiterung um PNG einzubetten — auf Servern
+        // ohne php-gd (oder im Test) lassen wir das Logo lieber weg, statt
+        // die Generierung scheitern zu lassen.
+        if (is_file($logoPath) && extension_loaded('gd')) {
             $logoDataUri = 'data:image/png;base64,'.base64_encode((string) file_get_contents($logoPath));
         }
 
