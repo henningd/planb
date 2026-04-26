@@ -210,12 +210,12 @@ new #[Title('Rollen')] class extends Component {
             <div class="flex flex-col rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
                 <div class="flex items-start justify-between gap-2">
                     <div class="min-w-0 flex-1">
-                        <div class="flex flex-wrap items-center gap-2">
-                            <flux:heading size="base">{{ $role->name }}</flux:heading>
-                            @if ($role->isSystem())
+                        <flux:heading size="base">{{ $role->name }}</flux:heading>
+                        @if ($role->isSystem())
+                            <div class="mt-1">
                                 <flux:badge color="indigo" size="sm" icon="shield-check">{{ __('System') }}</flux:badge>
-                            @endif
-                        </div>
+                            </div>
+                        @endif
                         @if ($role->description)
                             <flux:text class="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
                                 {{ $role->description }}
