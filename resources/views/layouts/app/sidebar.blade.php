@@ -10,6 +10,8 @@
                 <flux:sidebar.collapse class="lg:hidden" />
             </flux:sidebar.header>
 
+            <livewire:incident-launcher />
+
             <livewire:team-switcher />
 
             <flux:sidebar.nav>
