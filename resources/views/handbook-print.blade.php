@@ -1228,6 +1228,79 @@
                 </p>
             @endif
         @endif
+
+        {{-- 9.X – Detaillierte System-Sicht: RACI-Verantwortliche und Aufgaben pro System --}}
+        @if (! empty($systemsDetail))
+            <h3>Verantwortlichkeiten und Aufgaben pro System</h3>
+            <p class="small">RACI: <strong>R</strong> = Durchführend, <strong>A</strong> = Verantwortlich, <strong>C</strong> = Konsultiert, <strong>I</strong> = Informiert. Pro System die operativ besetzten Rollen und definierte Wartungs-/Prüfaufgaben.</p>
+
+            @foreach ($systemsDetail as $entry)
+                <div class="keep" style="margin-top: 4mm;">
+                    <h4 style="margin-bottom: 1mm;">{{ $entry['system']->name }}</h4>
+
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width: 25%;">R &mdash; Durchführend</th>
+                                <th style="width: 25%;">A &mdash; Verantwortlich</th>
+                                <th style="width: 25%;">C &mdash; Konsultiert</th>
+                                <th style="width: 25%;">I &mdash; Informiert</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td style="vertical-align: top;">
+                                    @forelse ($entry['raci']['R'] ?? [] as $line)<div>{{ $line }}</div>@empty<span class="small">&mdash;</span>@endforelse
+                                </td>
+                                <td style="vertical-align: top;">
+                                    @forelse ($entry['raci']['A'] ?? [] as $line)<div>{{ $line }}</div>@empty<span class="small">&mdash;</span>@endforelse
+                                </td>
+                                <td style="vertical-align: top;">
+                                    @forelse ($entry['raci']['C'] ?? [] as $line)<div>{{ $line }}</div>@empty<span class="small">&mdash;</span>@endforelse
+                                </td>
+                                <td style="vertical-align: top;">
+                                    @forelse ($entry['raci']['I'] ?? [] as $line)<div>{{ $line }}</div>@empty<span class="small">&mdash;</span>@endforelse
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    @if (! empty($entry['tasks']))
+                        <p class="small" style="margin-top: 2mm; margin-bottom: 1mm;"><strong>Aufgaben</strong></p>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Aufgabe</th>
+                                    <th style="width: 22mm;">Fällig</th>
+                                    <th style="width: 28mm;">Status</th>
+                                    <th>Verantwortlich (R / A)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach ($entry['tasks'] as $task)
+                                    <tr>
+                                        <td>
+                                            <strong>{{ $task['title'] }}</strong>
+                                            @if (! empty($task['description']))<br><span class="small">{{ $task['description'] }}</span>@endif
+                                        </td>
+                                        <td>{{ $task['due'] ?? '—' }}</td>
+                                        <td>{{ $task['status'] }}</td>
+                                        <td>
+                                            @if ($task['r'] === '' && $task['a'] === '')
+                                                <span class="small">— kein RACI hinterlegt —</span>
+                                            @else
+                                                @if ($task['r'] !== '')<div><strong>R:</strong> {{ $task['r'] }}</div>@endif
+                                                @if ($task['a'] !== '')<div><strong>A:</strong> {{ $task['a'] }}</div>@endif
+                                            @endif
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    @endif
+                </div>
+            @endforeach
+        @endif
     </div>
 
     {{-- ============ KAPITEL 10: SZENARIEN & PLAYBOOKS ============ --}}
