@@ -4,6 +4,7 @@ use App\Models\Company;
 use App\Models\Employee;
 use App\Models\HandbookShare;
 use App\Models\HandbookVersion;
+use App\Models\SystemTask;
 use App\Models\Team;
 use App\Models\User;
 use App\Scopes\CurrentCompanyScope;
@@ -63,6 +64,28 @@ test('seed action creates the demo user, team and company', function () {
         ->where('company_id', $company->id)
         ->count();
     expect($employees)->toBeGreaterThan(0);
+});
+
+test('seed populates system_tasks across multiple systems', function () {
+    $admin = User::factory()->create(['is_super_admin' => true]);
+
+    Livewire\Livewire::actingAs($admin->fresh())
+        ->test('pages::admin.demo.index')
+        ->call('seed')
+        ->assertHasNoErrors();
+
+    $company = Company::withoutGlobalScope(CurrentCompanyScope::class)
+        ->where('name', 'Musterfirma GmbH')
+        ->first();
+
+    $tasks = SystemTask::withoutGlobalScope(CurrentCompanyScope::class)
+        ->where('company_id', $company->id)
+        ->get();
+
+    expect($tasks->count())->toBeGreaterThanOrEqual(10);
+    // Mindestens ein paar Tasks sollten erledigt, ein paar offen sein.
+    expect($tasks->whereNotNull('completed_at')->count())->toBeGreaterThan(0);
+    expect($tasks->whereNull('completed_at')->count())->toBeGreaterThan(0);
 });
 
 test('seed creates revision-safe pdfs for approved handbook versions and shares', function () {

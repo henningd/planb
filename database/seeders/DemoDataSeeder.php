@@ -37,6 +37,7 @@ use App\Models\ScenarioRunStep;
 use App\Models\ScenarioStep;
 use App\Models\ServiceProvider;
 use App\Models\System;
+use App\Models\SystemTask;
 use App\Models\Team;
 use App\Models\User;
 use App\Scopes\CurrentCompanyScope;
@@ -118,6 +119,7 @@ class DemoDataSeeder extends Seeder
         $this->seedSystems($company, $itProvider);
         $this->enrichSystems($company);
         $this->seedSystemDependencies($company);
+        $this->seedSystemTasks($company);
         $this->seedScenarios($company);
         $this->seedCommunicationTemplates($company);
         $this->seedScenarioRuns($company, $user);
@@ -1092,6 +1094,89 @@ class DemoDataSeeder extends Seeder
                 $this->command?->info("PDF für Version {$version->version} angelegt.");
             } catch (Throwable $e) {
                 $this->command?->warn("PDF für Version {$version->version} übersprungen: {$e->getMessage()}");
+            }
+        }
+    }
+
+    /**
+     * Legt pro System ein paar typische Wartungs-/Prüfaufgaben mit gemischten
+     * Fälligkeiten und Erledigungs-Zuständen an. Match per Keyword im
+     * Systemnamen — Templates orientieren sich an dem, was im Handwerker-
+     * Alltag wirklich anfällt (USV-Test, Backup-Restore, Patching, …).
+     * Idempotent über (company_id, system_id, title).
+     */
+    private function seedSystemTasks(Company $company): void
+    {
+        $taskTemplates = [
+            'Strom' => [
+                ['title' => 'USV-Akku-Test', 'description' => 'Last für 30 Min. simulieren, Laufzeit-Abweichung dokumentieren.', 'due_in_days' => 30, 'completed_days_ago' => null],
+                ['title' => 'Generator-Probelauf', 'description' => 'Generator unter Last starten, Treibstoff-Stand und Übergabe testen.', 'due_in_days' => 90, 'completed_days_ago' => 45],
+            ],
+            'Internet' => [
+                ['title' => 'Failover auf Mobil-Hotspot prüfen', 'description' => 'Kabel ziehen, Failover-Zeit auf LTE messen, kritische Apps prüfen.', 'due_in_days' => 60, 'completed_days_ago' => null],
+                ['title' => 'Notfall-SIM-Guthaben checken', 'description' => 'Prepaid-Karte aufladen falls < 10 €.', 'due_in_days' => 14, 'completed_days_ago' => null],
+            ],
+            'Server' => [
+                ['title' => 'Restore-Test Offline-Backup', 'description' => 'Voll-Restore auf Test-Server, Datenvollständigkeit prüfen.', 'due_in_days' => 180, 'completed_days_ago' => 30],
+                ['title' => 'Sicherheits-Updates einspielen', 'description' => 'OS- und Anwendungs-Patches installieren, Reboot-Fenster mit GF abstimmen.', 'due_in_days' => -3, 'completed_days_ago' => null],
+                ['title' => 'Festplatten-SMART-Status', 'description' => 'SMART-Werte aller Datenträger prüfen, Auffälligkeiten dokumentieren.', 'due_in_days' => 30, 'completed_days_ago' => null],
+            ],
+            'Telefon' => [
+                ['title' => 'Konfigurations-Backup TK-Anlage', 'description' => 'Aktuelle Config exportieren und im IT-Schrank ablegen.', 'due_in_days' => 90, 'completed_days_ago' => 60],
+            ],
+            'E-Mail' => [
+                ['title' => 'M365-Admin-Account: 2FA-Backup-Codes', 'description' => 'Recovery-Codes neu erzeugen, im Tresor ablegen.', 'due_in_days' => 365, 'completed_days_ago' => 200],
+                ['title' => 'Phishing-Awareness-Übung', 'description' => 'Gefälschte Mail an Belegschaft, Klickraten auswerten, Schulung planen.', 'due_in_days' => 60, 'completed_days_ago' => null],
+            ],
+            'Cloud' => [
+                ['title' => 'Zugangsrechte-Review', 'description' => 'Wer hat noch Zugang? Ehemalige Mitarbeiter entfernen.', 'due_in_days' => 90, 'completed_days_ago' => null],
+            ],
+            'Handwerkersoftware' => [
+                ['title' => 'Backup auf externes Medium prüfen', 'description' => 'Letzten Backup-Stand vom Software-Hersteller verifizieren.', 'due_in_days' => 30, 'completed_days_ago' => null],
+                ['title' => 'Versions-Update einspielen', 'description' => 'Release Notes lesen, Test in Sandbox, dann Produktiv-Update.', 'due_in_days' => -7, 'completed_days_ago' => null],
+            ],
+            'Warenwirtschaft' => [
+                ['title' => 'Stammdaten-Pflege Lieferanten', 'description' => 'Veraltete Konditionen entfernen, neue Notfall-Kontakte ergänzen.', 'due_in_days' => 120, 'completed_days_ago' => 90],
+            ],
+            'Kassensystem' => [
+                ['title' => 'TSE-Zertifikat-Status prüfen', 'description' => 'Ablaufdatum der TSE prüfen, Folgezertifikat ggf. bestellen.', 'due_in_days' => 365, 'completed_days_ago' => null],
+                ['title' => 'Bargeld-Notfall-Schublade auffüllen', 'description' => 'Mind. 200 € Wechselgeld vorhanden? Bei Kartenterminal-Ausfall lebenswichtig.', 'due_in_days' => 14, 'completed_days_ago' => 7],
+            ],
+            'Lager' => [
+                ['title' => 'Inventur Werkstatt-Werkzeug', 'description' => 'Stichproben-Inventur kritischer Werkzeuge.', 'due_in_days' => 180, 'completed_days_ago' => 100],
+            ],
+            'Alarm' => [
+                ['title' => 'Akku-Test Funkmelder', 'description' => 'Test-Knopf jeder Einheit drücken, defekte Akkus tauschen.', 'due_in_days' => 365, 'completed_days_ago' => 30],
+            ],
+        ];
+
+        $systems = System::withoutGlobalScope(CurrentCompanyScope::class)
+            ->where('company_id', $company->id)
+            ->get();
+
+        foreach ($systems as $system) {
+            foreach ($taskTemplates as $keyword => $tasks) {
+                if (! str_contains(mb_strtolower($system->name), mb_strtolower($keyword))) {
+                    continue;
+                }
+
+                foreach ($tasks as $sort => $task) {
+                    SystemTask::withoutGlobalScope(CurrentCompanyScope::class)->updateOrCreate(
+                        [
+                            'company_id' => $company->id,
+                            'system_id' => $system->id,
+                            'title' => $task['title'],
+                        ],
+                        [
+                            'description' => $task['description'],
+                            'due_date' => now()->addDays($task['due_in_days'])->toDateString(),
+                            'completed_at' => $task['completed_days_ago'] !== null
+                                ? now()->subDays($task['completed_days_ago'])
+                                : null,
+                            'sort' => $sort,
+                        ],
+                    );
+                }
             }
         }
     }
