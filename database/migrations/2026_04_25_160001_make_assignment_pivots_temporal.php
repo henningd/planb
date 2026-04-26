@@ -101,6 +101,12 @@ return new class extends Migration
             Schema::dropIfExists($tmp);
         }
 
+        // MySQL: FK-Constraint-Namen sind per Datenbank eindeutig. Vor
+        // dem Rename die FKs wegnehmen, sonst belegt die spätere
+        // _legacy-Tabelle den Convention-Namen ($table_$col_foreign) und
+        // die neue Tabelle kann ihn nicht mehr nutzen.
+        $this->dropConventionalForeignKeys($table, $fkCols);
+
         Schema::rename($table, $tmp);
 
         Schema::create($table, function (Blueprint $t) use ($fkCols, $extras) {
@@ -169,6 +175,30 @@ return new class extends Migration
             DB::statement($sql);
         } catch (Throwable) {
             // Index existiert bereits aus früherem Lauf – ok.
+        }
+    }
+
+    /**
+     * Entfernt die per Convention benannten FK-Constraints einer Tabelle.
+     * Greift nur auf MySQL/MariaDB – auf Postgres/SQLite werden Constraints
+     * mit der Tabelle umbenannt bzw. mit DROP TABLE entsorgt.
+     *
+     * @param  list<string>  $fkCols
+     */
+    private function dropConventionalForeignKeys(string $table, array $fkCols): void
+    {
+        $driver = DB::getDriverName();
+        if ($driver !== 'mysql' && $driver !== 'mariadb') {
+            return;
+        }
+
+        foreach ($fkCols as $col) {
+            $name = "{$table}_{$col}_foreign";
+            try {
+                DB::statement("ALTER TABLE `{$table}` DROP FOREIGN KEY `{$name}`");
+            } catch (Throwable) {
+                // FK ist nicht (mehr) vorhanden – ok.
+            }
         }
     }
 
