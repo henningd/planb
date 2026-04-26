@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Storage;
 use Throwable;
 
@@ -56,6 +57,14 @@ class HandbookVersion extends Model
         return $this->belongsTo(Employee::class, 'approved_by_employee_id');
     }
 
+    /**
+     * @return HasMany<HandbookVersionAcknowledgement, $this>
+     */
+    public function acknowledgements(): HasMany
+    {
+        return $this->hasMany(HandbookVersionAcknowledgement::class);
+    }
+
     public function isApproved(): bool
     {
         return $this->approved_at !== null;
@@ -64,6 +73,38 @@ class HandbookVersion extends Model
     public function hasPdf(): bool
     {
         return $this->pdf_path !== null;
+    }
+
+    /**
+     * Returns the share of acknowledgements relative to the expected audience as a value 0..1.
+     *
+     * Heuristik: Zähler ist die Anzahl tatsächlicher Lesebestätigungen für diese Version.
+     * Nenner ist die Anzahl der Mitarbeiter mit `is_key_personnel = true` derselben Firma;
+     * existieren keine Schlüsselpersonen, fällt der Nenner auf alle Mitarbeiter der Firma
+     * zurück. Ohne Mitarbeiter wird 0.0 geliefert.
+     */
+    public function acknowledgementRate(): float
+    {
+        $total = Employee::query()
+            ->withoutGlobalScope(CurrentCompanyScope::class)
+            ->where('company_id', $this->company_id)
+            ->where('is_key_personnel', true)
+            ->count();
+
+        if ($total === 0) {
+            $total = Employee::query()
+                ->withoutGlobalScope(CurrentCompanyScope::class)
+                ->where('company_id', $this->company_id)
+                ->count();
+        }
+
+        if ($total === 0) {
+            return 0.0;
+        }
+
+        $count = $this->acknowledgements()->count();
+
+        return min(1.0, $count / $total);
     }
 
     /**
