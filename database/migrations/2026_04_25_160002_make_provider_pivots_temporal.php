@@ -61,6 +61,22 @@ return new class extends Migration
     {
         $tmp = "{$table}_legacy";
 
+        // Idempotenz: erkennt halbfertige Läufe (z. B. nach abgebrochenem
+        // Deploy). Ist die Tabelle bereits temporal (hat removed_at), nur
+        // den Legacy-Rest wegräumen und die Indexe sicherstellen.
+        $alreadyMigrated = Schema::hasTable($table) && Schema::hasColumn($table, 'removed_at');
+
+        if ($alreadyMigrated) {
+            Schema::dropIfExists($tmp);
+            $this->ensureTemporalIndexes($table, $fkCols);
+
+            return;
+        }
+
+        if (Schema::hasTable($tmp)) {
+            Schema::dropIfExists($tmp);
+        }
+
         Schema::rename($table, $tmp);
 
         Schema::create($table, function (Blueprint $t) use ($fkCols, $extras) {
@@ -92,10 +108,44 @@ return new class extends Migration
 
         Schema::dropIfExists($tmp);
 
+        $this->ensureTemporalIndexes($table, $fkCols);
+    }
+
+    /**
+     * Legt die drei Standard-Indexe für temporale Pivots an. Der partielle
+     * Unique-Index ist Postgres/SQLite-Syntax und wird auf MySQL
+     * übersprungen — dort sichert AssignmentSync die Active-Uniqueness
+     * applikationsseitig. CREATE-Statements sind try-catch-gewrappt, damit
+     * ein zweiter Lauf nicht an existierenden Indexen scheitert.
+     *
+     * @param  list<string>  $fkCols
+     */
+    private function ensureTemporalIndexes(string $table, array $fkCols): void
+    {
+        $driver = DB::getDriverName();
         $cols = implode(', ', $fkCols);
-        DB::statement("CREATE UNIQUE INDEX {$table}_active_unique ON {$table} ({$cols}) WHERE removed_at IS NULL");
-        DB::statement("CREATE INDEX {$table}_lookup_idx ON {$table} ({$fkCols[0]}, removed_at)");
-        DB::statement("CREATE INDEX {$table}_inverse_idx ON {$table} ({$fkCols[1]}, removed_at)");
+
+        if ($driver !== 'mysql' && $driver !== 'mariadb') {
+            $this->safelyRunStatement(
+                "CREATE UNIQUE INDEX {$table}_active_unique ON {$table} ({$cols}) WHERE removed_at IS NULL"
+            );
+        }
+
+        $this->safelyRunStatement(
+            "CREATE INDEX {$table}_lookup_idx ON {$table} ({$fkCols[0]}, removed_at)"
+        );
+        $this->safelyRunStatement(
+            "CREATE INDEX {$table}_inverse_idx ON {$table} ({$fkCols[1]}, removed_at)"
+        );
+    }
+
+    private function safelyRunStatement(string $sql): void
+    {
+        try {
+            DB::statement($sql);
+        } catch (Throwable) {
+            // Index existiert bereits aus früherem Lauf – ok.
+        }
     }
 
     /**
