@@ -2,15 +2,19 @@
 
 use App\Enums\TeamRole;
 use App\Models\Company;
+use App\Models\Employee;
 use App\Models\Location;
 use App\Models\Role;
 use App\Models\Scenario;
+use App\Models\System;
 use App\Models\User;
 use App\Scopes\CurrentCompanyScope;
+use App\Support\AssignmentSync;
 use App\Support\Backup\Exporter;
 use App\Support\Backup\Importer;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 uses(RefreshDatabase::class);
 
@@ -174,6 +178,120 @@ test('company area is updated in-place, not deleted', function () {
     expect($fresh->name)->toBe('Neu-Name');
     expect($fresh->team_id)->toBe($company->team_id); // team_id darf nicht überschrieben werden
     expect($fresh->employee_count)->toBe(42);
+});
+
+test('pivot employee_role roundtrips through export/import', function () {
+    $user = User::factory()->create();
+    $company = Company::factory()->for($user->currentTeam)->create();
+
+    $emp = Employee::factory()->for($company)->create();
+    $role = Role::withoutGlobalScope(CurrentCompanyScope::class)->create([
+        'company_id' => $company->id,
+        'name' => 'Test-Rolle',
+        'sort' => 99,
+    ]);
+
+    AssignmentSync::attach($role, $role->employees(), $emp->id);
+
+    $payload = Exporter::export($company, ['employees', 'roles', 'pivot_employee_role']);
+
+    expect($payload['areas']['pivot_employee_role'])->toHaveCount(1);
+
+    // Wipe + Restore
+    DB::table('employee_role')->delete();
+    DB::table('roles')->where('company_id', $company->id)->whereNull('system_key')->delete();
+    DB::table('employees')->where('company_id', $company->id)->delete();
+
+    Importer::import($company, $payload, ['employees', 'roles', 'pivot_employee_role']);
+
+    $restored = DB::table('employee_role')
+        ->where('role_id', $role->id)
+        ->where('employee_id', $emp->id)
+        ->whereNull('removed_at')
+        ->first();
+
+    expect($restored)->not->toBeNull();
+    // assigned_by_user_id wurde gestrippt → null
+    expect($restored->assigned_by_user_id)->toBeNull();
+});
+
+test('system_dependencies roundtrip via parent-table filter', function () {
+    $user = User::factory()->create();
+    $company = Company::factory()->for($user->currentTeam)->create();
+
+    $sysA = System::factory()->for($company)->create(['name' => 'Sys A']);
+    $sysB = System::factory()->for($company)->create(['name' => 'Sys B']);
+
+    DB::table('system_dependencies')->insert([
+        'system_id' => $sysA->id,
+        'depends_on_system_id' => $sysB->id,
+        'sort' => 0,
+        'note' => null,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $payload = Exporter::export($company, ['systems', 'system_dependencies']);
+    expect($payload['areas']['system_dependencies'])->toHaveCount(1);
+
+    DB::table('system_dependencies')->delete();
+    DB::table('systems')->where('company_id', $company->id)->delete();
+
+    Importer::import($company, $payload, ['systems', 'system_dependencies']);
+
+    $row = DB::table('system_dependencies')
+        ->where('system_id', $sysA->id)
+        ->where('depends_on_system_id', $sysB->id)
+        ->first();
+    expect($row)->not->toBeNull();
+});
+
+test('scenario_runs export strips user IDs on import', function () {
+    $user = User::factory()->create();
+    $company = Company::factory()->for($user->currentTeam)->create();
+
+    $scenario = $company->scenarios()->create(['name' => 'S', 'description' => '', 'trigger' => '']);
+
+    $runId = (string) Str::uuid();
+    DB::table('scenario_runs')->insert([
+        'id' => $runId,
+        'company_id' => $company->id,
+        'scenario_id' => $scenario->id,
+        'started_by_user_id' => $user->id,
+        'title' => 'Run-1',
+        'mode' => 'drill',
+        'started_at' => now(),
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+    DB::table('scenario_run_steps')->insert([
+        'id' => (string) Str::uuid(),
+        'scenario_run_id' => $runId,
+        'sort' => 0,
+        'title' => 'St-1',
+        'description' => 'd',
+        'responsible' => 'IT',
+        'checked_at' => now(),
+        'checked_by_user_id' => $user->id,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $payload = Exporter::export($company, ['scenarios', 'scenario_runs']);
+    expect($payload['areas']['scenario_runs'])->toHaveCount(1);
+    expect($payload['areas']['_nested_scenario_runs_scenario_run_steps'])->toHaveCount(1);
+
+    DB::table('scenario_run_steps')->delete();
+    DB::table('scenario_runs')->where('company_id', $company->id)->delete();
+
+    Importer::import($company, $payload, ['scenarios', 'scenario_runs']);
+
+    $run = DB::table('scenario_runs')->where('title', 'Run-1')->first();
+    expect($run)->not->toBeNull();
+    expect($run->started_by_user_id)->toBeNull();
+
+    $step = DB::table('scenario_run_steps')->where('title', 'St-1')->first();
+    expect($step->checked_by_user_id)->toBeNull();
 });
 
 test('admin can download backup and member cannot reach the route', function () {

@@ -15,6 +15,15 @@ namespace App\Support\Backup;
  *
  * `nested[]` listet abhängige Tabellen, die zusammen mit dem Parent
  * exportiert / wiederhergestellt werden (z. B. scenario_steps zu scenarios).
+ *
+ * `company_via`           → für Pivots/Sub-Entitäten ohne eigene company_id-
+ *                           Spalte: gibt Parent-Tabelle + FK an, über die
+ *                           gefiltert wird. Beim Import wird company_id NICHT
+ *                           gesetzt (Spalte existiert nicht).
+ *
+ * `strip_on_insert[]`     → Spalten, die beim Insert weggelassen werden
+ *                           (z. B. user_id-Audit-Felder, weil Users nicht
+ *                           Teil des Backups sind).
  */
 class BackupCatalog
 {
@@ -105,6 +114,42 @@ class BackupCatalog
                 'mode' => 'replace',
                 'order' => 30, // nach priorities + emergency_levels
             ],
+            'system_tasks' => [
+                'label' => 'System-Aufgaben',
+                'table' => 'system_tasks',
+                'mode' => 'replace',
+                'order' => 40, // nach systems
+            ],
+            'system_dependencies' => [
+                'label' => 'System-Abhängigkeiten',
+                'table' => 'system_dependencies',
+                'mode' => 'replace',
+                'order' => 50, // nach systems
+                'company_via' => ['parent_table' => 'systems', 'fk' => 'system_id'],
+            ],
+            'scenario_runs' => [
+                'label' => 'Szenario-Übungen / Lagen',
+                'table' => 'scenario_runs',
+                'mode' => 'replace',
+                'order' => 30, // nach scenarios
+                'nested' => [
+                    [
+                        'table' => 'scenario_run_steps',
+                        'fk' => 'scenario_run_id',
+                        'strip_on_insert' => ['checked_by_user_id'],
+                    ],
+                ],
+                'strip_on_insert' => ['started_by_user_id'],
+            ],
+            'incident_reports' => [
+                'label' => 'Vorfälle (Meldepflichten)',
+                'table' => 'incident_reports',
+                'mode' => 'replace',
+                'order' => 40, // nach scenario_runs
+                'nested' => [
+                    ['table' => 'incident_report_obligations', 'fk' => 'incident_report_id'],
+                ],
+            ],
             'handbook_versions' => [
                 'label' => 'Notfallhandbuch-Versionen',
                 'table' => 'handbook_versions',
@@ -116,6 +161,64 @@ class BackupCatalog
                 'table' => 'handbook_tests',
                 'mode' => 'replace',
                 'order' => 30, // nach employees
+            ],
+
+            // Pivots / Zuordnungen — keine eigene company_id, gefiltert über Parent.
+            'pivot_employee_role' => [
+                'label' => 'Zuordnung Mitarbeiter ↔ Rolle',
+                'table' => 'employee_role',
+                'mode' => 'replace',
+                'order' => 60,
+                'company_via' => ['parent_table' => 'roles', 'fk' => 'role_id'],
+                'strip_on_insert' => ['assigned_by_user_id', 'removed_by_user_id'],
+            ],
+            'pivot_role_system' => [
+                'label' => 'Zuordnung Rolle ↔ System (RACI)',
+                'table' => 'role_system',
+                'mode' => 'replace',
+                'order' => 60,
+                'company_via' => ['parent_table' => 'roles', 'fk' => 'role_id'],
+                'strip_on_insert' => ['assigned_by_user_id', 'removed_by_user_id'],
+            ],
+            'pivot_role_system_task' => [
+                'label' => 'Zuordnung Rolle ↔ System-Aufgabe (RACI)',
+                'table' => 'role_system_task',
+                'mode' => 'replace',
+                'order' => 60,
+                'company_via' => ['parent_table' => 'roles', 'fk' => 'role_id'],
+                'strip_on_insert' => ['assigned_by_user_id', 'removed_by_user_id'],
+            ],
+            'pivot_employee_system' => [
+                'label' => 'Zuordnung Mitarbeiter ↔ System (RACI)',
+                'table' => 'employee_system',
+                'mode' => 'replace',
+                'order' => 60,
+                'company_via' => ['parent_table' => 'systems', 'fk' => 'system_id'],
+                'strip_on_insert' => ['assigned_by_user_id', 'removed_by_user_id'],
+            ],
+            'pivot_system_task_employee' => [
+                'label' => 'Zuordnung Mitarbeiter ↔ System-Aufgabe (RACI)',
+                'table' => 'system_task_employee',
+                'mode' => 'replace',
+                'order' => 60,
+                'company_via' => ['parent_table' => 'system_tasks', 'fk' => 'system_task_id'],
+                'strip_on_insert' => ['assigned_by_user_id', 'removed_by_user_id'],
+            ],
+            'pivot_service_provider_system' => [
+                'label' => 'Zuordnung Dienstleister ↔ System (RACI)',
+                'table' => 'service_provider_system',
+                'mode' => 'replace',
+                'order' => 60,
+                'company_via' => ['parent_table' => 'systems', 'fk' => 'system_id'],
+                'strip_on_insert' => ['assigned_by_user_id', 'removed_by_user_id'],
+            ],
+            'pivot_service_provider_system_task' => [
+                'label' => 'Zuordnung Dienstleister ↔ System-Aufgabe (RACI)',
+                'table' => 'service_provider_system_task',
+                'mode' => 'replace',
+                'order' => 60,
+                'company_via' => ['parent_table' => 'system_tasks', 'fk' => 'system_task_id'],
+                'strip_on_insert' => ['assigned_by_user_id', 'removed_by_user_id'],
             ],
         ];
     }
