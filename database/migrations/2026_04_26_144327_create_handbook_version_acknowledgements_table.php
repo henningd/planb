@@ -16,7 +16,9 @@ return new class extends Migration
             $table->text('notes')->nullable();
             $table->timestamps();
 
-            $table->unique(['handbook_version_id', 'employee_id']);
+            // Expliziter, kurzer Index-Name: der Convention-Default ist auf
+            // MySQL > 64 Zeichen (Identifier-Limit).
+            $table->unique(['handbook_version_id', 'employee_id'], 'hbk_ack_version_employee_unique');
         });
     }
 
