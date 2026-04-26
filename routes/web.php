@@ -136,6 +136,7 @@ Route::prefix('admin')
         Route::livewire('scenarios', 'pages::admin.scenarios.index')->name('scenarios.index');
         Route::livewire('scenarios/{globalScenario}', 'pages::admin.scenarios.show')->name('scenarios.show');
         Route::livewire('demo', 'pages::admin.demo.index')->name('demo.index');
+        Route::livewire('industry-templates', 'pages::admin.industry-templates.index')->name('industry-templates.index');
         Route::livewire('settings/system', 'pages::admin.settings.system.index')->name('settings.system.index');
     });
 

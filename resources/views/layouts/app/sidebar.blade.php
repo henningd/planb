@@ -152,6 +152,9 @@
                         <flux:sidebar.item icon="document-duplicate" :href="route('admin.scenarios.index')" :current="request()->routeIs('admin.scenarios.*')" wire:navigate>
                             {{ __('Globale Szenarien') }}
                         </flux:sidebar.item>
+                        <flux:sidebar.item icon="rectangle-stack" :href="route('admin.industry-templates.index')" :current="request()->routeIs('admin.industry-templates.*')" wire:navigate>
+                            {{ __('Branchen-Templates') }}
+                        </flux:sidebar.item>
                         <flux:sidebar.item icon="sparkles" :href="route('admin.demo.index')" :current="request()->routeIs('admin.demo.*')" wire:navigate>
                             {{ __('Demo-Firma') }}
                         </flux:sidebar.item>

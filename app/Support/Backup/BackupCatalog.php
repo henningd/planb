@@ -24,6 +24,11 @@ namespace App\Support\Backup;
  * `strip_on_insert[]`     → Spalten, die beim Insert weggelassen werden
  *                           (z. B. user_id-Audit-Felder, weil Users nicht
  *                           Teil des Backups sind).
+ *
+ * `id_remap[]`            → Map FK-Spalte → Bereich (Catalog-Key), die für
+ *                           den Apply-Modus mit regenerateIds genutzt wird:
+ *                           der alte Wert in der FK-Spalte wird auf die neu
+ *                           generierte UUID des verlinkten Bereichs gemappt.
  */
 class BackupCatalog
 {
@@ -101,24 +106,31 @@ class BackupCatalog
                 'table' => 'employees',
                 'mode' => 'replace',
                 'order' => 20, // nach locations
+                'id_remap' => ['location_id' => 'locations', 'manager_id' => 'employees'],
             ],
             'communication_templates' => [
                 'label' => 'Kommunikations-Vorlagen',
                 'table' => 'communication_templates',
                 'mode' => 'replace',
                 'order' => 20, // nach scenarios
+                'id_remap' => ['scenario_id' => 'scenarios'],
             ],
             'systems' => [
                 'label' => 'Systeme',
                 'table' => 'systems',
                 'mode' => 'replace',
                 'order' => 30, // nach priorities + emergency_levels
+                'id_remap' => [
+                    'system_priority_id' => 'system_priorities',
+                    'emergency_level_id' => 'emergency_levels',
+                ],
             ],
             'system_tasks' => [
                 'label' => 'System-Aufgaben',
                 'table' => 'system_tasks',
                 'mode' => 'replace',
                 'order' => 40, // nach systems
+                'id_remap' => ['system_id' => 'systems'],
             ],
             'system_dependencies' => [
                 'label' => 'System-Abhängigkeiten',
@@ -126,6 +138,7 @@ class BackupCatalog
                 'mode' => 'replace',
                 'order' => 50, // nach systems
                 'company_via' => ['parent_table' => 'systems', 'fk' => 'system_id'],
+                'id_remap' => ['system_id' => 'systems', 'depends_on_system_id' => 'systems'],
             ],
             'scenario_runs' => [
                 'label' => 'Szenario-Übungen / Lagen',
@@ -140,6 +153,7 @@ class BackupCatalog
                     ],
                 ],
                 'strip_on_insert' => ['started_by_user_id'],
+                'id_remap' => ['scenario_id' => 'scenarios'],
             ],
             'incident_reports' => [
                 'label' => 'Vorfälle (Meldepflichten)',
@@ -149,18 +163,24 @@ class BackupCatalog
                 'nested' => [
                     ['table' => 'incident_report_obligations', 'fk' => 'incident_report_id'],
                 ],
+                'id_remap' => ['scenario_run_id' => 'scenario_runs'],
             ],
             'handbook_versions' => [
                 'label' => 'Notfallhandbuch-Versionen',
                 'table' => 'handbook_versions',
                 'mode' => 'replace',
                 'order' => 30, // nach employees
+                'id_remap' => [
+                    'changed_by_employee_id' => 'employees',
+                    'approved_by_employee_id' => 'employees',
+                ],
             ],
             'handbook_tests' => [
                 'label' => 'Testplan',
                 'table' => 'handbook_tests',
                 'mode' => 'replace',
                 'order' => 30, // nach employees
+                'id_remap' => ['responsible_employee_id' => 'employees'],
             ],
 
             // Pivots / Zuordnungen — keine eigene company_id, gefiltert über Parent.
@@ -171,6 +191,7 @@ class BackupCatalog
                 'order' => 60,
                 'company_via' => ['parent_table' => 'roles', 'fk' => 'role_id'],
                 'strip_on_insert' => ['assigned_by_user_id', 'removed_by_user_id'],
+                'id_remap' => ['role_id' => 'roles', 'employee_id' => 'employees'],
             ],
             'pivot_role_system' => [
                 'label' => 'Zuordnung Rolle ↔ System (RACI)',
@@ -179,6 +200,7 @@ class BackupCatalog
                 'order' => 60,
                 'company_via' => ['parent_table' => 'roles', 'fk' => 'role_id'],
                 'strip_on_insert' => ['assigned_by_user_id', 'removed_by_user_id'],
+                'id_remap' => ['role_id' => 'roles', 'system_id' => 'systems'],
             ],
             'pivot_role_system_task' => [
                 'label' => 'Zuordnung Rolle ↔ System-Aufgabe (RACI)',
@@ -187,6 +209,7 @@ class BackupCatalog
                 'order' => 60,
                 'company_via' => ['parent_table' => 'roles', 'fk' => 'role_id'],
                 'strip_on_insert' => ['assigned_by_user_id', 'removed_by_user_id'],
+                'id_remap' => ['role_id' => 'roles', 'system_task_id' => 'system_tasks'],
             ],
             'pivot_employee_system' => [
                 'label' => 'Zuordnung Mitarbeiter ↔ System (RACI)',
@@ -195,6 +218,7 @@ class BackupCatalog
                 'order' => 60,
                 'company_via' => ['parent_table' => 'systems', 'fk' => 'system_id'],
                 'strip_on_insert' => ['assigned_by_user_id', 'removed_by_user_id'],
+                'id_remap' => ['system_id' => 'systems', 'employee_id' => 'employees'],
             ],
             'pivot_system_task_employee' => [
                 'label' => 'Zuordnung Mitarbeiter ↔ System-Aufgabe (RACI)',
@@ -203,6 +227,7 @@ class BackupCatalog
                 'order' => 60,
                 'company_via' => ['parent_table' => 'system_tasks', 'fk' => 'system_task_id'],
                 'strip_on_insert' => ['assigned_by_user_id', 'removed_by_user_id'],
+                'id_remap' => ['system_task_id' => 'system_tasks', 'employee_id' => 'employees'],
             ],
             'pivot_service_provider_system' => [
                 'label' => 'Zuordnung Dienstleister ↔ System (RACI)',
@@ -211,6 +236,7 @@ class BackupCatalog
                 'order' => 60,
                 'company_via' => ['parent_table' => 'systems', 'fk' => 'system_id'],
                 'strip_on_insert' => ['assigned_by_user_id', 'removed_by_user_id'],
+                'id_remap' => ['system_id' => 'systems', 'service_provider_id' => 'service_providers'],
             ],
             'pivot_service_provider_system_task' => [
                 'label' => 'Zuordnung Dienstleister ↔ System-Aufgabe (RACI)',
@@ -219,6 +245,7 @@ class BackupCatalog
                 'order' => 60,
                 'company_via' => ['parent_table' => 'system_tasks', 'fk' => 'system_task_id'],
                 'strip_on_insert' => ['assigned_by_user_id', 'removed_by_user_id'],
+                'id_remap' => ['system_task_id' => 'system_tasks', 'service_provider_id' => 'service_providers'],
             ],
         ];
     }

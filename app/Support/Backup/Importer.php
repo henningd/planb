@@ -5,6 +5,7 @@ namespace App\Support\Backup;
 use App\Models\Company;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 /**
  * Replace-Mode-Import: Für jeden gewählten Bereich werden ALLE Zeilen
@@ -21,9 +22,15 @@ class Importer
     /**
      * @param  array<string, mixed>  $payload
      * @param  list<string>  $areaKeys
+     * @param  bool  $regenerateIds  Wenn true: alle IDs werden auf neue UUIDs
+     *                               gemappt und referenzierende FK-Spalten
+     *                               (siehe Catalog `id_remap`) entsprechend
+     *                               umgeschrieben. Pflicht beim Apply von
+     *                               Templates auf Firmen, in deren DB die
+     *                               Source-IDs noch existieren würden.
      * @return array<string, array{deleted?: int, inserted?: int, updated?: int}>
      */
-    public static function import(Company $company, array $payload, array $areaKeys): array
+    public static function import(Company $company, array $payload, array $areaKeys, bool $regenerateIds = false): array
     {
         $catalog = BackupCatalog::all();
         $selected = collect($areaKeys)
@@ -31,8 +38,11 @@ class Importer
             ->mapWithKeys(fn (string $k) => [$k => $catalog[$k]]);
 
         $summary = [];
+        // Pro Catalog-Key: [old_id => new_id]. Wird beim Apply mit
+        // regenerateIds aufgebaut und für FK-Remap genutzt.
+        $idMap = [];
 
-        DB::transaction(function () use ($company, $selected, $payload, &$summary) {
+        DB::transaction(function () use ($company, $selected, $payload, $regenerateIds, &$summary, &$idMap) {
             // 1. DELETE in absteigender order — abhängige Bereiche zuerst.
             foreach ($selected->sortByDesc('order') as $key => $area) {
                 if ($area['mode'] === 'update_single') {
@@ -73,6 +83,11 @@ class Importer
                     continue;
                 }
 
+                if ($regenerateIds) {
+                    $rows = self::regenerateRowIds($rows, $key, $idMap);
+                    $rows = self::remapForeignKeys($rows, $area['id_remap'] ?? [], $idMap);
+                }
+
                 $rows = self::prepareRowsForInsert($rows, $area, $company);
 
                 if ($rows !== []) {
@@ -83,6 +98,18 @@ class Importer
 
                 foreach ($area['nested'] ?? [] as $nested) {
                     $nestedRows = $payload['areas']['_nested_'.$key.'_'.$nested['table']] ?? [];
+
+                    if ($regenerateIds) {
+                        // Nested-Rows: Parent-FK auf neue Parent-ID umbiegen,
+                        // dann eigene ID neu generieren. Eigene IDs wandern
+                        // unter dem Pseudo-Key '_nested_<area>_<table>' in den
+                        // Map, falls weitere Tabellen darauf referenzieren
+                        // (aktuell nicht, aber für die Zukunft konsistent).
+                        $nestedRows = self::remapForeignKeys($nestedRows, [$nested['fk'] => $key], $idMap);
+                        $nestedKey = '_nested_'.$key.'_'.$nested['table'];
+                        $nestedRows = self::regenerateRowIds($nestedRows, $nestedKey, $idMap);
+                    }
+
                     // Nested-Tabellen haben keine eigene company_id — wir
                     // markieren das mit company_via, damit prepareRowsForInsert
                     // die Forcierung überspringt.
@@ -137,6 +164,67 @@ class Importer
         return DB::table($area['table'])
             ->whereIn($cv['fk'], $parentIds)
             ->delete();
+    }
+
+    /**
+     * Generiert für jede Zeile eine neue UUID und schreibt das Mapping
+     * old→new in $idMap[$key]. Ist kein 'id' in der Zeile, wird einer
+     * angelegt (für Pivots ohne id-Spalte greift das nicht).
+     *
+     * @param  list<array<string, mixed>>  $rows
+     * @param  array<string, array<string|int, string>>  $idMap
+     * @return list<array<string, mixed>>
+     */
+    private static function regenerateRowIds(array $rows, string $key, array &$idMap): array
+    {
+        $idMap[$key] = $idMap[$key] ?? [];
+
+        foreach ($rows as &$row) {
+            if (! array_key_exists('id', $row)) {
+                continue;
+            }
+            $oldId = $row['id'];
+            $newId = (string) Str::uuid();
+            $idMap[$key][$oldId] = $newId;
+            $row['id'] = $newId;
+        }
+        unset($row);
+
+        return $rows;
+    }
+
+    /**
+     * Schreibt FK-Spalten auf die neuen IDs des verlinkten Bereichs um.
+     * Wenn der alte Wert nicht im Map des verlinkten Bereichs liegt
+     * (z. B. NULL oder Reference auf etwas außerhalb des Backups),
+     * bleibt der Wert unverändert — wird im Worst Case beim Insert vom
+     * FK-Constraint abgewiesen.
+     *
+     * @param  list<array<string, mixed>>  $rows
+     * @param  array<string, string>  $remap  fkColumn => catalogKey
+     * @param  array<string, array<string|int, string>>  $idMap
+     * @return list<array<string, mixed>>
+     */
+    private static function remapForeignKeys(array $rows, array $remap, array $idMap): array
+    {
+        if ($remap === []) {
+            return $rows;
+        }
+
+        foreach ($rows as &$row) {
+            foreach ($remap as $fkColumn => $targetKey) {
+                if (! isset($row[$fkColumn])) {
+                    continue;
+                }
+                $oldFk = $row[$fkColumn];
+                if (isset($idMap[$targetKey][$oldFk])) {
+                    $row[$fkColumn] = $idMap[$targetKey][$oldFk];
+                }
+            }
+        }
+        unset($row);
+
+        return $rows;
     }
 
     /**
