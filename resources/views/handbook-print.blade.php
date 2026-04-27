@@ -1183,23 +1183,19 @@
                                 @endif
                             </td>
                             <td>
-                                @if ($system->priority)
-                                    <div class="contact-label">Priorität</div>
-                                    <div class="contact-value">{{ $system->priority->name }}</div>
-                                @endif
                                 @if ($system->emergencyLevel)
-                                    <div class="contact-label @if ($system->priority) contact-label-spaced @endif">Notfall-Level</div>
+                                    <div class="contact-label">Notfall-Level</div>
                                     <div class="contact-value">{{ $system->emergencyLevel->name }}</div>
                                 @endif
                                 @if ($system->rto_minutes)
-                                    <div class="contact-label @if ($system->priority || $system->emergencyLevel) contact-label-spaced @endif">RTO</div>
+                                    <div class="contact-label @if ($system->emergencyLevel) contact-label-spaced @endif">RTO</div>
                                     <div class="contact-value">{{ \App\Support\Duration::format($system->rto_minutes) }}</div>
                                 @endif
                                 @if ($system->rpo_minutes)
-                                    <div class="contact-label @if ($system->priority || $system->emergencyLevel || $system->rto_minutes) contact-label-spaced @endif">RPO</div>
+                                    <div class="contact-label @if ($system->emergencyLevel || $system->rto_minutes) contact-label-spaced @endif">RPO</div>
                                     <div class="contact-value">{{ \App\Support\Duration::format($system->rpo_minutes) }}</div>
                                 @endif
-                                @if (! $system->priority && ! $system->emergencyLevel && ! $system->rto_minutes && ! $system->rpo_minutes)
+                                @if (! $system->emergencyLevel && ! $system->rto_minutes && ! $system->rpo_minutes)
                                     —
                                 @endif
                             </td>
