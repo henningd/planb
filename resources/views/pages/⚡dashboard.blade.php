@@ -4,7 +4,6 @@ use App\Enums\CrisisRole;
 use App\Models\Company;
 use App\Models\EmergencyLevel;
 use App\Models\Employee;
-use App\Models\ScenarioRun;
 use App\Support\DashboardActions;
 use Flux\Flux;
 use Illuminate\Support\Facades\Auth;
@@ -79,19 +78,6 @@ new #[Title('Dashboard')] class extends Component
                 $e->is_crisis_deputy ? 1 : 0,
             ))
             ->values();
-    }
-
-    #[Computed]
-    public function activeRuns()
-    {
-        if (! $this->company) {
-            return collect();
-        }
-
-        return ScenarioRun::whereNull('ended_at')
-            ->whereNull('aborted_at')
-            ->orderByDesc('started_at')
-            ->get();
     }
 
     /**
@@ -224,33 +210,6 @@ new #[Title('Dashboard')] class extends Component
                 </div>
             @endif
         @endif
-    @endif
-
-    {{-- Active runs banner --}}
-    @if ($this->activeRuns->isNotEmpty())
-        <div class="space-y-3">
-            @foreach ($this->activeRuns as $run)
-                <a href="{{ route('scenario-runs.show', $run) }}" wire:navigate
-                   class="block rounded-xl border-2 p-5 {{ $run->mode->value === 'real' ? 'border-rose-400 bg-rose-50 dark:border-rose-800 dark:bg-rose-950/50' : 'border-indigo-400 bg-indigo-50 dark:border-indigo-800 dark:bg-indigo-950/50' }}">
-                    <div class="flex items-center gap-3">
-                        @if ($run->mode->value === 'real')
-                            <flux:icon.exclamation-triangle class="h-6 w-6 text-rose-600 dark:text-rose-300" />
-                            <div class="flex-1">
-                                <div class="font-semibold text-rose-900 dark:text-rose-100">{{ __('Aktiver Ernstfall') }}</div>
-                                <div class="text-sm text-rose-900/80 dark:text-rose-200/80">{{ $run->title }}</div>
-                            </div>
-                        @else
-                            <flux:icon.academic-cap class="h-6 w-6 text-indigo-600 dark:text-indigo-300" />
-                            <div class="flex-1">
-                                <div class="font-semibold text-indigo-900 dark:text-indigo-100">{{ __('Laufende Übung') }}</div>
-                                <div class="text-sm text-indigo-900/80 dark:text-indigo-200/80">{{ $run->title }}</div>
-                            </div>
-                        @endif
-                        <flux:badge size="sm">{{ $run->started_at->diffForHumans() }}</flux:badge>
-                    </div>
-                </a>
-            @endforeach
-        </div>
     @endif
 
     {{-- Onboarding hints --}}
