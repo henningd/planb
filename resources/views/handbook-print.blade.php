@@ -1268,8 +1268,7 @@
                             <thead>
                                 <tr>
                                     <th>Aufgabe</th>
-                                    <th style="width: 22mm;">Fällig</th>
-                                    <th style="width: 28mm;">Status</th>
+                                    <th style="width: 38mm;">Fällig &amp; Status</th>
                                     <th>Verantwortlich (R / A)</th>
                                 </tr>
                             </thead>
@@ -1280,8 +1279,10 @@
                                             <strong>{{ $task['title'] }}</strong>
                                             @if (! empty($task['description']))<br><span class="small">{{ $task['description'] }}</span>@endif
                                         </td>
-                                        <td>{{ $task['due'] ?? '—' }}</td>
-                                        <td>{{ $task['status'] }}</td>
+                                        <td class="small">
+                                            <strong>Fällig:</strong> {{ $task['due'] ?? '—' }}<br>
+                                            <strong>Status:</strong> {{ $task['status'] }}
+                                        </td>
                                         <td>
                                             @if ($task['r'] === '' && $task['a'] === '')
                                                 <span class="small">— kein RACI hinterlegt —</span>
