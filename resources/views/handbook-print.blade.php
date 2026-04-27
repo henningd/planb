@@ -1163,7 +1163,7 @@
 
             <h3>9.{{ $loop->iteration }} {{ $category->label() }}</h3>
             <p class="small">{{ $category->description() }}</p>
-            <table>
+            <table class="role-table">
                 <thead>
                     <tr>
                         <th>System</th>
