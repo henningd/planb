@@ -366,7 +366,7 @@ new #[Title('Krisen-Cockpit')] class extends Component {
                             <table class="min-w-full text-sm">
                                 <thead>
                                     <tr class="border-b border-zinc-200 text-left text-xs uppercase tracking-wide text-zinc-500 dark:border-zinc-700 dark:text-zinc-400">
-                                        <th class="py-2 pr-3 font-semibold">{{ __('Notfall-Level') }}</th>
+                                        <th class="py-2 pl-3 pr-3 font-semibold">{{ __('Notfall-Level') }}</th>
                                         <th class="py-2 pr-3 font-semibold">{{ __('System') }}</th>
                                         <th class="py-2 pr-3 font-semibold">{{ __('RTO') }}</th>
                                         <th class="py-2 pr-3 font-semibold">{{ __('Frist') }}</th>
@@ -385,7 +385,7 @@ new #[Title('Krisen-Cockpit')] class extends Component {
                                             $depthIndent = max(0, ($item['depth'] ?? 0)) * 12;
                                         @endphp
                                         <tr class="align-top {{ $deadlineMissed ? 'bg-rose-50 dark:bg-rose-950/30' : '' }}">
-                                            <td class="py-[17px] pr-3">
+                                            <td class="py-[17px] pl-3 pr-3">
                                                 <flux:badge color="{{ $badgeColor }}" size="sm">
                                                     {{ $item['level_name'] ?? __('—') }}
                                                 </flux:badge>
