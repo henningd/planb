@@ -1497,12 +1497,9 @@
             <table>
                 <thead>
                     <tr>
-                        <th>Test</th>
-                        <th>Inhalt</th>
-                        <th>Intervall</th>
-                        <th>Letzte Durchführung</th>
-                        <th>Nächste Fälligkeit</th>
-                        <th>Verantwortlich</th>
+                        <th style="width: 25%;">Test</th>
+                        <th style="width: 40%;">Inhalt</th>
+                        <th style="width: 35%;">Plan &amp; Verantwortung</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -1510,10 +1507,12 @@
                         <tr>
                             <td><strong>{{ $t->type->label() }}</strong>@if ($t->name)<br><span class="small">{{ $t->name }}</span>@endif</td>
                             <td>{{ $t->description ?? '—' }}</td>
-                            <td>{{ $t->interval->label() }}</td>
-                            <td>{{ $t->last_executed_at?->format('d.m.Y') ?? '—' }}</td>
-                            <td>{{ $t->next_due_at?->format('d.m.Y') ?? '—' }}{{ $t->isOverdue() ? ' (überfällig)' : '' }}</td>
-                            <td>{{ $t->responsible?->fullName() ?? '—' }}</td>
+                            <td class="small">
+                                <strong>Intervall:</strong> {{ $t->interval->label() }}<br>
+                                <strong>Letzte Durchführung:</strong> {{ $t->last_executed_at?->format('d.m.Y') ?? '—' }}<br>
+                                <strong>Nächste Fälligkeit:</strong> {{ $t->next_due_at?->format('d.m.Y') ?? '—' }}{{ $t->isOverdue() ? ' (überfällig)' : '' }}<br>
+                                <strong>Verantwortlich:</strong> {{ $t->responsible?->fullName() ?? '—' }}
+                            </td>
                         </tr>
                     @endforeach
                 </tbody>
