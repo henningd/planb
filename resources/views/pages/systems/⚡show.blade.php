@@ -1565,7 +1565,7 @@ new #[Title('System')] class extends Component {
         </div>
     </div>
 
-    <flux:modal name="task-edit" class="max-w-xl">
+    <flux:modal name="task-edit" class="max-w-4xl">
         <form wire:submit="saveEditTask" class="space-y-5">
             <div>
                 <flux:heading size="lg">{{ __('Aufgabe bearbeiten') }}</flux:heading>
