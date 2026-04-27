@@ -1408,8 +1408,8 @@ new #[Title('System')] class extends Component {
                                     @php($taskRoleGroups = $task->roleAssignees->groupBy(fn ($r) => $r->pivot->raci_role ?? ''))
                                     @php($roleMembersFor = fn (string $code) => ($taskRoleGroups->get($code) ?? collect())->flatMap(fn ($role) => $role->employees))
                                     @php($notDeputy = fn ($x) => ! ($x->pivot->is_deputy ?? false))
-                                    @php($taskAccountableCount = ($taskEmpGroups->get('A') ?? collect())->filter($notDeputy)->count() + ($taskProvGroups->get('A') ?? collect())->filter($notDeputy)->count() + ($taskRoleGroups->get('A') ?? collect())->filter($notDeputy)->flatMap(fn ($role) => $role->employees)->count())
-                                    @php($taskResponsibleCount = ($taskEmpGroups->get('R') ?? collect())->count() + ($taskProvGroups->get('R') ?? collect())->count() + $roleMembersFor('R')->count())
+                                    @php($taskAccountableCount = ($taskEmpGroups->get('A') ?? collect())->filter($notDeputy)->count() + ($taskProvGroups->get('A') ?? collect())->filter($notDeputy)->count() + ($taskRoleGroups->get('A') ?? collect())->filter($notDeputy)->count())
+                                    @php($taskResponsibleCount = ($taskEmpGroups->get('R') ?? collect())->count() + ($taskProvGroups->get('R') ?? collect())->count() + ($taskRoleGroups->get('R') ?? collect())->count())
 
                                     @if (! $task->isDone() && ($taskAccountableCount === 0 || $taskResponsibleCount === 0 || $taskAccountableCount > 1))
                                         <div class="mt-2 flex items-start gap-2 rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-xs dark:border-rose-900 dark:bg-rose-950/40">
