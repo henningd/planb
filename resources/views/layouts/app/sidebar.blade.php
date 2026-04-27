@@ -19,6 +19,11 @@
                     <flux:sidebar.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>
                         {{ __('Dashboard') }}
                     </flux:sidebar.item>
+                    @if (auth()->user()->isCurrentTeamAdmin())
+                        <flux:sidebar.item icon="chart-bar" :href="route('compliance.index')" :current="request()->routeIs('compliance.*')" wire:navigate>
+                            {{ __('Compliance') }}
+                        </flux:sidebar.item>
+                    @endif
                 </flux:sidebar.group>
 
                 <flux:sidebar.group

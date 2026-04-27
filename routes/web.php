@@ -71,6 +71,7 @@ Route::prefix('{current_team}')
                 ->where('version', '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}')
                 ->name('handbook-versions.pdf');
             Route::livewire('handbook-tests', 'pages::handbook-tests.index')->name('handbook-tests.index');
+            Route::livewire('compliance', 'pages::compliance.index')->name('compliance.index');
         });
 
         Route::get('systems/export', function () {
