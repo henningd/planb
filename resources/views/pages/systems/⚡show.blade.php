@@ -1466,6 +1466,10 @@ new #[Title('System')] class extends Component {
                                                             </li>
                                                         @endforeach
                                                         @foreach ($rolesAtR as $roleAssignee)
+                                                            @php
+                                                                $roleMain = $roleAssignee->employees->reject(fn ($m) => (bool) ($m->pivot->is_deputy ?? false));
+                                                                $roleDeputies = $roleAssignee->employees->filter(fn ($m) => (bool) ($m->pivot->is_deputy ?? false));
+                                                            @endphp
                                                             <li class="text-zinc-700 dark:text-zinc-200">
                                                                 <div class="flex items-center gap-1 font-medium">
                                                                     <span>{{ $roleAssignee->name }}</span>
@@ -1473,9 +1477,28 @@ new #[Title('System')] class extends Component {
                                                                         <span class="inline-flex items-center rounded bg-zinc-200 px-1 text-[10px] font-normal text-zinc-700 dark:bg-zinc-700 dark:text-zinc-200">{{ __('Vertretung') }}</span>
                                                                     @endif
                                                                 </div>
-                                                                <div class="ml-2 text-[11px] text-zinc-500 dark:text-zinc-400">
-                                                                    {{ $this->roleMembersText($roleAssignee->id) }}
-                                                                </div>
+                                                                @if ($roleAssignee->employees->isEmpty())
+                                                                    <div class="ml-2 text-[11px] italic text-zinc-400 dark:text-zinc-500">
+                                                                        {{ __('Diese Rolle hat noch keine Mitglieder.') }}
+                                                                    </div>
+                                                                @else
+                                                                    <ul class="ml-2 space-y-0.5 text-[11px] text-zinc-500 dark:text-zinc-400">
+                                                                        @foreach ($roleMain as $m)
+                                                                            <li class="flex items-center gap-1">
+                                                                                <span class="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+                                                                                <span>{{ $m->fullName() }}</span>
+                                                                                <span class="text-[10px] text-zinc-400">{{ __('· Verantwortlich') }}</span>
+                                                                            </li>
+                                                                        @endforeach
+                                                                        @foreach ($roleDeputies as $m)
+                                                                            <li class="flex items-center gap-1">
+                                                                                <span class="inline-block h-1.5 w-1.5 rounded-full bg-zinc-400"></span>
+                                                                                <span>{{ $m->fullName() }}</span>
+                                                                                <span class="text-[10px] text-zinc-400">{{ __('· Vertretung') }}</span>
+                                                                            </li>
+                                                                        @endforeach
+                                                                    </ul>
+                                                                @endif
                                                             </li>
                                                         @endforeach
                                                     </ul>
