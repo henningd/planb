@@ -195,7 +195,7 @@ new #[Title('Krisen-Cockpit')] class extends Component {
             <div class="space-y-6">
                 {{-- Sektion 1: Lage-Header (sticky) --}}
                 <div
-                    class="sticky top-0 z-30 -mx-4 rounded-xl border border-rose-300 bg-rose-600 px-6 py-5 text-white shadow-lg dark:border-rose-700 dark:bg-rose-700 sm:mx-0"
+                    class="sticky top-0 z-30 -mx-4 rounded-xl border-l-4 border border-l-rose-500 border-rose-200 bg-rose-50 px-6 py-5 text-rose-950 shadow-sm dark:border-rose-900 dark:border-l-rose-500 dark:bg-rose-950/40 dark:text-rose-50 sm:mx-0"
                     x-data="{
                         startedAt: @js($startedAtIso),
                         elapsed: '00:00',
@@ -218,12 +218,12 @@ new #[Title('Krisen-Cockpit')] class extends Component {
                     <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                         <div class="min-w-0 flex-1">
                             <div class="flex items-center gap-2 text-2xl font-bold leading-tight">
-                                <span aria-hidden="true">🚨</span>
+                                <flux:icon.exclamation-triangle class="h-6 w-6 text-rose-600 dark:text-rose-400" />
                                 <span>{{ __('Aktiver Notfall:') }}</span>
                                 <span class="truncate" data-test="cockpit-scenario-name">{{ $scenarioName }}</span>
                             </div>
                             @if ($trigger && $trigger !== $scenarioName)
-                                <p class="mt-1 text-sm text-rose-50/90">
+                                <p class="mt-1 text-sm text-rose-900/80 dark:text-rose-100/80">
                                     <span class="font-semibold">{{ __('Auslöser:') }}</span>
                                     {{ $trigger }}
                                 </p>
@@ -238,11 +238,10 @@ new #[Title('Krisen-Cockpit')] class extends Component {
                         <div class="shrink-0">
                             <flux:button
                                 type="button"
-                                variant="filled"
+                                variant="danger"
                                 wire:click="endRun"
                                 wire:confirm="{{ __('Szenario wirklich beenden?') }}"
                                 icon="x-circle"
-                                class="!bg-white !text-rose-700 hover:!bg-rose-50"
                                 data-test="cockpit-end-run"
                             >
                                 {{ __('Szenario beenden') }}
@@ -386,20 +385,20 @@ new #[Title('Krisen-Cockpit')] class extends Component {
                                             $depthIndent = max(0, ($item['depth'] ?? 0)) * 12;
                                         @endphp
                                         <tr class="align-top {{ $deadlineMissed ? 'bg-rose-50 dark:bg-rose-950/30' : '' }}">
-                                            <td class="py-3 pr-3">
+                                            <td class="py-[17px] pr-3">
                                                 <flux:badge color="{{ $badgeColor }}" size="sm">
                                                     {{ $item['level_name'] ?? __('—') }}
                                                 </flux:badge>
                                             </td>
-                                            <td class="py-3 pr-3">
+                                            <td class="py-[17px] pr-3">
                                                 <div style="padding-left: {{ $depthIndent }}px" class="font-medium text-zinc-900 dark:text-zinc-100">
                                                     {{ $sys->name }}
                                                 </div>
                                             </td>
-                                            <td class="py-3 pr-3 font-mono tabular-nums text-zinc-700 dark:text-zinc-200">
+                                            <td class="py-[17px] pr-3 font-mono tabular-nums text-zinc-700 dark:text-zinc-200">
                                                 {{ $this->formatRto($item['rto_minutes'] ?? null) }}
                                             </td>
-                                            <td class="py-3 pr-3">
+                                            <td class="py-[17px] pr-3">
                                                 @if ($deadline)
                                                     <span
                                                         class="inline-flex items-center gap-1.5 font-mono text-xs tabular-nums {{ $deadlineMissed ? 'animate-pulse rounded bg-rose-100 px-1.5 py-0.5 text-rose-800 dark:bg-rose-900/60 dark:text-rose-100' : 'text-zinc-700 dark:text-zinc-200' }}"
@@ -430,7 +429,7 @@ new #[Title('Krisen-Cockpit')] class extends Component {
                                                     <span class="text-zinc-400">—</span>
                                                 @endif
                                             </td>
-                                            <td class="py-3 pr-3">
+                                            <td class="py-[17px] pr-3">
                                                 @php
                                                     $open = (int) ($item['open_tasks'] ?? 0);
                                                     $total = (int) ($item['total_tasks'] ?? 0);
@@ -440,7 +439,7 @@ new #[Title('Krisen-Cockpit')] class extends Component {
                                                     {{ $open }}/{{ $total }}
                                                 </flux:badge>
                                             </td>
-                                            <td class="py-3 pr-3 text-right">
+                                            <td class="py-[17px] pr-3 text-right">
                                                 <flux:button size="xs" variant="ghost" icon="arrow-top-right-on-square"
                                                     :href="route('systems.show', ['system' => $sys->id])" wire:navigate>
                                                     {{ __('Öffnen') }}
