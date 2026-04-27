@@ -23,6 +23,8 @@ new #[Title('Sofortmittel')] class extends Component {
 
     public string $access_holders = '';
 
+    public ?int $available_budget = null;
+
     public ?string $last_check_at = null;
 
     public ?string $next_check_at = null;
@@ -76,6 +78,7 @@ new #[Title('Sofortmittel')] class extends Component {
         $this->description = (string) $r->description;
         $this->location = (string) $r->location;
         $this->access_holders = (string) $r->access_holders;
+        $this->available_budget = $r->available_budget;
         $this->last_check_at = $r->last_check_at?->toDateString();
         $this->next_check_at = $r->next_check_at?->toDateString();
         $this->notes = (string) $r->notes;
@@ -98,6 +101,7 @@ new #[Title('Sofortmittel')] class extends Component {
             'description' => ['nullable', 'string', 'max:2000'],
             'location' => ['nullable', 'string', 'max:255'],
             'access_holders' => ['nullable', 'string', 'max:1000'],
+            'available_budget' => ['nullable', 'integer', 'min:0', 'max:100000000'],
             'last_check_at' => ['nullable', 'date'],
             'next_check_at' => ['nullable', 'date'],
             'notes' => ['nullable', 'string', 'max:2000'],
@@ -138,7 +142,7 @@ new #[Title('Sofortmittel')] class extends Component {
 
     protected function resetForm(): void
     {
-        $this->reset(['editingId', 'name', 'description', 'location', 'access_holders', 'last_check_at', 'next_check_at', 'notes', 'sort']);
+        $this->reset(['editingId', 'name', 'description', 'location', 'access_holders', 'available_budget', 'last_check_at', 'next_check_at', 'notes', 'sort']);
         $this->type = EmergencyResourceType::EmergencyCash->value;
     }
 
@@ -225,6 +229,13 @@ new #[Title('Sofortmittel')] class extends Component {
                             <span>{{ $resource->access_holders }}</span>
                         </div>
                     @endif
+                    @if ($resource->available_budget !== null)
+                        <div class="flex items-center gap-2">
+                            <flux:icon.banknotes class="h-4 w-4 text-zinc-400" />
+                            <span class="font-medium tabular-nums">{{ number_format($resource->available_budget, 0, ',', '.') }} €</span>
+                            <span class="text-xs text-zinc-500 dark:text-zinc-400">{{ __('sofort verfügbar') }}</span>
+                        </div>
+                    @endif
                     @if ($resource->next_check_at)
                         <div class="flex items-center gap-2">
                             <flux:icon.calendar class="h-4 w-4 text-zinc-400" />
@@ -272,6 +283,16 @@ new #[Title('Sofortmittel')] class extends Component {
                 <flux:input wire:model="location" :label="__('Aufbewahrungsort')" type="text" />
                 <flux:input wire:model="access_holders" :label="__('Zugriffsberechtigte')" type="text" placeholder="z. B. GF + IT-Lead" />
             </div>
+
+            <flux:input
+                wire:model="available_budget"
+                :label="__('Sofort verfügbares Budget (€)')"
+                type="number"
+                min="0"
+                step="1"
+                placeholder="z. B. 5000"
+                description="Bargeld, Kreditkartenlimit oder vorab freigegebene Mittel — was im Ernstfall ohne weitere Freigabe verfügbar ist."
+            />
 
             <div class="grid gap-4 sm:grid-cols-2">
                 <flux:input wire:model="last_check_at" :label="__('Letzte Prüfung')" type="date" />

@@ -18,6 +18,7 @@ use Illuminate\Database\Eloquent\Model;
     'description',
     'location',
     'access_holders',
+    'available_budget',
     'last_check_at',
     'next_check_at',
     'notes',
@@ -49,6 +50,7 @@ class EmergencyResource extends Model
             'last_check_at' => 'date',
             'next_check_at' => 'date',
             'last_reminder_sent_at' => 'datetime',
+            'available_budget' => 'integer',
             'sort' => 'integer',
         ];
     }
