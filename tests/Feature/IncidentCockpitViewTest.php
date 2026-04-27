@@ -6,9 +6,8 @@ use App\Models\ScenarioRunStep;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
-use Tests\TestCase;
 
-uses(TestCase::class, RefreshDatabase::class);
+uses(RefreshDatabase::class);
 
 test('page renders skeleton when no active run', function () {
     $user = User::factory()->create();

@@ -73,6 +73,7 @@ test('catalog scope filtering returns the right keys', function () {
     expect(array_keys(SettingsCatalog::byScope(SettingsCatalog::COMPANY)))
         ->toEqualCanonicalizing([
             'auto_pdf_enabled',
+            'incident_mode_enabled',
             'enforce_2fa_admins',
             'share_link_default_days',
             'audit_retention_days',
