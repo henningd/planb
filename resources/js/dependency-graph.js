@@ -55,9 +55,9 @@ export function initDependencyGraph(opts) {
     const cy = cytoscape({
         container: root,
         elements: [...opts.nodes, ...opts.edges],
-        wheelSensitivity: 0.2,
-        minZoom: 0.2,
-        maxZoom: 3,
+        wheelSensitivity: 0.6,
+        minZoom: 0.1,
+        maxZoom: 4,
         style: [
             {
                 selector: 'node',
@@ -178,6 +178,13 @@ export function initDependencyGraph(opts) {
         },
         fit() {
             cy.fit(undefined, 30);
+        },
+        zoomBy(factor) {
+            const center = { x: cy.width() / 2, y: cy.height() / 2 };
+            cy.zoom({
+                level: Math.max(cy.minZoom(), Math.min(cy.maxZoom(), cy.zoom() * factor)),
+                renderedPosition: center,
+            });
         },
         applyFilter({ levels, categories, search }) {
             const haystack = (search || '').trim().toLowerCase();

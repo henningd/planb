@@ -87,6 +87,8 @@ new #[Title('Abhängigkeiten')] class extends Component {
                     if (this.instance) this.instance.relayout(name);
                 },
                 fit() { if (this.instance) this.instance.fit(); },
+                zoomIn() { if (this.instance) this.instance.zoomBy(1.5); },
+                zoomOut() { if (this.instance) this.instance.zoomBy(1 / 1.5); },
             }"
             x-init="init()"
             class="grid gap-4 lg:grid-cols-[1fr_22rem]"
@@ -129,6 +131,14 @@ new #[Title('Abhängigkeiten')] class extends Component {
                             :placeholder="__('Suchen…')"
                             class="w-44"
                         />
+                        <div class="flex items-center gap-0.5 rounded-lg bg-zinc-100 p-0.5 dark:bg-zinc-800">
+                            <button type="button" class="rounded-md px-2 py-1 text-zinc-700 hover:bg-white dark:text-zinc-200 dark:hover:bg-zinc-700" @click="zoomOut()" :title="__('Verkleinern')">
+                                <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M5 9.75A.75.75 0 0 1 5.75 9h8.5a.75.75 0 0 1 0 1.5h-8.5A.75.75 0 0 1 5 9.75Z"/></svg>
+                            </button>
+                            <button type="button" class="rounded-md px-2 py-1 text-zinc-700 hover:bg-white dark:text-zinc-200 dark:hover:bg-zinc-700" @click="zoomIn()" :title="__('Vergrößern')">
+                                <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M10.75 5.75a.75.75 0 0 0-1.5 0V9h-3.5a.75.75 0 0 0 0 1.5h3.5v3.25a.75.75 0 0 0 1.5 0V10.5h3.5a.75.75 0 0 0 0-1.5h-3.5V5.75Z"/></svg>
+                            </button>
+                        </div>
                         <flux:button size="sm" variant="ghost" icon="arrows-pointing-out" @click="fit()">{{ __('Einpassen') }}</flux:button>
                     </div>
                 </div>
