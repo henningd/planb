@@ -4,7 +4,7 @@ namespace App\Support\Compliance;
 
 use App\Enums\ComplianceCategory;
 use App\Enums\CrisisRole;
-use App\Enums\RaciRole;
+use App\Enums\SystemOwnership;
 use App\Models\CommunicationTemplate;
 use App\Models\Company;
 use App\Models\EmergencyResource;
@@ -205,9 +205,9 @@ class Catalog
     private static function systemsRaci(): Check
     {
         return new Check(
-            key: 'systems.raci',
-            label: 'Systeme mit Verantwortlichen (RACI)',
-            description: 'Jedes System hat mindestens eine Verantwortliche (A) und eine Durchführende (R) Person oder Rolle.',
+            key: 'systems.ownership',
+            label: 'Systeme mit Eigentümer & Operator',
+            description: 'Jedes System hat mindestens einen Eigentümer (Hauptperson) und einen Administrator/Operator – entweder als Person oder als Rolle.',
             category: ComplianceCategory::Systeme,
             weight: 8,
             evaluator: function (Company $company): Result {
@@ -219,35 +219,35 @@ class Catalog
                 $action = ['label' => 'Systeme öffnen', 'route' => 'systems.index'];
 
                 if ($total === 0) {
-                    return Result::notApplicable('Keine Systeme – RACI nicht bewertbar.');
+                    return Result::notApplicable('Keine Systeme – Eigentümer-Check nicht bewertbar.');
                 }
                 $missing = [];
                 foreach ($systems as $system) {
-                    $employeeRoles = $system->employees->pluck('pivot.raci_role')->all();
-                    $roleRoles = $system->roles->pluck('pivot.raci_role')->all();
-                    $allRoles = array_unique(array_merge($employeeRoles, $roleRoles));
-                    $hasA = in_array(RaciRole::Accountable->value, $allRoles, true);
-                    $hasR = in_array(RaciRole::Responsible->value, $allRoles, true);
-                    if (! $hasA || ! $hasR) {
+                    $employeeKinds = $system->employees->reject(fn ($e) => (bool) ($e->pivot->is_deputy ?? false))->pluck('pivot.ownership_kind')->all();
+                    $roleKinds = $system->roles->reject(fn ($r) => (bool) ($r->pivot->is_deputy ?? false))->pluck('pivot.ownership_kind')->all();
+                    $allKinds = array_unique(array_merge($employeeKinds, $roleKinds));
+                    $hasOwner = in_array(SystemOwnership::Owner->value, $allKinds, true);
+                    $hasOperator = in_array(SystemOwnership::Operator->value, $allKinds, true);
+                    if (! $hasOwner || ! $hasOperator) {
                         $miss = [];
-                        if (! $hasA) {
-                            $miss[] = 'Verantwortlich';
+                        if (! $hasOwner) {
+                            $miss[] = 'Eigentümer';
                         }
-                        if (! $hasR) {
-                            $miss[] = 'Durchführend';
+                        if (! $hasOperator) {
+                            $miss[] = 'Operator';
                         }
                         $missing[] = $system->name.' ('.implode(' + ', $miss).' fehlt)';
                     }
                 }
                 $count = count($missing);
                 if ($count === 0) {
-                    return Result::pass("Alle {$total} Systeme haben Verantwortlich und Durchführend.", action: $action);
+                    return Result::pass("Alle {$total} Systeme haben Eigentümer und Operator.", action: $action);
                 }
                 $score = (int) round(($total - $count) / $total * 100);
 
                 return Result::partial(
                     $score,
-                    "{$count} von {$total} Systemen ohne vollständige RACI-Besetzung.",
+                    "{$count} von {$total} Systemen ohne vollständige Eigentums-Zuordnung.",
                     array_slice($missing, 0, 5),
                     $action,
                 );

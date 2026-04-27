@@ -41,17 +41,17 @@ new #[Title('System bearbeiten')] class extends Component {
 
     public ?int $downtime_cost_per_hour = null;
 
-    /** @var array<int, array{provider_id: string, raci_role: string, note: string}> */
+    /** @var array<int, array{provider_id: string, ownership_kind: string, is_deputy: bool, note: string}> */
     public array $providerAssignments = [];
 
     public string $providerSearch = '';
 
-    /** @var array<int, array{employee_id: string, raci_role: string, note: string}> */
+    /** @var array<int, array{employee_id: string, ownership_kind: string, is_deputy: bool, note: string}> */
     public array $responsibles = [];
 
     public string $employeeSearch = '';
 
-    /** @var array<int, array{role_id: string, raci_role: string, note: string}> */
+    /** @var array<int, array{role_id: string, ownership_kind: string, is_deputy: bool, note: string}> */
     public array $roleAssignments = [];
 
     public string $roleSearch = '';
@@ -82,7 +82,8 @@ new #[Title('System bearbeiten')] class extends Component {
             $this->providerAssignments = $system->serviceProviders
                 ->map(fn (ServiceProvider $p) => [
                     'provider_id' => $p->id,
-                    'raci_role' => (string) ($p->pivot->raci_role ?? ''),
+                    'ownership_kind' => (string) ($p->pivot->ownership_kind ?? ''),
+                    'is_deputy' => (bool) ($p->pivot->is_deputy ?? false),
                     'note' => (string) ($p->pivot->note ?? ''),
                 ])
                 ->values()
@@ -90,7 +91,8 @@ new #[Title('System bearbeiten')] class extends Component {
             $this->responsibles = $system->employees
                 ->map(fn (Employee $e) => [
                     'employee_id' => $e->id,
-                    'raci_role' => (string) ($e->pivot->raci_role ?? ''),
+                    'ownership_kind' => (string) ($e->pivot->ownership_kind ?? ''),
+                    'is_deputy' => (bool) ($e->pivot->is_deputy ?? false),
                     'note' => (string) ($e->pivot->note ?? ''),
                 ])
                 ->values()
@@ -105,7 +107,8 @@ new #[Title('System bearbeiten')] class extends Component {
             $this->roleAssignments = $system->roles
                 ->map(fn (Role $r) => [
                     'role_id' => $r->id,
-                    'raci_role' => (string) ($r->pivot->raci_role ?? ''),
+                    'ownership_kind' => (string) ($r->pivot->ownership_kind ?? ''),
+                    'is_deputy' => (bool) ($r->pivot->is_deputy ?? false),
                     'note' => (string) ($r->pivot->note ?? ''),
                 ])
                 ->values()
@@ -212,7 +215,8 @@ new #[Title('System bearbeiten')] class extends Component {
 
         $this->providerAssignments[] = [
             'provider_id' => $id,
-            'raci_role' => '',
+            'ownership_kind' => '',
+            'is_deputy' => false,
             'note' => '',
         ];
 
@@ -308,7 +312,8 @@ new #[Title('System bearbeiten')] class extends Component {
 
         $this->responsibles[] = [
             'employee_id' => $id,
-            'raci_role' => '',
+            'ownership_kind' => '',
+            'is_deputy' => false,
             'note' => '',
         ];
 
@@ -401,7 +406,8 @@ new #[Title('System bearbeiten')] class extends Component {
 
         $this->roleAssignments[] = [
             'role_id' => $id,
-            'raci_role' => '',
+            'ownership_kind' => '',
+            'is_deputy' => false,
             'note' => '',
         ];
         $this->roleSearch = '';
@@ -576,7 +582,7 @@ new #[Title('System bearbeiten')] class extends Component {
     public function save()
     {
         $validDurations = array_keys(Duration::OPTIONS);
-        $raciValues = implode(',', array_column(\App\Enums\RaciRole::cases(), 'value'));
+        $ownershipValues = implode(',', array_column(\App\Enums\SystemOwnership::cases(), 'value'));
 
         $validated = $this->validate([
             'name' => ['required', 'string', 'max:255'],
@@ -591,18 +597,21 @@ new #[Title('System bearbeiten')] class extends Component {
             'downtime_cost_per_hour' => ['nullable', 'integer', 'min:0', 'max:100000000'],
             'providerAssignments' => ['array'],
             'providerAssignments.*.provider_id' => ['required', 'uuid', 'exists:service_providers,id'],
-            'providerAssignments.*.raci_role' => ['nullable', 'in:'.$raciValues],
+            'providerAssignments.*.ownership_kind' => ['nullable', 'in:'.$ownershipValues],
+            'providerAssignments.*.is_deputy' => ['nullable', 'boolean'],
             'providerAssignments.*.note' => ['nullable', 'string', 'max:500'],
             'responsibles' => ['array'],
             'responsibles.*.employee_id' => ['required', 'uuid', 'exists:employees,id'],
-            'responsibles.*.raci_role' => ['nullable', 'in:'.$raciValues],
+            'responsibles.*.ownership_kind' => ['nullable', 'in:'.$ownershipValues],
+            'responsibles.*.is_deputy' => ['nullable', 'boolean'],
             'responsibles.*.note' => ['nullable', 'string', 'max:500'],
             'dependencyAssignments' => ['array'],
             'dependencyAssignments.*.dependency_id' => ['required', 'uuid', 'exists:systems,id'],
             'dependencyAssignments.*.note' => ['nullable', 'string', 'max:500'],
             'roleAssignments' => ['array'],
             'roleAssignments.*.role_id' => ['required', 'uuid', 'exists:roles,id'],
-            'roleAssignments.*.raci_role' => ['nullable', 'in:'.$raciValues],
+            'roleAssignments.*.ownership_kind' => ['nullable', 'in:'.$ownershipValues],
+            'roleAssignments.*.is_deputy' => ['nullable', 'boolean'],
             'roleAssignments.*.note' => ['nullable', 'string', 'max:500'],
         ]);
 
@@ -630,7 +639,8 @@ new #[Title('System bearbeiten')] class extends Component {
         foreach (array_values($responsibles) as $index => $row) {
             $employeeSync[$row['employee_id']] = [
                 'sort' => $index,
-                'raci_role' => ($row['raci_role'] ?? '') !== '' ? $row['raci_role'] : null,
+                'ownership_kind' => ($row['ownership_kind'] ?? '') !== '' ? $row['ownership_kind'] : null,
+                'is_deputy' => (bool) ($row['is_deputy'] ?? false),
                 'note' => ($row['note'] ?? '') !== '' ? $row['note'] : null,
             ];
         }
@@ -639,7 +649,8 @@ new #[Title('System bearbeiten')] class extends Component {
         foreach (array_values($providerAssignments) as $index => $row) {
             $providerSync[$row['provider_id']] = [
                 'sort' => $index,
-                'raci_role' => ($row['raci_role'] ?? '') !== '' ? $row['raci_role'] : null,
+                'ownership_kind' => ($row['ownership_kind'] ?? '') !== '' ? $row['ownership_kind'] : null,
+                'is_deputy' => (bool) ($row['is_deputy'] ?? false),
                 'note' => ($row['note'] ?? '') !== '' ? $row['note'] : null,
             ];
         }
@@ -656,7 +667,8 @@ new #[Title('System bearbeiten')] class extends Component {
         foreach (array_values($roleAssignments) as $index => $row) {
             $roleSync[$row['role_id']] = [
                 'sort' => $index,
-                'raci_role' => ($row['raci_role'] ?? '') !== '' ? $row['raci_role'] : null,
+                'ownership_kind' => ($row['ownership_kind'] ?? '') !== '' ? $row['ownership_kind'] : null,
+                'is_deputy' => (bool) ($row['is_deputy'] ?? false),
                 'note' => ($row['note'] ?? '') !== '' ? $row['note'] : null,
             ];
         }
@@ -1023,21 +1035,25 @@ new #[Title('System bearbeiten')] class extends Component {
                                                     <span x-show="meta(row.employee_id).position" class="text-xs text-zinc-500 dark:text-zinc-400" x-text="'· ' + meta(row.employee_id).position"></span>
                                                     <span x-show="meta(row.employee_id).mobile" class="text-xs text-zinc-500 dark:text-zinc-400" x-text="'· ' + meta(row.employee_id).mobile"></span>
                                                 </div>
-                                                <div class="flex flex-col gap-2 sm:flex-row">
+                                                <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
                                                     <select
-                                                        x-model="row.raci_role"
-                                                        class="w-full rounded-md border border-zinc-200 bg-white px-2.5 py-1 text-sm shadow-sm focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500 sm:w-56 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white"
+                                                        x-model="row.ownership_kind"
+                                                        class="w-full rounded-md border border-zinc-200 bg-white px-2.5 py-1 text-sm shadow-sm focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500 sm:w-64 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white"
                                                     >
-                                                        <option value="">{{ __('System-Zuständigkeit (optional)') }}</option>
-                                                        @foreach (\App\Enums\RaciRole::cases() as $r)
-                                                            <option value="{{ $r->value }}">{{ $r->value }} – {{ $r->label() }}</option>
+                                                        <option value="">{{ __('Zuständigkeit wählen …') }}</option>
+                                                        @foreach (\App\Enums\SystemOwnership::ordered() as $o)
+                                                            <option value="{{ $o->value }}">{{ $o->label() }}</option>
                                                         @endforeach
                                                     </select>
+                                                    <label class="inline-flex cursor-pointer items-center gap-1.5 text-xs text-zinc-700 dark:text-zinc-300">
+                                                        <input type="checkbox" x-model="row.is_deputy" class="h-4 w-4 rounded border-zinc-300 text-zinc-900 focus:ring-zinc-500 dark:border-zinc-700 dark:bg-zinc-800">
+                                                        {{ __('Vertretung') }}
+                                                    </label>
                                                     <input
                                                         type="text"
                                                         x-model="row.note"
                                                         @keydown.enter.prevent
-                                                        placeholder="{{ __('Notiz (optional, z. B. „nur werktags erreichbar")') }}"
+                                                        placeholder="{{ __('Notiz (optional)') }}"
                                                         class="block w-full rounded-md border border-zinc-200 bg-white px-2.5 py-1 text-sm shadow-sm placeholder:text-zinc-400 focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white"
                                                     />
                                                 </div>
@@ -1172,16 +1188,20 @@ new #[Title('System bearbeiten')] class extends Component {
                                                     <span x-show="meta(row.provider_id).hotline" class="text-xs text-zinc-500 dark:text-zinc-400" x-text="'· ' + meta(row.provider_id).hotline"></span>
                                                     <span x-show="meta(row.provider_id).contact" class="text-xs text-zinc-500 dark:text-zinc-400" x-text="'· ' + meta(row.provider_id).contact"></span>
                                                 </div>
-                                                <div class="flex flex-col gap-2 sm:flex-row">
+                                                <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
                                                     <select
-                                                        x-model="row.raci_role"
-                                                        class="w-full rounded-md border border-zinc-200 bg-white px-2.5 py-1 text-sm shadow-sm focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500 sm:w-56 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white"
+                                                        x-model="row.ownership_kind"
+                                                        class="w-full rounded-md border border-zinc-200 bg-white px-2.5 py-1 text-sm shadow-sm focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500 sm:w-64 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white"
                                                     >
-                                                        <option value="">{{ __('System-Zuständigkeit (optional)') }}</option>
-                                                        @foreach (\App\Enums\RaciRole::cases() as $r)
-                                                            <option value="{{ $r->value }}">{{ $r->value }} – {{ $r->label() }}</option>
+                                                        <option value="">{{ __('Zuständigkeit wählen …') }}</option>
+                                                        @foreach (\App\Enums\SystemOwnership::ordered() as $o)
+                                                            <option value="{{ $o->value }}">{{ $o->label() }}</option>
                                                         @endforeach
                                                     </select>
+                                                    <label class="inline-flex cursor-pointer items-center gap-1.5 text-xs text-zinc-700 dark:text-zinc-300">
+                                                        <input type="checkbox" x-model="row.is_deputy" class="h-4 w-4 rounded border-zinc-300 text-zinc-900 focus:ring-zinc-500 dark:border-zinc-700 dark:bg-zinc-800">
+                                                        {{ __('Vertretung') }}
+                                                    </label>
                                                     <input
                                                         type="text"
                                                         x-model="row.note"
@@ -1456,16 +1476,20 @@ new #[Title('System bearbeiten')] class extends Component {
                                                     <span class="font-medium" x-text="meta(row.role_id).name"></span>
                                                     <span x-show="meta(row.role_id).description" class="text-xs text-zinc-500 dark:text-zinc-400" x-text="'· ' + meta(row.role_id).description"></span>
                                                 </div>
-                                                <div class="flex flex-col gap-2 sm:flex-row">
+                                                <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
                                                     <select
-                                                        x-model="row.raci_role"
-                                                        class="w-full rounded-md border border-zinc-200 bg-white px-2.5 py-1 text-sm shadow-sm focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500 sm:w-56 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white"
+                                                        x-model="row.ownership_kind"
+                                                        class="w-full rounded-md border border-zinc-200 bg-white px-2.5 py-1 text-sm shadow-sm focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500 sm:w-64 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white"
                                                     >
-                                                        <option value="">{{ __('System-Zuständigkeit (optional)') }}</option>
-                                                        @foreach (\App\Enums\RaciRole::cases() as $r)
-                                                            <option value="{{ $r->value }}">{{ $r->value }} – {{ $r->label() }}</option>
+                                                        <option value="">{{ __('Zuständigkeit wählen …') }}</option>
+                                                        @foreach (\App\Enums\SystemOwnership::ordered() as $o)
+                                                            <option value="{{ $o->value }}">{{ $o->label() }}</option>
                                                         @endforeach
                                                     </select>
+                                                    <label class="inline-flex cursor-pointer items-center gap-1.5 text-xs text-zinc-700 dark:text-zinc-300">
+                                                        <input type="checkbox" x-model="row.is_deputy" class="h-4 w-4 rounded border-zinc-300 text-zinc-900 focus:ring-zinc-500 dark:border-zinc-700 dark:bg-zinc-800">
+                                                        {{ __('Vertretung') }}
+                                                    </label>
                                                     <input
                                                         type="text"
                                                         x-model="row.note"

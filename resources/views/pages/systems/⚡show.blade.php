@@ -63,6 +63,7 @@ new #[Title('System')] class extends Component {
             'emergencyLevel',
             'serviceProviders',
             'employees',
+            'roles.employees',
             'dependencies',
             'dependents',
         ]);
@@ -630,6 +631,20 @@ new #[Title('System')] class extends Component {
                 <button
                     type="button"
                     role="tab"
+                    :aria-selected="tab === 'roles'"
+                    @click="tab = 'roles'"
+                    :class="tab === 'roles'
+                        ? 'border-b-2 border-zinc-900 text-zinc-900 dark:border-white dark:text-white'
+                        : 'border-b-2 border-transparent text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200'"
+                    class="flex items-center gap-2 px-4 py-2 text-sm font-medium"
+                >
+                    <flux:icon.identification class="h-4 w-4" />
+                    {{ __('Rollen') }}
+                    <flux:badge color="teal" size="sm">{{ $system->roles->count() }}</flux:badge>
+                </button>
+                <button
+                    type="button"
+                    role="tab"
                     :aria-selected="tab === 'dependencies'"
                     @click="tab = 'dependencies'"
                     :class="tab === 'dependencies'
@@ -661,69 +676,30 @@ new #[Title('System')] class extends Component {
                     <flux:text class="text-sm text-zinc-500 dark:text-zinc-400">{{ __('Noch keine Verantwortlichen zugewiesen.') }}</flux:text>
                 @else
                     @php
-                        $raciGroupsEmployees = $system->employees->groupBy(fn ($e) => $e->pivot->raci_role ?? '');
-                        $accountableCountEmp = ($raciGroupsEmployees->get('A') ?? collect())->count();
-                        $responsibleCountEmp = ($raciGroupsEmployees->get('R') ?? collect())->count();
+                        $employeeGroups = \App\Support\SystemOwnershipGroups::group($system->employees);
+                        $employeeUnassigned = \App\Support\SystemOwnershipGroups::unassigned($system->employees);
                     @endphp
 
                     <div class="rounded-xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-700 dark:bg-zinc-950/50">
                         <div class="mb-1 flex flex-wrap items-center justify-between gap-2">
                             <flux:heading size="sm">{{ __('Zuständigkeiten auf System-Ebene') }}</flux:heading>
-                            <flux:text class="text-xs text-zinc-500 dark:text-zinc-400">
-                                {{ __('Pflicht: genau 1 × A (Verantwortlich), mind. 1 × R (Durchführend).') }}
-                            </flux:text>
                         </div>
                         <flux:text class="mb-3 text-xs text-zinc-500 dark:text-zinc-400">
-                            {{ __('Grundsätzliche Ownership für dieses System. Konkrete Aufgaben haben ihr eigenes RACI weiter unten im Abschnitt „Aufgaben".') }}
+                            {{ __('System-Eigentümer entscheidet, Operator betreibt, Ansprechpartner kennt die Fachseite. Konkrete Aufgaben haben weiter unten ihr eigenes RACI.') }}
                         </flux:text>
 
-                        @if ($accountableCountEmp === 0 || $responsibleCountEmp === 0 || $accountableCountEmp > 1)
-                            <div class="mb-3 flex items-start gap-2 rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm dark:border-rose-900 dark:bg-rose-950/40">
-                                <flux:icon.exclamation-triangle class="mt-0.5 h-4 w-4 shrink-0 text-rose-600 dark:text-rose-400" />
-                                <div class="space-y-0.5 text-rose-800 dark:text-rose-200">
-                                    @if ($accountableCountEmp === 0)
-                                        <div>{{ __('Kein „A" (Verantwortlich) zugewiesen – genau eine Person wird erwartet.') }}</div>
-                                    @elseif ($accountableCountEmp > 1)
-                                        <div>{{ __(':n Personen mit „A" (Verantwortlich) – klassisch nur eine Person.', ['n' => $accountableCountEmp]) }}</div>
-                                    @endif
-                                    @if ($responsibleCountEmp === 0)
-                                        <div>{{ __('Kein „R" (Durchführend) zugewiesen – mindestens eine Person wird erwartet.') }}</div>
-                                    @endif
-                                </div>
-                            </div>
-                        @endif
-
-                        <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                            @foreach (\App\Enums\RaciRole::cases() as $r)
-                                @php
-                                    $members = $raciGroupsEmployees->get($r->value) ?? collect();
-                                @endphp
-                                <div class="rounded-lg border border-zinc-200 bg-white p-3 dark:border-zinc-700 dark:bg-zinc-900">
-                                    <div class="mb-2 flex items-center gap-2">
-                                        <flux:badge :color="$r->badgeColor()" size="sm">
-                                            <span class="font-bold">{{ $r->value }}</span>
-                                            <span class="ml-1">{{ $r->label() }}</span>
-                                        </flux:badge>
-                                    </div>
-                                    <flux:text class="mb-2 text-xs text-zinc-500 dark:text-zinc-400">{{ $r->description() }}</flux:text>
-                                    @if ($members->isEmpty())
-                                        <div class="text-xs italic text-zinc-400 dark:text-zinc-500">{{ __('— nicht besetzt —') }}</div>
-                                    @else
-                                        <ul class="space-y-0.5 text-sm">
-                                            @foreach ($members as $m)
-                                                <li class="text-zinc-700 dark:text-zinc-200">{{ $m->fullName() }}</li>
-                                            @endforeach
-                                        </ul>
-                                    @endif
-                                </div>
-                            @endforeach
-                        </div>
+                        <x-system.ownership-overview
+                            :groups="$employeeGroups"
+                            :unassigned="$employeeUnassigned"
+                            unassignedLabel="Mitarbeiter ohne Zuständigkeits-Zuordnung"
+                        />
                     </div>
 
                     <div class="grid gap-4 md:grid-cols-2">
                         @foreach ($system->employees as $index => $e)
                             @php
-                                $raci = \App\Enums\RaciRole::tryFrom((string) $e->pivot->raci_role);
+                                $own = \App\Enums\SystemOwnership::tryFrom((string) ($e->pivot->ownership_kind ?? ''));
+                                $isDeputy = (bool) ($e->pivot->is_deputy ?? false);
                             @endphp
                             <div class="rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
                                 <div class="flex items-start gap-3">
@@ -733,11 +709,13 @@ new #[Title('System')] class extends Component {
                                     <div class="min-w-0 flex-1">
                                         <div class="flex flex-wrap items-center gap-2">
                                             <flux:heading size="base">{{ $e->fullName() }}</flux:heading>
-                                            @if ($raci)
-                                                <flux:badge :color="$raci->badgeColor()" size="sm" :title="$raci->description()">
-                                                    <span class="font-bold">{{ $raci->value }}</span>
-                                                    <span class="ml-1">{{ $raci->label() }}</span>
+                                            @if ($own)
+                                                <flux:badge :color="$own->badgeColor()" size="sm" :title="$own->description()">
+                                                    {{ $own->shortLabel() }}
                                                 </flux:badge>
+                                            @endif
+                                            @if ($isDeputy)
+                                                <flux:badge color="zinc" size="sm">{{ __('Vertretung') }}</flux:badge>
                                             @endif
                                         </div>
                                         @if ($e->position || $e->department)
@@ -800,51 +778,31 @@ new #[Title('System')] class extends Component {
                     <flux:text class="text-sm text-zinc-500 dark:text-zinc-400">{{ __('Keine Dienstleister zugeordnet.') }}</flux:text>
                 @else
                     @php
-                        $raciGroupsProv = $system->serviceProviders->groupBy(fn ($p) => $p->pivot->raci_role ?? '');
+                        $providerGroups = \App\Support\SystemOwnershipGroups::group($system->serviceProviders);
+                        $providerUnassigned = \App\Support\SystemOwnershipGroups::unassigned($system->serviceProviders);
                     @endphp
 
                     <div class="rounded-xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-700 dark:bg-zinc-950/50">
                         <div class="mb-1 flex flex-wrap items-center justify-between gap-2">
                             <flux:heading size="sm">{{ __('Zuständigkeiten auf System-Ebene') }}</flux:heading>
-                            <flux:text class="text-xs text-zinc-500 dark:text-zinc-400">
-                                {{ __('Dienstleister ergänzen i. d. R. die R-/C-Rollen.') }}
-                            </flux:text>
                         </div>
                         <flux:text class="mb-3 text-xs text-zinc-500 dark:text-zinc-400">
-                            {{ __('Grundsätzliche Zuständigkeit für dieses System. Für konkrete Aufgaben siehe RACI-Matrix im Abschnitt „Aufgaben".') }}
+                            {{ __('Dienstleister sind typischerweise Operator (Betrieb) oder Ansprechpartner (Lieferant, Hersteller).') }}
                         </flux:text>
 
-                        <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                            @foreach (\App\Enums\RaciRole::cases() as $r)
-                                @php
-                                    $members = $raciGroupsProv->get($r->value) ?? collect();
-                                @endphp
-                                <div class="rounded-lg border border-zinc-200 bg-white p-3 dark:border-zinc-700 dark:bg-zinc-900">
-                                    <div class="mb-2 flex items-center gap-2">
-                                        <flux:badge :color="$r->badgeColor()" size="sm">
-                                            <span class="font-bold">{{ $r->value }}</span>
-                                            <span class="ml-1">{{ $r->label() }}</span>
-                                        </flux:badge>
-                                    </div>
-                                    <flux:text class="mb-2 text-xs text-zinc-500 dark:text-zinc-400">{{ $r->description() }}</flux:text>
-                                    @if ($members->isEmpty())
-                                        <div class="text-xs italic text-zinc-400 dark:text-zinc-500">{{ __('— nicht besetzt —') }}</div>
-                                    @else
-                                        <ul class="space-y-0.5 text-sm">
-                                            @foreach ($members as $m)
-                                                <li class="text-zinc-700 dark:text-zinc-200">{{ $m->name }}</li>
-                                            @endforeach
-                                        </ul>
-                                    @endif
-                                </div>
-                            @endforeach
-                        </div>
+                        <x-system.ownership-overview
+                            :groups="$providerGroups"
+                            :unassigned="$providerUnassigned"
+                            unassignedLabel="Dienstleister ohne Zuständigkeits-Zuordnung"
+                            :showValidation="false"
+                        />
                     </div>
 
                     <div class="grid gap-4 md:grid-cols-2">
                         @foreach ($system->serviceProviders as $index => $p)
                             @php
-                                $raci = \App\Enums\RaciRole::tryFrom((string) $p->pivot->raci_role);
+                                $own = \App\Enums\SystemOwnership::tryFrom((string) ($p->pivot->ownership_kind ?? ''));
+                                $isDeputy = (bool) ($p->pivot->is_deputy ?? false);
                             @endphp
                             <div class="rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
                                 <div class="flex items-start gap-3">
@@ -854,11 +812,13 @@ new #[Title('System')] class extends Component {
                                     <div class="min-w-0 flex-1">
                                         <div class="flex flex-wrap items-center gap-2">
                                             <flux:heading size="base">{{ $p->name }}</flux:heading>
-                                            @if ($raci)
-                                                <flux:badge :color="$raci->badgeColor()" size="sm" :title="$raci->description()">
-                                                    <span class="font-bold">{{ $raci->value }}</span>
-                                                    <span class="ml-1">{{ $raci->label() }}</span>
+                                            @if ($own)
+                                                <flux:badge :color="$own->badgeColor()" size="sm" :title="$own->description()">
+                                                    {{ $own->shortLabel() }}
                                                 </flux:badge>
+                                            @endif
+                                            @if ($isDeputy)
+                                                <flux:badge color="zinc" size="sm">{{ __('Vertretung') }}</flux:badge>
                                             @endif
                                         </div>
                                         @if ($p->contact_name)
@@ -908,6 +868,91 @@ new #[Title('System')] class extends Component {
                                         <div class="min-w-0 flex-1">
                                             <div class="text-xs font-semibold uppercase text-amber-700 dark:text-amber-400">{{ __('Notiz') }}</div>
                                             <div class="mt-0.5 text-sm text-zinc-700 dark:text-zinc-200">{{ $p->pivot->note }}</div>
+                                        </div>
+                                    </div>
+                                @endif
+                            </div>
+                        @endforeach
+                    </div>
+                @endif
+            </div>
+
+            <div x-show="tab === 'roles'" x-cloak class="space-y-5">
+                @if ($system->roles->isEmpty())
+                    <flux:text class="text-sm text-zinc-500 dark:text-zinc-400">{{ __('Keine Rollen zugeordnet.') }}</flux:text>
+                @else
+                    @php
+                        $roleGroups = \App\Support\SystemOwnershipGroups::group($system->roles);
+                        $roleUnassigned = \App\Support\SystemOwnershipGroups::unassigned($system->roles);
+                    @endphp
+
+                    <div class="rounded-xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-700 dark:bg-zinc-950/50">
+                        <div class="mb-1 flex flex-wrap items-center justify-between gap-2">
+                            <flux:heading size="sm">{{ __('Zuständigkeiten auf System-Ebene') }}</flux:heading>
+                        </div>
+                        <flux:text class="mb-3 text-xs text-zinc-500 dark:text-zinc-400">
+                            {{ __('Zuweisung über Rollen statt einzelner Personen — Mitglieder der Rolle erben die Zuständigkeit.') }}
+                        </flux:text>
+
+                        <x-system.ownership-overview
+                            :groups="$roleGroups"
+                            :unassigned="$roleUnassigned"
+                            unassignedLabel="Rollen ohne Zuständigkeits-Zuordnung"
+                            :showValidation="false"
+                        />
+                    </div>
+
+                    <div class="grid gap-4 md:grid-cols-2">
+                        @foreach ($system->roles as $index => $r)
+                            @php
+                                $own = \App\Enums\SystemOwnership::tryFrom((string) ($r->pivot->ownership_kind ?? ''));
+                                $isDeputy = (bool) ($r->pivot->is_deputy ?? false);
+                            @endphp
+                            <div class="rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
+                                <div class="flex items-start gap-3">
+                                    <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-teal-100 text-sm font-semibold text-teal-800 dark:bg-teal-900 dark:text-teal-100">
+                                        {{ $index + 1 }}
+                                    </span>
+                                    <div class="min-w-0 flex-1">
+                                        <div class="flex flex-wrap items-center gap-2">
+                                            <flux:heading size="base">{{ $r->name }}</flux:heading>
+                                            @if ($own)
+                                                <flux:badge :color="$own->badgeColor()" size="sm" :title="$own->description()">
+                                                    {{ $own->shortLabel() }}
+                                                </flux:badge>
+                                            @endif
+                                            @if ($isDeputy)
+                                                <flux:badge color="zinc" size="sm">{{ __('Vertretung') }}</flux:badge>
+                                            @endif
+                                        </div>
+                                        @if ($r->description)
+                                            <flux:text class="mt-1 text-sm text-zinc-500 dark:text-zinc-400">{{ $r->description }}</flux:text>
+                                        @endif
+                                    </div>
+                                </div>
+
+                                @if ($r->employees->isNotEmpty())
+                                    <div class="mt-4">
+                                        <div class="mb-1.5 text-xs font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">{{ __('Mitglieder') }}</div>
+                                        <div class="flex flex-wrap gap-1.5">
+                                            @foreach ($r->employees as $member)
+                                                <span class="inline-flex items-center gap-1 rounded-md bg-zinc-100 px-1.5 py-0.5 text-xs text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">
+                                                    <flux:icon.user class="h-3 w-3 text-zinc-400" />
+                                                    {{ $member->fullName() }}
+                                                </span>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                @else
+                                    <div class="mt-4 text-xs italic text-zinc-500 dark:text-zinc-400">{{ __('Rolle hat keine Mitglieder.') }}</div>
+                                @endif
+
+                                @if ($r->pivot->note)
+                                    <div class="mt-4 flex items-start gap-2 rounded-md border-l-2 border-amber-400 bg-amber-50 px-3 py-2 dark:border-amber-500 dark:bg-amber-950/30">
+                                        <flux:icon.chat-bubble-left-ellipsis class="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+                                        <div class="min-w-0 flex-1">
+                                            <div class="text-xs font-semibold uppercase text-amber-700 dark:text-amber-400">{{ __('Notiz') }}</div>
+                                            <div class="mt-0.5 text-sm text-zinc-700 dark:text-zinc-200">{{ $r->pivot->note }}</div>
                                         </div>
                                     </div>
                                 @endif

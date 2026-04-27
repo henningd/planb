@@ -36,7 +36,7 @@ class AssignmentSync
      *
      * @var list<string>
      */
-    private const IDENTITY_COLUMNS = ['raci_role', 'is_deputy'];
+    private const IDENTITY_COLUMNS = ['raci_role', 'ownership_kind', 'is_deputy'];
 
     /**
      * Synchronisiert die aktive Menge der zugeordneten verbundenen IDs.
@@ -292,7 +292,7 @@ class AssignmentSync
         $relatedLabel = self::resolveLabel($relatedModel);
 
         $pivotPayload = collect($pivotData)
-            ->only(['raci_role', 'sort', 'note'])
+            ->only(['raci_role', 'ownership_kind', 'is_deputy', 'sort', 'note'])
             ->reject(fn ($v) => $v === null || $v === '')
             ->all();
 
