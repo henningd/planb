@@ -55,7 +55,7 @@ export function initDependencyGraph(opts) {
     const cy = cytoscape({
         container: root,
         elements: [...opts.nodes, ...opts.edges],
-        wheelSensitivity: 0.6,
+        wheelSensitivity: 1.6,
         minZoom: 0.1,
         maxZoom: 4,
         style: [
