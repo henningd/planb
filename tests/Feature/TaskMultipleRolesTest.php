@@ -44,6 +44,34 @@ test('saving a task with multiple roles assigned persists all of them', function
     expect($assigned)->toContain($role1->id, $role2->id, $role3->id);
 });
 
+test('the same role can be assigned with multiple RACI codes', function () {
+    $user = User::factory()->create();
+    $company = Company::factory()->for($user->currentTeam)->create();
+
+    $this->actingAs($user->fresh());
+
+    $system = System::factory()->for($company)->create();
+    $role = Role::factory()->for($company)->create(['name' => 'Geschäftsleitung']);
+
+    Livewire\Livewire::actingAs($user->fresh())
+        ->test('pages::systems.show', ['system' => $system])
+        ->set('newTaskTitle', 'Doppel-RACI')
+        ->set('newTaskRoles', [
+            ['role_id' => $role->id, 'raci_role' => RaciRole::Accountable->value, 'is_deputy' => false],
+            ['role_id' => $role->id, 'raci_role' => RaciRole::Consulted->value, 'is_deputy' => false],
+        ])
+        ->call('addTask')
+        ->assertHasNoErrors();
+
+    $task = SystemTask::withoutGlobalScope(CurrentCompanyScope::class)
+        ->where('system_id', $system->id)
+        ->first();
+
+    expect($task->roleAssignees)->toHaveCount(2);
+    $codes = $task->roleAssignees->map(fn ($r) => $r->pivot->raci_role)->sort()->values()->all();
+    expect($codes)->toBe(['A', 'C']);
+});
+
 test('editing a task and assigning multiple roles persists all of them', function () {
     $user = User::factory()->create();
     $company = Company::factory()->for($user->currentTeam)->create();

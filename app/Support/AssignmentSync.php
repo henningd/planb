@@ -106,6 +106,94 @@ class AssignmentSync
     }
 
     /**
+     * Wie {@see sync()}, aber erlaubt mehrere aktive Zuordnungen für DIESELBE
+     * related_id — solange sich die Identitäts-Attribute (raci_role,
+     * is_deputy, …) unterscheiden. Damit kann z. B. eine Rolle bei einer
+     * Aufgabe gleichzeitig als A und als C hinterlegt sein.
+     *
+     * @param  BelongsToMany<Model, Model>  $relation
+     * @param  list<array<string, mixed>>  $desired  flache Liste; jeder Eintrag
+     *                                               enthält related_id + Pivot-Attribute
+     * @param  list<string>  $identityKeys  Pivot-Spalten, die zusammen mit related_id
+     *                                      die Identität einer Zeile bilden
+     */
+    public static function syncCompound(Model $parent, BelongsToMany $relation, array $desired, array $identityKeys = ['raci_role']): void
+    {
+        DB::transaction(function () use ($parent, $relation, $desired, $identityKeys) {
+            $ctx = self::context($parent, $relation);
+            $now = Carbon::now();
+            $userId = Auth::id();
+
+            $current = [];
+            DB::table($ctx['table'])
+                ->where($ctx['foreignKey'], $ctx['parentKey'])
+                ->whereNull('removed_at')
+                ->get()
+                ->each(function ($row) use (&$current, $ctx, $identityKeys) {
+                    $arr = (array) $row;
+                    $current[self::tupleKey($arr, $ctx['relatedKey'], $identityKeys)] = $arr;
+                });
+
+            $desiredMap = [];
+            foreach ($desired as $row) {
+                $desiredMap[self::tupleKey($row, $ctx['relatedKey'], $identityKeys)] = $row;
+            }
+
+            $toRemoveKeys = array_diff_key($current, $desiredMap);
+            $toAddKeys = array_diff_key($desiredMap, $current);
+            $toCheckKeys = array_intersect_key($current, $desiredMap);
+
+            foreach ($toRemoveKeys as $existing) {
+                self::endRow($ctx, $existing['id'], $now, $userId);
+                self::auditEvent($parent, $relation, 'unassigned', $existing[$ctx['relatedKey']], $existing);
+            }
+
+            foreach ($toAddKeys as $row) {
+                $relId = $row[$ctx['relatedKey']];
+                $attrs = $row;
+                unset($attrs[$ctx['relatedKey']]);
+                self::insertRow($ctx, $relId, $attrs, $now, $userId);
+                self::auditEvent($parent, $relation, 'assigned', $relId, $attrs);
+            }
+
+            foreach ($toCheckKeys as $key => $existing) {
+                $desiredAttrs = $desiredMap[$key];
+                $patch = [];
+                foreach ($desiredAttrs as $col => $value) {
+                    if ($col === $ctx['relatedKey'] || in_array($col, $identityKeys, true)) {
+                        continue;
+                    }
+                    if (($existing[$col] ?? null) !== $value) {
+                        $patch[$col] = $value;
+                    }
+                }
+                if ($patch !== []) {
+                    $patch['updated_at'] = $now;
+                    DB::table($ctx['table'])->where('id', $existing['id'])->update($patch);
+                }
+            }
+        });
+    }
+
+    /**
+     * @param  array<string, mixed>  $row
+     * @param  list<string>  $identityKeys
+     */
+    private static function tupleKey(array $row, string $relatedKey, array $identityKeys): string
+    {
+        $parts = [(string) ($row[$relatedKey] ?? '')];
+        foreach ($identityKeys as $col) {
+            $value = $row[$col] ?? '';
+            if (is_bool($value)) {
+                $value = $value ? '1' : '0';
+            }
+            $parts[] = (string) $value;
+        }
+
+        return implode('|', $parts);
+    }
+
+    /**
      * Fügt einer Beziehung eine einzelne Zuordnung hinzu.
      * Existiert bereits eine aktive row mit identischen Identitätsspalten, passiert nichts.
      *

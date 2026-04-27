@@ -477,18 +477,19 @@ new #[Title('System')] class extends Component {
      */
     protected function syncAssignees(SystemTask $task, array $rows): void
     {
-        $sync = [];
+        $desired = [];
         foreach ($rows as $row) {
             if (empty($row['employee_id'])) {
                 continue;
             }
-            $sync[$row['employee_id']] = [
+            $desired[] = [
+                'employee_id' => $row['employee_id'],
                 'raci_role' => $row['raci_role'],
                 'is_deputy' => (bool) ($row['is_deputy'] ?? false),
             ];
         }
 
-        AssignmentSync::sync($task, $task->assignees(), $sync);
+        AssignmentSync::syncCompound($task, $task->assignees(), $desired, ['raci_role', 'is_deputy']);
     }
 
     /**
@@ -496,18 +497,19 @@ new #[Title('System')] class extends Component {
      */
     protected function syncProviderAssignees(SystemTask $task, array $rows): void
     {
-        $sync = [];
+        $desired = [];
         foreach ($rows as $row) {
             if (empty($row['provider_id'])) {
                 continue;
             }
-            $sync[$row['provider_id']] = [
+            $desired[] = [
+                'service_provider_id' => $row['provider_id'],
                 'raci_role' => $row['raci_role'],
                 'is_deputy' => (bool) ($row['is_deputy'] ?? false),
             ];
         }
 
-        AssignmentSync::sync($task, $task->providerAssignees(), $sync);
+        AssignmentSync::syncCompound($task, $task->providerAssignees(), $desired, ['raci_role', 'is_deputy']);
     }
 
     /**
@@ -515,19 +517,20 @@ new #[Title('System')] class extends Component {
      */
     protected function syncRoleAssignees(SystemTask $task, array $rows): void
     {
-        $sync = [];
+        $desired = [];
         foreach (array_values($rows) as $index => $row) {
             if (empty($row['role_id'])) {
                 continue;
             }
-            $sync[$row['role_id']] = [
+            $desired[] = [
+                'role_id' => $row['role_id'],
                 'raci_role' => $row['raci_role'],
                 'is_deputy' => (bool) ($row['is_deputy'] ?? false),
                 'sort' => $index,
             ];
         }
 
-        AssignmentSync::sync($task, $task->roleAssignees(), $sync);
+        AssignmentSync::syncCompound($task, $task->roleAssignees(), $desired, ['raci_role', 'is_deputy']);
     }
 }; ?>
 
