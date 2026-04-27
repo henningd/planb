@@ -2,8 +2,10 @@
 
 namespace App\Support\Incident;
 
+use App\Models\CommunicationTemplate;
 use App\Models\Company;
 use App\Models\ScenarioRun;
+use App\Models\ScenarioRunStep;
 use Illuminate\Support\Collection;
 
 /**
@@ -16,15 +18,17 @@ use Illuminate\Support\Collection;
  * @phpstan-type StaffMember array{role: \App\Enums\CrisisRole, role_label: string, main: ?\App\Models\Employee, deputies: Collection<int, \App\Models\Employee>}
  * @phpstan-type RecoveryItem array{system: \App\Models\System, level_name: ?string, level_sort: ?int, rto_minutes: ?int, deadline_at: ?\Illuminate\Support\Carbon, depth: int, open_tasks: int, total_tasks: int}
  * @phpstan-type ObligationItem array{report: \App\Models\IncidentReport, obligation: \App\Models\IncidentReportObligation, deadline_at: ?\Illuminate\Support\Carbon, reported: bool, label: string}
+ * @phpstan-type DamageRateItem array{system_id: string, system_name: string, hourly: int}
  */
 class CockpitData
 {
     /**
      * @param  list<StaffMember>  $crisisStaff
      * @param  list<RecoveryItem>  $recoveryOrder
-     * @param  Collection<int, \App\Models\ScenarioRunStep>  $steps
-     * @param  Collection<int, \App\Models\CommunicationTemplate>  $communicationTemplates
+     * @param  Collection<int, ScenarioRunStep>  $steps
+     * @param  Collection<int, CommunicationTemplate>  $communicationTemplates
      * @param  list<ObligationItem>  $obligations
+     * @param  list<DamageRateItem>  $damageRatePerSystem
      */
     public function __construct(
         public readonly Company $company,
@@ -34,6 +38,8 @@ class CockpitData
         public readonly Collection $steps,
         public readonly Collection $communicationTemplates,
         public readonly array $obligations,
+        public readonly int $damageRatePerHourEur = 0,
+        public readonly array $damageRatePerSystem = [],
     ) {}
 
     public function hasActiveRun(): bool

@@ -453,6 +453,73 @@ new #[Title('Krisen-Cockpit')] class extends Component {
                     @endif
                 </div>
 
+                {{-- Sektion 3b: Aktuell laufender Schaden --}}
+                @php
+                    $damageRate = (int) $cockpit->damageRatePerHourEur;
+                    $damageRateFormatted = number_format($damageRate, 0, ',', '.');
+                    $topDamageSystems = array_slice($cockpit->damageRatePerSystem, 0, 5);
+                @endphp
+                <div class="rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900" data-test="cockpit-damage">
+                    <div class="mb-4 flex items-center gap-2">
+                        <flux:icon.banknotes class="h-5 w-5 text-zinc-500" />
+                        <flux:heading size="lg">{{ __('Aktuell laufender Schaden') }}</flux:heading>
+                    </div>
+
+                    @if ($damageRate === 0)
+                        <flux:text class="text-sm text-zinc-500 dark:text-zinc-400">
+                            {{ __('Keine Ausfallkosten je Stunde an Systemen hinterlegt.') }}
+                        </flux:text>
+                        <flux:button class="mt-3" size="xs" variant="ghost" :href="route('systems.index')" wire:navigate icon="arrow-top-right-on-square">
+                            {{ __('Zu den Systemen') }}
+                        </flux:button>
+                    @else
+                        <div
+                            x-data="{
+                                startedAt: @js($startedAtIso),
+                                ratePerHour: {{ $damageRate }},
+                                accumulated: '0',
+                                tick() {
+                                    if (! this.startedAt) { this.accumulated = '0'; return; }
+                                    const start = new Date(this.startedAt).getTime();
+                                    const elapsedSeconds = Math.max(0, (Date.now() - start) / 1000);
+                                    const ratePerSecond = this.ratePerHour / 3600;
+                                    const value = Math.floor(elapsedSeconds * ratePerSecond);
+                                    this.accumulated = value.toLocaleString('de-DE');
+                                }
+                            }"
+                            x-init="tick(); setInterval(() => tick(), 1000)"
+                        >
+                            <div class="font-mono text-4xl font-bold tabular-nums text-rose-600 dark:text-rose-400">
+                                <span x-text="accumulated" data-test="cockpit-damage-counter">0</span>
+                                <span> €</span>
+                            </div>
+                            <flux:text class="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+                                {{ __('aktuell') }} <span class="font-semibold">{{ $damageRateFormatted }} €/h</span> &times; {{ __('Laufzeit') }}
+                            </flux:text>
+                        </div>
+
+                        @if (count($topDamageSystems) > 0)
+                            <div class="mt-5">
+                                <div class="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+                                    {{ __('Top 5 Systeme nach Stundenrate') }}
+                                </div>
+                                <ul class="divide-y divide-zinc-100 dark:divide-zinc-800" data-test="cockpit-damage-top">
+                                    @foreach ($topDamageSystems as $entry)
+                                        <li class="flex items-center justify-between gap-3 py-2 text-sm">
+                                            <span class="truncate font-medium text-zinc-800 dark:text-zinc-100">
+                                                {{ $entry['system_name'] }}
+                                            </span>
+                                            <span class="font-mono tabular-nums text-zinc-700 dark:text-zinc-200">
+                                                {{ number_format($entry['hourly'], 0, ',', '.') }} €/h
+                                            </span>
+                                        </li>
+                                    @endforeach
+                                </ul>
+                            </div>
+                        @endif
+                    @endif
+                </div>
+
                 {{-- Sektion 4: Schritte abhaken --}}
                 <div class="rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
                     <div class="mb-4 flex items-center gap-2">

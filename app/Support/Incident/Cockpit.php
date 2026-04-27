@@ -26,6 +26,8 @@ class Cockpit
     {
         $activeRun = self::activeRun($company);
 
+        $damage = self::damageRates($company);
+
         return new CockpitData(
             company: $company,
             activeRun: $activeRun,
@@ -34,6 +36,8 @@ class Cockpit
             steps: $activeRun ? $activeRun->steps()->orderBy('sort')->get() : collect(),
             communicationTemplates: self::communicationTemplates($company, $activeRun),
             obligations: self::obligations($company, $activeRun),
+            damageRatePerHourEur: $damage['total'],
+            damageRatePerSystem: $damage['per_system'],
         );
     }
 
@@ -284,6 +288,44 @@ class Cockpit
         }
 
         return $report->occurred_at->copy()->addHours((int) $hours);
+    }
+
+    /**
+     * Berechnet die Ausfallkosten je Stunde für die Firma:
+     * Summe aller `downtime_cost_per_hour` (NULL als 0) sowie pro System
+     * eine sortierte Liste (nur > 0, absteigend nach Stundenrate).
+     *
+     * @return array{total: int, per_system: list<array{system_id: string, system_name: string, hourly: int}>}
+     */
+    private static function damageRates(Company $company): array
+    {
+        $systems = System::query()
+            ->where('company_id', $company->id)
+            ->select(['id', 'name', 'downtime_cost_per_hour'])
+            ->get();
+
+        $total = 0;
+        $perSystem = [];
+
+        foreach ($systems as $system) {
+            $hourly = (int) ($system->downtime_cost_per_hour ?? 0);
+            $total += $hourly;
+
+            if ($hourly > 0) {
+                $perSystem[] = [
+                    'system_id' => (string) $system->id,
+                    'system_name' => (string) $system->name,
+                    'hourly' => $hourly,
+                ];
+            }
+        }
+
+        usort($perSystem, fn (array $a, array $b) => $b['hourly'] <=> $a['hourly']);
+
+        return [
+            'total' => $total,
+            'per_system' => $perSystem,
+        ];
     }
 
     private static function obligationLabel(IncidentReportObligation $obligation): string
