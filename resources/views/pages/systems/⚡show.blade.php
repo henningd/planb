@@ -165,6 +165,27 @@ new #[Title('System')] class extends Component {
         return $names !== '' ? $names : __('Diese Rolle hat noch keine Mitglieder.');
     }
 
+    /**
+     * Splits a Role's members into Hauptpersonen (main) and Vertretungen (deputies)
+     * basierend auf der pivot-Spalte employee_role.is_deputy.
+     *
+     * @return array{main: \Illuminate\Support\Collection, deputies: \Illuminate\Support\Collection}
+     */
+    public function splitRoleMembers(Role $role): array
+    {
+        $main = collect();
+        $deputies = collect();
+        foreach ($role->employees as $member) {
+            if ($member->pivot->is_deputy ?? false) {
+                $deputies->push($member);
+            } else {
+                $main->push($member);
+            }
+        }
+
+        return ['main' => $main, 'deputies' => $deputies];
+    }
+
     public function addNewTaskAssignee(): void
     {
         $this->newTaskAssignees[] = [
@@ -1403,13 +1424,15 @@ new #[Title('System')] class extends Component {
                                         </div>
                                     @endif
                                 @else
-                                    @php($taskEmpGroups = $task->assignees->groupBy(fn ($e) => $e->pivot->raci_role ?? ''))
-                                    @php($taskProvGroups = $task->providerAssignees->groupBy(fn ($p) => $p->pivot->raci_role ?? ''))
-                                    @php($taskRoleGroups = $task->roleAssignees->groupBy(fn ($r) => $r->pivot->raci_role ?? ''))
-                                    @php($roleMembersFor = fn (string $code) => ($taskRoleGroups->get($code) ?? collect())->flatMap(fn ($role) => $role->employees))
-                                    @php($notDeputy = fn ($x) => ! ($x->pivot->is_deputy ?? false))
-                                    @php($taskAccountableCount = ($taskEmpGroups->get('A') ?? collect())->filter($notDeputy)->count() + ($taskProvGroups->get('A') ?? collect())->filter($notDeputy)->count() + ($taskRoleGroups->get('A') ?? collect())->filter($notDeputy)->count())
-                                    @php($taskResponsibleCount = ($taskEmpGroups->get('R') ?? collect())->count() + ($taskProvGroups->get('R') ?? collect())->count() + ($taskRoleGroups->get('R') ?? collect())->count())
+                                    @php
+                                        $taskEmpGroups = $task->assignees->groupBy(fn ($e) => $e->pivot->raci_role ?? '');
+                                        $taskProvGroups = $task->providerAssignees->groupBy(fn ($p) => $p->pivot->raci_role ?? '');
+                                        $taskRoleGroups = $task->roleAssignees->groupBy(fn ($r) => $r->pivot->raci_role ?? '');
+                                        $roleMembersFor = fn (string $code) => ($taskRoleGroups->get($code) ?? collect())->flatMap(fn ($role) => $role->employees);
+                                        $notDeputy = fn ($x) => ! ($x->pivot->is_deputy ?? false);
+                                        $taskAccountableCount = ($taskEmpGroups->get('A') ?? collect())->filter($notDeputy)->count() + ($taskProvGroups->get('A') ?? collect())->filter($notDeputy)->count() + ($taskRoleGroups->get('A') ?? collect())->filter($notDeputy)->count();
+                                        $taskResponsibleCount = ($taskEmpGroups->get('R') ?? collect())->count() + ($taskProvGroups->get('R') ?? collect())->count() + ($taskRoleGroups->get('R') ?? collect())->count();
+                                    @endphp
 
                                     @if (! $task->isDone() && ($taskAccountableCount === 0 || $taskResponsibleCount === 0 || $taskAccountableCount > 1))
                                         <div class="mt-2 flex items-start gap-2 rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-xs dark:border-rose-900 dark:bg-rose-950/40">
@@ -1429,10 +1452,12 @@ new #[Title('System')] class extends Component {
 
                                     <div class="grid gap-2 pt-2 sm:grid-cols-2 lg:grid-cols-4">
                                         @foreach (\App\Enums\RaciRole::cases() as $r)
-                                            @php($emps = $taskEmpGroups->get($r->value) ?? collect())
-                                            @php($provs = $taskProvGroups->get($r->value) ?? collect())
-                                            @php($rolesAtR = $taskRoleGroups->get($r->value) ?? collect())
-                                            @php($isEmpty = $emps->isEmpty() && $provs->isEmpty() && $rolesAtR->isEmpty())
+                                            @php
+                                                $emps = $taskEmpGroups->get($r->value) ?? collect();
+                                                $provs = $taskProvGroups->get($r->value) ?? collect();
+                                                $rolesAtR = $taskRoleGroups->get($r->value) ?? collect();
+                                                $isEmpty = $emps->isEmpty() && $provs->isEmpty() && $rolesAtR->isEmpty();
+                                            @endphp
                                             <div class="rounded-md border border-zinc-200 bg-white p-2 dark:border-zinc-700 dark:bg-zinc-900">
                                                 <div class="mb-1">
                                                     <flux:badge :color="$r->badgeColor()" size="sm" :title="$r->description()">
@@ -1467,8 +1492,7 @@ new #[Title('System')] class extends Component {
                                                         @endforeach
                                                         @foreach ($rolesAtR as $roleAssignee)
                                                             @php
-                                                                $roleMain = $roleAssignee->employees->reject(fn ($m) => (bool) ($m->pivot->is_deputy ?? false));
-                                                                $roleDeputies = $roleAssignee->employees->filter(fn ($m) => (bool) ($m->pivot->is_deputy ?? false));
+                                                                $roleMembers = $this->splitRoleMembers($roleAssignee);
                                                             @endphp
                                                             <li class="text-zinc-700 dark:text-zinc-200">
                                                                 <div class="flex items-center gap-1 font-medium">
@@ -1483,14 +1507,14 @@ new #[Title('System')] class extends Component {
                                                                     </div>
                                                                 @else
                                                                     <ul class="ml-2 space-y-0.5 text-[11px] text-zinc-500 dark:text-zinc-400">
-                                                                        @foreach ($roleMain as $m)
+                                                                        @foreach ($roleMembers['main'] as $m)
                                                                             <li class="flex items-center gap-1">
                                                                                 <span class="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
                                                                                 <span>{{ $m->fullName() }}</span>
                                                                                 <span class="text-[10px] text-zinc-400">{{ __('· Verantwortlich') }}</span>
                                                                             </li>
                                                                         @endforeach
-                                                                        @foreach ($roleDeputies as $m)
+                                                                        @foreach ($roleMembers['deputies'] as $m)
                                                                             <li class="flex items-center gap-1">
                                                                                 <span class="inline-block h-1.5 w-1.5 rounded-full bg-zinc-400"></span>
                                                                                 <span>{{ $m->fullName() }}</span>
