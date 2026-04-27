@@ -19,7 +19,7 @@
                     <flux:sidebar.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>
                         {{ __('Dashboard') }}
                     </flux:sidebar.item>
-                    @if (auth()->user()->isCurrentTeamAdmin())
+                    @if (config('features.compliance') && auth()->user()->isCurrentTeamAdmin())
                         <flux:sidebar.item icon="chart-bar" :href="route('compliance.index')" :current="request()->routeIs('compliance.*')" wire:navigate>
                             {{ __('Compliance') }}
                         </flux:sidebar.item>
@@ -51,9 +51,11 @@
                     <flux:sidebar.item icon="server-stack" :href="route('systems.index')" :current="request()->routeIs('systems.index') || request()->routeIs('systems.create') || request()->routeIs('systems.show') || request()->routeIs('systems.edit') || request()->routeIs('systems.export')" wire:navigate>
                         {{ __('Systeme') }}
                     </flux:sidebar.item>
-                    <flux:sidebar.item icon="share" :href="route('dependencies.index')" :current="request()->routeIs('dependencies.*')" wire:navigate>
-                        {{ __('Abhängigkeiten') }}
-                    </flux:sidebar.item>
+                    @if (config('features.dependencies'))
+                        <flux:sidebar.item icon="share" :href="route('dependencies.index')" :current="request()->routeIs('dependencies.*')" wire:navigate>
+                            {{ __('Abhängigkeiten') }}
+                        </flux:sidebar.item>
+                    @endif
                     @if (auth()->user()->isCurrentTeamAdmin())
                         <flux:sidebar.item icon="shield-check" :href="route('insurance-policies.index')" :current="request()->routeIs('insurance-policies.*')" wire:navigate>
                             {{ __('Versicherungen') }}

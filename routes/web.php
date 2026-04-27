@@ -44,7 +44,9 @@ Route::prefix('{current_team}')
             ->name('systems.edit');
         Route::livewire('service-providers', 'pages::service-providers.index')->name('service-providers.index');
         Route::livewire('emergency-resources', 'pages::emergency-resources.index')->name('emergency-resources.index');
-        Route::livewire('dependencies', 'pages::dependencies.index')->name('dependencies.index');
+        if (config('features.dependencies')) {
+            Route::livewire('dependencies', 'pages::dependencies.index')->name('dependencies.index');
+        }
         Route::livewire('employees', 'pages::employees.index')->name('employees.index');
         Route::livewire('roles', 'pages::roles.index')->name('roles.index');
 
@@ -72,7 +74,9 @@ Route::prefix('{current_team}')
                 ->where('version', '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}')
                 ->name('handbook-versions.pdf');
             Route::livewire('handbook-tests', 'pages::handbook-tests.index')->name('handbook-tests.index');
-            Route::livewire('compliance', 'pages::compliance.index')->name('compliance.index');
+            if (config('features.compliance')) {
+                Route::livewire('compliance', 'pages::compliance.index')->name('compliance.index');
+            }
         });
 
         Route::get('systems/export', function () {
