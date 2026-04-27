@@ -129,28 +129,29 @@ class HandbookData
             foreach ($sortedTasks as $task) {
                 $rNames = [];
                 $aNames = [];
+                $deputySuffix = fn ($pivot) => ($pivot->is_deputy ?? false) ? ' (Vertretung)' : '';
                 foreach ($task->assignees as $e) {
                     $code = $e->pivot->raci_role ?? null;
                     if ($code === 'R') {
-                        $rNames[] = $e->fullName();
+                        $rNames[] = $e->fullName().$deputySuffix($e->pivot);
                     } elseif ($code === 'A') {
-                        $aNames[] = $e->fullName();
+                        $aNames[] = $e->fullName().$deputySuffix($e->pivot);
                     }
                 }
                 foreach ($task->providerAssignees as $p) {
                     $code = $p->pivot->raci_role ?? null;
                     if ($code === 'R') {
-                        $rNames[] = 'DL: '.$p->name;
+                        $rNames[] = 'DL: '.$p->name.$deputySuffix($p->pivot);
                     } elseif ($code === 'A') {
-                        $aNames[] = 'DL: '.$p->name;
+                        $aNames[] = 'DL: '.$p->name.$deputySuffix($p->pivot);
                     }
                 }
                 foreach ($task->roleAssignees as $r) {
                     $code = $r->pivot->raci_role ?? null;
                     if ($code === 'R') {
-                        $rNames[] = 'Rolle: '.$r->name;
+                        $rNames[] = 'Rolle: '.$r->name.$deputySuffix($r->pivot);
                     } elseif ($code === 'A') {
-                        $aNames[] = 'Rolle: '.$r->name;
+                        $aNames[] = 'Rolle: '.$r->name.$deputySuffix($r->pivot);
                     }
                 }
 

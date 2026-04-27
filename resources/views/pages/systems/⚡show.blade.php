@@ -25,13 +25,13 @@ new #[Title('System')] class extends Component {
 
     public ?string $newTaskDueDate = null;
 
-    /** @var array<int, array{employee_id: string, raci_role: string}> */
+    /** @var array<int, array{employee_id: string, raci_role: string, is_deputy: bool}> */
     public array $newTaskAssignees = [];
 
-    /** @var array<int, array{provider_id: string, raci_role: string}> */
+    /** @var array<int, array{provider_id: string, raci_role: string, is_deputy: bool}> */
     public array $newTaskProviders = [];
 
-    /** @var array<int, array{role_id: string, raci_role: string}> */
+    /** @var array<int, array{role_id: string, raci_role: string, is_deputy: bool}> */
     public array $newTaskRoles = [];
 
     public ?string $editingTaskId = null;
@@ -42,13 +42,13 @@ new #[Title('System')] class extends Component {
 
     public ?string $editDueDate = null;
 
-    /** @var array<int, array{employee_id: string, raci_role: string}> */
+    /** @var array<int, array{employee_id: string, raci_role: string, is_deputy: bool}> */
     public array $editAssignees = [];
 
-    /** @var array<int, array{provider_id: string, raci_role: string}> */
+    /** @var array<int, array{provider_id: string, raci_role: string, is_deputy: bool}> */
     public array $editProviders = [];
 
-    /** @var array<int, array{role_id: string, raci_role: string}> */
+    /** @var array<int, array{role_id: string, raci_role: string, is_deputy: bool}> */
     public array $editRoles = [];
 
     /** Stichtag (YYYY-MM-DD) für die Historie-Ansicht. Leer = alle Stints anzeigen. */
@@ -170,6 +170,7 @@ new #[Title('System')] class extends Component {
         $this->newTaskAssignees[] = [
             'employee_id' => '',
             'raci_role' => RaciRole::Responsible->value,
+            'is_deputy' => false,
         ];
     }
 
@@ -188,6 +189,7 @@ new #[Title('System')] class extends Component {
         $this->newTaskProviders[] = [
             'provider_id' => '',
             'raci_role' => RaciRole::Consulted->value,
+            'is_deputy' => false,
         ];
     }
 
@@ -204,6 +206,7 @@ new #[Title('System')] class extends Component {
         $this->editAssignees[] = [
             'employee_id' => '',
             'raci_role' => RaciRole::Responsible->value,
+            'is_deputy' => false,
         ];
     }
 
@@ -222,6 +225,7 @@ new #[Title('System')] class extends Component {
         $this->editProviders[] = [
             'provider_id' => '',
             'raci_role' => RaciRole::Consulted->value,
+            'is_deputy' => false,
         ];
     }
 
@@ -238,6 +242,7 @@ new #[Title('System')] class extends Component {
         $this->newTaskRoles[] = [
             'role_id' => '',
             'raci_role' => RaciRole::Responsible->value,
+            'is_deputy' => false,
         ];
     }
 
@@ -254,6 +259,7 @@ new #[Title('System')] class extends Component {
         $this->editRoles[] = [
             'role_id' => '',
             'raci_role' => RaciRole::Responsible->value,
+            'is_deputy' => false,
         ];
     }
 
@@ -276,12 +282,15 @@ new #[Title('System')] class extends Component {
             'newTaskAssignees' => ['array'],
             'newTaskAssignees.*.employee_id' => ['required', 'uuid', 'exists:employees,id'],
             'newTaskAssignees.*.raci_role' => ['required', 'in:'.$raciValues],
+            'newTaskAssignees.*.is_deputy' => ['nullable', 'boolean'],
             'newTaskProviders' => ['array'],
             'newTaskProviders.*.provider_id' => ['required', 'uuid', 'exists:service_providers,id'],
             'newTaskProviders.*.raci_role' => ['required', 'in:'.$raciValues],
+            'newTaskProviders.*.is_deputy' => ['nullable', 'boolean'],
             'newTaskRoles' => ['array'],
             'newTaskRoles.*.role_id' => ['required', 'uuid', 'exists:roles,id'],
             'newTaskRoles.*.raci_role' => ['required', 'in:'.$raciValues],
+            'newTaskRoles.*.is_deputy' => ['nullable', 'boolean'],
         ]);
 
         $nextSort = (int) SystemTask::where('system_id', $this->system->id)->max('sort') + 1;
@@ -376,6 +385,7 @@ new #[Title('System')] class extends Component {
             ->map(fn (Employee $e) => [
                 'employee_id' => $e->id,
                 'raci_role' => (string) $e->pivot->raci_role,
+                'is_deputy' => (bool) ($e->pivot->is_deputy ?? false),
             ])
             ->values()
             ->all();
@@ -383,6 +393,7 @@ new #[Title('System')] class extends Component {
             ->map(fn (ServiceProvider $p) => [
                 'provider_id' => $p->id,
                 'raci_role' => (string) $p->pivot->raci_role,
+                'is_deputy' => (bool) ($p->pivot->is_deputy ?? false),
             ])
             ->values()
             ->all();
@@ -390,6 +401,7 @@ new #[Title('System')] class extends Component {
             ->map(fn (Role $r) => [
                 'role_id' => $r->id,
                 'raci_role' => (string) $r->pivot->raci_role,
+                'is_deputy' => (bool) ($r->pivot->is_deputy ?? false),
             ])
             ->values()
             ->all();
@@ -408,12 +420,15 @@ new #[Title('System')] class extends Component {
             'editAssignees' => ['array'],
             'editAssignees.*.employee_id' => ['required', 'uuid', 'exists:employees,id'],
             'editAssignees.*.raci_role' => ['required', 'in:'.$raciValues],
+            'editAssignees.*.is_deputy' => ['nullable', 'boolean'],
             'editProviders' => ['array'],
             'editProviders.*.provider_id' => ['required', 'uuid', 'exists:service_providers,id'],
             'editProviders.*.raci_role' => ['required', 'in:'.$raciValues],
+            'editProviders.*.is_deputy' => ['nullable', 'boolean'],
             'editRoles' => ['array'],
             'editRoles.*.role_id' => ['required', 'uuid', 'exists:roles,id'],
             'editRoles.*.raci_role' => ['required', 'in:'.$raciValues],
+            'editRoles.*.is_deputy' => ['nullable', 'boolean'],
         ]);
 
         $task = SystemTask::where('system_id', $this->system->id)
@@ -437,7 +452,7 @@ new #[Title('System')] class extends Component {
     }
 
     /**
-     * @param  array<int, array{employee_id: string, raci_role: string}>  $rows
+     * @param  array<int, array{employee_id: string, raci_role: string, is_deputy?: bool}>  $rows
      */
     protected function syncAssignees(SystemTask $task, array $rows): void
     {
@@ -446,14 +461,17 @@ new #[Title('System')] class extends Component {
             if (empty($row['employee_id'])) {
                 continue;
             }
-            $sync[$row['employee_id']] = ['raci_role' => $row['raci_role']];
+            $sync[$row['employee_id']] = [
+                'raci_role' => $row['raci_role'],
+                'is_deputy' => (bool) ($row['is_deputy'] ?? false),
+            ];
         }
 
         AssignmentSync::sync($task, $task->assignees(), $sync);
     }
 
     /**
-     * @param  array<int, array{provider_id: string, raci_role: string}>  $rows
+     * @param  array<int, array{provider_id: string, raci_role: string, is_deputy?: bool}>  $rows
      */
     protected function syncProviderAssignees(SystemTask $task, array $rows): void
     {
@@ -462,14 +480,17 @@ new #[Title('System')] class extends Component {
             if (empty($row['provider_id'])) {
                 continue;
             }
-            $sync[$row['provider_id']] = ['raci_role' => $row['raci_role']];
+            $sync[$row['provider_id']] = [
+                'raci_role' => $row['raci_role'],
+                'is_deputy' => (bool) ($row['is_deputy'] ?? false),
+            ];
         }
 
         AssignmentSync::sync($task, $task->providerAssignees(), $sync);
     }
 
     /**
-     * @param  array<int, array{role_id: string, raci_role: string}>  $rows
+     * @param  array<int, array{role_id: string, raci_role: string, is_deputy?: bool}>  $rows
      */
     protected function syncRoleAssignees(SystemTask $task, array $rows): void
     {
@@ -480,6 +501,7 @@ new #[Title('System')] class extends Component {
             }
             $sync[$row['role_id']] = [
                 'raci_role' => $row['raci_role'],
+                'is_deputy' => (bool) ($row['is_deputy'] ?? false),
                 'sort' => $index,
             ];
         }
@@ -1217,6 +1239,10 @@ new #[Title('System')] class extends Component {
                                             <flux:select.option value="{{ $r->value }}">{{ $r->value }} – {{ $r->label() }}</flux:select.option>
                                         @endforeach
                                     </flux:select>
+                                    <label class="inline-flex cursor-pointer items-center gap-1.5 text-xs text-zinc-700 dark:text-zinc-300">
+                                        <input type="checkbox" wire:model="newTaskAssignees.{{ $i }}.is_deputy" class="h-4 w-4 rounded border-zinc-300 text-zinc-900 focus:ring-zinc-500 dark:border-zinc-700 dark:bg-zinc-800">
+                                        {{ __('Vertretung') }}
+                                    </label>
                                     <flux:button type="button" size="sm" variant="ghost" icon="x-mark"
                                         wire:click.prevent="removeNewTaskAssignee({{ $i }})" />
                                 </div>
@@ -1254,6 +1280,10 @@ new #[Title('System')] class extends Component {
                                             <flux:select.option value="{{ $r->value }}">{{ $r->value }} – {{ $r->label() }}</flux:select.option>
                                         @endforeach
                                     </flux:select>
+                                    <label class="inline-flex cursor-pointer items-center gap-1.5 text-xs text-zinc-700 dark:text-zinc-300">
+                                        <input type="checkbox" wire:model="newTaskProviders.{{ $i }}.is_deputy" class="h-4 w-4 rounded border-zinc-300 text-zinc-900 focus:ring-zinc-500 dark:border-zinc-700 dark:bg-zinc-800">
+                                        {{ __('Vertretung') }}
+                                    </label>
                                     <flux:button type="button" size="sm" variant="ghost" icon="x-mark"
                                         wire:click.prevent="removeNewTaskProvider({{ $i }})" />
                                 </div>
@@ -1293,6 +1323,10 @@ new #[Title('System')] class extends Component {
                                                 <flux:select.option value="{{ $r->value }}">{{ $r->value }} – {{ $r->label() }}</flux:select.option>
                                             @endforeach
                                         </flux:select>
+                                        <label class="inline-flex cursor-pointer items-center gap-1.5 text-xs text-zinc-700 dark:text-zinc-300">
+                                            <input type="checkbox" wire:model="newTaskRoles.{{ $i }}.is_deputy" class="h-4 w-4 rounded border-zinc-300 text-zinc-900 focus:ring-zinc-500 dark:border-zinc-700 dark:bg-zinc-800">
+                                            {{ __('Vertretung') }}
+                                        </label>
                                         <flux:button type="button" size="sm" variant="ghost" icon="x-mark" wire:click.prevent="removeNewTaskRole({{ $i }})" />
                                     </div>
                                     @if ($row['role_id'])
@@ -1373,7 +1407,8 @@ new #[Title('System')] class extends Component {
                                     @php($taskProvGroups = $task->providerAssignees->groupBy(fn ($p) => $p->pivot->raci_role ?? ''))
                                     @php($taskRoleGroups = $task->roleAssignees->groupBy(fn ($r) => $r->pivot->raci_role ?? ''))
                                     @php($roleMembersFor = fn (string $code) => ($taskRoleGroups->get($code) ?? collect())->flatMap(fn ($role) => $role->employees))
-                                    @php($taskAccountableCount = ($taskEmpGroups->get('A') ?? collect())->count() + ($taskProvGroups->get('A') ?? collect())->count() + $roleMembersFor('A')->count())
+                                    @php($notDeputy = fn ($x) => ! ($x->pivot->is_deputy ?? false))
+                                    @php($taskAccountableCount = ($taskEmpGroups->get('A') ?? collect())->filter($notDeputy)->count() + ($taskProvGroups->get('A') ?? collect())->filter($notDeputy)->count() + ($taskRoleGroups->get('A') ?? collect())->filter($notDeputy)->flatMap(fn ($role) => $role->employees)->count())
                                     @php($taskResponsibleCount = ($taskEmpGroups->get('R') ?? collect())->count() + ($taskProvGroups->get('R') ?? collect())->count() + $roleMembersFor('R')->count())
 
                                     @if (! $task->isDone() && ($taskAccountableCount === 0 || $taskResponsibleCount === 0 || $taskAccountableCount > 1))
@@ -1416,17 +1451,28 @@ new #[Title('System')] class extends Component {
                                                             <li class="flex items-center gap-1 text-zinc-700 dark:text-zinc-200">
                                                                 <flux:icon.user class="h-3 w-3 shrink-0 text-zinc-400" />
                                                                 <span class="truncate">{{ $person->fullName() }}</span>
+                                                                @if ($person->pivot->is_deputy ?? false)
+                                                                    <span class="ml-1 inline-flex items-center rounded bg-zinc-200 px-1 text-[10px] text-zinc-700 dark:bg-zinc-700 dark:text-zinc-200">{{ __('Vertretung') }}</span>
+                                                                @endif
                                                             </li>
                                                         @endforeach
                                                         @foreach ($provs as $prov)
                                                             <li class="flex items-center gap-1 text-zinc-700 dark:text-zinc-200">
                                                                 <flux:icon.wrench-screwdriver class="h-3 w-3 shrink-0 text-zinc-400" />
                                                                 <span class="truncate">{{ $prov->name }}</span>
+                                                                @if ($prov->pivot->is_deputy ?? false)
+                                                                    <span class="ml-1 inline-flex items-center rounded bg-zinc-200 px-1 text-[10px] text-zinc-700 dark:bg-zinc-700 dark:text-zinc-200">{{ __('Vertretung') }}</span>
+                                                                @endif
                                                             </li>
                                                         @endforeach
                                                         @foreach ($rolesAtR as $roleAssignee)
                                                             <li class="text-zinc-700 dark:text-zinc-200">
-                                                                <div class="font-medium">{{ $roleAssignee->name }}</div>
+                                                                <div class="flex items-center gap-1 font-medium">
+                                                                    <span>{{ $roleAssignee->name }}</span>
+                                                                    @if ($roleAssignee->pivot->is_deputy ?? false)
+                                                                        <span class="inline-flex items-center rounded bg-zinc-200 px-1 text-[10px] font-normal text-zinc-700 dark:bg-zinc-700 dark:text-zinc-200">{{ __('Vertretung') }}</span>
+                                                                    @endif
+                                                                </div>
                                                                 <div class="ml-2 text-[11px] text-zinc-500 dark:text-zinc-400">
                                                                     {{ $this->roleMembersText($roleAssignee->id) }}
                                                                 </div>
@@ -1516,6 +1562,10 @@ new #[Title('System')] class extends Component {
                                         <flux:select.option value="{{ $r->value }}">{{ $r->value }} – {{ $r->label() }}</flux:select.option>
                                     @endforeach
                                 </flux:select>
+                                <label class="inline-flex cursor-pointer items-center gap-1.5 text-xs text-zinc-700 dark:text-zinc-300">
+                                    <input type="checkbox" wire:model="editAssignees.{{ $i }}.is_deputy" class="h-4 w-4 rounded border-zinc-300 text-zinc-900 focus:ring-zinc-500 dark:border-zinc-700 dark:bg-zinc-800">
+                                    {{ __('Vertretung') }}
+                                </label>
                                 <flux:button type="button" size="sm" variant="ghost" icon="x-mark"
                                     wire:click.prevent="removeEditAssignee({{ $i }})" />
                             </div>
@@ -1553,6 +1603,10 @@ new #[Title('System')] class extends Component {
                                         <flux:select.option value="{{ $r->value }}">{{ $r->value }} – {{ $r->label() }}</flux:select.option>
                                     @endforeach
                                 </flux:select>
+                                <label class="inline-flex cursor-pointer items-center gap-1.5 text-xs text-zinc-700 dark:text-zinc-300">
+                                    <input type="checkbox" wire:model="editProviders.{{ $i }}.is_deputy" class="h-4 w-4 rounded border-zinc-300 text-zinc-900 focus:ring-zinc-500 dark:border-zinc-700 dark:bg-zinc-800">
+                                    {{ __('Vertretung') }}
+                                </label>
                                 <flux:button type="button" size="sm" variant="ghost" icon="x-mark"
                                     wire:click.prevent="removeEditProvider({{ $i }})" />
                             </div>
@@ -1592,6 +1646,10 @@ new #[Title('System')] class extends Component {
                                             <flux:select.option value="{{ $r->value }}">{{ $r->value }} – {{ $r->label() }}</flux:select.option>
                                         @endforeach
                                     </flux:select>
+                                    <label class="inline-flex cursor-pointer items-center gap-1.5 text-xs text-zinc-700 dark:text-zinc-300">
+                                        <input type="checkbox" wire:model="editRoles.{{ $i }}.is_deputy" class="h-4 w-4 rounded border-zinc-300 text-zinc-900 focus:ring-zinc-500 dark:border-zinc-700 dark:bg-zinc-800">
+                                        {{ __('Vertretung') }}
+                                    </label>
                                     <flux:button type="button" size="sm" variant="ghost" icon="x-mark" wire:click.prevent="removeEditRole({{ $i }})" />
                                 </div>
                                 @if ($row['role_id'])
