@@ -16,4 +16,6 @@ return [
     'compliance' => filter_var(env('FEATURE_COMPLIANCE_ENABLED', true), FILTER_VALIDATE_BOOLEAN),
 
     'dependencies' => filter_var(env('FEATURE_DEPENDENCIES_ENABLED', true), FILTER_VALIDATE_BOOLEAN),
+
+    'incident_mode' => filter_var(env('FEATURE_INCIDENT_MODE_ENABLED', true), FILTER_VALIDATE_BOOLEAN),
 ];

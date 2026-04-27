@@ -56,6 +56,13 @@ class SettingsCatalog
                 'label' => 'Auto-PDF bei neuer Version',
                 'description' => 'Erzeugt automatisch ein revisionssicheres PDF, sobald eine HandbookVersion angelegt wird.',
             ],
+            'incident_mode_enabled' => [
+                'scope' => self::COMPANY,
+                'type' => 'bool',
+                'default' => true,
+                'label' => 'Live-Inzident-Modus',
+                'description' => 'Zeigt im Ernstfall ein reduziertes Krisen-Cockpit mit Krisenstab, Wiederanlauf-Reihenfolge, Schritten und Meldepflichten. Bei einem aktiven Szenario-Lauf erscheint zusätzlich ein Banner.',
+            ],
             'enforce_2fa_admins' => [
                 'scope' => self::COMPANY,
                 'type' => 'bool',

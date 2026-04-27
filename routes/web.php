@@ -47,6 +47,9 @@ Route::prefix('{current_team}')
         if (config('features.dependencies')) {
             Route::livewire('dependencies', 'pages::dependencies.index')->name('dependencies.index');
         }
+        if (config('features.incident_mode')) {
+            Route::livewire('incident-mode', 'pages::incident-mode.index')->name('incident-mode.index');
+        }
         Route::livewire('employees', 'pages::employees.index')->name('employees.index');
         Route::livewire('roles', 'pages::roles.index')->name('roles.index');
 

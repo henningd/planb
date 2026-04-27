@@ -76,6 +76,11 @@
                     data-sidebar-key="emergency"
                     class="grid"
                 >
+                    @if (config('features.incident_mode'))
+                        <flux:sidebar.item icon="exclamation-triangle" :href="route('incident-mode.index')" :current="request()->routeIs('incident-mode.*')" wire:navigate>
+                            {{ __('Krisen-Cockpit') }}
+                        </flux:sidebar.item>
+                    @endif
                     <flux:sidebar.item icon="bolt" :href="route('scenarios.index')" :current="request()->routeIs('scenarios.*')" wire:navigate>
                         {{ __('Szenarien') }}
                     </flux:sidebar.item>
