@@ -47,6 +47,8 @@ Route::prefix('{current_team}')
         if (config('features.dependencies')) {
             Route::livewire('dependencies', 'pages::dependencies.index')->name('dependencies.index');
         }
+        Route::livewire('tasks-inbox', 'pages::tasks-inbox.index')->name('tasks-inbox.index');
+        Route::livewire('recovery-gantt', 'pages::recovery-gantt.index')->name('recovery-gantt.index');
         if (config('features.incident_mode')) {
             Route::livewire('incident-mode', 'pages::incident-mode.index')->name('incident-mode.index');
         }

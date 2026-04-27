@@ -56,6 +56,12 @@
                             {{ __('Abhängigkeiten') }}
                         </flux:sidebar.item>
                     @endif
+                    <flux:sidebar.item icon="inbox" :href="route('tasks-inbox.index')" :current="request()->routeIs('tasks-inbox.*')" wire:navigate>
+                        {{ __('Aufgaben-Inbox') }}
+                    </flux:sidebar.item>
+                    <flux:sidebar.item icon="chart-bar-square" :href="route('recovery-gantt.index')" :current="request()->routeIs('recovery-gantt.*')" wire:navigate>
+                        {{ __('Recovery-Zeitplan') }}
+                    </flux:sidebar.item>
                     @if (auth()->user()->isCurrentTeamAdmin())
                         <flux:sidebar.item icon="shield-check" :href="route('insurance-policies.index')" :current="request()->routeIs('insurance-policies.*')" wire:navigate>
                             {{ __('Versicherungen') }}
