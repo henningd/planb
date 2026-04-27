@@ -186,6 +186,11 @@ export function initDependencyGraph(opts) {
                 renderedPosition: center,
             });
         },
+        resetZoom() {
+            const center = { x: cy.width() / 2, y: cy.height() / 2 };
+            cy.zoom({ level: 1, renderedPosition: center });
+            cy.center();
+        },
         applyFilter({ levels, categories, search }) {
             const haystack = (search || '').trim().toLowerCase();
             cy.batch(() => {
