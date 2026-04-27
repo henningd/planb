@@ -1240,21 +1240,21 @@
                     <h4 style="margin-bottom: 1mm;">{{ $entry['system']->name }}</h4>
 
                     <table>
-                        <thead>
-                            <tr>
-                                <th style="width: 33%;">System-Eigentümer</th>
-                                <th style="width: 34%;">Administrator / Operator</th>
-                                <th style="width: 33%;">Fachlicher Ansprechpartner</th>
-                            </tr>
-                        </thead>
                         <tbody>
                             <tr>
+                                <th style="width: 38%; text-align: left; vertical-align: top;">System-Eigentümer</th>
                                 <td style="vertical-align: top;">
                                     @forelse ($entry['ownership']['owner'] ?? [] as $line)<div>{{ $line }}</div>@empty<span class="small">&mdash;</span>@endforelse
                                 </td>
+                            </tr>
+                            <tr>
+                                <th style="width: 38%; text-align: left; vertical-align: top;">Administrator / Operator</th>
                                 <td style="vertical-align: top;">
                                     @forelse ($entry['ownership']['operator'] ?? [] as $line)<div>{{ $line }}</div>@empty<span class="small">&mdash;</span>@endforelse
                                 </td>
+                            </tr>
+                            <tr>
+                                <th style="width: 38%; text-align: left; vertical-align: top;">Fachlicher Ansprechpartner</th>
                                 <td style="vertical-align: top;">
                                     @forelse ($entry['ownership']['contact'] ?? [] as $line)<div>{{ $line }}</div>@empty<span class="small">&mdash;</span>@endforelse
                                 </td>
