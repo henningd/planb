@@ -80,7 +80,7 @@ class HandbookData
      */
     private static function buildSystemsDetail(Company $company): array
     {
-        $codes = ['R', 'A', 'C', 'I'];
+        $kinds = ['owner', 'operator', 'contact'];
         $out = [];
 
         foreach ($company->systems as $system) {
@@ -93,29 +93,32 @@ class HandbookData
                 continue;
             }
 
-            $raci = [];
-            foreach ($codes as $code) {
+            $ownership = [];
+            foreach ($kinds as $kind) {
                 $entries = [];
                 foreach ($system->employees as $e) {
-                    if (($e->pivot->raci_role ?? null) === $code) {
-                        $entries[] = $e->fullName();
+                    if (($e->pivot->ownership_kind ?? null) === $kind) {
+                        $suffix = ($e->pivot->is_deputy ?? false) ? ' (Vertretung)' : '';
+                        $entries[] = $e->fullName().$suffix;
                     }
                 }
                 foreach ($system->serviceProviders as $p) {
-                    if (($p->pivot->raci_role ?? null) === $code) {
-                        $entries[] = 'DL: '.$p->name;
+                    if (($p->pivot->ownership_kind ?? null) === $kind) {
+                        $suffix = ($p->pivot->is_deputy ?? false) ? ' (Vertretung)' : '';
+                        $entries[] = 'DL: '.$p->name.$suffix;
                     }
                 }
                 foreach ($system->roles as $r) {
-                    if (($r->pivot->raci_role ?? null) === $code) {
-                        $line = 'Rolle: '.$r->name;
+                    if (($r->pivot->ownership_kind ?? null) === $kind) {
+                        $suffix = ($r->pivot->is_deputy ?? false) ? ' (Vertretung)' : '';
+                        $line = 'Rolle: '.$r->name.$suffix;
                         if ($r->employees->isNotEmpty()) {
                             $line .= ' ('.$r->employees->map(fn ($emp) => $emp->fullName())->implode(', ').')';
                         }
                         $entries[] = $line;
                     }
                 }
-                $raci[$code] = $entries;
+                $ownership[$kind] = $entries;
             }
 
             $tasks = [];
@@ -165,7 +168,7 @@ class HandbookData
 
             $out[] = [
                 'system' => $system,
-                'raci' => $raci,
+                'ownership' => $ownership,
                 'tasks' => $tasks,
             ];
         }

@@ -1230,10 +1230,10 @@
             @endif
         @endif
 
-        {{-- 9.X – Detaillierte System-Sicht: RACI-Verantwortliche und Aufgaben pro System --}}
+        {{-- 9.X – Detaillierte System-Sicht: Eigentums-Rollen und Aufgaben pro System --}}
         @if (! empty($systemsDetail))
             <h3>Verantwortlichkeiten und Aufgaben pro System</h3>
-            <p class="small">RACI: <strong>R</strong> = Durchführend, <strong>A</strong> = Verantwortlich, <strong>C</strong> = Konsultiert, <strong>I</strong> = Informiert. Pro System die operativ besetzten Rollen und definierte Wartungs-/Prüfaufgaben.</p>
+            <p class="small">Auf System-Ebene: <strong>Eigentümer</strong> entscheidet, <strong>Operator</strong> betreibt, <strong>Ansprechpartner</strong> kennt die Fachseite. Bei Aufgaben gilt klassisch RACI (R = Durchführend, A = Verantwortlich).</p>
 
             @foreach ($systemsDetail as $entry)
                 <div class="keep" style="margin-top: 4mm;">
@@ -1242,25 +1242,21 @@
                     <table>
                         <thead>
                             <tr>
-                                <th style="width: 25%;">R &mdash; Durchführend</th>
-                                <th style="width: 25%;">A &mdash; Verantwortlich</th>
-                                <th style="width: 25%;">C &mdash; Konsultiert</th>
-                                <th style="width: 25%;">I &mdash; Informiert</th>
+                                <th style="width: 33%;">System-Eigentümer</th>
+                                <th style="width: 34%;">Administrator / Operator</th>
+                                <th style="width: 33%;">Fachlicher Ansprechpartner</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr>
                                 <td style="vertical-align: top;">
-                                    @forelse ($entry['raci']['R'] ?? [] as $line)<div>{{ $line }}</div>@empty<span class="small">&mdash;</span>@endforelse
+                                    @forelse ($entry['ownership']['owner'] ?? [] as $line)<div>{{ $line }}</div>@empty<span class="small">&mdash;</span>@endforelse
                                 </td>
                                 <td style="vertical-align: top;">
-                                    @forelse ($entry['raci']['A'] ?? [] as $line)<div>{{ $line }}</div>@empty<span class="small">&mdash;</span>@endforelse
+                                    @forelse ($entry['ownership']['operator'] ?? [] as $line)<div>{{ $line }}</div>@empty<span class="small">&mdash;</span>@endforelse
                                 </td>
                                 <td style="vertical-align: top;">
-                                    @forelse ($entry['raci']['C'] ?? [] as $line)<div>{{ $line }}</div>@empty<span class="small">&mdash;</span>@endforelse
-                                </td>
-                                <td style="vertical-align: top;">
-                                    @forelse ($entry['raci']['I'] ?? [] as $line)<div>{{ $line }}</div>@empty<span class="small">&mdash;</span>@endforelse
+                                    @forelse ($entry['ownership']['contact'] ?? [] as $line)<div>{{ $line }}</div>@empty<span class="small">&mdash;</span>@endforelse
                                 </td>
                             </tr>
                         </tbody>
