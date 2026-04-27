@@ -8,6 +8,7 @@ enum Industry: string
     case Handel = 'handel';
     case Dienstleistung = 'dienstleistung';
     case Produktion = 'produktion';
+    case OeffentlicheEinrichtung = 'oeffentliche_einrichtung';
     case Sonstiges = 'sonstiges';
 
     public function label(): string
@@ -17,6 +18,7 @@ enum Industry: string
             self::Handel => 'Handel',
             self::Dienstleistung => 'Dienstleistung',
             self::Produktion => 'Produktion',
+            self::OeffentlicheEinrichtung => 'Öffentliche Einrichtung',
             self::Sonstiges => 'Sonstiges',
         };
     }

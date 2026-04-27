@@ -16,6 +16,9 @@ enum LegalForm: string
     case Genossenschaft = 'eg';
     case Verein = 'verein';
     case Stiftung = 'stiftung';
+    case AoeR = 'aoer';
+    case KdoeR = 'kdoer';
+    case StiftungOeR = 'stiftung_oer';
 
     public function label(): string
     {
@@ -32,6 +35,9 @@ enum LegalForm: string
             self::Genossenschaft => 'Genossenschaft (eG)',
             self::Verein => 'Verein (e.V.)',
             self::Stiftung => 'Stiftung',
+            self::AoeR => 'Anstalt des öffentlichen Rechts (AöR)',
+            self::KdoeR => 'Körperschaft des öffentlichen Rechts (KdöR)',
+            self::StiftungOeR => 'Stiftung des öffentlichen Rechts',
         };
     }
 
