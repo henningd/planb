@@ -44,6 +44,7 @@ Route::prefix('{current_team}')
             ->name('systems.edit');
         Route::livewire('service-providers', 'pages::service-providers.index')->name('service-providers.index');
         Route::livewire('emergency-resources', 'pages::emergency-resources.index')->name('emergency-resources.index');
+        Route::livewire('dependencies', 'pages::dependencies.index')->name('dependencies.index');
         Route::livewire('employees', 'pages::employees.index')->name('employees.index');
         Route::livewire('roles', 'pages::roles.index')->name('roles.index');
 

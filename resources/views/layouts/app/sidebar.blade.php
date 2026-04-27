@@ -51,6 +51,9 @@
                     <flux:sidebar.item icon="server-stack" :href="route('systems.index')" :current="request()->routeIs('systems.index') || request()->routeIs('systems.create') || request()->routeIs('systems.show') || request()->routeIs('systems.edit') || request()->routeIs('systems.export')" wire:navigate>
                         {{ __('Systeme') }}
                     </flux:sidebar.item>
+                    <flux:sidebar.item icon="share" :href="route('dependencies.index')" :current="request()->routeIs('dependencies.*')" wire:navigate>
+                        {{ __('Abhängigkeiten') }}
+                    </flux:sidebar.item>
                     @if (auth()->user()->isCurrentTeamAdmin())
                         <flux:sidebar.item icon="shield-check" :href="route('insurance-policies.index')" :current="request()->routeIs('insurance-policies.*')" wire:navigate>
                             {{ __('Versicherungen') }}
