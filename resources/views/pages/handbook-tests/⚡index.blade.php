@@ -29,6 +29,8 @@ new #[Title('Testplan')] class extends Component {
 
     public ?string $responsible_employee_id = null;
 
+    public ?string $responsible_role_id = null;
+
     public string $result_notes = '';
 
     public int $sort = 0;
@@ -55,7 +57,7 @@ new #[Title('Testplan')] class extends Component {
     #[Computed]
     public function tests(): Collection
     {
-        return HandbookTest::with('responsible')
+        return HandbookTest::with(['responsible', 'responsibleRole.employees'])
             ->orderByRaw('next_due_at IS NULL, next_due_at')
             ->orderBy('sort')
             ->get();
@@ -68,6 +70,15 @@ new #[Title('Testplan')] class extends Component {
     public function employeeOptions(): Collection
     {
         return Employee::orderBy('last_name')->orderBy('first_name')->get();
+    }
+
+    /**
+     * @return Collection<int, \App\Models\Role>
+     */
+    #[Computed]
+    public function roleOptions(): Collection
+    {
+        return \App\Models\Role::orderBy('sort')->orderBy('name')->get();
     }
 
     public function openCreate(): void
@@ -88,6 +99,7 @@ new #[Title('Testplan')] class extends Component {
         $this->last_executed_at = $t->last_executed_at?->toDateString();
         $this->next_due_at = $t->next_due_at?->toDateString();
         $this->responsible_employee_id = $t->responsible_employee_id;
+        $this->responsible_role_id = $t->responsible_role_id;
         $this->result_notes = (string) $t->result_notes;
         $this->sort = $t->sort;
 
@@ -110,6 +122,7 @@ new #[Title('Testplan')] class extends Component {
             'last_executed_at' => ['nullable', 'date'],
             'next_due_at' => ['nullable', 'date'],
             'responsible_employee_id' => ['nullable', 'uuid', 'exists:employees,id'],
+            'responsible_role_id' => ['nullable', 'uuid', 'exists:roles,id'],
             'result_notes' => ['nullable', 'string', 'max:2000'],
             'sort' => ['integer', 'min:0'],
         ]);
@@ -165,7 +178,7 @@ new #[Title('Testplan')] class extends Component {
 
     protected function resetForm(): void
     {
-        $this->reset(['editingId', 'name', 'description', 'last_executed_at', 'next_due_at', 'responsible_employee_id', 'result_notes', 'sort']);
+        $this->reset(['editingId', 'name', 'description', 'last_executed_at', 'next_due_at', 'responsible_employee_id', 'responsible_role_id', 'result_notes', 'sort']);
         $this->type = HandbookTestType::ContactCheck->value;
         $this->interval = HandbookTestInterval::Yearly->value;
     }
@@ -262,6 +275,15 @@ new #[Title('Testplan')] class extends Component {
                             <span>{{ $test->responsible->fullName() }}</span>
                         </div>
                     @endif
+                    @if ($test->responsibleRole)
+                        <div class="flex items-center gap-2">
+                            <flux:icon.identification class="h-4 w-4 text-zinc-400" />
+                            <span>{{ $test->responsibleRole->name }}</span>
+                            @if ($test->responsibleRole->employees->count() > 0)
+                                <span class="text-xs text-zinc-500 dark:text-zinc-400">({{ $test->responsibleRole->employees->count() }} {{ __('Mitglieder') }})</span>
+                            @endif
+                        </div>
+                    @endif
                 </div>
 
                 @if ($test->result_notes)
@@ -308,12 +330,23 @@ new #[Title('Testplan')] class extends Component {
                 <flux:input wire:model="next_due_at" :label="__('Nächste Fälligkeit')" type="date" />
             </div>
 
-            <flux:select wire:model="responsible_employee_id" :label="__('Verantwortlich')">
-                <flux:select.option value="">{{ __('— niemand —') }}</flux:select.option>
-                @foreach ($this->employeeOptions as $emp)
-                    <flux:select.option value="{{ $emp->id }}">{{ $emp->fullName() }}</flux:select.option>
-                @endforeach
-            </flux:select>
+            <div class="grid gap-4 sm:grid-cols-2">
+                <flux:select wire:model="responsible_employee_id" :label="__('Verantwortlich (Person)')">
+                    <flux:select.option value="">{{ __('— keine Person —') }}</flux:select.option>
+                    @foreach ($this->employeeOptions as $emp)
+                        <flux:select.option value="{{ $emp->id }}">{{ $emp->fullName() }}</flux:select.option>
+                    @endforeach
+                </flux:select>
+                <flux:select wire:model="responsible_role_id" :label="__('Verantwortlich (Rolle / Gruppe)')">
+                    <flux:select.option value="">{{ __('— keine Rolle —') }}</flux:select.option>
+                    @foreach ($this->roleOptions as $role)
+                        <flux:select.option value="{{ $role->id }}">{{ $role->name }}</flux:select.option>
+                    @endforeach
+                </flux:select>
+            </div>
+            <flux:description>
+                {{ __('Person, Rolle/Gruppe oder beides. Eine Rolle kann mehrere Mitglieder umfassen — die werden auf dieser Seite und im PDF mit ausgewiesen.') }}
+            </flux:description>
 
             <flux:textarea wire:model="result_notes" :label="__('Ergebnis-Notizen')" rows="2" />
 

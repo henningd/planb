@@ -1515,7 +1515,14 @@
                                 <strong>Intervall:</strong> {{ $t->interval->label() }}<br>
                                 <strong>Letzte Durchführung:</strong> {{ $t->last_executed_at?->format('d.m.Y') ?? '—' }}<br>
                                 <strong>Nächste Fälligkeit:</strong> {{ $t->next_due_at?->format('d.m.Y') ?? '—' }}{{ $t->isOverdue() ? ' (überfällig)' : '' }}<br>
-                                <strong>Verantwortlich:</strong> {{ $t->responsible?->fullName() ?? '—' }}
+                                <strong>Verantwortlich:</strong>
+                                @if ($t->responsible || $t->responsibleRole)
+                                    @if ($t->responsible){{ $t->responsible->fullName() }}@endif
+                                    @if ($t->responsible && $t->responsibleRole) · @endif
+                                    @if ($t->responsibleRole)Rolle: {{ $t->responsibleRole->name }}@if ($t->responsibleRole->employees->isNotEmpty()) ({{ $t->responsibleRole->employees->map(fn ($e) => $e->fullName())->implode(', ') }})@endif @endif
+                                @else
+                                    —
+                                @endif
                             </td>
                         </tr>
                     @endforeach

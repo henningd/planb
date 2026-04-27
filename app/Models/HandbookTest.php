@@ -24,6 +24,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'last_executed_at',
     'next_due_at',
     'responsible_employee_id',
+    'responsible_role_id',
     'result_notes',
     'last_reminder_sent_at',
     'sort',
@@ -44,6 +45,14 @@ class HandbookTest extends Model
     public function responsible(): BelongsTo
     {
         return $this->belongsTo(Employee::class, 'responsible_employee_id');
+    }
+
+    /**
+     * @return BelongsTo<Role, $this>
+     */
+    public function responsibleRole(): BelongsTo
+    {
+        return $this->belongsTo(Role::class, 'responsible_role_id');
     }
 
     public function isOverdue(): bool
