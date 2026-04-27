@@ -1167,8 +1167,7 @@
                 <thead>
                     <tr>
                         <th>System</th>
-                        <th>Priorität / Stufe</th>
-                        <th>RTO / RPO</th>
+                        <th style="width: 38mm;">Kennzahlen</th>
                         <th>Ersatzprozess</th>
                         <th>Runbook</th>
                     </tr>
@@ -1184,13 +1183,25 @@
                                 @endif
                             </td>
                             <td>
-                                {{ $system->priority?->name ?? '—' }}
-                                @if ($system->emergencyLevel)<br><span class="small">{{ $system->emergencyLevel->name }}</span>@endif
-                            </td>
-                            <td>
-                                @if ($system->rto_minutes)RTO: {{ \App\Support\Duration::format($system->rto_minutes) }}<br>@endif
-                                @if ($system->rpo_minutes)RPO: {{ \App\Support\Duration::format($system->rpo_minutes) }}@endif
-                                @if (! $system->rto_minutes && ! $system->rpo_minutes)—@endif
+                                @if ($system->priority)
+                                    <div class="contact-label">Priorität</div>
+                                    <div class="contact-value">{{ $system->priority->name }}</div>
+                                @endif
+                                @if ($system->emergencyLevel)
+                                    <div class="contact-label @if ($system->priority) contact-label-spaced @endif">Notfall-Level</div>
+                                    <div class="contact-value">{{ $system->emergencyLevel->name }}</div>
+                                @endif
+                                @if ($system->rto_minutes)
+                                    <div class="contact-label @if ($system->priority || $system->emergencyLevel) contact-label-spaced @endif">RTO</div>
+                                    <div class="contact-value">{{ \App\Support\Duration::format($system->rto_minutes) }}</div>
+                                @endif
+                                @if ($system->rpo_minutes)
+                                    <div class="contact-label @if ($system->priority || $system->emergencyLevel || $system->rto_minutes) contact-label-spaced @endif">RPO</div>
+                                    <div class="contact-value">{{ \App\Support\Duration::format($system->rpo_minutes) }}</div>
+                                @endif
+                                @if (! $system->priority && ! $system->emergencyLevel && ! $system->rto_minutes && ! $system->rpo_minutes)
+                                    —
+                                @endif
                             </td>
                             <td>{{ $system->fallback_process ?? '—' }}</td>
                             <td>{{ $system->runbook_reference ?? '—' }}</td>
