@@ -25,7 +25,8 @@
             }, $e->is_crisis_deputy ? 1 : 0));
         $authorities = $providers->filter(fn ($p) => $p->type?->isAuthority() ?? false);
         $externalProviders = $providers->reject(fn ($p) => $p->type?->isAuthority() ?? false);
-        $emblemUrl = asset('wappen.png');
+        $emblemPathPublic = public_path('wappen.png');
+        $emblemUrl = asset('wappen.png').(is_file($emblemPathPublic) ? '?v='.filemtime($emblemPathPublic) : '');
         $pageTopCenter = sprintf('%s — Notfall- und Krisenhandbuch', $company->name);
 
         // Für die @page Margin-Box brauchen wir die PNG mit fester Pixelgröße,
