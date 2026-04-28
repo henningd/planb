@@ -14,6 +14,279 @@ class SettingsCatalog
 
     public const COMPANY = 'company';
 
+    private const DEFAULT_IMPRINT = <<<'TEXT'
+        IMPRESSUM
+
+        Angaben gemäß § 5 Telemediengesetz (TMG)
+
+        Anbieter
+        Arento AI GmbH i. G.
+        Wiesenstr. 28
+        53773 Hennef
+        Deutschland
+
+        Kontakt
+        E-Mail: info@arento.ai
+
+        Vertretungsberechtigter Geschäftsführer
+        Daniel Henninger
+
+        Hinweis zur Vorgesellschaft
+        Die Gesellschaft befindet sich in Gründung (i. G.). Bis zur Eintragung in
+        das Handelsregister bestehen die Vorschriften der Vor-GmbH. Registereintrag,
+        Registergericht, Handelsregisternummer und ggf. Umsatzsteuer-Identifikations-
+        nummer (§ 27 a UStG) werden nach erfolgter Eintragung an dieser Stelle
+        ergänzt.
+
+        Inhaltlich verantwortlich gemäß § 18 Abs. 2 MStV
+        Daniel Henninger, Anschrift wie oben
+
+        Online-Streitbeilegung
+        Die Europäische Kommission stellt eine Plattform zur Online-Streitbeilegung
+        (OS) bereit, erreichbar unter https://ec.europa.eu/consumers/odr/.
+        Wir sind nicht verpflichtet und nicht bereit, an einem Streit-
+        beilegungsverfahren vor einer Verbraucherschlichtungsstelle teilzunehmen.
+
+        Haftung für Inhalte
+        Die Inhalte unserer Seiten wurden mit größter Sorgfalt erstellt. Für die
+        Richtigkeit, Vollständigkeit und Aktualität der Inhalte können wir jedoch
+        keine Gewähr übernehmen. Als Diensteanbieter sind wir gemäß § 7 Abs. 1 TMG
+        für eigene Inhalte auf diesen Seiten nach den allgemeinen Gesetzen
+        verantwortlich. Nach §§ 8 bis 10 TMG sind wir als Diensteanbieter jedoch
+        nicht verpflichtet, übermittelte oder gespeicherte fremde Informationen
+        zu überwachen oder nach Umständen zu forschen, die auf eine rechtswidrige
+        Tätigkeit hinweisen.
+
+        Haftung für Links
+        Unser Angebot kann Links zu externen Webseiten Dritter enthalten, auf
+        deren Inhalte wir keinen Einfluss haben. Deshalb können wir für diese
+        fremden Inhalte auch keine Gewähr übernehmen. Für die Inhalte der
+        verlinkten Seiten ist stets der jeweilige Anbieter oder Betreiber der
+        Seiten verantwortlich.
+
+        Urheberrecht
+        Die durch die Seitenbetreiber erstellten Inhalte und Werke auf diesen
+        Seiten unterliegen dem deutschen Urheberrecht. Vervielfältigung,
+        Bearbeitung, Verbreitung und jede Art der Verwertung außerhalb der
+        Grenzen des Urheberrechts bedürfen der schriftlichen Zustimmung des
+        jeweiligen Autors bzw. Erstellers.
+
+        TEXT;
+
+    private const DEFAULT_PRIVACY = <<<'TEXT'
+        DATENSCHUTZERKLÄRUNG
+
+        Stand: April 2026
+
+        1. VERANTWORTLICHER
+
+        Verantwortlich für die Datenverarbeitung im Sinne der DSGVO ist:
+
+        Arento AI GmbH i. G.
+        Wiesenstr. 28
+        53773 Hennef
+        Deutschland
+        E-Mail: info@arento.ai
+        Vertretungsberechtigter Geschäftsführer: Daniel Henninger
+
+        Einen Datenschutzbeauftragten haben wir derzeit nicht bestellt, da die
+        gesetzlichen Voraussetzungen (Art. 37 DSGVO, § 38 BDSG) nicht erfüllt
+        sind. Bei Fragen zum Datenschutz wenden Sie sich bitte direkt an die
+        oben genannte E-Mail-Adresse.
+
+        2. ALLGEMEINES ZUR DATENVERARBEITUNG
+
+        Wir verarbeiten personenbezogene Daten unserer Nutzerinnen und Nutzer
+        grundsätzlich nur, soweit dies zur Bereitstellung einer funktionsfähigen
+        Plattform sowie unserer Inhalte und Leistungen erforderlich ist. Die
+        Verarbeitung personenbezogener Daten erfolgt regelmäßig nur nach
+        Einwilligung der betroffenen Person oder in den Fällen, in denen eine
+        vorherige Einholung einer Einwilligung aus tatsächlichen Gründen nicht
+        möglich ist und die Verarbeitung der Daten durch gesetzliche
+        Vorschriften gestattet ist.
+
+        Rechtsgrundlagen sind insbesondere:
+        — Art. 6 Abs. 1 lit. a DSGVO (Einwilligung)
+        — Art. 6 Abs. 1 lit. b DSGVO (Vertragserfüllung / vorvertragliche Maßnahmen)
+        — Art. 6 Abs. 1 lit. c DSGVO (rechtliche Verpflichtung)
+        — Art. 6 Abs. 1 lit. f DSGVO (berechtigte Interessen)
+
+        3. BEREITSTELLUNG DER WEBSITE UND DER PLATTFORM (LOGFILES)
+
+        Bei jedem Aufruf unserer Website und der Plattform erfasst unser
+        Hosting-Anbieter automatisch Informationen, die Ihr Browser an unseren
+        Server übermittelt. Diese sogenannten Server-Logfiles enthalten:
+
+        — IP-Adresse des anfragenden Geräts (gekürzt, soweit technisch möglich)
+        — Datum und Uhrzeit der Anfrage
+        — Aufgerufene URL und HTTP-Methode
+        — Übertragene Datenmenge und Statuscode
+        — Referrer-URL
+        — Browser-Typ und -Version, Betriebssystem
+
+        Rechtsgrundlage: Art. 6 Abs. 1 lit. f DSGVO. Berechtigtes Interesse ist
+        der sichere und stabile Betrieb der Plattform sowie die Erkennung und
+        Abwehr von Angriffen.
+
+        Speicherdauer: in der Regel 14 Tage, danach automatische Löschung. Bei
+        sicherheitsrelevanten Vorfällen werden Logs länger aufbewahrt, bis der
+        Vorfall vollständig aufgeklärt ist.
+
+        4. NUTZUNG DER PLATTFORM (BENUTZERKONTO)
+
+        Für die Nutzung der Plattform legen Sie ein Benutzerkonto an. Dabei
+        verarbeiten wir:
+
+        — Name, E-Mail-Adresse, Passwort (gespeichert als bcrypt-Hash, Klartext
+          wird nicht abgelegt)
+        — Zwei-Faktor-Authentifizierungs-Geheimnisse (verschlüsselt)
+        — Zugehörigkeit zu Teams/Mandanten und Berechtigungen
+        — Zeitstempel von Anmeldungen und Sitzungen
+
+        Rechtsgrundlage: Art. 6 Abs. 1 lit. b DSGVO (Vertragserfüllung).
+
+        Speicherdauer: für die Dauer der Vertragsbeziehung. Nach Vertragsende
+        werden Konto-Daten nach einer angemessenen Karenzzeit gelöscht oder
+        anonymisiert, soweit keine gesetzlichen Aufbewahrungspflichten
+        entgegenstehen.
+
+        5. INHALTLICHE NUTZUNG (NOTFALLHANDBUCH)
+
+        Im Rahmen der Plattform-Nutzung erfassen Sie als Mandant Daten zu
+        Mitarbeitenden, IT-Systemen, Dienstleistern, Kontakten,
+        Versicherungen, Notfallszenarien und ähnlichen Inhalten Ihres
+        Notfallhandbuchs. Diese Daten verarbeiten wir ausschließlich in
+        Ihrem Auftrag (Art. 28 DSGVO).
+
+        Bei Verarbeitung personenbezogener Daten Dritter (z. B.
+        Mitarbeiter-Telefonnummern, Notfall-Kontakte) ist der Mandant für
+        eine wirksame Rechtsgrundlage und für die Information der Betroffenen
+        nach Art. 13/14 DSGVO selbst verantwortlich.
+
+        Rechtsgrundlage gegenüber dem Mandanten: Art. 6 Abs. 1 lit. b DSGVO.
+        Rechtsgrundlage für betroffene Mitarbeiter/Dritte: typischerweise
+        § 26 BDSG bzw. Art. 6 Abs. 1 lit. b/f DSGVO — die konkrete Bewertung
+        obliegt dem Mandanten.
+
+        6. AUFTRAGSVERARBEITER UND DIENSTLEISTER
+
+        Wir setzen folgende Auftragsverarbeiter ein, mit denen jeweils ein
+        Vertrag nach Art. 28 DSGVO besteht:
+
+        Hosting und Datenhaltung
+        DigitalOcean, LLC, 101 Avenue of the Americas, 10th Floor, New York,
+        NY 10013, USA — wir nutzen ausschließlich die EU-Region Frankfurt
+        (FRA1). Anwendungsserver, Datenbank und Datei-Speicher liegen in
+        Deutschland. Standardvertragsklauseln (Art. 46 DSGVO) sind als
+        zusätzliche Garantie geschlossen.
+
+        E-Mail-Versand und -Empfang
+        Strato AG, Otto-Ostrowski-Str. 7, 10249 Berlin — verarbeitet
+        transaktionale und kommunikative E-Mails (Anmeldebestätigungen,
+        Passwort-Reset, Krisen-Mails). Datenverarbeitung in Deutschland.
+
+        SMS-Versand für Krisen-Kommunikation
+        avento.ai (Anbieter, Anschrift werden auf Anfrage mitgeteilt) —
+        verarbeitet Empfänger-Mobilnummern und Nachrichteninhalte zur
+        Zustellung. Wird nur eingesetzt, wenn der Mandant SMS-Vorlagen
+        aktiv versendet.
+
+        Optionale Krisen-Kommunikationskanäle (nur bei aktiver Nutzung
+        durch den Mandanten)
+        — Slack: Slack Technologies, LLC, USA — Versand in mandanteneigene
+          Slack-Channels über Incoming-Webhook. Drittlandübermittlung in die
+          USA auf Grundlage der EU-Standardvertragsklauseln (Art. 46 DSGVO).
+        — Microsoft Teams: Microsoft Corporation / Microsoft Ireland
+          Operations Ltd. — Versand in mandanteneigene Teams-Channels über
+          Incoming-Webhook. Datenhaltung kann je nach Tenant-Konfiguration
+          des Mandanten in der EU oder in den USA stattfinden.
+        — Telegram: Telegram FZ-LLC, VAE — Versand in mandanteneigene
+          Telegram-Kanäle. Drittlandübermittlung auf Grundlage der EU-
+          Standardvertragsklauseln (Art. 46 DSGVO).
+
+        Optionales Monitoring
+        Wenn der Mandant in der Plattform Webhook-Endpunkte für Zabbix oder
+        Prometheus Alertmanager freischaltet, werden eingehende Alarm-Daten
+        (Hostname, Severity, Subject, Zeitstempel) zur automatischen Incident-
+        Erstellung verarbeitet. Die Quelle der Alarme liegt in der Sphäre
+        des Mandanten.
+
+        7. DRITTLANDÜBERMITTLUNG
+
+        Die Anwendungsplattform selbst (Stammdaten, Notfallhandbuch, Audit-
+        Log) wird ausschließlich in der EU verarbeitet. Eine Drittland-
+        übermittlung findet ausschließlich dann statt, wenn der Mandant
+        Slack-, Teams- oder Telegram-Kanäle für Krisen-Kommunikation aktiv
+        nutzt. Rechtsgrundlage ist in diesen Fällen Art. 46 Abs. 2 lit. c
+        DSGVO (EU-Standardvertragsklauseln); ergänzend setzen wir
+        technisch-organisatorische Maßnahmen wie Transportverschlüsselung
+        ein.
+
+        8. SPEICHERDAUER
+
+        Wir speichern personenbezogene Daten nur so lange, wie es für die
+        jeweiligen Zwecke erforderlich ist oder gesetzliche Aufbewahrungs-
+        pflichten bestehen. Konkrete Fristen für die wichtigsten Kategorien:
+
+        — Server-Logfiles: 14 Tage
+        — Audit-Log der Plattform: pro Mandant konfigurierbar (Standard
+          unbegrenzt, einstellbar bis 10 Jahre); auf Anfrage des Mandanten
+          jederzeit kürzbar
+        — Konto-Daten: für die Dauer der Vertragsbeziehung plus Karenzzeit
+        — Inhaltliche Mandanten-Daten (Notfallhandbuch): bis zur Löschung
+          durch den Mandanten oder Ende der Vertragsbeziehung
+
+        9. DATENSICHERHEIT
+
+        Wir setzen technisch-organisatorische Maßnahmen ein, die dem Stand
+        der Technik entsprechen, insbesondere:
+
+        — Transportverschlüsselung (TLS) für sämtliche Verbindungen
+        — Passwörter werden ausschließlich als bcrypt-Hash gespeichert
+        — Optional Zwei-Faktor-Authentifizierung (TOTP); für Administratoren
+          erzwingbar
+        — Mandantentrennung auf Anwendungs- und Datenbankebene
+        — Lückenloser Audit-Log über sicherheitsrelevante Änderungen
+        — Regelmäßige Datensicherungen
+
+        10. IHRE RECHTE ALS BETROFFENE PERSON
+
+        Soweit wir personenbezogene Daten von Ihnen verarbeiten, stehen
+        Ihnen folgende Rechte zu:
+
+        — Auskunft (Art. 15 DSGVO)
+        — Berichtigung (Art. 16 DSGVO)
+        — Löschung (Art. 17 DSGVO)
+        — Einschränkung der Verarbeitung (Art. 18 DSGVO)
+        — Datenübertragbarkeit (Art. 20 DSGVO)
+        — Widerspruch (Art. 21 DSGVO), insbesondere gegen Verarbeitungen
+          auf Grundlage von Art. 6 Abs. 1 lit. f DSGVO
+        — Widerruf erteilter Einwilligungen (Art. 7 Abs. 3 DSGVO) mit
+          Wirkung für die Zukunft
+
+        Bitte richten Sie Anfragen an info@arento.ai.
+
+        11. BESCHWERDERECHT BEI DER AUFSICHTSBEHÖRDE
+
+        Sie haben das Recht, sich bei einer Datenschutz-Aufsichtsbehörde
+        über die Verarbeitung Ihrer personenbezogenen Daten zu beschweren
+        (Art. 77 DSGVO). Für unseren Sitz in Hennef ist zuständig:
+
+        Landesbeauftragte für Datenschutz und Informationsfreiheit
+        Nordrhein-Westfalen (LDI NRW)
+        Kavalleriestraße 2-4
+        40213 Düsseldorf
+        Telefon: 0211 38424-0
+        E-Mail: poststelle@ldi.nrw.de
+
+        12. ÄNDERUNG DIESER DATENSCHUTZERKLÄRUNG
+
+        Wir behalten uns vor, diese Datenschutzerklärung anzupassen, wenn
+        sich rechtliche Vorgaben oder unsere Verarbeitungstätigkeiten
+        ändern. Die jeweils aktuelle Fassung ist unter dieser URL abrufbar.
+
+        TEXT;
+
     /**
      * @return array<string, array{scope: string, type: string, default: mixed, label: string, description: string, enum?: array<string,string>, min?: int, max?: int}>
      */
@@ -65,14 +338,14 @@ class SettingsCatalog
             'platform_imprint' => [
                 'scope' => self::SYSTEM,
                 'type' => 'string',
-                'default' => "Anbieter\nArento AI GmbH i. G.\nWiesenstr. 28\n53773 Hennef\n\nVertretungsberechtigter Geschäftsführer\nDaniel Henninger\n\nKontakt\nE-Mail: info@arento.ai\n\nHinweis\nDie Gesellschaft befindet sich in Gründung (i. G.). Registereintrag und Umsatzsteuer-Identifikationsnummer werden nach Eintragung ins Handelsregister ergänzt.",
+                'default' => self::DEFAULT_IMPRINT,
                 'label' => 'Impressum (Plain-Text/Markdown)',
                 'description' => 'Pflichtangaben nach §5 TMG. Wird unter /impressum gerendert.',
             ],
             'platform_privacy' => [
                 'scope' => self::SYSTEM,
                 'type' => 'string',
-                'default' => "Verantwortlicher\nArento AI GmbH i. G.\nWiesenstr. 28, 53773 Hennef\nE-Mail: info@arento.ai\nVertretungsberechtigter Geschäftsführer: Daniel Henninger\n\nAuftragsverarbeiter (Empfänger personenbezogener Daten)\n— Hosting & Datenhaltung: DigitalOcean, LLC, Region Frankfurt (FRA1) — Anwendungsserver, Datenbank, Datei-Speicher.\n— E-Mail-Versand und -Empfang: Strato AG (Deutschland) — transaktionale und kommunikative E-Mails.\n— SMS-Versand: avento.ai — Versand von Krisen-Kurznachrichten, sofern dieser Kanal genutzt wird.\n— Optionale Krisen-Kommunikationskanäle (nur bei aktiver Nutzung durch den Mandanten):\n   · Slack (Slack Technologies, LLC, USA) — Versand in mandanteneigene Slack-Channels via Webhook.\n   · Microsoft Teams (Microsoft Corporation, USA / EU-Datacenter) — Versand in mandanteneigene Teams-Channels via Webhook.\n   · Telegram (Telegram FZ-LLC) — Versand in mandanteneigene Telegram-Kanäle.\n\nMit den deutschen/europäischen Anbietern bestehen Auftragsverarbeitungsverträge nach Art. 28 DSGVO. Bei Nutzung von Slack, Teams oder Telegram findet eine Datenübermittlung in Drittländer (USA bzw. VAE) statt; Rechtsgrundlage sind die EU-Standardvertragsklauseln und ergänzende Maßnahmen (Art. 46 DSGVO). Datenhaltung der Anwendungsplattform selbst erfolgt ausschließlich innerhalb der EU.\n\nHinweis\nDieser Text ist eine Grundstruktur und ersetzt KEINE vollständige Datenschutzerklärung. Vor Produktivbetrieb bitte durch eine fachkundige Stelle ergänzen lassen — insbesondere zu: verarbeiteten Datenkategorien je Funktion, Rechtsgrundlagen (Art. 6 DSGVO), Speicherdauer, Cookies/Tracking, Betroffenenrechten (Auskunft, Löschung, Widerspruch) und zuständiger Aufsichtsbehörde.",
+                'default' => self::DEFAULT_PRIVACY,
                 'label' => 'Datenschutzerklärung (Plain-Text/Markdown)',
                 'description' => 'DSGVO-Pflichttext. Wird unter /datenschutz gerendert.',
             ],
