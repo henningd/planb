@@ -49,3 +49,12 @@ Innerhalb eines Teams gibt es drei Rollen:
 ## Konto löschen
 
 Im Profil unten gibt es den Button **„Konto löschen"**. Achtung: das ist endgültig. Wenn Sie der einzige Owner Ihres Teams sind, müssen Sie zuerst entweder einen anderen Owner ernennen oder das Team mit-löschen. Vorher unbedingt das Mandanten-Archiv exportieren (System-Settings → Vollständiges Archiv).
+
+## Eigene Daten herunterladen / Account löschen
+
+Unter **Einstellungen → Daten & Datenschutz** finden Sie die zwei DSGVO-Selbstbedienungs-Funktionen:
+
+- **Daten exportieren (Art. 15 DSGVO)** — der Button **„JSON herunterladen"** liefert ein strukturiertes JSON-Dokument mit Ihren Stammdaten (Name, E-Mail, Anmelde-Zeitstempel, 2FA-Status), allen Mandanten-Mitgliedschaften (Mandant, Rolle, Beitritts-Datum) und allen Audit-Log-Einträgen, die Sie persönlich verursacht haben. Die Datei heißt `planb-account-{user-id}-{datum}.json` und kann z. B. an eine Aufsichtsbehörde oder zur eigenen Kontrolle weitergegeben werden.
+- **Löschung beantragen (Art. 17 DSGVO)** — der Button **„Löschung beantragen"** öffnet einen Bestätigungs-Dialog mit optionaler Begründung. Die Anfrage wird gespeichert; ein Administrator prüft und bearbeitet sie **innerhalb von 30 Tagen** manuell. Solange eine Anfrage offen ist, kann keine zweite gestellt werden — die Karte zeigt stattdessen einen Hinweis mit dem Antrags-Datum. Eine sofortige technische Löschung erfolgt aus Aufbewahrungs- und Mandanten-Schutz-Gründen bewusst nicht über diesen Self-Service.
+
+> **Hinweis**: Wenn Sie sofort und endgültig Ihren Account entfernen wollen, ohne auf einen Admin zu warten, nutzen Sie weiterhin den klassischen Button **„Konto löschen"** im Profil (oben). Der DSGVO-Antrag ist die schonende Variante mit Prüfung durch den Plattform-Betreiber.
