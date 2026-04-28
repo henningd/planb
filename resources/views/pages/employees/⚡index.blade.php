@@ -435,16 +435,27 @@ new #[Title('Mitarbeiter')] class extends Component {
                     </button>
                 </div>
 
-                <div x-show="viewMode === 'list'" x-cloak class="flex flex-wrap items-center gap-3">
-                    <flux:input wire:model.live.debounce.300ms="search" type="search" icon="magnifying-glass" placeholder="{{ __('Suchen: Name, Rolle, E-Mail …') }}" class="max-w-sm" />
-                    @if ($this->departments)
-                        <flux:select wire:model.live="filterDepartment" placeholder="{{ __('Alle Abteilungen') }}" class="max-w-xs">
-                            <flux:select.option value="">{{ __('Alle Abteilungen') }}</flux:select.option>
-                            @foreach ($this->departments as $dept)
-                                <flux:select.option value="{{ $dept }}">{{ $dept }}</flux:select.option>
-                            @endforeach
-                        </flux:select>
-                    @endif
+                <flux:input x-show="viewMode === 'list'" x-cloak wire:model.live.debounce.300ms="search" type="search" icon="magnifying-glass" placeholder="{{ __('Suchen: Name, Rolle, E-Mail …') }}" class="max-w-sm" />
+                @if ($this->departments)
+                    <flux:select x-show="viewMode === 'list'" x-cloak wire:model.live="filterDepartment" placeholder="{{ __('Alle Abteilungen') }}" class="max-w-xs">
+                        <flux:select.option value="">{{ __('Alle Abteilungen') }}</flux:select.option>
+                        @foreach ($this->departments as $dept)
+                            <flux:select.option value="{{ $dept }}">{{ $dept }}</flux:select.option>
+                        @endforeach
+                    </flux:select>
+                @endif
+
+                <div
+                    wire:loading.delay.shortest
+                    wire:target="search,filterDepartment"
+                    x-show="viewMode === 'list'"
+                    x-cloak
+                    class="flex items-center gap-1.5 text-xs text-zinc-500 dark:text-zinc-400"
+                    role="status"
+                    aria-live="polite"
+                >
+                    <flux:icon.loading variant="mini" />
+                    <span>{{ __('Filtere …') }}</span>
                 </div>
             </div>
 
@@ -543,7 +554,11 @@ new #[Title('Mitarbeiter')] class extends Component {
                         </flux:text>
                     </div>
                 @else
-                    <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                    <div
+                        wire:loading.delay.shortest.class="opacity-50"
+                        wire:target="search,filterDepartment"
+                        class="grid gap-4 transition-opacity sm:grid-cols-2 xl:grid-cols-3"
+                    >
                         @foreach ($this->employees as $employee)
                 <div class="flex flex-col rounded-xl border border-zinc-200 bg-white p-5 transition hover:border-zinc-300 hover:shadow-sm dark:border-zinc-700 dark:bg-zinc-900 dark:hover:border-zinc-600">
                     <div class="flex items-start justify-between gap-2">
