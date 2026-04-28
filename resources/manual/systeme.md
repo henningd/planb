@@ -14,6 +14,7 @@ Knopf **„Neues System"**. Pflichtangaben:
 
 Empfohlen:
 
+- **Systemtyp** — Anwendung, Kommunikation, Server oder Infrastruktur. Optional, hilft bei der technischen Einordnung im Notfall.
 - **Beschreibung** — was macht das System konkret?
 - **Notfall-Workaround** (`fallback_process`) — was tun, wenn das System ausfällt? z. B. „Warenausgabe handschriftlich auf Lieferschein, später nachbuchen".
 - **Runbook-Verweis** — Link oder Hinweis auf die technische Wiederanlauf-Anleitung.

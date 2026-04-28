@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\SystemCategory;
+use App\Enums\SystemType;
 use App\Models\Employee;
 use App\Models\EmergencyLevel;
 use App\Models\Role;
@@ -32,6 +33,8 @@ new #[Title('System bearbeiten')] class extends Component {
     public ?string $emergency_level_id = null;
 
     public string $category = '';
+
+    public string $system_type = '';
 
     public ?string $system_priority_id = null;
 
@@ -77,6 +80,7 @@ new #[Title('System bearbeiten')] class extends Component {
             $this->runbook_reference = (string) $system->runbook_reference;
             $this->emergency_level_id = $system->emergency_level_id;
             $this->category = $system->category->value;
+            $this->system_type = $system->system_type?->value ?? '';
             $this->system_priority_id = $system->system_priority_id;
             $this->rto_minutes = $system->rto_minutes;
             $this->rpo_minutes = $system->rpo_minutes;
@@ -596,6 +600,7 @@ new #[Title('System bearbeiten')] class extends Component {
             'runbook_reference' => ['nullable', 'string', 'max:255'],
             'emergency_level_id' => ['nullable', 'uuid', 'exists:emergency_levels,id'],
             'category' => ['required', 'in:'.collect(SystemCategory::cases())->pluck('value')->implode(',')],
+            'system_type' => ['nullable', 'in:'.collect(SystemType::cases())->pluck('value')->implode(',')],
             'system_priority_id' => ['nullable', 'uuid', 'exists:system_priorities,id'],
             'rto_minutes' => ['nullable', 'integer', 'in:'.implode(',', $validDurations)],
             'rpo_minutes' => ['nullable', 'integer', 'in:'.implode(',', $validDurations)],
@@ -632,6 +637,8 @@ new #[Title('System bearbeiten')] class extends Component {
             ->values()
             ->all();
         $validated['monitoring_keys'] = $monitoringKeys === [] ? null : $monitoringKeys;
+
+        $validated['system_type'] = ($validated['system_type'] ?? '') !== '' ? $validated['system_type'] : null;
 
         unset($validated['providerAssignments'], $validated['responsibles'], $validated['dependencyAssignments'], $validated['roleAssignments'], $validated['monitoring_keys_text']);
 
@@ -821,6 +828,13 @@ new #[Title('System bearbeiten')] class extends Component {
 
             <flux:select wire:model="category" :label="__('Kategorie')" required>
                 @foreach (\App\Enums\SystemCategory::cases() as $case)
+                    <flux:select.option value="{{ $case->value }}">{{ $case->label() }}</flux:select.option>
+                @endforeach
+            </flux:select>
+
+            <flux:select wire:model="system_type" :label="__('Systemtyp')">
+                <flux:select.option value="">{{ __('Nicht definiert') }}</flux:select.option>
+                @foreach (\App\Enums\SystemType::cases() as $case)
                     <flux:select.option value="{{ $case->value }}">{{ $case->label() }}</flux:select.option>
                 @endforeach
             </flux:select>
