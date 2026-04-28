@@ -1,5 +1,7 @@
 @php
-    $productName = config('app.name', 'Notfallplan');
+    $productName = \App\Support\Settings\SystemSetting::get('platform_name', '') ?: config('app.name', 'Notfallplan');
+    $contactEmail = (string) \App\Support\Settings\SystemSetting::get('platform_contact_email', '');
+    $contactPhone = (string) \App\Support\Settings\SystemSetting::get('platform_contact_phone', '');
 
     $problems = [
         [
@@ -241,8 +243,8 @@
                     </p>
 
                     <div class="mt-8 flex flex-col sm:flex-row gap-3">
-                        <a href="#demo" class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-slate-900 text-white font-medium hover:bg-slate-800 transition shadow-sm">
-                            Demo ansehen
+                        <a href="#features" class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-slate-900 text-white font-medium hover:bg-slate-800 transition shadow-sm">
+                            Funktionen ansehen
                             <svg class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
                         </a>
                         <a href="#kontakt" class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-white text-slate-900 font-medium ring-1 ring-slate-200 hover:ring-slate-300 hover:bg-slate-50 transition">
@@ -642,18 +644,26 @@
                     <p class="mt-4 text-lg text-indigo-100 leading-relaxed">
                         Wir zeigen Ihnen, wie ein strukturiertes Notfallhandbuch für Ihr Unternehmen aussehen kann – praxisnah, verständlich und ohne Verpflichtung.
                     </p>
-                    <div class="mt-8 flex flex-col sm:flex-row gap-3">
-                        <a href="#demo" class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-white text-slate-900 font-medium hover:bg-slate-100 transition shadow-sm">
-                            Demo anfragen
-                            <svg class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
-                        </a>
-                        <a href="#gespraech" class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-white/10 text-white font-medium ring-1 ring-white/20 hover:bg-white/15 transition">
-                            Gespräch vereinbaren
-                        </a>
-                        <a href="#produkt" class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg text-white font-medium hover:bg-white/10 transition">
-                            Produkt kennenlernen
-                        </a>
-                    </div>
+                    @if ($contactEmail !== '' || $contactPhone !== '')
+                        <div class="mt-8 flex flex-col sm:flex-row gap-3">
+                            @if ($contactEmail !== '')
+                                <a href="mailto:{{ $contactEmail }}" class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-white text-slate-900 font-medium hover:bg-slate-100 transition shadow-sm">
+                                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                                    {{ $contactEmail }}
+                                </a>
+                            @endif
+                            @if ($contactPhone !== '')
+                                <a href="tel:{{ preg_replace('/[^+0-9]/', '', $contactPhone) }}" class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-white/10 text-white font-medium ring-1 ring-white/20 hover:bg-white/15 transition">
+                                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                                    {{ $contactPhone }}
+                                </a>
+                            @endif
+                        </div>
+                    @else
+                        <div class="mt-8 rounded-lg bg-white/10 ring-1 ring-white/20 px-5 py-4 text-sm text-indigo-100">
+                            {{ __('Kontaktdaten werden in den Plattform-Einstellungen hinterlegt (Schlüssel: platform_contact_email, platform_contact_phone).') }}
+                        </div>
+                    @endif
                 </div>
             </div>
         </div>
@@ -690,10 +700,10 @@
                 <div>
                     <div class="text-sm font-semibold text-slate-900">Unternehmen</div>
                     <ul class="mt-4 space-y-3 text-sm text-slate-600">
-                        <li><a href="#" class="hover:text-slate-900 transition">Kontakt</a></li>
-                        <li><a href="#" class="hover:text-slate-900 transition">Impressum</a></li>
-                        <li><a href="#" class="hover:text-slate-900 transition">Datenschutz</a></li>
-                        <li><a href="#" class="hover:text-slate-900 transition">AGB</a></li>
+                        <li><a href="#kontakt" class="hover:text-slate-900 transition">Kontakt</a></li>
+                        <li><a href="{{ route('legal.imprint') }}" class="hover:text-slate-900 transition">Impressum</a></li>
+                        <li><a href="{{ route('legal.privacy') }}" class="hover:text-slate-900 transition">Datenschutz</a></li>
+                        <li><a href="{{ route('legal.terms') }}" class="hover:text-slate-900 transition">AGB</a></li>
                     </ul>
                 </div>
             </div>
@@ -703,8 +713,9 @@
                     &copy; {{ date('Y') }} {{ $productName }}. Alle Rechte vorbehalten.
                 </div>
                 <div class="flex items-center gap-6 text-sm text-slate-500">
-                    <a href="#" class="hover:text-slate-900 transition">Impressum</a>
-                    <a href="#" class="hover:text-slate-900 transition">Datenschutz</a>
+                    <a href="{{ route('legal.imprint') }}" class="hover:text-slate-900 transition">Impressum</a>
+                    <a href="{{ route('legal.privacy') }}" class="hover:text-slate-900 transition">Datenschutz</a>
+                    <a href="{{ route('legal.terms') }}" class="hover:text-slate-900 transition">AGB</a>
                 </div>
             </div>
         </div>

@@ -25,6 +25,36 @@ Route::get('/', function () {
     ]);
 })->name('home');
 
+Route::get('/impressum', function () {
+    return view('legal-page', [
+        'productName' => SystemSetting::get('platform_name', '') ?: config('app.name', 'PlanB'),
+        'heading' => __('Impressum'),
+        'content' => (string) SystemSetting::get('platform_imprint', ''),
+        'emptyHint' => __('Hier erscheinen die Pflichtangaben nach §5 TMG (Anbieter, Anschrift, Vertretungsberechtigte, Kontakt, Registereintrag, USt-IdNr).'),
+        'settingKey' => 'platform_imprint',
+    ]);
+})->name('legal.imprint');
+
+Route::get('/datenschutz', function () {
+    return view('legal-page', [
+        'productName' => SystemSetting::get('platform_name', '') ?: config('app.name', 'PlanB'),
+        'heading' => __('Datenschutzerklärung'),
+        'content' => (string) SystemSetting::get('platform_privacy', ''),
+        'emptyHint' => __('Hier erscheint die DSGVO-Datenschutzerklärung — welche Daten werden verarbeitet, auf welcher Rechtsgrundlage, wie lange, an wen weitergegeben.'),
+        'settingKey' => 'platform_privacy',
+    ]);
+})->name('legal.privacy');
+
+Route::get('/agb', function () {
+    return view('legal-page', [
+        'productName' => SystemSetting::get('platform_name', '') ?: config('app.name', 'PlanB'),
+        'heading' => __('Allgemeine Geschäftsbedingungen'),
+        'content' => (string) SystemSetting::get('platform_terms', ''),
+        'emptyHint' => __('Hier erscheinen die AGB des Plattform-Betreibers.'),
+        'settingKey' => 'platform_terms',
+    ]);
+})->name('legal.terms');
+
 Route::prefix('{current_team}')
     ->middleware(['auth', 'verified', EnsureTeamMembership::class])
     ->group(function () {

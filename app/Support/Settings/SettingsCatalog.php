@@ -48,6 +48,41 @@ class SettingsCatalog
                 'label' => 'Plattform-Fußzeile',
                 'description' => 'Optionaler Hinweis-Text (z. B. Impressum-Link), erscheint unten in der Sidebar.',
             ],
+            'platform_contact_email' => [
+                'scope' => self::SYSTEM,
+                'type' => 'string',
+                'default' => 'info@arento.ai',
+                'label' => 'Kontakt-E-Mail',
+                'description' => 'Wird auf der Landing-Page und in den Rechtsseiten ausgegeben.',
+            ],
+            'platform_contact_phone' => [
+                'scope' => self::SYSTEM,
+                'type' => 'string',
+                'default' => '',
+                'label' => 'Kontakt-Telefon',
+                'description' => 'Wird auf der Landing-Page ausgegeben.',
+            ],
+            'platform_imprint' => [
+                'scope' => self::SYSTEM,
+                'type' => 'string',
+                'default' => "Anbieter\nArento AI GmbH i. G.\nWiesenstr. 28\n53773 Hennef\n\nVertretungsberechtigter Geschäftsführer\nDaniel Henninger\n\nKontakt\nE-Mail: info@arento.ai\n\nHinweis\nDie Gesellschaft befindet sich in Gründung (i. G.). Registereintrag und Umsatzsteuer-Identifikationsnummer werden nach Eintragung ins Handelsregister ergänzt.",
+                'label' => 'Impressum (Plain-Text/Markdown)',
+                'description' => 'Pflichtangaben nach §5 TMG. Wird unter /impressum gerendert.',
+            ],
+            'platform_privacy' => [
+                'scope' => self::SYSTEM,
+                'type' => 'string',
+                'default' => "Verantwortlicher\nArento AI GmbH i. G., Wiesenstr. 28, 53773 Hennef, info@arento.ai\n\nHinweis\nDieser Text ist ein Platzhalter und ersetzt KEINE juristische Datenschutzerklärung. Bitte vor Produktivbetrieb durch eine fachkundige Stelle ergänzen lassen — insbesondere zu: verarbeiteten Datenkategorien, Rechtsgrundlagen (Art. 6 DSGVO), Speicherdauer, Empfängern, Drittland-Transfers, Cookies/Tracking, Betroffenenrechten und Aufsichtsbehörde.",
+                'label' => 'Datenschutzerklärung (Plain-Text/Markdown)',
+                'description' => 'DSGVO-Pflichttext. Wird unter /datenschutz gerendert.',
+            ],
+            'platform_terms' => [
+                'scope' => self::SYSTEM,
+                'type' => 'string',
+                'default' => "Anbieter\nArento AI GmbH i. G., Wiesenstr. 28, 53773 Hennef, info@arento.ai\n\nHinweis\nDieser Text ist ein Platzhalter und ersetzt KEINE wirksamen AGB. Bitte vor Produktivbetrieb durch eine fachkundige Stelle ausarbeiten lassen — insbesondere zu: Vertragsgegenstand, Leistungsumfang, Verfügbarkeit/SLA, Vergütung, Laufzeit/Kündigung, Haftung, Datenschutzauftragsverarbeitung, Gerichtsstand und anwendbarem Recht.",
+                'label' => 'AGB (Plain-Text/Markdown)',
+                'description' => 'Allgemeine Geschäftsbedingungen. Wird unter /agb gerendert.',
+            ],
 
             'auto_pdf_enabled' => [
                 'scope' => self::COMPANY,

@@ -68,7 +68,17 @@ test('CompanySetting isolates between companies', function () {
 
 test('catalog scope filtering returns the right keys', function () {
     expect(array_keys(SettingsCatalog::byScope(SettingsCatalog::SYSTEM)))
-        ->toEqualCanonicalizing(['registration_enabled', 'demo_locked', 'platform_name', 'platform_footer']);
+        ->toEqualCanonicalizing([
+            'registration_enabled',
+            'demo_locked',
+            'platform_name',
+            'platform_footer',
+            'platform_contact_email',
+            'platform_contact_phone',
+            'platform_imprint',
+            'platform_privacy',
+            'platform_terms',
+        ]);
 
     expect(array_keys(SettingsCatalog::byScope(SettingsCatalog::COMPANY)))
         ->toEqualCanonicalizing([
