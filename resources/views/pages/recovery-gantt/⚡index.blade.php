@@ -155,24 +155,45 @@ new #[Title('Recovery-Zeitplan')] class extends Component {
                                 }
                             @endphp
 
-                            <div class="grid grid-cols-[minmax(8rem,30%)_1fr] items-center gap-3">
+                            <div
+                                class="grid grid-cols-[minmax(8rem,30%)_1fr] items-center gap-3"
+                                data-gantt-row="{{ $system->id }}"
+                                data-level-sort="{{ $level?->sort ?? 0 }}"
+                                data-level-label="{{ $entry['level_label'] }}"
+                                data-rto-missing="{{ $entry['rto_missing'] ? '1' : '0' }}"
+                            >
                                 <div class="flex min-w-0 items-center gap-1.5">
-                                    @if ($level)
-                                        <span class="inline-block h-2 w-2 shrink-0 rounded-full" style="background-color: {{ $entry['level_color'] }}" title="{{ $level->name }}"></span>
-                                    @endif
+                                    <span data-gantt-icon="{{ $entry['level_icon'] }}" aria-label="{{ $entry['level_label'] }}">
+                                        <flux:icon
+                                            :name="$entry['level_icon']"
+                                            variant="mini"
+                                            class="shrink-0"
+                                            style="color: {{ $entry['level_color'] }}"
+                                        />
+                                    </span>
+                                    <span class="sr-only">{{ $entry['level_label'] }}:</span>
                                     <a
                                         href="{{ route('systems.show', ['current_team' => $this->company->team?->slug, 'system' => $system->id]) }}"
                                         wire:navigate
                                         class="truncate text-sm font-medium text-zinc-900 hover:text-zinc-700 hover:underline dark:text-zinc-100 dark:hover:text-zinc-300"
-                                        title="{{ $system->name }}"
+                                        title="{{ $system->name }} – {{ $level?->name ?? $entry['level_label'] }}"
                                     >{{ $system->name }}</a>
                                 </div>
                                 <div class="relative h-7 rounded bg-zinc-50 dark:bg-zinc-800/60">
                                     <div
-                                        class="absolute top-0 flex h-full min-w-[2px] items-center overflow-hidden rounded px-1.5 text-[10px] font-medium text-white shadow-sm"
+                                        class="absolute top-0 flex h-full min-w-[2px] items-center gap-1 overflow-hidden rounded px-1.5 text-[10px] font-medium text-white shadow-sm"
                                         style="margin-left: {{ $marginLeft }}%; width: {{ max($width, 0.5) }}%; background-color: {{ $entry['level_color'] }};"
-                                        title="{{ $tooltip }}"
+                                        title="{{ $tooltip }} | {{ $entry['level_label'] }}"
                                     >
+                                        @if ($entry['rto_missing'])
+                                            <span data-bar-icon="clock" aria-label="{{ __('RTO-Vorgabe (60 min angenommen)') }}">
+                                                <flux:icon name="clock" variant="micro" class="shrink-0 opacity-90" />
+                                            </span>
+                                        @else
+                                            <span data-bar-icon="{{ $entry['level_icon'] }}" aria-hidden="true">
+                                                <flux:icon :name="$entry['level_icon']" variant="micro" class="shrink-0 opacity-90" />
+                                            </span>
+                                        @endif
                                         <span class="truncate tabular-nums">{{ \App\Support\Graph\RecoveryTimelineBuilder::formatMinutes($duration) }}@if ($entry['rto_missing']) *@endif</span>
                                     </div>
                                 </div>
@@ -180,23 +201,35 @@ new #[Title('Recovery-Zeitplan')] class extends Component {
                         @endforeach
                     </div>
 
-                    {{-- Legend --}}
-                    <div class="mt-4 flex flex-wrap items-center gap-3 border-t border-zinc-100 pt-3 text-xs text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
-                        <span class="inline-flex items-center gap-1.5">
+                    {{-- Legend: Farbe + Icon + Text-Label kombiniert (WCAG 2.1 AA, 1.4.1) --}}
+                    <div
+                        class="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-zinc-100 pt-3 text-xs text-zinc-500 dark:border-zinc-800 dark:text-zinc-400"
+                        aria-label="{{ __('Legende: Kritikalitäts-Stufen') }}"
+                        data-testid="gantt-legend"
+                    >
+                        <span class="inline-flex items-center gap-1.5" data-legend-icon="shield-exclamation">
                             <span class="inline-block h-2 w-2 rounded-full" style="background-color: #f43f5e"></span>
+                            <flux:icon name="shield-exclamation" variant="mini" style="color: #f43f5e" />
                             {{ __('Stufe 1 (kritisch)') }}
                         </span>
-                        <span class="inline-flex items-center gap-1.5">
+                        <span class="inline-flex items-center gap-1.5" data-legend-icon="exclamation-triangle">
                             <span class="inline-block h-2 w-2 rounded-full" style="background-color: #f59e0b"></span>
-                            {{ __('Stufe 2') }}
+                            <flux:icon name="exclamation-triangle" variant="mini" style="color: #f59e0b" />
+                            {{ __('Stufe 2 (wichtig)') }}
                         </span>
-                        <span class="inline-flex items-center gap-1.5">
+                        <span class="inline-flex items-center gap-1.5" data-legend-icon="shield-check">
                             <span class="inline-block h-2 w-2 rounded-full" style="background-color: #0ea5e9"></span>
-                            {{ __('Stufe 3') }}
+                            <flux:icon name="shield-check" variant="mini" style="color: #0ea5e9" />
+                            {{ __('Stufe 3 (mittel)') }}
                         </span>
-                        <span class="inline-flex items-center gap-1.5">
+                        <span class="inline-flex items-center gap-1.5" data-legend-icon="check-circle">
                             <span class="inline-block h-2 w-2 rounded-full" style="background-color: #10b981"></span>
-                            {{ __('Stufe 4') }}
+                            <flux:icon name="check-circle" variant="mini" style="color: #10b981" />
+                            {{ __('Stufe 4 (gering)') }}
+                        </span>
+                        <span class="inline-flex items-center gap-1.5" data-legend-icon="clock">
+                            <flux:icon name="clock" variant="mini" class="text-zinc-400 dark:text-zinc-500" />
+                            {{ __('RTO-Vorgabe (60 min angenommen)') }}
                         </span>
                         @if ($stats['missing_rto'] > 0)
                             <span class="ml-auto text-amber-600 dark:text-amber-400">* {{ __('RTO fehlt – 60 min angenommen') }}</span>

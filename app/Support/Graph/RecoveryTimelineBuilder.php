@@ -23,6 +23,8 @@ use App\Models\System;
  *   rto_minutes: int,
  *   rto_missing: bool,
  *   level_color: string,
+ *   level_icon: string,
+ *   level_label: string,
  * }
  */
 class RecoveryTimelineBuilder
@@ -139,6 +141,8 @@ class RecoveryTimelineBuilder
                 'rto_minutes' => $duration,
                 'rto_missing' => isset($missingRto[$id]),
                 'level_color' => self::levelColor($sys->emergencyLevel?->sort),
+                'level_icon' => self::levelIcon($sys->emergencyLevel?->sort),
+                'level_label' => self::levelLabel($sys->emergencyLevel?->sort),
             ];
         }
 
@@ -219,6 +223,35 @@ class RecoveryTimelineBuilder
             3 => '#0ea5e9',
             4 => '#10b981',
             default => '#71717a',
+        };
+    }
+
+    /**
+     * Heroicon-Name je Notfall-Level-Sort. Ergänzt die Farbe redundant
+     * für Nutzer mit Farbsehschwäche (WCAG 2.1 AA, 1.4.1).
+     */
+    public static function levelIcon(?int $sort): string
+    {
+        return match ($sort) {
+            1 => 'shield-exclamation',
+            2 => 'exclamation-triangle',
+            3 => 'shield-check',
+            4 => 'check-circle',
+            default => 'question-mark-circle',
+        };
+    }
+
+    /**
+     * Kurzer Text-Bezeichner für die Kritikalitäts-Stufe.
+     */
+    public static function levelLabel(?int $sort): string
+    {
+        return match ($sort) {
+            1 => 'Stufe 1 (kritisch)',
+            2 => 'Stufe 2 (wichtig)',
+            3 => 'Stufe 3 (mittel)',
+            4 => 'Stufe 4 (gering)',
+            default => 'Ohne Stufe',
         };
     }
 

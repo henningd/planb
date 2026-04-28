@@ -184,7 +184,11 @@ new #[Title('Compliance')] class extends Component {
                     <span class="text-5xl font-semibold tabular-nums text-zinc-900 dark:text-zinc-50">{{ $score }}</span>
                     <span class="text-lg text-zinc-500 dark:text-zinc-400">/ 100</span>
                 </div>
-                <flux:badge :color="$color" size="sm" class="mt-3">{{ $report->readinessLabel() }}</flux:badge>
+                {{-- Klassifizierungs-Wort-Label direkt unter der Zahl (WCAG 2.1 AA, 1.4.1). --}}
+                <div class="mt-1 text-base font-semibold" style="color: {{ $hex }}" data-testid="readiness-label">
+                    {{ $report->readinessLabel() }}
+                </div>
+                <flux:badge :color="$color" size="sm" class="mt-2">{{ $report->readinessLabel() }}</flux:badge>
                 <div class="mt-4 h-2 w-full overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800">
                     <div class="h-full rounded-full" style="width: {{ $score }}%; background-color: {{ $hex }}"></div>
                 </div>
@@ -284,10 +288,19 @@ new #[Title('Compliance')] class extends Component {
                                         $deltaColor = $stats['week_delta'] > 0
                                             ? 'text-emerald-600 dark:text-emerald-400'
                                             : 'text-rose-600 dark:text-rose-400';
+                                        $deltaIcon = $stats['week_delta'] > 0
+                                            ? 'arrow-trending-up'
+                                            : 'arrow-trending-down';
                                     @endphp
-                                    <span class="text-sm font-medium tabular-nums {{ $deltaColor }}">{{ $deltaSign }}{{ $stats['week_delta'] }}</span>
+                                    <span class="inline-flex items-center gap-1 text-sm font-medium tabular-nums {{ $deltaColor }}" data-testid="week-delta" data-trend-icon="{{ $deltaIcon }}">
+                                        <flux:icon :name="$deltaIcon" variant="mini" />
+                                        <span>{{ $deltaSign }}{{ $stats['week_delta'] }}&nbsp;{{ __('Pkt.') }}</span>
+                                    </span>
                                 @elseif ($stats['week_delta'] === 0)
-                                    <span class="text-sm font-medium tabular-nums text-zinc-500 dark:text-zinc-400">±0</span>
+                                    <span class="inline-flex items-center gap-1 text-sm font-medium tabular-nums text-zinc-500 dark:text-zinc-400" data-testid="week-delta" data-trend-icon="minus">
+                                        <flux:icon name="minus" variant="mini" />
+                                        <span>±0&nbsp;{{ __('Pkt.') }}</span>
+                                    </span>
                                 @endif
                             </div>
                         @else
@@ -306,10 +319,19 @@ new #[Title('Compliance')] class extends Component {
                                         $deltaColor = $stats['month_delta'] > 0
                                             ? 'text-emerald-600 dark:text-emerald-400'
                                             : 'text-rose-600 dark:text-rose-400';
+                                        $deltaIcon = $stats['month_delta'] > 0
+                                            ? 'arrow-trending-up'
+                                            : 'arrow-trending-down';
                                     @endphp
-                                    <span class="text-sm font-medium tabular-nums {{ $deltaColor }}">{{ $deltaSign }}{{ $stats['month_delta'] }}</span>
+                                    <span class="inline-flex items-center gap-1 text-sm font-medium tabular-nums {{ $deltaColor }}" data-testid="month-delta" data-trend-icon="{{ $deltaIcon }}">
+                                        <flux:icon :name="$deltaIcon" variant="mini" />
+                                        <span>{{ $deltaSign }}{{ $stats['month_delta'] }}&nbsp;{{ __('Pkt.') }}</span>
+                                    </span>
                                 @elseif ($stats['month_delta'] === 0)
-                                    <span class="text-sm font-medium tabular-nums text-zinc-500 dark:text-zinc-400">±0</span>
+                                    <span class="inline-flex items-center gap-1 text-sm font-medium tabular-nums text-zinc-500 dark:text-zinc-400" data-testid="month-delta" data-trend-icon="minus">
+                                        <flux:icon name="minus" variant="mini" />
+                                        <span>±0&nbsp;{{ __('Pkt.') }}</span>
+                                    </span>
                                 @endif
                             </div>
                         @else
