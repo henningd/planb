@@ -5,6 +5,7 @@ use App\Models\Company;
 use App\Models\EmergencyLevel;
 use App\Models\Employee;
 use App\Support\DashboardActions;
+use App\Support\Onboarding\OnboardingService;
 use Flux\Flux;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Computed;
@@ -92,6 +93,34 @@ new #[Title('Dashboard')] class extends Component
 
         return DashboardActions::for($this->company);
     }
+
+    #[Computed]
+    public function onboarding(): ?\App\Support\Onboarding\OnboardingProgress
+    {
+        if (! $this->company) {
+            return null;
+        }
+
+        return OnboardingService::progressFor($this->company);
+    }
+
+    public function resumeOnboarding(): void
+    {
+        if (! $this->company) {
+            return;
+        }
+        OnboardingService::resume($this->company);
+        $this->redirectRoute('onboarding.index', ['current_team' => Auth::user()->currentTeam->slug], navigate: true);
+    }
+
+    public function dismissOnboarding(): void
+    {
+        if (! $this->company) {
+            return;
+        }
+        OnboardingService::dismiss($this->company);
+        unset($this->onboarding);
+    }
 }; ?>
 
 <section class="flex w-full flex-1 flex-col gap-6">
@@ -106,6 +135,51 @@ new #[Title('Dashboard')] class extends Component
             @endif
         </flux:subheading>
     </div>
+
+    {{-- Onboarding-Fortschritt --}}
+    @if ($this->onboarding && $this->onboarding->shouldShowOnDashboard())
+        @php($onboarding = $this->onboarding)
+        @php($next = $onboarding->nextStep())
+        <div class="rounded-xl border border-sky-300 bg-sky-50 p-5 dark:border-sky-700 dark:bg-sky-950">
+            <div class="flex flex-wrap items-start justify-between gap-4">
+                <div class="min-w-0 flex-1">
+                    <div class="flex flex-wrap items-center gap-2">
+                        <flux:icon.rocket-launch class="size-5 text-sky-700 dark:text-sky-300" />
+                        <flux:heading size="md">{{ __('Einrichtung läuft') }}</flux:heading>
+                        @if ($onboarding->state->isPaused())
+                            <flux:badge color="amber" size="sm">{{ __('Pausiert') }}</flux:badge>
+                        @endif
+                    </div>
+                    <flux:text class="mt-1 text-sm text-sky-900 dark:text-sky-100">
+                        {{ __('Schritt :n von :total — :label', [
+                            'n' => $onboarding->doneSteps() + 1,
+                            'total' => $onboarding->totalSteps(),
+                            'label' => $next?->label() ?? __('—'),
+                        ]) }}
+                    </flux:text>
+                </div>
+                <div class="text-right">
+                    <div class="text-3xl font-semibold text-sky-700 dark:text-sky-300">{{ $onboarding->percentage() }} %</div>
+                    <flux:text class="text-xs text-sky-700/80 dark:text-sky-300/80">
+                        {{ $onboarding->doneSteps() }} / {{ $onboarding->totalSteps() }}
+                    </flux:text>
+                </div>
+            </div>
+
+            <div class="mt-3 h-2 w-full overflow-hidden rounded-full bg-sky-200/60 dark:bg-sky-900">
+                <div class="h-full bg-sky-600 transition-all" style="width: {{ $onboarding->percentage() }}%"></div>
+            </div>
+
+            <div class="mt-4 flex flex-wrap items-center gap-2">
+                <flux:button size="sm" variant="primary" wire:click="resumeOnboarding" icon="arrow-right">
+                    {{ $onboarding->state->isPaused() ? __('Wieder aufnehmen') : __('Fortsetzen') }}
+                </flux:button>
+                <flux:button size="sm" variant="ghost" wire:click="dismissOnboarding" icon="x-mark">
+                    {{ __('Vom Dashboard ausblenden') }}
+                </flux:button>
+            </div>
+        </div>
+    @endif
 
     {{-- Was muss ich heute tun? --}}
     @if ($this->company)

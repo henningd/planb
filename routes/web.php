@@ -29,6 +29,7 @@ Route::prefix('{current_team}')
     ->middleware(['auth', 'verified', EnsureTeamMembership::class])
     ->group(function () {
         Route::livewire('dashboard', 'pages::dashboard')->name('dashboard');
+        Route::livewire('onboarding', 'pages::onboarding.index')->name('onboarding.index');
 
         Route::livewire('company', 'pages::company.edit')->name('company.edit');
         Route::livewire('locations', 'pages::locations.index')->name('locations.index');

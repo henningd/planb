@@ -19,6 +19,9 @@
                     <flux:sidebar.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>
                         {{ __('Dashboard') }}
                     </flux:sidebar.item>
+                    <flux:sidebar.item icon="rocket-launch" :href="route('onboarding.index')" :current="request()->routeIs('onboarding.*')" wire:navigate>
+                        {{ __('Einrichtung') }}
+                    </flux:sidebar.item>
                     @if (config('features.compliance') && auth()->user()->isCurrentTeamAdmin())
                         <flux:sidebar.item icon="chart-bar" :href="route('compliance.index')" :current="request()->routeIs('compliance.*')" wire:navigate>
                             {{ __('Compliance') }}
