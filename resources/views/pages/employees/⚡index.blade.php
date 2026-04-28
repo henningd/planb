@@ -4,6 +4,7 @@ use App\Enums\CrisisRole;
 use App\Models\Department;
 use App\Models\Employee;
 use App\Models\Location;
+use App\Support\Employees\EmployeeExporter;
 use Flux\Flux;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
@@ -309,6 +310,21 @@ new #[Title('Mitarbeiter')] class extends Component {
     {
         return CrisisRole::options();
     }
+
+    public function exportJson(): \Symfony\Component\HttpFoundation\StreamedResponse
+    {
+        $company = Auth::user()?->currentCompany();
+        abort_unless($company !== null, 404);
+
+        $payload = EmployeeExporter::export($company);
+        $filename = EmployeeExporter::filename($company);
+
+        return response()->streamDownload(
+            fn () => print json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR),
+            $filename,
+            ['Content-Type' => 'application/json'],
+        );
+    }
 }; ?>
 
 <section class="w-full">
@@ -320,9 +336,20 @@ new #[Title('Mitarbeiter')] class extends Component {
             </flux:subheading>
         </div>
 
-        <flux:button variant="primary" icon="plus" wire:click="openCreate" :disabled="! $this->hasCompany">
-            {{ __('Neuer Mitarbeiter') }}
-        </flux:button>
+        <div class="flex items-center gap-2">
+            <flux:button
+                variant="ghost"
+                icon="arrow-down-tray"
+                wire:click="exportJson"
+                :disabled="! $this->hasCompany"
+                title="{{ __('Alle Mitarbeiter mit Stammdaten, Vorgesetzten, Rollen und System-Zuweisungen als JSON') }}"
+            >
+                {{ __('JSON-Export') }}
+            </flux:button>
+            <flux:button variant="primary" icon="plus" wire:click="openCreate" :disabled="! $this->hasCompany">
+                {{ __('Neuer Mitarbeiter') }}
+            </flux:button>
+        </div>
     </div>
 
     @unless ($this->hasCompany)

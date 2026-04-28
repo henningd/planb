@@ -41,6 +41,20 @@ Mitarbeiter können als **Schlüsselperson** markiert werden. Schlüsselpersonen
 
 Optional: ein **privater Notfall-Kontakt** (z. B. Familie). Wird nur in echten Notlagen verwendet und nicht in regulären Reports.
 
+## JSON-Export
+
+Oben rechts neben „Neuer Mitarbeiter" sitzt der Button **„JSON-Export"**. Klick darauf liefert eine Datei `planb-mitarbeiter-{firma}-{datum}.json` mit allen Mitarbeitern der aktuellen Firma — inklusive:
+
+- Stammdaten (Name, Position, Telefonnummern, E-Mail, Notfall-Kontakt)
+- Zuordnungen: Abteilung, Standort, Krisenrolle, Schlüsselperson-Flag
+- **Vorgesetzte und direkt unterstellte Mitarbeiter** (mit ID und Klar-Namen)
+- **Rollen-Zuweisungen** (welche Rollen-Eigentümer ist die Person)
+- **System-Zuweisungen** mit RACI-Rolle und ggf. Notiz
+
+Die Datei ist mit Klar-Namen aufgelöst — also auch ohne die Plattform inspizierbar (z. B. in einem Texteditor) oder weiterverarbeitbar (in Excel via JSON-Import, in einer eigenen Notfall-Datenbank, oder als Beleg an einen Auditor).
+
+Hinweis: Für einen vollständigen, re-importierbaren Mandanten-Export gibt es zusätzlich das **Mandanten-Archiv** unter den Einstellungen.
+
 ## Beziehungen auf einen Blick
 
 Jede Mitarbeiter-Karte zeigt unten zwei Zeilen, falls relevant:
