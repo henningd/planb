@@ -527,6 +527,256 @@ class SettingsCatalog
 
         TEXT;
 
+    private const DEFAULT_AV_CONTRACT = <<<'TEXT'
+        VERTRAG ZUR AUFTRAGSVERARBEITUNG NACH ART. 28 DSGVO
+
+        Stand: April 2026
+
+        zwischen
+
+        — dem Verantwortlichen (Kunde, im Folgenden „Auftraggeber") und
+        — der Arento AI GmbH i. G., Wiesenstr. 28, 53773 Hennef
+          (im Folgenden „Auftragnehmer" oder „Auftragsverarbeiter").
+
+        § 1 GEGENSTAND UND DAUER
+
+        (1) Der Auftragnehmer verarbeitet personenbezogene Daten im Auftrag
+        des Auftraggebers im Rahmen des zwischen den Parteien geschlossenen
+        Hauptvertrags über die Nutzung der Plattform.
+
+        (2) Die Dauer der Auftragsverarbeitung entspricht der Laufzeit des
+        Hauptvertrags.
+
+        § 2 ART, UMFANG UND ZWECK DER VERARBEITUNG
+
+        (1) Gegenstand der Verarbeitung sind personenbezogene Daten, die der
+        Auftraggeber im Rahmen der Plattform-Nutzung selbst eingibt:
+        Mitarbeiter-Stammdaten, Krisenrollen, Kontaktdaten, ggf. Notfall-
+        Informationen.
+
+        (2) Zweck der Verarbeitung ist ausschließlich die Bereitstellung der
+        Plattform und der vereinbarten Funktionen.
+
+        (3) Die betroffenen Personenkategorien sind:
+        — Mitarbeiter des Auftraggebers,
+        — externe Dienstleister-Kontakte des Auftraggebers,
+        — Versicherungs- und Behördenkontakte (Klartextdaten),
+        — Plattform-Benutzer des Auftraggebers (App-Zugang).
+
+        § 3 PFLICHTEN DES AUFTRAGNEHMERS
+
+        Der Auftragnehmer verpflichtet sich:
+        — die Daten ausschließlich auf Weisung des Auftraggebers zu verarbeiten,
+        — alle eingesetzten Personen auf das Datengeheimnis zu verpflichten,
+        — geeignete technische und organisatorische Maßnahmen (TOM) gemäß
+          Art. 32 DSGVO zu treffen — siehe separates Dokument unter /tom,
+        — bei der Wahrung der Betroffenenrechte (Art. 15–22 DSGVO) angemessen
+          mitzuwirken,
+        — den Auftraggeber unverzüglich (spätestens binnen 24 Stunden nach
+          Kenntnisnahme) bei einer Datenpanne zu informieren,
+        — Datenschutz-Folgenabschätzungen zu unterstützen, soweit erforderlich.
+
+        § 4 SUBUNTERNEHMER (UNTERAUFTRAGSVERARBEITER)
+
+        (1) Der Auftraggeber stimmt dem Einsatz der unter /subprocessors
+        gelisteten Unterauftragsverarbeiter ausdrücklich zu.
+
+        (2) Der Auftragnehmer wird neue Subunternehmer mindestens 30 Tage
+        vor Aufnahme der Verarbeitung in Textform anzeigen. Der Auftraggeber
+        kann widersprechen; bei berechtigtem Widerspruch besteht ein
+        Sonderkündigungsrecht für den Hauptvertrag.
+
+        § 5 WEISUNGSBEFUGNIS
+
+        (1) Weisungen sind in Textform zu erteilen. Der Auftragnehmer hat den
+        Auftraggeber unverzüglich zu informieren, wenn er der Auffassung ist,
+        dass eine Weisung gegen die DSGVO verstößt.
+
+        (2) Mündliche Weisungen sind unverzüglich in Textform zu bestätigen.
+
+        § 6 KONTROLLRECHTE
+
+        (1) Der Auftraggeber hat das Recht, die Einhaltung der Vorschriften
+        dieses Vertrags durch geeignete Maßnahmen zu kontrollieren — in der
+        Regel durch Vorlage aktueller Selbstauskünfte, Zertifikate oder
+        Berichte unabhängiger Prüfer.
+
+        (2) Vor-Ort-Prüfungen finden nur in dringenden Ausnahmefällen statt
+        und werden mit angemessener Frist (mindestens 30 Tage) vorab
+        vereinbart.
+
+        § 7 DATENRÜCKGABE UND LÖSCHUNG
+
+        (1) Nach Beendigung des Hauptvertrags stellt der Auftragnehmer dem
+        Auftraggeber auf Anforderung sämtliche im Auftrag verarbeiteten Daten
+        in einem strukturierten, maschinenlesbaren Format zur Verfügung
+        (siehe Funktion „Mandanten-Archiv (ZIP)" in der Plattform).
+
+        (2) Anschließend werden die Daten gelöscht, soweit keine gesetzlichen
+        Aufbewahrungspflichten entgegenstehen.
+
+        § 8 HAFTUNG
+
+        Die Haftung richtet sich nach den Regelungen des Hauptvertrags und
+        nach Art. 82 DSGVO.
+
+        § 9 SCHLUSSBESTIMMUNGEN
+
+        (1) Diese Vereinbarung ist Anlage zum Hauptvertrag und erlischt mit
+        dessen Beendigung.
+
+        (2) Bei Widersprüchen zwischen diesem AVV und dem Hauptvertrag gehen
+        die Regelungen dieses AVV vor, soweit es um die Verarbeitung perso-
+        nenbezogener Daten geht.
+
+        Hinweis: Diese Grundstruktur ist eine Vorlage und ersetzt keine
+        juristische Prüfung im Einzelfall. Vor Abschluss durch eine fach-
+        kundige Stelle prüfen lassen — insbesondere bei Behörden-Kunden
+        und KRITIS-Betreibern, die eigene Mustervorlagen vorgeben.
+
+        TEXT;
+
+    private const DEFAULT_TOM = <<<'TEXT'
+        TECHNISCHE UND ORGANISATORISCHE MAßNAHMEN (TOM) NACH ART. 32 DSGVO
+
+        Stand: April 2026
+
+        Verantwortlich
+        Arento AI GmbH i. G., Wiesenstr. 28, 53773 Hennef
+        E-Mail: info@arento.ai
+
+        Diese TOM-Liste beschreibt die zum Schutz personenbezogener Daten
+        eingesetzten Maßnahmen und ist Anlage zum Vertrag zur Auftrags-
+        verarbeitung.
+
+        1. VERTRAULICHKEIT (ART. 32 ABS. 1 LIT. B DSGVO)
+
+        Zutrittskontrolle (physisch)
+        — Hosting bei DigitalOcean (Rechenzentrum Frankfurt FRA1, ISO 27001-
+          zertifiziert).
+        — Kein direkter Zutritt der Mitarbeiter des Auftragnehmers zu Servern.
+        — Büroräume sind durch Schließanlage und Alarmanlage gesichert.
+
+        Zugangskontrolle (logisch)
+        — Authentifizierung mit individuellen Benutzerkonten (E-Mail + Passwort).
+        — Passwörter gespeichert als bcrypt-Hash (nicht im Klartext).
+        — Zwei-Faktor-Authentifizierung (TOTP) optional, für Admins erzwingbar.
+        — Brute-Force-Schutz mit Login-Throttling.
+        — Sitzungs-Cookies sind HttpOnly, Secure, SameSite=Lax.
+
+        Zugriffskontrolle (Berechtigungskonzept)
+        — Drei Rollen pro Mandant: Owner, Admin, Member.
+        — Sensible Bereiche (Versicherungen, Audit-Log, Versionsfreigaben)
+          nur für Admin/Owner.
+        — Mandantentrennung auf Anwendungs- und Datenbankebene
+          (BelongsToCurrentCompany-Trait, Global Scope).
+        — Lückenloses Audit-Log über alle sicherheitsrelevanten Änderungen.
+
+        Trennungskontrolle (Mandantentrennung)
+        — Jeder Datensatz hat ein company_id-Feld; sämtliche Queries werden
+          automatisch gefiltert.
+        — Cross-Tenant-Zugriffe sind weder über die UI noch über die API
+          möglich (HTTP 403).
+
+        Pseudonymisierung
+        — UUIDs als Primärschlüssel; keine sequentiellen IDs in URLs.
+        — Personenbezogene Daten werden nicht pseudonymisiert für die
+          Verarbeitung selbst, da der Zweck der Plattform die direkte
+          Adressierbarkeit der Personen erfordert (Notfall-Kontaktdaten).
+
+        2. INTEGRITÄT (ART. 32 ABS. 1 LIT. B DSGVO)
+
+        Eingabekontrolle
+        — Vollständiges Audit-Log (Wer, Wann, Was, Vorher/Nachher) für alle
+          audit-relevanten Tabellen.
+        — Audit-Log ist nur lesbar (keine Bearbeitung), automatische
+          Aufbewahrung pro Mandant konfigurierbar.
+
+        Weitergabekontrolle
+        — Alle Verbindungen verschlüsselt mit TLS 1.2 oder höher.
+        — HTTPS strict (HSTS-Header), keine HTTP-Endpunkte für Datenübertragung.
+        — API-Webhooks ausschließlich mit Bearer-Token-Authentifizierung;
+          Token werden als SHA-256-Hash gespeichert.
+
+        3. VERFÜGBARKEIT UND BELASTBARKEIT (ART. 32 ABS. 1 LIT. B DSGVO)
+
+        Verfügbarkeitskontrolle
+        — Tägliche Datenbank-Backups, 30 Tage Aufbewahrung.
+        — Hosting-Anbieter mit Multi-AZ-Architektur (Hochverfügbarkeit).
+        — Monitoring der Anwendung mit automatischen Alarmen.
+
+        Wiederherstellbarkeit
+        — Datenbank-Restore aus Backup innerhalb von 4 Stunden.
+        — Mandanten-Archiv (ZIP) jederzeit durch den Auftraggeber abrufbar
+          (vollständiger Selbst-Export aller Stammdaten, Audit-Log und
+          Handbuch-PDFs).
+
+        4. VERFAHREN ZUR REGELMÄßIGEN ÜBERPRÜFUNG (ART. 32 ABS. 1 LIT. D DSGVO)
+
+        — Sicherheits-Updates der Plattform-Komponenten werden mindestens
+          monatlich eingespielt; sicherheitskritische Updates innerhalb von
+          7 Tagen.
+        — Composer- und npm-Abhängigkeiten werden auf bekannte
+          Schwachstellen gescannt (Composer Audit, npm audit).
+        — Automatisierte Test-Suite mit über 600 Tests, die bei jedem
+          Release durchläuft.
+        — Vulnerability-Disclosure-Policy unter /.well-known/security.txt
+          mit Kontakt für Sicherheits-Meldungen.
+
+        5. INCIDENT-RESPONSE
+
+        — Internes Incident-Response-Verfahren mit Rollen, Eskalation und
+          Meldekette.
+        — Datenpannen werden binnen 24 Stunden nach Kenntnisnahme an
+          betroffene Auftraggeber gemeldet.
+        — Aufsichtsbehörde wird gemäß Art. 33 DSGVO binnen 72 Stunden
+          informiert.
+
+        Hinweis: Diese TOM beschreibt den aktuellen Stand. Maßnahmen werden
+        fortlaufend dem Stand der Technik angepasst. Wesentliche Änderungen
+        werden den Auftraggebern in Textform mitgeteilt.
+
+        TEXT;
+
+    private const DEFAULT_SUBPROCESSORS = <<<'TEXT'
+        SUBUNTERAUFTRAGSVERARBEITER (SUBPROCESSORS)
+
+        Stand: April 2026
+
+        Diese Liste beschreibt alle Unterauftragsverarbeiter, die im Rahmen
+        der Plattform-Bereitstellung eingesetzt werden. Mit jedem Anbieter
+        besteht ein Vertrag zur Auftragsverarbeitung nach Art. 28 DSGVO.
+
+        EINGESETZTE SUBPROCESSORS
+
+        | Anbieter | Sitz | Zweck | Drittland | Rechtsgrundlage |
+        |---|---|---|---|---|
+        | DigitalOcean, LLC | USA, Region FRA1 (Frankfurt) | Hosting, Datenbank, Datei-Speicher | Datenhaltung in der EU; Drittland-Risiko nur bei US-Anbieter-Strukturen | Art. 28 + EU-SCC (Art. 46 DSGVO) |
+        | Strato AG | Deutschland | E-Mail-Versand und -Empfang | nein | Art. 28 DSGVO |
+        | avento.ai | (auf Anfrage) | SMS-Versand für Krisen-Kommunikation, sofern Funktion genutzt | abhängig vom Anbieter — wird auf Anfrage geklärt | Art. 28 DSGVO |
+
+        OPTIONALE SUBPROCESSORS (NUR BEI AKTIVER NUTZUNG)
+
+        Werden ausschließlich aktiviert, wenn der Auftraggeber die ent-
+        sprechende Funktion in den Plattform-Einstellungen einschaltet:
+
+        | Anbieter | Sitz | Zweck | Drittland | Rechtsgrundlage |
+        |---|---|---|---|---|
+        | Slack Technologies, LLC | USA | Versand in mandanteneigene Slack-Channels via Webhook | ja (USA) | EU-SCC (Art. 46 DSGVO) + ergänzende Maßnahmen |
+        | Microsoft Corporation / Microsoft Ireland Operations Ltd. | EU/USA | Versand in mandanteneigene Teams-Channels via Webhook | je nach Tenant-Konfiguration des Auftraggebers | EU-SCC (Art. 46 DSGVO) |
+        | Telegram FZ-LLC | VAE | Versand in mandanteneigene Telegram-Kanäle | ja (VAE) | EU-SCC (Art. 46 DSGVO) + ergänzende Maßnahmen |
+
+        ÄNDERUNGEN AN DIESER LISTE
+
+        Neue Subprocessors werden mindestens 30 Tage vor Aufnahme der
+        Verarbeitung in Textform angekündigt. Auftraggeber haben das Recht,
+        zu widersprechen — siehe § 4 des AVV.
+
+        Diese Liste wird mindestens jährlich überprüft und bei Änderungen
+        sofort aktualisiert.
+
+        TEXT;
+
     /**
      * @return array<string, array{scope: string, type: string, default: mixed, label: string, description: string, enum?: array<string,string>, min?: int, max?: int}>
      */
@@ -595,6 +845,34 @@ class SettingsCatalog
                 'default' => self::DEFAULT_TERMS,
                 'label' => 'AGB (Plain-Text/Markdown)',
                 'description' => 'Allgemeine Geschäftsbedingungen. Wird unter /agb gerendert.',
+            ],
+            'platform_av_contract' => [
+                'scope' => self::SYSTEM,
+                'type' => 'string',
+                'default' => self::DEFAULT_AV_CONTRACT,
+                'label' => 'AVV (Auftragsverarbeitung Art. 28 DSGVO)',
+                'description' => 'Vertragsvorlage zur Auftragsverarbeitung. Wird unter /auftragsverarbeitung gerendert.',
+            ],
+            'platform_tom' => [
+                'scope' => self::SYSTEM,
+                'type' => 'string',
+                'default' => self::DEFAULT_TOM,
+                'label' => 'TOM (Technische und organisatorische Maßnahmen)',
+                'description' => 'TOM nach Art. 32 DSGVO. Anlage zum AVV, wird unter /tom gerendert.',
+            ],
+            'platform_subprocessors' => [
+                'scope' => self::SYSTEM,
+                'type' => 'string',
+                'default' => self::DEFAULT_SUBPROCESSORS,
+                'label' => 'Subprocessor-Liste',
+                'description' => 'Liste der Unterauftragsverarbeiter. Wird unter /subprocessors gerendert.',
+            ],
+            'platform_security_contact' => [
+                'scope' => self::SYSTEM,
+                'type' => 'string',
+                'default' => 'security@arento.ai',
+                'label' => 'Security-Kontakt-E-Mail',
+                'description' => 'Wird in /.well-known/security.txt gerendert (RFC 9116). Empfehlung: dedizierte Adresse, nicht die Firmen-Hauptadresse.',
             ],
 
             'auto_pdf_enabled' => [

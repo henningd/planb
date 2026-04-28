@@ -69,6 +69,7 @@ class ManualCatalog
             ['category' => 'Einstellungen', 'slug' => 'api-webhooks', 'title' => 'API & Webhooks', 'summary' => 'Tokens, Zabbix, Prometheus-Anbindung, automatische Incidents.'],
 
             // Anhang
+            ['category' => 'Anhang', 'slug' => 'compliance-dokumente', 'title' => 'Compliance-Dokumente', 'summary' => 'Impressum, Datenschutz, AGB, AVV, TOM, Subprocessors, security.txt — die öffentlichen Pflicht-Seiten der Plattform.'],
             ['category' => 'Anhang', 'slug' => 'glossar', 'title' => 'Glossar', 'summary' => 'Begriffe von BIA bis WAR-Room verständlich erklärt.'],
             ['category' => 'Anhang', 'slug' => 'faq', 'title' => 'FAQ', 'summary' => 'Häufige Fragen und Antworten.'],
         ];

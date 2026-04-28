@@ -8,6 +8,19 @@
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600,700" rel="stylesheet" />
     @vite(['resources/css/app.css'])
+    <style>
+        .prose h2 { margin-top: 2rem; font-size: 1.4rem; font-weight: 600; color: rgb(15 23 42); }
+        .prose h3 { margin-top: 1.5rem; font-size: 1.1rem; font-weight: 600; color: rgb(15 23 42); }
+        .prose p { margin-top: 0.75rem; line-height: 1.7; color: rgb(51 65 85); }
+        .prose ul { list-style: disc; padding-left: 1.25rem; margin-top: 0.5rem; }
+        .prose li { margin-top: 0.2rem; }
+        .prose strong { color: rgb(15 23 42); font-weight: 600; }
+        .prose table { width: 100%; border-collapse: collapse; margin-top: 1rem; font-size: 0.9em; }
+        .prose th, .prose td { border: 1px solid rgb(226 232 240); padding: 0.5rem 0.75rem; text-align: left; vertical-align: top; }
+        .prose th { background: rgb(248 250 252); font-weight: 600; }
+        .prose code { background: rgb(241 245 249); padding: 0.1em 0.4em; border-radius: 0.25rem; font-size: 0.9em; }
+        .prose a { color: rgb(79 70 229); text-decoration: underline; }
+    </style>
 </head>
 <body class="bg-white text-slate-900 antialiased font-sans">
 
@@ -27,19 +40,19 @@
         </div>
     </header>
 
-    <main class="max-w-3xl mx-auto px-6 lg:px-8 py-12 lg:py-20">
+    <main class="max-w-3xl mx-auto px-6 lg:px-8 py-12 lg:py-16">
         <h1 class="text-3xl sm:text-4xl font-semibold tracking-tight text-slate-900">{{ $heading }}</h1>
 
         @if (trim($content) !== '')
-            <div class="mt-8 prose prose-slate max-w-none whitespace-pre-line text-slate-700 leading-relaxed">{{ $content }}</div>
+            <div class="mt-6 prose max-w-none">
+                {!! $html !!}
+            </div>
         @else
             <div class="mt-8 rounded-xl border border-amber-300 bg-amber-50 p-6 text-amber-900">
                 <div class="font-semibold">{{ __('Inhalt steht aus.') }}</div>
-                <p class="mt-2 text-sm leading-relaxed">
-                    {{ $emptyHint }}
-                </p>
+                <p class="mt-2 text-sm leading-relaxed">{{ $emptyHint }}</p>
                 <p class="mt-3 text-xs text-amber-800/80">
-                    {{ __('Plattform-Betreiber: Text in den Plattform-Einstellungen unter dem Schlüssel') }} <code class="font-mono">{{ $settingKey }}</code> {{ __('hinterlegen.') }}
+                    {{ __('Plattform-Betreiber: Text in den Plattform-Einstellungen unter dem Schlüssel') }} <code>{{ $settingKey }}</code> {{ __('hinterlegen.') }}
                 </p>
             </div>
         @endif
@@ -49,9 +62,9 @@
         <div class="max-w-7xl mx-auto px-6 lg:px-8 py-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-sm text-slate-500">
             <div>&copy; {{ date('Y') }} {{ $productName }}.</div>
             <div class="flex flex-wrap items-center gap-4">
-                <a href="{{ route('legal.imprint') }}" class="hover:text-slate-900 transition">{{ __('Impressum') }}</a>
-                <a href="{{ route('legal.privacy') }}" class="hover:text-slate-900 transition">{{ __('Datenschutz') }}</a>
-                <a href="{{ route('legal.terms') }}" class="hover:text-slate-900 transition">{{ __('AGB') }}</a>
+                <a href="{{ route('legal.imprint') }}" class="hover:text-slate-900 transition">Impressum</a>
+                <a href="{{ route('legal.privacy') }}" class="hover:text-slate-900 transition">Datenschutz</a>
+                <a href="{{ route('legal.terms') }}" class="hover:text-slate-900 transition">AGB</a>
                 <a href="{{ route('legal.av_contract') }}" class="hover:text-slate-900 transition">AVV</a>
                 <a href="{{ route('legal.tom') }}" class="hover:text-slate-900 transition">TOM</a>
                 <a href="{{ route('legal.subprocessors') }}" class="hover:text-slate-900 transition">Subprocessors</a>

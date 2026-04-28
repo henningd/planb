@@ -78,6 +78,10 @@ test('catalog scope filtering returns the right keys', function () {
             'platform_imprint',
             'platform_privacy',
             'platform_terms',
+            'platform_av_contract',
+            'platform_tom',
+            'platform_subprocessors',
+            'platform_security_contact',
         ]);
 
     expect(array_keys(SettingsCatalog::byScope(SettingsCatalog::COMPANY)))

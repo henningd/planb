@@ -43,6 +43,56 @@ it('renders the terms page', function () {
         ->assertSeeText('AGB-Inhalt');
 });
 
+it('renders the AVV page with markdown content', function () {
+    $this->get('/auftragsverarbeitung')
+        ->assertOk()
+        ->assertSeeText('Auftragsverarbeitung')
+        ->assertSeeText('Subunternehmer')
+        ->assertSeeText('Arento AI GmbH');
+});
+
+it('renders the TOM page', function () {
+    $this->get('/tom')
+        ->assertOk()
+        ->assertSeeText('Technische und organisatorische Maßnahmen')
+        ->assertSeeText('TLS')
+        ->assertSeeText('bcrypt');
+});
+
+it('renders the subprocessors page with a table', function () {
+    $this->get('/subprocessors')
+        ->assertOk()
+        ->assertSeeText('Subprocessors')
+        ->assertSeeText('DigitalOcean')
+        ->assertSeeText('Strato')
+        ->assertSee('<table>', false);
+});
+
+it('serves a security.txt under /.well-known/security.txt', function () {
+    $response = $this->get('/.well-known/security.txt');
+    $response->assertOk();
+    expect($response->headers->get('content-type'))->toContain('text/plain');
+    expect($response->getContent())
+        ->toContain('Contact: mailto:')
+        ->toContain('Expires:')
+        ->toContain('Preferred-Languages: de, en');
+});
+
+it('exposes the new compliance route names', function () {
+    expect(Route::has('legal.av_contract'))->toBeTrue();
+    expect(Route::has('legal.tom'))->toBeTrue();
+    expect(Route::has('legal.subprocessors'))->toBeTrue();
+    expect(Route::has('legal.security_txt'))->toBeTrue();
+});
+
+it('links the compliance routes from the welcome page footer', function () {
+    $response = $this->get('/');
+    $response->assertOk()
+        ->assertSee(route('legal.av_contract'), false)
+        ->assertSee(route('legal.tom'), false)
+        ->assertSee(route('legal.subprocessors'), false);
+});
+
 it('exposes legal routes by name', function () {
     expect(Route::has('legal.imprint'))->toBeTrue();
     expect(Route::has('legal.privacy'))->toBeTrue();

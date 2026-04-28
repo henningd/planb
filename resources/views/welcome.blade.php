@@ -854,8 +854,8 @@
     {{-- ============ FOOTER ============ --}}
     <footer class="border-t border-slate-200 bg-white">
         <div class="max-w-7xl mx-auto px-6 lg:px-8 py-12">
-            <div class="grid md:grid-cols-4 gap-8">
-                <div class="md:col-span-2">
+            <div class="grid gap-8 md:grid-cols-2 lg:grid-cols-5">
+                <div class="md:col-span-2 lg:col-span-2">
                     <div class="flex items-center gap-2">
                         <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-600 to-blue-600 text-white">
                             <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -890,6 +890,16 @@
                         <li><a href="{{ route('legal.imprint') }}" class="hover:text-slate-900 transition">Impressum</a></li>
                         <li><a href="{{ route('legal.privacy') }}" class="hover:text-slate-900 transition">Datenschutz</a></li>
                         <li><a href="{{ route('legal.terms') }}" class="hover:text-slate-900 transition">AGB</a></li>
+                    </ul>
+                </div>
+
+                <div>
+                    <div class="text-sm font-semibold text-slate-900">Compliance</div>
+                    <ul class="mt-4 space-y-3 text-sm text-slate-600">
+                        <li><a href="{{ route('legal.av_contract') }}" class="hover:text-slate-900 transition">Auftragsverarbeitung</a></li>
+                        <li><a href="{{ route('legal.tom') }}" class="hover:text-slate-900 transition">TOM (Art. 32 DSGVO)</a></li>
+                        <li><a href="{{ route('legal.subprocessors') }}" class="hover:text-slate-900 transition">Subprocessors</a></li>
+                        <li><a href="{{ url('/.well-known/security.txt') }}" class="hover:text-slate-900 transition">security.txt</a></li>
                     </ul>
                 </div>
             </div>

@@ -58,6 +58,57 @@ Route::get('/agb', function () {
     ]);
 })->name('legal.terms');
 
+Route::get('/auftragsverarbeitung', function () {
+    $content = (string) SystemSetting::get('platform_av_contract');
+
+    return view('legal-page-markdown', [
+        'productName' => SystemSetting::get('platform_name') ?: config('app.name', 'PlanB'),
+        'heading' => __('Auftragsverarbeitung (AVV)'),
+        'content' => $content,
+        'html' => ManualRenderer::toHtml($content),
+        'emptyHint' => __('Hier erscheint der Vertrag zur Auftragsverarbeitung nach Art. 28 DSGVO.'),
+        'settingKey' => 'platform_av_contract',
+    ]);
+})->name('legal.av_contract');
+
+Route::get('/tom', function () {
+    $content = (string) SystemSetting::get('platform_tom');
+
+    return view('legal-page-markdown', [
+        'productName' => SystemSetting::get('platform_name') ?: config('app.name', 'PlanB'),
+        'heading' => __('Technische und organisatorische Maßnahmen'),
+        'content' => $content,
+        'html' => ManualRenderer::toHtml($content),
+        'emptyHint' => __('Hier erscheinen die TOM nach Art. 32 DSGVO als Anlage zum AVV.'),
+        'settingKey' => 'platform_tom',
+    ]);
+})->name('legal.tom');
+
+Route::get('/subprocessors', function () {
+    $content = (string) SystemSetting::get('platform_subprocessors');
+
+    return view('legal-page-markdown', [
+        'productName' => SystemSetting::get('platform_name') ?: config('app.name', 'PlanB'),
+        'heading' => __('Subprocessors / Unterauftragsverarbeiter'),
+        'content' => $content,
+        'html' => ManualRenderer::toHtml($content),
+        'emptyHint' => __('Hier erscheint die Liste der eingesetzten Unterauftragsverarbeiter.'),
+        'settingKey' => 'platform_subprocessors',
+    ]);
+})->name('legal.subprocessors');
+
+Route::get('/.well-known/security.txt', function () {
+    $contact = (string) SystemSetting::get('platform_security_contact');
+    $expires = now()->addYear()->format('Y-m-d\TH:i:s\Z');
+
+    $body = "Contact: mailto:{$contact}\n"
+        ."Expires: {$expires}\n"
+        ."Preferred-Languages: de, en\n"
+        .'Canonical: '.url('/.well-known/security.txt')."\n";
+
+    return response($body, 200, ['Content-Type' => 'text/plain; charset=utf-8']);
+})->name('legal.security_txt');
+
 Route::get('/funktionen/{slug}', function (string $slug) {
     $feature = FeatureCatalog::find($slug);
     abort_unless($feature !== null, 404);
