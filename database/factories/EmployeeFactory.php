@@ -22,7 +22,7 @@ class EmployeeFactory extends Factory
             'first_name' => fake()->firstName(),
             'last_name' => fake()->lastName(),
             'position' => fake()->jobTitle(),
-            'department' => fake()->randomElement(['Geschäftsführung', 'Vertrieb', 'Produktion', 'IT', 'Buchhaltung', 'Service']),
+            'department_id' => null,
             'work_phone' => fake()->phoneNumber(),
             'mobile_phone' => fake()->phoneNumber(),
             'private_phone' => null,

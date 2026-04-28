@@ -93,8 +93,13 @@ class Importer
                 // Pivot-Eintrag (employee_manager) angelegt. Damit bleiben
                 // Industry-Template-Payloads, die noch mit dem alten Spalten-
                 // Schema arbeiten, weiter kompatibel.
+                //
+                // Genauso für das Legacy-Feld department (String): wir
+                // legen pro Firma eine Department-Zeile an (oder finden eine
+                // bestehende) und mappen die ID auf department_id.
                 $managerLinks = [];
                 if ($key === 'employees') {
+                    $deptIdByName = [];
                     foreach ($rows as &$row) {
                         if (array_key_exists('manager_id', $row)) {
                             $managerId = $row['manager_id'];
@@ -109,6 +114,37 @@ class Importer
                                         'manager_id' => $managerId,
                                     ];
                                 }
+                            }
+                        }
+
+                        if (array_key_exists('department', $row)) {
+                            $deptName = $row['department'] !== null ? trim((string) $row['department']) : '';
+                            unset($row['department']);
+
+                            if ($deptName === '') {
+                                $row['department_id'] = $row['department_id'] ?? null;
+                            } else {
+                                if (! isset($deptIdByName[$deptName])) {
+                                    $existingId = DB::table('departments')
+                                        ->where('company_id', $company->id)
+                                        ->where('name', $deptName)
+                                        ->value('id');
+
+                                    if ($existingId === null) {
+                                        $existingId = (string) Str::uuid();
+                                        DB::table('departments')->insert([
+                                            'id' => $existingId,
+                                            'company_id' => $company->id,
+                                            'name' => $deptName,
+                                            'description' => null,
+                                            'sort' => 0,
+                                            'created_at' => now(),
+                                            'updated_at' => now(),
+                                        ]);
+                                    }
+                                    $deptIdByName[$deptName] = $existingId;
+                                }
+                                $row['department_id'] = $deptIdByName[$deptName];
                             }
                         }
                     }

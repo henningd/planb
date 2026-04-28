@@ -15,7 +15,7 @@ Knopf **„Neuer Mitarbeiter"**. Pflichtangaben:
 Empfohlen für jede Person:
 
 - **Funktion / Position** — Geschäftsführung, Buchhaltung, Werkstattleiter, …
-- **Abteilung** — Geschäftsführung, Vertrieb, IT, Service, Buchhaltung, Produktion …
+- **Abteilung** — Auswahl aus den Abteilungen, die Sie unter „Einrichtung → Abteilungen" angelegt haben. Wenn keine passende dabei ist: erst Abteilung anlegen, dann hier zuweisen. Wenn niemand zugewiesen werden soll, einfach „— Keine Abteilung —" wählen.
 - **Arbeitstelefon** und **Mobilnummer** — beides angeben, falls vorhanden.
 - **E-Mail-Adresse** — wichtig für Krisen-Mail-Versand.
 - **Standort** — wo arbeitet die Person primär?

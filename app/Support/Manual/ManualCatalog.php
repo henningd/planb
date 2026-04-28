@@ -26,6 +26,7 @@ class ManualCatalog
             // Stammdaten
             ['category' => 'Stammdaten', 'slug' => 'firma', 'title' => 'Firma', 'summary' => 'Firmenprofil, Branche, Rechtsform, Mitarbeiterzahl, Datenschutzbehörde.'],
             ['category' => 'Stammdaten', 'slug' => 'standorte', 'title' => 'Standorte', 'summary' => 'Hauptsitz, Filialen, Werkstätten, Lager — die physischen Orte des Unternehmens.'],
+            ['category' => 'Stammdaten', 'slug' => 'abteilungen', 'title' => 'Abteilungen', 'summary' => 'Organisations-Einheiten der Firma; Auswahl-Liste für die Abteilungs-Zuordnung pro Mitarbeiter.'],
             ['category' => 'Stammdaten', 'slug' => 'mitarbeiter', 'title' => 'Mitarbeiter', 'summary' => 'Personen mit Kontaktdaten, Funktion und Krisenrolle.'],
             ['category' => 'Stammdaten', 'slug' => 'rollen', 'title' => 'Rollen und Pflichtrollen', 'summary' => 'Die fünf Pflichtrollen, eigene Rollen, Hauptpersonen und Stellvertretungen.'],
             ['category' => 'Stammdaten', 'slug' => 'dienstleister', 'title' => 'Dienstleister', 'summary' => 'Externe IT-Dienstleister, Hotlines, SLA, Vertragsdaten.'],

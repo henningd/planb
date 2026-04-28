@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\CrisisRole;
+use App\Models\Department;
 use App\Models\Employee;
 use App\Models\Location;
 use Flux\Flux;
@@ -19,7 +20,7 @@ new #[Title('Mitarbeiter')] class extends Component {
 
     public string $position = '';
 
-    public string $department = '';
+    public ?string $department_id = null;
 
     public string $work_phone = '';
 
@@ -61,7 +62,7 @@ new #[Title('Mitarbeiter')] class extends Component {
     public function hierarchyGraph(): array
     {
         $employees = Employee::query()
-            ->with('managers:id')
+            ->with(['managers:id', 'department:id,name'])
             ->orderBy('last_name')
             ->orderBy('first_name')
             ->get();
@@ -74,7 +75,7 @@ new #[Title('Mitarbeiter')] class extends Component {
                 'data' => [
                     'id' => $e->id,
                     'label' => $label,
-                    'department' => (string) ($e->department ?? ''),
+                    'department' => (string) ($e->department?->name ?? ''),
                     'is_key_personnel' => (bool) $e->is_key_personnel,
                     'has_crisis_role' => $e->crisis_role !== null,
                     'crisis_role' => $e->crisis_role?->label() ?? '',
@@ -106,7 +107,7 @@ new #[Title('Mitarbeiter')] class extends Component {
     public function employees()
     {
         return Employee::query()
-            ->with(['managers', 'location'])
+            ->with(['managers', 'location', 'department'])
             ->when($this->search !== '', function ($q) {
                 $term = '%'.$this->search.'%';
                 $q->where(function ($q) use ($term) {
@@ -116,25 +117,34 @@ new #[Title('Mitarbeiter')] class extends Component {
                         ->orWhere('email', 'like', $term);
                 });
             })
-            ->when($this->filterDepartment !== '', fn ($q) => $q->where('department', $this->filterDepartment))
+            ->when($this->filterDepartment !== '', fn ($q) => $q->whereHas('department', fn ($q2) => $q2->where('name', $this->filterDepartment)))
             ->orderBy('last_name')
             ->orderBy('first_name')
             ->get();
     }
 
     /**
+     * Department-Namen der aktuellen Firma (alphabetisch). Wird für den
+     * Filter und für das Hierarchie-Drop-down verwendet.
+     *
      * @return array<int, string>
      */
     #[Computed]
     public function departments(): array
     {
-        return Employee::query()
-            ->whereNotNull('department')
-            ->pluck('department')
-            ->unique()
-            ->sort()
-            ->values()
+        return Department::query()
+            ->orderBy('name')
+            ->pluck('name')
             ->all();
+    }
+
+    /**
+     * @return \Illuminate\Database\Eloquent\Collection<int, Department>
+     */
+    #[Computed]
+    public function departmentOptions(): \Illuminate\Database\Eloquent\Collection
+    {
+        return Department::query()->orderBy('sort')->orderBy('name')->get();
     }
 
     #[Computed]
@@ -182,7 +192,7 @@ new #[Title('Mitarbeiter')] class extends Component {
         $this->first_name = $e->first_name;
         $this->last_name = $e->last_name;
         $this->position = (string) $e->position;
-        $this->department = (string) $e->department;
+        $this->department_id = $e->department_id;
         $this->work_phone = (string) $e->work_phone;
         $this->mobile_phone = (string) $e->mobile_phone;
         $this->private_phone = (string) $e->private_phone;
@@ -210,7 +220,7 @@ new #[Title('Mitarbeiter')] class extends Component {
             'first_name' => ['required', 'string', 'max:255'],
             'last_name' => ['required', 'string', 'max:255'],
             'position' => ['nullable', 'string', 'max:255'],
-            'department' => ['nullable', 'string', 'max:255'],
+            'department_id' => ['nullable', 'uuid', 'exists:departments,id'],
             'work_phone' => ['nullable', 'string', 'max:50'],
             'mobile_phone' => ['nullable', 'string', 'max:50'],
             'private_phone' => ['nullable', 'string', 'max:50'],
@@ -260,7 +270,7 @@ new #[Title('Mitarbeiter')] class extends Component {
 
         Flux::modal('employee-form')->close();
         $this->resetForm();
-        unset($this->employees, $this->departments, $this->managerOptions, $this->locationOptions);
+        unset($this->employees, $this->departments, $this->departmentOptions, $this->managerOptions, $this->locationOptions);
 
         Flux::toast(variant: 'success', text: __('Mitarbeiter gespeichert.'));
     }
@@ -276,7 +286,7 @@ new #[Title('Mitarbeiter')] class extends Component {
         if ($this->deletingId) {
             Employee::findOrFail($this->deletingId)->delete();
             $this->deletingId = null;
-            unset($this->employees, $this->departments, $this->managerOptions, $this->locationOptions);
+            unset($this->employees, $this->departments, $this->departmentOptions, $this->managerOptions, $this->locationOptions);
             Flux::modal('employee-delete')->close();
             Flux::toast(variant: 'success', text: __('Mitarbeiter gelöscht.'));
         }
@@ -285,7 +295,7 @@ new #[Title('Mitarbeiter')] class extends Component {
     protected function resetForm(): void
     {
         $this->reset([
-            'editingId', 'first_name', 'last_name', 'position', 'department',
+            'editingId', 'first_name', 'last_name', 'position', 'department_id',
             'work_phone', 'mobile_phone', 'private_phone', 'email', 'location_id',
             'emergency_contact', 'manager_ids', 'is_key_personnel',
             'crisis_role', 'is_crisis_deputy', 'notes',
@@ -511,7 +521,7 @@ new #[Title('Mitarbeiter')] class extends Component {
                                         </flux:badge>
                                     @endif
                                     @if ($employee->department)
-                                        <flux:badge color="zinc" size="sm">{{ $employee->department }}</flux:badge>
+                                        <flux:badge color="zinc" size="sm">{{ $employee->department->name }}</flux:badge>
                                     @endif
                                 </div>
                             </div>
@@ -587,7 +597,17 @@ new #[Title('Mitarbeiter')] class extends Component {
 
             <div class="grid gap-4 sm:grid-cols-2">
                 <flux:input wire:model="position" :label="__('Position')" placeholder="z. B. Vertriebsleitung" />
-                <flux:input wire:model="department" :label="__('Abteilung')" placeholder="z. B. Vertrieb" />
+                <flux:select wire:model="department_id" :label="__('Abteilung')" :placeholder="__('Keine Abteilung')">
+                    <flux:select.option value="">{{ __('— Keine Abteilung —') }}</flux:select.option>
+                    @foreach ($this->departmentOptions as $dept)
+                        <flux:select.option value="{{ $dept->id }}">{{ $dept->name }}</flux:select.option>
+                    @endforeach
+                </flux:select>
+                @if ($this->departmentOptions->isEmpty())
+                    <flux:text class="-mt-2 text-xs text-zinc-500">
+                        {{ __('Noch keine Abteilung angelegt — pflegen Sie diese unter „Abteilungen" in der Sidebar.') }}
+                    </flux:text>
+                @endif
             </div>
 
             <div class="grid gap-4 sm:grid-cols-2">

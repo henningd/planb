@@ -18,7 +18,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
     'first_name',
     'last_name',
     'position',
-    'department',
+    'department_id',
     'work_phone',
     'mobile_phone',
     'private_phone',
@@ -90,6 +90,14 @@ class Employee extends Model
     public function location(): BelongsTo
     {
         return $this->belongsTo(Location::class);
+    }
+
+    /**
+     * @return BelongsTo<Department, $this>
+     */
+    public function department(): BelongsTo
+    {
+        return $this->belongsTo(Department::class);
     }
 
     /**

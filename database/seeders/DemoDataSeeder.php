@@ -29,6 +29,7 @@ use App\Models\CommunicationDispatchRecipient;
 use App\Models\CommunicationTemplate;
 use App\Models\Company;
 use App\Models\ComplianceScoreSnapshot;
+use App\Models\Department;
 use App\Models\EmergencyResource;
 use App\Models\Employee;
 use App\Models\GlobalScenario;
@@ -218,6 +219,19 @@ class DemoDataSeeder extends Seeder
             ->where('company_id', $company->id)
             ->pluck('id', 'name');
 
+        // Departments — pro Holzbau-Demo-Mandant fest definiert. Werden vor
+        // den Mitarbeitern angelegt, damit das department_id-Mapping greift.
+        $departmentNames = ['Geschäftsführung', 'Verwaltung', 'Werkstatt', 'Compliance'];
+        foreach ($departmentNames as $sort => $name) {
+            Department::withoutGlobalScope(CurrentCompanyScope::class)->updateOrCreate(
+                ['company_id' => $company->id, 'name' => $name],
+                ['company_id' => $company->id, 'name' => $name, 'sort' => $sort],
+            );
+        }
+        $departmentIdByName = Department::withoutGlobalScope(CurrentCompanyScope::class)
+            ->where('company_id', $company->id)
+            ->pluck('id', 'name');
+
         $employees = [
             [
                 'first_name' => 'Max', 'last_name' => 'Mustermann',
@@ -351,6 +365,10 @@ class DemoDataSeeder extends Seeder
             $locationName = $data['location_name'] ?? null;
             unset($data['location_name']);
             $data['location_id'] = $locationName !== null ? ($locationIdByName[$locationName] ?? null) : null;
+
+            $deptName = $data['department'] ?? null;
+            unset($data['department']);
+            $data['department_id'] = $deptName !== null ? ($departmentIdByName[$deptName] ?? null) : null;
 
             Employee::withoutGlobalScope(CurrentCompanyScope::class)->updateOrCreate(
                 [

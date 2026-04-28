@@ -769,9 +769,9 @@ new #[Title('System')] class extends Component {
                                                 <flux:badge color="zinc" size="sm">{{ __('Vertretung') }}</flux:badge>
                                             @endif
                                         </div>
-                                        @if ($e->position || $e->department)
+                                        @if ($e->position || $e->department?->name)
                                             <flux:text class="text-sm text-zinc-500 dark:text-zinc-400">
-                                                {{ $e->position }}@if ($e->position && $e->department) · @endif{{ $e->department }}
+                                                {{ $e->position }}@if ($e->position && $e->department?->name) · @endif{{ $e->department?->name }}
                                             </flux:text>
                                         @endif
                                     </div>

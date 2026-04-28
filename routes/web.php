@@ -214,6 +214,7 @@ Route::prefix('{current_team}')
 
         Route::livewire('company', 'pages::company.edit')->name('company.edit');
         Route::livewire('locations', 'pages::locations.index')->name('locations.index');
+        Route::livewire('departments', 'pages::departments.index')->name('departments.index');
         Route::livewire('emergency-levels', 'pages::emergency-levels.index')->name('emergency-levels.index');
         Route::livewire('systems', 'pages::systems.index')->name('systems.index');
         Route::livewire('systems/create', 'pages::systems.edit')->name('systems.create');
