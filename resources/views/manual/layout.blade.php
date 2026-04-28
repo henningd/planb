@@ -101,6 +101,7 @@
                 <a href="{{ route('legal.av_contract') }}" class="hover:text-slate-900 transition">AVV</a>
                 <a href="{{ route('legal.tom') }}" class="hover:text-slate-900 transition">TOM</a>
                 <a href="{{ route('legal.subprocessors') }}" class="hover:text-slate-900 transition">Subprocessors</a>
+                <a href="{{ route('legal.accessibility') }}" class="hover:text-slate-900 transition">Barrierefreiheit</a>
             </div>
         </div>
     </footer>

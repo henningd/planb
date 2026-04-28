@@ -770,6 +770,106 @@ class SettingsCatalog
 
         TEXT;
 
+    private const DEFAULT_ACCESSIBILITY = <<<'TEXT'
+        ERKLÄRUNG ZUR BARRIEREFREIHEIT
+
+        Stand: April 2026
+
+        Diese Erklärung zur digitalen Barrierefreiheit gilt für die unter
+        dieser Domain erreichbare Plattform PlanB einschließlich aller
+        eingeloggten Bereiche (Dashboard, Notfallhandbuch, Krisen-Cockpit,
+        Compliance-Module) sowie der öffentlichen Marketing- und
+        Rechtsseiten.
+
+        ## Konformitätsstand
+
+        Die Plattform ist nach Selbsteinschätzung des Anbieters **weitgehend
+        konform** mit den Web Content Accessibility Guidelines (WCAG) 2.1
+        Level AA und der zugrundeliegenden europäischen Norm EN 301 549.
+        Eine externe Prüfung durch eine offizielle Überwachungsstelle ist
+        bisher nicht erfolgt.
+
+        Für öffentliche Auftraggeber gilt zusätzlich die Barrierefreie-
+        Informationstechnik-Verordnung (BITV 2.0), für privatwirtschaftliche
+        Anbieter ab Juni 2025 das Barrierefreiheitsstärkungsgesetz (BFSG).
+
+        ## Bekannte Barrieren
+
+        Die folgenden Bereiche entsprechen aktuell **nicht vollständig** den
+        WCAG-2.1-AA-Anforderungen:
+
+        - **PDF-Exporte**: Generierte Notfallhandbuch-, Audit-Log- und
+          Versions-PDFs sind sichtbar lesbar, aber noch nicht in vollem
+          Umfang als „tagged PDF" gemäß PDF/UA strukturiert.
+          Screenreader-Nutzer können den Inhalt zwar erfassen, eine
+          fehlerfreie Vorlese-Reihenfolge ist nicht in jedem Fall
+          gewährleistet. Wir arbeiten an einer barrierefreien Variante.
+        - **Komplexe Diagramme** (Risiko-Heatmap, Recovery-Gantt,
+          Abhängigkeitsgraphen): Werden derzeit primär visuell dargestellt.
+          Eine vollständige Text-Alternative für jede Position ist noch
+          nicht implementiert. Die zugrundeliegenden Daten sind aber
+          jeweils in einer parallel angezeigten Tabelle abrufbar.
+        - **Drag-and-Drop-Interaktionen** (z. B. Aufgaben-Inbox,
+          Kanban-Spalten): Tastatur-Alternativen über Sortier-Buttons sind
+          vorhanden, aber die Bedienung ist mit Tastatur weniger flüssig
+          als per Maus.
+
+        ## Bereits erreichbare Stärken
+
+        - Die gesamte Plattform ist **per Tastatur** vollständig bedienbar
+          (Tab-Reihenfolge, Fokus-Indikatoren, Skip-Links).
+        - **Sichtbare Fokus-Marker** auf allen interaktiven Elementen.
+        - **Semantisches HTML** (Überschriften-Hierarchie, Landmarks,
+          ARIA-Labels) für die Hauptansichten.
+        - **Kontraste** der Standard-Oberfläche entsprechen mindestens
+          WCAG-AA (4,5:1 für Fließtext, 3:1 für Bedienelemente).
+        - **Responsive Design**: Die Inhalte funktionieren in einer
+          Bandbreite von 320 px bis 4K ohne horizontales Scrollen.
+        - **Keine Zeitlimits** auf Formularen; sicherheitsrelevante
+          Sitzungen warnen rechtzeitig vor dem Ablauf.
+
+        ## Erstellung dieser Erklärung
+
+        Diese Erklärung wurde am **15. April 2026** auf Basis einer
+        Selbstbewertung des Anbieters erstellt. Sie wird mindestens
+        **einmal jährlich** sowie bei wesentlichen Änderungen der
+        Plattform überprüft und aktualisiert.
+
+        ## Feedback und Kontakt
+
+        Sie haben eine Barriere entdeckt, eine Information ist nicht
+        zugänglich oder Sie benötigen einen barrierefreien Auszug
+        (z. B. Notfallhandbuch in einer alternativen Form)? Bitte
+        wenden Sie sich an:
+
+        Arento AI GmbH i. G.
+        Wiesenstr. 28
+        53773 Hennef
+        E-Mail: barrierefreiheit@arento.ai
+
+        Wir bemühen uns, Rückmeldungen innerhalb von **vier Wochen** zu
+        beantworten.
+
+        ## Schlichtungsverfahren (für Bundesbehörden)
+
+        Sollten Sie als Nutzer einer öffentlichen Stelle des Bundes mit
+        einer Antwort des Anbieters nicht zufrieden sein, können Sie sich
+        an die **Schlichtungsstelle nach § 16 Behindertengleichstellungs-
+        gesetz (BGG)** wenden:
+
+        Schlichtungsstelle nach dem Behindertengleichstellungsgesetz
+        bei dem Beauftragten der Bundesregierung für die Belange von
+        Menschen mit Behinderungen
+        Mauerstraße 53
+        10117 Berlin
+        Telefon: +49 30 18527-2805
+        E-Mail: info@schlichtungsstelle-bgg.de
+        Web: https://www.schlichtungsstelle-bgg.de
+
+        Die Schlichtung ist für Sie kostenfrei.
+
+        TEXT;
+
     private const DEFAULT_SUBPROCESSORS = <<<'TEXT'
         SUBUNTERAUFTRAGSVERARBEITER (SUBPROCESSORS)
 
@@ -898,6 +998,13 @@ class SettingsCatalog
                 'default' => self::DEFAULT_SUBPROCESSORS,
                 'label' => 'Subprocessor-Liste',
                 'description' => 'Liste der Unterauftragsverarbeiter. Wird unter /subprocessors gerendert.',
+            ],
+            'platform_accessibility' => [
+                'scope' => self::SYSTEM,
+                'type' => 'string',
+                'default' => self::DEFAULT_ACCESSIBILITY,
+                'label' => 'Erklärung zur Barrierefreiheit (Markdown)',
+                'description' => 'Barrierefreiheitserklärung nach BITV 2.0 / BFSG. Wird unter /barrierefreiheit gerendert.',
             ],
             'platform_security_contact' => [
                 'scope' => self::SYSTEM,

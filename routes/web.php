@@ -97,6 +97,19 @@ Route::get('/subprocessors', function () {
     ]);
 })->name('legal.subprocessors');
 
+Route::get('/barrierefreiheit', function () {
+    $content = (string) SystemSetting::get('platform_accessibility');
+
+    return view('legal-page-markdown', [
+        'productName' => SystemSetting::get('platform_name') ?: config('app.name', 'PlanB'),
+        'heading' => __('Erklärung zur Barrierefreiheit'),
+        'content' => $content,
+        'html' => ManualRenderer::toHtml($content),
+        'emptyHint' => __('Hier erscheint die Erklärung zur digitalen Barrierefreiheit nach BITV 2.0 / BFSG.'),
+        'settingKey' => 'platform_accessibility',
+    ]);
+})->name('legal.accessibility');
+
 Route::get('/.well-known/security.txt', function () {
     $contact = (string) SystemSetting::get('platform_security_contact');
     $expires = now()->addYear()->format('Y-m-d\TH:i:s\Z');

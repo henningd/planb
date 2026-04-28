@@ -85,12 +85,24 @@ it('exposes the new compliance route names', function () {
     expect(Route::has('legal.security_txt'))->toBeTrue();
 });
 
+it('renders the accessibility page with markdown content', function () {
+    $this->get('/barrierefreiheit')
+        ->assertOk()
+        ->assertSeeText('Barrierefreiheit')
+        ->assertSeeText('WCAG');
+});
+
+it('exposes the legal.accessibility route name', function () {
+    expect(Route::has('legal.accessibility'))->toBeTrue();
+});
+
 it('links the compliance routes from the welcome page footer', function () {
     $response = $this->get('/');
     $response->assertOk()
         ->assertSee(route('legal.av_contract'), false)
         ->assertSee(route('legal.tom'), false)
-        ->assertSee(route('legal.subprocessors'), false);
+        ->assertSee(route('legal.subprocessors'), false)
+        ->assertSee(route('legal.accessibility'), false);
 });
 
 it('exposes legal routes by name', function () {

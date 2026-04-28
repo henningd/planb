@@ -899,6 +899,7 @@
                         <li><a href="{{ route('legal.av_contract') }}" class="hover:text-slate-900 transition">Auftragsverarbeitung</a></li>
                         <li><a href="{{ route('legal.tom') }}" class="hover:text-slate-900 transition">TOM (Art. 32 DSGVO)</a></li>
                         <li><a href="{{ route('legal.subprocessors') }}" class="hover:text-slate-900 transition">Subprocessors</a></li>
+                        <li><a href="{{ route('legal.accessibility') }}" class="hover:text-slate-900 transition">Barrierefreiheit</a></li>
                         <li><a href="{{ url('/.well-known/security.txt') }}" class="hover:text-slate-900 transition">security.txt</a></li>
                     </ul>
                 </div>
