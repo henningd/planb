@@ -27,9 +27,9 @@ Route::get('/', function () {
 
 Route::get('/impressum', function () {
     return view('legal-page', [
-        'productName' => SystemSetting::get('platform_name', '') ?: config('app.name', 'PlanB'),
+        'productName' => SystemSetting::get('platform_name') ?: config('app.name', 'PlanB'),
         'heading' => __('Impressum'),
-        'content' => (string) SystemSetting::get('platform_imprint', ''),
+        'content' => (string) SystemSetting::get('platform_imprint'),
         'emptyHint' => __('Hier erscheinen die Pflichtangaben nach §5 TMG (Anbieter, Anschrift, Vertretungsberechtigte, Kontakt, Registereintrag, USt-IdNr).'),
         'settingKey' => 'platform_imprint',
     ]);
@@ -37,9 +37,9 @@ Route::get('/impressum', function () {
 
 Route::get('/datenschutz', function () {
     return view('legal-page', [
-        'productName' => SystemSetting::get('platform_name', '') ?: config('app.name', 'PlanB'),
+        'productName' => SystemSetting::get('platform_name') ?: config('app.name', 'PlanB'),
         'heading' => __('Datenschutzerklärung'),
-        'content' => (string) SystemSetting::get('platform_privacy', ''),
+        'content' => (string) SystemSetting::get('platform_privacy'),
         'emptyHint' => __('Hier erscheint die DSGVO-Datenschutzerklärung — welche Daten werden verarbeitet, auf welcher Rechtsgrundlage, wie lange, an wen weitergegeben.'),
         'settingKey' => 'platform_privacy',
     ]);
@@ -47,9 +47,9 @@ Route::get('/datenschutz', function () {
 
 Route::get('/agb', function () {
     return view('legal-page', [
-        'productName' => SystemSetting::get('platform_name', '') ?: config('app.name', 'PlanB'),
+        'productName' => SystemSetting::get('platform_name') ?: config('app.name', 'PlanB'),
         'heading' => __('Allgemeine Geschäftsbedingungen'),
-        'content' => (string) SystemSetting::get('platform_terms', ''),
+        'content' => (string) SystemSetting::get('platform_terms'),
         'emptyHint' => __('Hier erscheinen die AGB des Plattform-Betreibers.'),
         'settingKey' => 'platform_terms',
     ]);
