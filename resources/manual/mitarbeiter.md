@@ -19,7 +19,7 @@ Empfohlen für jede Person:
 - **Arbeitstelefon** und **Mobilnummer** — beides angeben, falls vorhanden.
 - **E-Mail-Adresse** — wichtig für Krisen-Mail-Versand.
 - **Standort** — wo arbeitet die Person primär?
-- **Vorgesetzte/r** — Verweis auf einen anderen Mitarbeiter; ergibt automatisch ein Organigramm.
+- **Vorgesetzt von** — eine oder mehrere andere Mitarbeiter. Mehrfach-Zuordnung ist gewollt: in vielen Betrieben gibt es einen fachlichen und einen disziplinarischen Vorgesetzten, oder eine Matrix-Organisation mit mehreren Linien. Wer niemandem unterstellt ist (z. B. Geschäftsführung), lässt das Feld leer.
 
 ## Krisenrolle
 
