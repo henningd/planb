@@ -1,6 +1,7 @@
 <?php
 
 use App\Support\Manual\ManualCatalog;
+use App\Support\Manual\ManualRenderer;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Route;
 
@@ -38,6 +39,26 @@ it('links the manual from the welcome page footer', function () {
         ->assertOk()
         ->assertSee(route('manual.index'), false)
         ->assertSeeText('Benutzerhandbuch');
+});
+
+it('renders GFM tables as html tables', function () {
+    $html = ManualRenderer::toHtml(<<<'MD'
+        | Spalte A | Spalte B |
+        |---|---|
+        | Wert 1 | Wert 2 |
+        MD);
+
+    expect($html)
+        ->toContain('<table>')
+        ->toContain('<th>Spalte A</th>')
+        ->toContain('<td>Wert 1</td>');
+});
+
+it('renders the rolle-chapter table as actual html table', function () {
+    $this->get('/handbuch/rollen')
+        ->assertOk()
+        ->assertSee('<table>', false)
+        ->assertSee('<th>Rolle</th>', false);
 });
 
 it('every catalog entry has a markdown file', function (string $slug) {
