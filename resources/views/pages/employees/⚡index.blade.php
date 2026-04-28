@@ -359,176 +359,192 @@ new #[Title('Mitarbeiter')] class extends Component {
     @endunless
 
     @if ($this->hasCompany)
-        <div class="mb-4 flex flex-wrap items-center gap-3">
-            <div class="flex items-center gap-1 rounded-lg bg-zinc-100 p-1 dark:bg-zinc-800" role="tablist" aria-label="{{ __('Ansicht') }}">
-                <button
-                    type="button"
-                    wire:click="$set('viewMode', 'list')"
-                    role="tab"
-                    aria-selected="{{ $viewMode === 'list' ? 'true' : 'false' }}"
-                    class="inline-flex items-center gap-1 rounded-md px-3 py-1 text-xs font-medium transition {{ $viewMode === 'list' ? 'bg-white text-zinc-900 shadow dark:bg-zinc-700 dark:text-zinc-50' : 'text-zinc-600 dark:text-zinc-300' }}"
-                >
-                    <flux:icon name="list-bullet" class="size-4" />
-                    {{ __('Liste') }}
-                </button>
-                <button
-                    type="button"
-                    wire:click="$set('viewMode', 'hierarchy')"
-                    role="tab"
-                    aria-selected="{{ $viewMode === 'hierarchy' ? 'true' : 'false' }}"
-                    class="inline-flex items-center gap-1 rounded-md px-3 py-1 text-xs font-medium transition {{ $viewMode === 'hierarchy' ? 'bg-white text-zinc-900 shadow dark:bg-zinc-700 dark:text-zinc-50' : 'text-zinc-600 dark:text-zinc-300' }}"
-                >
-                    <flux:icon name="share" class="size-4" />
-                    {{ __('Hierarchie') }}
-                </button>
-            </div>
-
-            @if ($viewMode === 'list')
-                <flux:input wire:model.live.debounce.300ms="search" type="search" icon="magnifying-glass" placeholder="{{ __('Suchen: Name, Rolle, E-Mail …') }}" class="max-w-sm" />
-                @if ($this->departments)
-                    <flux:select wire:model.live="filterDepartment" placeholder="{{ __('Alle Abteilungen') }}" class="max-w-xs">
-                        <flux:select.option value="">{{ __('Alle Abteilungen') }}</flux:select.option>
-                        @foreach ($this->departments as $dept)
-                            <flux:select.option value="{{ $dept }}">{{ $dept }}</flux:select.option>
-                        @endforeach
-                    </flux:select>
-                @endif
-            @endif
-        </div>
-    @endif
-
-    @if ($this->hasCompany && $viewMode === 'hierarchy')
         @php
             $graph = $this->hierarchyGraph;
             $hasNodes = count($graph['nodes']) > 0;
             $hasEdges = count($graph['edges']) > 0;
         @endphp
 
-        @if (! $hasNodes)
-            <div class="rounded-xl border border-zinc-200 bg-white px-5 py-12 text-center dark:border-zinc-700 dark:bg-zinc-900">
-                <flux:text class="text-zinc-500 dark:text-zinc-400">
-                    {{ __('Noch keine Mitarbeiter angelegt.') }}
-                </flux:text>
-            </div>
-        @else
-            <div
-                wire:ignore
-                x-data="{
-                    instance: null,
-                    search: '',
-                    department: '',
-                    selected: null,
-                    init() {
-                        const start = () => {
-                            if (!window.PlanB || !window.PlanB.initEmployeeHierarchy) {
-                                requestAnimationFrame(start);
-                                return;
-                            }
-                            this.instance = window.PlanB.initEmployeeHierarchy({
-                                containerId: 'employee-hierarchy-canvas',
-                                nodes: @js($graph['nodes']),
-                                edges: @js($graph['edges']),
-                                onSelect: (data) => { this.selected = data; },
-                            });
-                        };
-                        this.$nextTick(start);
-                    },
-                    applyFilter() {
-                        if (!this.instance) return;
-                        this.instance.applyFilter({ search: this.search, department: this.department });
-                    },
-                    fit() { this.instance && this.instance.fit(); },
-                    zoomIn() { this.instance && this.instance.zoomBy(1.5); },
-                    zoomOut() { this.instance && this.instance.zoomBy(1 / 1.5); },
-                    resetZoom() { this.instance && this.instance.resetZoom(); },
-                }"
-                x-init="init()"
-                class="grid gap-4 lg:grid-cols-[1fr_20rem]"
-            >
-                <div class="rounded-xl border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-900">
-                    <div class="flex flex-wrap items-center gap-2 border-b border-zinc-100 p-3 dark:border-zinc-800">
-                        <flux:input
-                            x-model.debounce.250ms="search"
-                            @input="applyFilter()"
-                            size="sm"
-                            icon="magnifying-glass"
-                            placeholder="{{ __('Suchen…') }}"
-                            class="w-44"
-                        />
-                        @if (! empty($graph['departments']))
-                            <select
-                                x-model="department"
-                                @change="applyFilter()"
-                                class="rounded-lg border border-zinc-200 bg-white px-2 py-1 text-xs dark:border-zinc-700 dark:bg-zinc-900"
-                            >
-                                <option value="">{{ __('Alle Abteilungen') }}</option>
-                                @foreach ($graph['departments'] as $dept)
-                                    <option value="{{ $dept }}">{{ $dept }}</option>
-                                @endforeach
-                            </select>
-                        @endif
-
-                        <div class="ml-auto flex items-center gap-0.5 rounded-lg bg-zinc-100 p-0.5 dark:bg-zinc-800">
-                            <button type="button" class="rounded-md px-2 py-1 text-zinc-700 hover:bg-white dark:text-zinc-200 dark:hover:bg-zinc-700" @click="zoomOut()" title="{{ __('Verkleinern') }}">
-                                <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M5 9.75A.75.75 0 0 1 5.75 9h8.5a.75.75 0 0 1 0 1.5h-8.5A.75.75 0 0 1 5 9.75Z"/></svg>
-                            </button>
-                            <button type="button" class="rounded-md px-2 py-1 text-xs font-semibold text-zinc-700 hover:bg-white dark:text-zinc-200 dark:hover:bg-zinc-700" @click="resetZoom()" title="{{ __('Zoom zurücksetzen') }}">1:1</button>
-                            <button type="button" class="rounded-md px-2 py-1 text-zinc-700 hover:bg-white dark:text-zinc-200 dark:hover:bg-zinc-700" @click="zoomIn()" title="{{ __('Vergrößern') }}">
-                                <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M10.75 5.75a.75.75 0 0 0-1.5 0V9h-3.5a.75.75 0 0 0 0 1.5h3.5v3.25a.75.75 0 0 0 1.5 0V10.5h3.5a.75.75 0 0 0 0-1.5h-3.5V5.75Z"/></svg>
-                            </button>
-                        </div>
-                        <flux:button size="sm" variant="ghost" icon="arrows-pointing-out" @click="fit()">{{ __('Einpassen') }}</flux:button>
-                    </div>
-                    <div id="employee-hierarchy-canvas" class="h-[640px] w-full"></div>
-
-                    @if (! $hasEdges)
-                        <div class="border-t border-zinc-100 px-4 py-3 text-xs text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
-                            {{ __('Noch keine Vorgesetzten-Beziehungen erfasst — bearbeiten Sie einzelne Mitarbeiter und setzen Sie das Feld „Vorgesetzte", damit hier ein Org-Chart entsteht.') }}
-                        </div>
-                    @endif
+        {{-- Wechsel zwischen Liste und Hierarchie ausschließlich Client-seitig per Alpine —
+             kein Livewire-Roundtrip. Die Hierarchie-Daten werden bei jedem Pageload mit
+             ausgeliefert; Cytoscape wird erst beim ersten Wechsel auf „Hierarchie" instanziiert. --}}
+        <div
+            x-data="{
+                viewMode: @js($viewMode),
+                cy: null,
+                hSearch: '',
+                hDepartment: '',
+                hSelected: null,
+                ensureCytoscape() {
+                    if (this.cy) return;
+                    const start = () => {
+                        if (!window.PlanB || !window.PlanB.initEmployeeHierarchy) {
+                            requestAnimationFrame(start);
+                            return;
+                        }
+                        this.cy = window.PlanB.initEmployeeHierarchy({
+                            containerId: 'employee-hierarchy-canvas',
+                            nodes: @js($graph['nodes']),
+                            edges: @js($graph['edges']),
+                            onSelect: (data) => { this.hSelected = data; },
+                        });
+                    };
+                    this.$nextTick(start);
+                },
+                onShowHierarchy() {
+                    if (!this.cy) {
+                        this.ensureCytoscape();
+                    } else {
+                        this.$nextTick(() => { this.cy.resize(); this.cy.fit(); });
+                    }
+                },
+                applyHierarchyFilter() {
+                    if (!this.cy) return;
+                    this.cy.applyFilter({ search: this.hSearch, department: this.hDepartment });
+                },
+                fit() { this.cy && this.cy.fit(); },
+                zoomIn() { this.cy && this.cy.zoomBy(1.5); },
+                zoomOut() { this.cy && this.cy.zoomBy(1 / 1.5); },
+                resetZoom() { this.cy && this.cy.resetZoom(); },
+            }"
+            x-init="$watch('viewMode', (val) => { if (val === 'hierarchy') onShowHierarchy(); }); if (viewMode === 'hierarchy') onShowHierarchy();"
+        >
+            <div class="mb-4 flex flex-wrap items-center gap-3">
+                <div class="flex items-center gap-1 rounded-lg bg-zinc-100 p-1 dark:bg-zinc-800" role="tablist" aria-label="{{ __('Ansicht') }}">
+                    <button
+                        type="button"
+                        @click="viewMode = 'list'"
+                        role="tab"
+                        :aria-selected="viewMode === 'list' ? 'true' : 'false'"
+                        class="inline-flex items-center gap-1 rounded-md px-3 py-1 text-xs font-medium transition"
+                        :class="viewMode === 'list' ? 'bg-white text-zinc-900 shadow dark:bg-zinc-700 dark:text-zinc-50' : 'text-zinc-600 dark:text-zinc-300'"
+                    >
+                        <flux:icon name="list-bullet" class="size-4" />
+                        {{ __('Liste') }}
+                    </button>
+                    <button
+                        type="button"
+                        @click="viewMode = 'hierarchy'"
+                        role="tab"
+                        :aria-selected="viewMode === 'hierarchy' ? 'true' : 'false'"
+                        class="inline-flex items-center gap-1 rounded-md px-3 py-1 text-xs font-medium transition"
+                        :class="viewMode === 'hierarchy' ? 'bg-white text-zinc-900 shadow dark:bg-zinc-700 dark:text-zinc-50' : 'text-zinc-600 dark:text-zinc-300'"
+                    >
+                        <flux:icon name="share" class="size-4" />
+                        {{ __('Hierarchie') }}
+                    </button>
                 </div>
 
-                <aside class="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-900">
-                    <flux:heading size="sm">{{ __('Legende') }}</flux:heading>
-                    <ul class="mt-3 space-y-2 text-xs text-zinc-600 dark:text-zinc-300">
-                        <li class="flex items-center gap-2"><span class="inline-block h-3 w-5 rounded border-2" style="background:#fee2e2;border-color:#dc2626"></span>{{ __('Mit Krisenrolle') }}</li>
-                        <li class="flex items-center gap-2"><span class="inline-block h-3 w-5 rounded border-2" style="background:#fef3c7;border-color:#d97706"></span>{{ __('Schlüsselperson') }}</li>
-                        <li class="flex items-center gap-2"><span class="inline-block h-3 w-5 rounded border-2" style="background:#eef2ff;border-color:#6366f1"></span>{{ __('Standard-Mitarbeiter') }}</li>
-                        <li class="flex items-center gap-2"><svg viewBox="0 0 24 12" class="h-3 w-6"><path d="M2 6h17" stroke="#0ea5e9" stroke-width="2" fill="none"/><path d="M22 6l-4-3v6z" fill="#0ea5e9"/></svg>{{ __('Beim Hover: Vorgesetzten-Pfad') }}</li>
-                        <li class="flex items-center gap-2"><svg viewBox="0 0 24 12" class="h-3 w-6"><path d="M2 6h17" stroke="#f59e0b" stroke-width="2" fill="none"/><path d="M22 6l-4-3v6z" fill="#f59e0b"/></svg>{{ __('Beim Hover: Unterstellte') }}</li>
-                    </ul>
-
-                    <div class="mt-4 border-t border-zinc-100 pt-3 dark:border-zinc-800">
-                        <flux:heading size="sm">{{ __('Auswahl') }}</flux:heading>
-                        <template x-if="selected">
-                            <div class="mt-2 space-y-1 text-sm">
-                                <div class="font-semibold text-zinc-900 dark:text-zinc-100" x-text="selected.label.replace(/\n/g, ' — ')"></div>
-                                <div class="text-xs text-zinc-500 dark:text-zinc-400" x-text="selected.department || '{{ __('Keine Abteilung') }}'"></div>
-                                <div class="text-xs text-zinc-500 dark:text-zinc-400" x-show="selected.has_crisis_role" x-text="'{{ __('Krisenrolle:') }} ' + selected.crisis_role"></div>
-                            </div>
-                        </template>
-                        <template x-if="!selected">
-                            <div class="mt-2 text-xs text-zinc-500 dark:text-zinc-400">{{ __('Klicken Sie einen Knoten an, um Details zu sehen.') }}</div>
-                        </template>
-                    </div>
-                </aside>
+                <div x-show="viewMode === 'list'" x-cloak class="flex flex-wrap items-center gap-3">
+                    <flux:input wire:model.live.debounce.300ms="search" type="search" icon="magnifying-glass" placeholder="{{ __('Suchen: Name, Rolle, E-Mail …') }}" class="max-w-sm" />
+                    @if ($this->departments)
+                        <flux:select wire:model.live="filterDepartment" placeholder="{{ __('Alle Abteilungen') }}" class="max-w-xs">
+                            <flux:select.option value="">{{ __('Alle Abteilungen') }}</flux:select.option>
+                            @foreach ($this->departments as $dept)
+                                <flux:select.option value="{{ $dept }}">{{ $dept }}</flux:select.option>
+                            @endforeach
+                        </flux:select>
+                    @endif
+                </div>
             </div>
-        @endif
-    @endif
 
-    @if ($viewMode === 'list' && $this->employees->isEmpty())
-        <div class="rounded-xl border border-zinc-200 bg-white px-5 py-12 text-center dark:border-zinc-700 dark:bg-zinc-900">
-            <flux:text class="text-zinc-500 dark:text-zinc-400">
-                @if ($this->search !== '' || $this->filterDepartment !== '')
-                    {{ __('Keine Mitarbeiter gefunden, die zu den Filtern passen.') }}
+            <div x-show="viewMode === 'hierarchy'" x-cloak>
+                @if (! $hasNodes)
+                    <div class="rounded-xl border border-zinc-200 bg-white px-5 py-12 text-center dark:border-zinc-700 dark:bg-zinc-900">
+                        <flux:text class="text-zinc-500 dark:text-zinc-400">
+                            {{ __('Noch keine Mitarbeiter angelegt.') }}
+                        </flux:text>
+                    </div>
                 @else
-                    {{ __('Noch keine Mitarbeiter angelegt.') }}
+                    <div
+                        wire:ignore
+                        class="grid gap-4 lg:grid-cols-[1fr_20rem]"
+                    >
+                        <div class="rounded-xl border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-900">
+                            <div class="flex flex-wrap items-center gap-2 border-b border-zinc-100 p-3 dark:border-zinc-800">
+                                <flux:input
+                                    x-model.debounce.250ms="hSearch"
+                                    @input="applyHierarchyFilter()"
+                                    size="sm"
+                                    icon="magnifying-glass"
+                                    placeholder="{{ __('Suchen…') }}"
+                                    class="w-44"
+                                />
+                                @if (! empty($graph['departments']))
+                                    <select
+                                        x-model="hDepartment"
+                                        @change="applyHierarchyFilter()"
+                                        class="rounded-lg border border-zinc-200 bg-white px-2 py-1 text-xs dark:border-zinc-700 dark:bg-zinc-900"
+                                    >
+                                        <option value="">{{ __('Alle Abteilungen') }}</option>
+                                        @foreach ($graph['departments'] as $dept)
+                                            <option value="{{ $dept }}">{{ $dept }}</option>
+                                        @endforeach
+                                    </select>
+                                @endif
+
+                                <div class="ml-auto flex items-center gap-0.5 rounded-lg bg-zinc-100 p-0.5 dark:bg-zinc-800">
+                                    <button type="button" class="rounded-md px-2 py-1 text-zinc-700 hover:bg-white dark:text-zinc-200 dark:hover:bg-zinc-700" @click="zoomOut()" title="{{ __('Verkleinern') }}">
+                                        <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M5 9.75A.75.75 0 0 1 5.75 9h8.5a.75.75 0 0 1 0 1.5h-8.5A.75.75 0 0 1 5 9.75Z"/></svg>
+                                    </button>
+                                    <button type="button" class="rounded-md px-2 py-1 text-xs font-semibold text-zinc-700 hover:bg-white dark:text-zinc-200 dark:hover:bg-zinc-700" @click="resetZoom()" title="{{ __('Zoom zurücksetzen') }}">1:1</button>
+                                    <button type="button" class="rounded-md px-2 py-1 text-zinc-700 hover:bg-white dark:text-zinc-200 dark:hover:bg-zinc-700" @click="zoomIn()" title="{{ __('Vergrößern') }}">
+                                        <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M10.75 5.75a.75.75 0 0 0-1.5 0V9h-3.5a.75.75 0 0 0 0 1.5h3.5v3.25a.75.75 0 0 0 1.5 0V10.5h3.5a.75.75 0 0 0 0-1.5h-3.5V5.75Z"/></svg>
+                                    </button>
+                                </div>
+                                <flux:button size="sm" variant="ghost" icon="arrows-pointing-out" @click="fit()">{{ __('Einpassen') }}</flux:button>
+                            </div>
+                            <div id="employee-hierarchy-canvas" class="h-[640px] w-full"></div>
+
+                            @if (! $hasEdges)
+                                <div class="border-t border-zinc-100 px-4 py-3 text-xs text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
+                                    {{ __('Noch keine Vorgesetzten-Beziehungen erfasst — bearbeiten Sie einzelne Mitarbeiter und setzen Sie das Feld „Vorgesetzte", damit hier ein Org-Chart entsteht.') }}
+                                </div>
+                            @endif
+                        </div>
+
+                        <aside class="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-900">
+                            <flux:heading size="sm">{{ __('Legende') }}</flux:heading>
+                            <ul class="mt-3 space-y-2 text-xs text-zinc-600 dark:text-zinc-300">
+                                <li class="flex items-center gap-2"><span class="inline-block h-3 w-5 rounded border-2" style="background:#fee2e2;border-color:#dc2626"></span>{{ __('Mit Krisenrolle') }}</li>
+                                <li class="flex items-center gap-2"><span class="inline-block h-3 w-5 rounded border-2" style="background:#fef3c7;border-color:#d97706"></span>{{ __('Schlüsselperson') }}</li>
+                                <li class="flex items-center gap-2"><span class="inline-block h-3 w-5 rounded border-2" style="background:#eef2ff;border-color:#6366f1"></span>{{ __('Standard-Mitarbeiter') }}</li>
+                                <li class="flex items-center gap-2"><svg viewBox="0 0 24 12" class="h-3 w-6"><path d="M2 6h17" stroke="#0ea5e9" stroke-width="2" fill="none"/><path d="M22 6l-4-3v6z" fill="#0ea5e9"/></svg>{{ __('Beim Hover: Vorgesetzten-Pfad') }}</li>
+                                <li class="flex items-center gap-2"><svg viewBox="0 0 24 12" class="h-3 w-6"><path d="M2 6h17" stroke="#f59e0b" stroke-width="2" fill="none"/><path d="M22 6l-4-3v6z" fill="#f59e0b"/></svg>{{ __('Beim Hover: Unterstellte') }}</li>
+                            </ul>
+
+                            <div class="mt-4 border-t border-zinc-100 pt-3 dark:border-zinc-800">
+                                <flux:heading size="sm">{{ __('Auswahl') }}</flux:heading>
+                                <template x-if="hSelected">
+                                    <div class="mt-2 space-y-1 text-sm">
+                                        <div class="font-semibold text-zinc-900 dark:text-zinc-100" x-text="hSelected.label.replace(/\n/g, ' — ')"></div>
+                                        <div class="text-xs text-zinc-500 dark:text-zinc-400" x-text="hSelected.department || '{{ __('Keine Abteilung') }}'"></div>
+                                        <div class="text-xs text-zinc-500 dark:text-zinc-400" x-show="hSelected.has_crisis_role" x-text="'{{ __('Krisenrolle:') }} ' + hSelected.crisis_role"></div>
+                                    </div>
+                                </template>
+                                <template x-if="!hSelected">
+                                    <div class="mt-2 text-xs text-zinc-500 dark:text-zinc-400">{{ __('Klicken Sie einen Knoten an, um Details zu sehen.') }}</div>
+                                </template>
+                            </div>
+                        </aside>
+                    </div>
                 @endif
-            </flux:text>
-        </div>
-    @elseif ($viewMode === 'list')
-        <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            @foreach ($this->employees as $employee)
+            </div>
+
+            <div x-show="viewMode === 'list'" x-cloak>
+                @if ($this->employees->isEmpty())
+                    <div class="rounded-xl border border-zinc-200 bg-white px-5 py-12 text-center dark:border-zinc-700 dark:bg-zinc-900">
+                        <flux:text class="text-zinc-500 dark:text-zinc-400">
+                            @if ($this->search !== '' || $this->filterDepartment !== '')
+                                {{ __('Keine Mitarbeiter gefunden, die zu den Filtern passen.') }}
+                            @else
+                                {{ __('Noch keine Mitarbeiter angelegt.') }}
+                            @endif
+                        </flux:text>
+                    </div>
+                @else
+                    <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                        @foreach ($this->employees as $employee)
                 <div class="flex flex-col rounded-xl border border-zinc-200 bg-white p-5 transition hover:border-zinc-300 hover:shadow-sm dark:border-zinc-700 dark:bg-zinc-900 dark:hover:border-zinc-600">
                     <div class="flex items-start justify-between gap-2">
                         <div class="flex min-w-0 flex-1 items-start gap-3">
@@ -625,6 +641,9 @@ new #[Title('Mitarbeiter')] class extends Component {
                     @endif
                 </div>
             @endforeach
+                    </div>
+                @endif
+            </div>
         </div>
     @endif
 
