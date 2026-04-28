@@ -556,6 +556,9 @@
                     <p class="mt-2 text-sm text-slate-600 leading-relaxed">
                         Reifegrad-Score nach BSI 200-4 und NIS2 — automatisch errechnet aus Ihren tatsächlichen Daten. 30-Tage-Trend, Top-Aktionen mit größtem Hebel und ein klarer Zustand: nicht vorbereitet, ausbaufähig, gut, hervorragend.
                     </p>
+                    <a href="{{ route('feature.show', 'compliance-dashboard') }}" class="mt-4 inline-flex items-center gap-1 text-sm font-medium text-indigo-600 hover:text-indigo-800 transition">
+                        Mehr erfahren <span aria-hidden="true">→</span>
+                    </a>
                 </div>
 
                 {{-- Risiko-Register --}}
@@ -570,6 +573,9 @@
                     <p class="mt-2 text-sm text-slate-600 leading-relaxed">
                         ISO-27001-konformes Register: 5×5-Heatmap, Eintrittswahrscheinlichkeit × Schaden, Restrisiko nach Maßnahmen, Eigentümer und Review-Termine. Maßnahmen lassen sich direkt in die Aufgaben-Inbox überführen.
                     </p>
+                    <a href="{{ route('feature.show', 'risiko-register') }}" class="mt-4 inline-flex items-center gap-1 text-sm font-medium text-rose-600 hover:text-rose-800 transition">
+                        Mehr erfahren <span aria-hidden="true">→</span>
+                    </a>
                 </div>
 
                 {{-- Lessons Learned --}}
@@ -583,6 +589,9 @@
                     <p class="mt-2 text-sm text-slate-600 leading-relaxed">
                         Strukturierte After-Action-Auswertung pro Vorfall und Übung — Ursache, was lief gut, was nicht, plus konkrete Maßnahmen mit Fälligkeit. Verknüpft mit Handbuch-Versionen, damit Erkenntnisse nachweislich einfließen.
                     </p>
+                    <a href="{{ route('feature.show', 'lessons-learned') }}" class="mt-4 inline-flex items-center gap-1 text-sm font-medium text-violet-600 hover:text-violet-800 transition">
+                        Mehr erfahren <span aria-hidden="true">→</span>
+                    </a>
                 </div>
 
                 {{-- War-Room / Echtzeit --}}
@@ -596,6 +605,9 @@
                     <p class="mt-2 text-sm text-slate-600 leading-relaxed">
                         Mehrere Personen sehen in Echtzeit, wer welchen Schritt erledigt hat. Anwesenheits-Liste, Live-Updates auf Schritte und Notizen — aus dem Doku-Tool wird ein operativer Krisen-Kommandostand.
                     </p>
+                    <a href="{{ route('feature.show', 'war-room') }}" class="mt-4 inline-flex items-center gap-1 text-sm font-medium text-amber-600 hover:text-amber-800 transition">
+                        Mehr erfahren <span aria-hidden="true">→</span>
+                    </a>
                 </div>
 
                 {{-- Audit-Log + Mandanten-Export --}}
@@ -609,6 +621,9 @@
                     <p class="mt-2 text-sm text-slate-600 leading-relaxed">
                         Lückenlose Änderungshistorie pro Mandant, exportierbar als CSV oder PDF. Vollständiges Mandanten-Archiv (ZIP) für DSGVO-Auskunft: alle Stammdaten, Audit-Log und revisionssichere Handbuch-PDFs in einem Download.
                     </p>
+                    <a href="{{ route('feature.show', 'audit-export') }}" class="mt-4 inline-flex items-center gap-1 text-sm font-medium text-emerald-600 hover:text-emerald-800 transition">
+                        Mehr erfahren <span aria-hidden="true">→</span>
+                    </a>
                 </div>
 
                 {{-- Monitoring-Integration --}}
@@ -622,6 +637,9 @@
                     <p class="mt-2 text-sm text-slate-600 leading-relaxed">
                         Zabbix oder Prometheus Alertmanager melden kritische Vorfälle automatisch — die Plattform öffnet einen Incident, mappt das richtige System und löst die Eskalations-Kette aus. Krisen-Nachrichten via Slack, Microsoft Teams, E-Mail und SMS, jeweils mit Audit-Spur.
                     </p>
+                    <a href="{{ route('feature.show', 'monitoring') }}" class="mt-4 inline-flex items-center gap-1 text-sm font-medium text-sky-600 hover:text-sky-800 transition">
+                        Mehr erfahren <span aria-hidden="true">→</span>
+                    </a>
                 </div>
             </div>
 

@@ -13,6 +13,7 @@ use App\Models\System;
 use App\Scopes\CurrentCompanyScope;
 use App\Support\CurrentCompany;
 use App\Support\HandbookData;
+use App\Support\Marketing\FeatureCatalog;
 use App\Support\Settings\SystemSetting;
 use App\Support\SystemImport;
 use Illuminate\Support\Facades\Route;
@@ -54,6 +55,18 @@ Route::get('/agb', function () {
         'settingKey' => 'platform_terms',
     ]);
 })->name('legal.terms');
+
+Route::get('/funktionen/{slug}', function (string $slug) {
+    $feature = FeatureCatalog::find($slug);
+    abort_unless($feature !== null, 404);
+
+    return view('feature-detail', [
+        'feature' => $feature,
+        'productName' => SystemSetting::get('platform_name') ?: config('app.name', 'PlanB'),
+        'canRegister' => Features::enabled(Features::registration())
+            && SystemSetting::get('registration_enabled', true),
+    ]);
+})->where('slug', '[a-z0-9-]+')->name('feature.show');
 
 Route::prefix('{current_team}')
     ->middleware(['auth', 'verified', EnsureTeamMembership::class])
