@@ -19,10 +19,25 @@ it('returns 404 for an unknown feature slug', function () {
 
 it('shows a placeholder when a screenshot file is missing', function () {
     $slug = FeatureCatalog::slugs()[0];
+    $feature = FeatureCatalog::find($slug);
+    $screenshotFile = $feature['screenshots'][0]['file'];
+    $path = public_path('screenshots/'.$screenshotFile);
+    $backup = $path.'.bak';
 
-    $this->get('/funktionen/'.$slug)
-        ->assertOk()
-        ->assertSeeText('Screenshot folgt');
+    $hadFile = file_exists($path);
+    if ($hadFile) {
+        rename($path, $backup);
+    }
+
+    try {
+        $this->get('/funktionen/'.$slug)
+            ->assertOk()
+            ->assertSeeText('Screenshot folgt');
+    } finally {
+        if ($hadFile && file_exists($backup)) {
+            rename($backup, $path);
+        }
+    }
 });
 
 it('links every feature card on the home page to a detail route', function () {
