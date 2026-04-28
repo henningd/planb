@@ -50,10 +50,66 @@ test('employees page renders with search and department filter', function () {
         ->get(route('employees.index'))
         ->assertOk()
         ->assertSee('Mitarbeiter')
-        ->assertSee('Erika Mustermann')
+        ->assertSee('Mustermann, Erika')
         ->assertSee('Schlüsselmitarbeiter')
         ->assertSee('Vertriebsleitung')
         ->assertSee('0171 1234567');
+});
+
+test('employees list shows names as "Lastname, Firstname" sorted by lastname', function () {
+    $user = User::factory()->create();
+    $company = Company::factory()->for($user->currentTeam)->create();
+
+    foreach ([
+        ['Anton', 'Zimmermann'],
+        ['Berta', 'Albrecht'],
+        ['Carl', 'Müller'],
+    ] as [$first, $last]) {
+        Employee::withoutGlobalScope(CurrentCompanyScope::class)->create([
+            'company_id' => $company->id,
+            'first_name' => $first,
+            'last_name' => $last,
+        ]);
+    }
+
+    $response = $this->actingAs($user->fresh())->get(route('employees.index'));
+    $response->assertOk();
+
+    $body = $response->getContent();
+    $albrechtPos = strpos($body, 'Albrecht, Berta');
+    $muellerPos = strpos($body, 'Müller, Carl');
+    $zimmermannPos = strpos($body, 'Zimmermann, Anton');
+
+    expect($albrechtPos)->not->toBeFalse()
+        ->and($muellerPos)->not->toBeFalse()
+        ->and($zimmermannPos)->not->toBeFalse()
+        ->and($albrechtPos)->toBeLessThan($muellerPos)
+        ->and($muellerPos)->toBeLessThan($zimmermannPos);
+});
+
+test('employees hierarchy view renders cytoscape canvas with graph data', function () {
+    $user = User::factory()->create();
+    $company = Company::factory()->for($user->currentTeam)->create();
+
+    $chef = Employee::withoutGlobalScope(CurrentCompanyScope::class)->create([
+        'company_id' => $company->id,
+        'first_name' => 'Chef',
+        'last_name' => 'Mueller',
+    ]);
+    $angestellter = Employee::withoutGlobalScope(CurrentCompanyScope::class)->create([
+        'company_id' => $company->id,
+        'first_name' => 'Anna',
+        'last_name' => 'Beispiel',
+    ]);
+    $angestellter->managers()->attach($chef->id);
+
+    Livewire\Livewire::actingAs($user->fresh())
+        ->test('pages::employees.index')
+        ->set('viewMode', 'hierarchy')
+        ->assertSee('employee-hierarchy-canvas', false)
+        ->assertSee($chef->id, false)
+        ->assertSee($angestellter->id, false)
+        ->assertSee("edge-{$chef->id}-{$angestellter->id}", false);
 });
 
 test('manager self-reference persists correctly', function () {

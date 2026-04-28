@@ -41,6 +41,13 @@ Mitarbeiter können als **Schlüsselperson** markiert werden. Schlüsselpersonen
 
 Optional: ein **privater Notfall-Kontakt** (z. B. Familie). Wird nur in echten Notlagen verwendet und nicht in regulären Reports.
 
+## Listen- und Hierarchie-Ansicht
+
+Die Mitarbeiter-Übersicht hat oben einen Tab-Schalter zwischen zwei Darstellungen:
+
+- **Liste** (Standard): Karten-Grid mit allen Mitarbeitern, alphabetisch aufsteigend nach Nachname sortiert. Namen werden im Format **„Nachname, Vorname"** angezeigt — so ist die Sortier-Reihenfolge auch beim Drüberlesen sofort nachvollziehbar. Mit Suche (Name, Rolle, E-Mail) und Abteilungs-Filter durchsuchbar.
+- **Hierarchie**: grafisches Org-Chart der Vorgesetzten-Beziehungen, von oben nach unten gerichtet. Personen mit mehreren Vorgesetzten erscheinen einmal mit zwei Eingangs-Pfeilen — die Mehrfach-Zuordnung des Modells (fachlich + disziplinarisch, Matrix-Organisation) ist im Diagramm korrekt abgebildet. Beim Hover über einen Knoten leuchtet die gesamte Vorgesetzten-Kette nach oben (blau) und alle Unterstellten nach unten (gelb) auf — so sehen Sie auch in größeren Strukturen sofort: „Wer trägt für diese Person Verantwortung — und wofür ist diese Person verantwortlich?". Schlüsselpersonen sind gelb hinterlegt, Personen mit Krisenrolle rot. Klick auf einen Knoten öffnet rechts die Detail-Karte.
+
 ## Mindestens drei Mitarbeiter
 
 Die Onboarding-Prüfung verlangt mindestens **drei Mitarbeiter**. Das ist die untere Schwelle, ab der ein Notfallhandbuch sinnvoll ist — eine Person allein hat keinen Krisenstab.

@@ -40,6 +40,24 @@ class Employee extends Model
         return trim("{$this->first_name} {$this->last_name}");
     }
 
+    public function nameLastFirst(): string
+    {
+        $last = trim((string) $this->last_name);
+        $first = trim((string) $this->first_name);
+
+        if ($last === '' && $first === '') {
+            return '';
+        }
+        if ($last === '') {
+            return $first;
+        }
+        if ($first === '') {
+            return $last;
+        }
+
+        return "{$last}, {$first}";
+    }
+
     public function auditLabel(): string
     {
         return $this->fullName();
