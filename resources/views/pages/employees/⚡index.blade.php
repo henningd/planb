@@ -107,7 +107,7 @@ new #[Title('Mitarbeiter')] class extends Component {
     public function employees()
     {
         return Employee::query()
-            ->with(['managers', 'location', 'department'])
+            ->with(['managers', 'reports', 'location', 'department'])
             ->when($this->search !== '', function ($q) {
                 $term = '%'.$this->search.'%';
                 $q->where(function ($q) use ($term) {
@@ -570,9 +570,31 @@ new #[Title('Mitarbeiter')] class extends Component {
                     @endif
 
                     @if ($employee->managers->isNotEmpty())
-                        <flux:text class="mt-3 border-t border-zinc-100 pt-3 text-xs text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
-                            {{ __('Vorgesetzt von:') }} {{ $employee->managers->map(fn ($m) => $m->fullName())->implode(', ') }}
-                        </flux:text>
+                        <div class="mt-3 border-t border-zinc-100 pt-3 dark:border-zinc-800">
+                            <div class="flex items-start gap-2 text-sm">
+                                <flux:icon name="user-circle" class="mt-0.5 h-4 w-4 shrink-0 text-zinc-400" />
+                                <div class="min-w-0 flex-1">
+                                    <div class="text-xs uppercase tracking-wide text-zinc-500 dark:text-zinc-400">{{ __('Unterstellt') }}</div>
+                                    <div class="mt-0.5 text-zinc-700 dark:text-zinc-200">
+                                        {{ $employee->managers->map(fn ($m) => $m->nameLastFirst())->implode(' · ') }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
+
+                    @if ($employee->reports->isNotEmpty())
+                        <div class="mt-2 border-t border-zinc-100 pt-2 dark:border-zinc-800">
+                            <div class="flex items-start gap-2 text-sm">
+                                <flux:icon name="users" class="mt-0.5 h-4 w-4 shrink-0 text-zinc-400" />
+                                <div class="min-w-0 flex-1">
+                                    <div class="text-xs uppercase tracking-wide text-zinc-500 dark:text-zinc-400">{{ trans_choice('{1} Vorgesetzt für|[2,*] Vorgesetzt für (:count)', $employee->reports->count(), ['count' => $employee->reports->count()]) }}</div>
+                                    <div class="mt-0.5 text-zinc-700 dark:text-zinc-200">
+                                        {{ $employee->reports->map(fn ($r) => $r->nameLastFirst())->implode(' · ') }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     @endif
                 </div>
             @endforeach

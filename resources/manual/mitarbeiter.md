@@ -41,6 +41,15 @@ Mitarbeiter können als **Schlüsselperson** markiert werden. Schlüsselpersonen
 
 Optional: ein **privater Notfall-Kontakt** (z. B. Familie). Wird nur in echten Notlagen verwendet und nicht in regulären Reports.
 
+## Beziehungen auf einen Blick
+
+Jede Mitarbeiter-Karte zeigt unten zwei Zeilen, falls relevant:
+
+- **UNTERSTELLT** — die Vorgesetzten dieser Person, getrennt durch „·". Bei Matrix-Organisation stehen mehrere Namen nebeneinander.
+- **VORGESETZT FÜR (n)** — die direkt unterstellten Mitarbeiter, mit Anzahl in Klammern. Hilft, im Ernstfall sofort zu sehen: „wer berichtet an wen?".
+
+Wer eine vollständige Visualisierung der gesamten Firma sehen will, wechselt in den **Hierarchie-Tab** oben.
+
 ## Listen- und Hierarchie-Ansicht
 
 Die Mitarbeiter-Übersicht hat oben einen Tab-Schalter zwischen zwei Darstellungen:
