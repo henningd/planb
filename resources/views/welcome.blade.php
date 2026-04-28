@@ -1,7 +1,8 @@
 @php
-    $productName = \App\Support\Settings\SystemSetting::get('platform_name', '') ?: config('app.name', 'Notfallplan');
-    $contactEmail = (string) \App\Support\Settings\SystemSetting::get('platform_contact_email', '');
-    $contactPhone = (string) \App\Support\Settings\SystemSetting::get('platform_contact_phone', '');
+    $productName = \App\Support\Settings\SystemSetting::get('platform_name') ?: config('app.name', 'Notfallplan');
+    $contactEmail = (string) \App\Support\Settings\SystemSetting::get('platform_contact_email');
+    $contactPhone = (string) \App\Support\Settings\SystemSetting::get('platform_contact_phone');
+    $companyName = 'Arento AI GmbH i. G.';
 
     $problems = [
         [
@@ -202,20 +203,24 @@
             </nav>
 
             <div class="flex items-center gap-3">
-                @if (Route::has('login'))
-                    @auth
-                        <a href="{{ route('dashboard') }}" class="hidden sm:inline-flex items-center px-4 py-2 text-sm font-medium text-slate-700 hover:text-slate-900 transition">
-                            Dashboard
+                @auth
+                    <a href="{{ route('dashboard') }}" class="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg bg-slate-900 text-white hover:bg-slate-800 transition shadow-sm">
+                        Zum Dashboard
+                    </a>
+                @else
+                    <a href="{{ route('login') }}" class="hidden sm:inline-flex items-center px-4 py-2 text-sm font-medium text-slate-700 hover:text-slate-900 transition">
+                        Anmelden
+                    </a>
+                    @if ($canRegister)
+                        <a href="{{ route('register') }}" class="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg bg-slate-900 text-white hover:bg-slate-800 transition shadow-sm">
+                            Kostenlos starten
                         </a>
                     @else
-                        <a href="{{ route('login') }}" class="hidden sm:inline-flex items-center px-4 py-2 text-sm font-medium text-slate-700 hover:text-slate-900 transition">
-                            Anmelden
+                        <a href="#kontakt" class="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg bg-slate-900 text-white hover:bg-slate-800 transition shadow-sm">
+                            Demo anfragen
                         </a>
-                    @endauth
-                @endif
-                <a href="#kontakt" class="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg bg-slate-900 text-white hover:bg-slate-800 transition shadow-sm">
-                    Demo anfragen
-                </a>
+                    @endif
+                @endauth
             </div>
         </div>
     </header>
@@ -244,13 +249,29 @@
                     </p>
 
                     <div class="mt-8 flex flex-col sm:flex-row gap-3">
-                        <a href="#features" class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-slate-900 text-white font-medium hover:bg-slate-800 transition shadow-sm">
-                            Funktionen ansehen
-                            <svg class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
-                        </a>
-                        <a href="#kontakt" class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-white text-slate-900 font-medium ring-1 ring-slate-200 hover:ring-slate-300 hover:bg-slate-50 transition">
-                            Kontakt aufnehmen
-                        </a>
+                        @auth
+                            <a href="{{ route('dashboard') }}" class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-slate-900 text-white font-medium hover:bg-slate-800 transition shadow-sm">
+                                Zum Dashboard
+                                <svg class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+                            </a>
+                        @else
+                            @if ($canRegister)
+                                <a href="{{ route('register') }}" class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-slate-900 text-white font-medium hover:bg-slate-800 transition shadow-sm">
+                                    Kostenlos starten
+                                    <svg class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+                                </a>
+                                <a href="{{ route('login') }}" class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-white text-slate-900 font-medium ring-1 ring-slate-200 hover:ring-slate-300 hover:bg-slate-50 transition">
+                                    Anmelden
+                                </a>
+                            @else
+                                <a href="#features" class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-slate-900 text-white font-medium hover:bg-slate-800 transition shadow-sm">
+                                    Funktionen ansehen
+                                </a>
+                                <a href="{{ route('login') }}" class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-white text-slate-900 font-medium ring-1 ring-slate-200 hover:ring-slate-300 hover:bg-slate-50 transition">
+                                    Anmelden
+                                </a>
+                            @endif
+                        @endauth
                     </div>
 
                     <div class="mt-10 flex flex-wrap items-center gap-x-6 gap-y-3 text-sm text-slate-500">
@@ -751,15 +772,45 @@
                 <div class="absolute inset-0 -z-0 opacity-30 bg-[radial-gradient(ellipse_at_top_right,rgba(255,255,255,0.4),transparent_50%)]"></div>
                 <div class="relative max-w-2xl">
                     <h2 class="text-3xl sm:text-4xl font-semibold tracking-tight">
-                        Lernen Sie {{ $productName }} in einem kurzen Gespräch kennen.
+                        @auth
+                            Weiter mit {{ $productName }} im Dashboard.
+                        @else
+                            @if ($canRegister)
+                                In Minuten zum eigenen Notfallhandbuch.
+                            @else
+                                Lernen Sie {{ $productName }} in einem kurzen Gespräch kennen.
+                            @endif
+                        @endauth
                     </h2>
                     <p class="mt-4 text-lg text-indigo-100 leading-relaxed">
-                        Wir zeigen Ihnen, wie ein strukturiertes Notfallhandbuch für Ihr Unternehmen aussehen kann – praxisnah, verständlich und ohne Verpflichtung.
+                        @auth
+                            Sie sind angemeldet — alles ist vorbereitet. Eine kostenlose Testumgebung ist startbereit, sobald Sie ein Firmenprofil anlegen.
+                        @else
+                            @if ($canRegister)
+                                Konto anlegen, Firmenprofil ausfüllen, Branche wählen — der geführte Wizard erledigt den Rest. Kein Beratungsprojekt nötig.
+                            @else
+                                Wir zeigen Ihnen, wie ein strukturiertes Notfallhandbuch für Ihr Unternehmen aussehen kann – praxisnah, verständlich und ohne Verpflichtung.
+                            @endif
+                        @endauth
                     </p>
-                    @if ($contactEmail !== '' || $contactPhone !== '')
-                        <div class="mt-8 flex flex-col sm:flex-row gap-3">
+                    <div class="mt-8 flex flex-col sm:flex-row gap-3">
+                        @auth
+                            <a href="{{ route('dashboard') }}" class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-white text-slate-900 font-medium hover:bg-slate-100 transition shadow-sm">
+                                Zum Dashboard
+                                <svg class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+                            </a>
+                        @else
+                            @if ($canRegister)
+                                <a href="{{ route('register') }}" class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-white text-slate-900 font-medium hover:bg-slate-100 transition shadow-sm">
+                                    Kostenlos starten
+                                    <svg class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+                                </a>
+                                <a href="{{ route('login') }}" class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-white/10 text-white font-medium ring-1 ring-white/20 hover:bg-white/15 transition">
+                                    Anmelden
+                                </a>
+                            @endif
                             @if ($contactEmail !== '')
-                                <a href="mailto:{{ $contactEmail }}" class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-white text-slate-900 font-medium hover:bg-slate-100 transition shadow-sm">
+                                <a href="mailto:{{ $contactEmail }}" class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-white/10 text-white font-medium ring-1 ring-white/20 hover:bg-white/15 transition">
                                     <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
                                     {{ $contactEmail }}
                                 </a>
@@ -770,12 +821,13 @@
                                     {{ $contactPhone }}
                                 </a>
                             @endif
-                        </div>
-                    @else
-                        <div class="mt-8 rounded-lg bg-white/10 ring-1 ring-white/20 px-5 py-4 text-sm text-indigo-100">
-                            {{ __('Kontaktdaten werden in den Plattform-Einstellungen hinterlegt (Schlüssel: platform_contact_email, platform_contact_phone).') }}
-                        </div>
-                    @endif
+                            @if ($contactEmail === '' && $contactPhone === '' && ! $canRegister)
+                                <div class="rounded-lg bg-white/10 ring-1 ring-white/20 px-5 py-4 text-sm text-indigo-100">
+                                    Kontaktdaten werden in den Plattform-Einstellungen hinterlegt (Schlüssel: platform_contact_email, platform_contact_phone).
+                                </div>
+                            @endif
+                        @endauth
+                    </div>
                 </div>
             </div>
         </div>
@@ -796,6 +848,9 @@
                     </div>
                     <p class="mt-4 text-sm text-slate-600 leading-relaxed max-w-md">
                         Das digitale Notfallhandbuch für kleine und mittelständische Unternehmen. Strukturiert vorbereitet auf Cyberangriff, Ausfall und Krise.
+                    </p>
+                    <p class="mt-3 text-xs text-slate-500">
+                        Ein Produkt der <a href="{{ route('legal.imprint') }}" class="hover:text-slate-900 transition">{{ $companyName }}</a>.
                     </p>
                 </div>
 
@@ -822,7 +877,7 @@
 
             <div class="mt-12 pt-8 border-t border-slate-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div class="text-sm text-slate-500">
-                    &copy; {{ date('Y') }} {{ $productName }}. Alle Rechte vorbehalten.
+                    &copy; {{ date('Y') }} {{ $companyName }}. Alle Rechte vorbehalten.
                 </div>
                 <div class="flex items-center gap-6 text-sm text-slate-500">
                     <a href="{{ route('legal.imprint') }}" class="hover:text-slate-900 transition">Impressum</a>

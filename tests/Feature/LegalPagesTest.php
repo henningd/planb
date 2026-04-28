@@ -59,13 +59,32 @@ it('shows configured contact email and phone on the home page', function () {
         ->assertSeeText('+49 30 123456');
 });
 
-it('falls back to a hint when no contact data is configured', function () {
+it('falls back to a hint when no contact data and no self-service registration are available', function () {
     SystemSetting::set('platform_contact_email', '');
     SystemSetting::set('platform_contact_phone', '');
+    SystemSetting::set('registration_enabled', false);
 
     $this->get('/')
         ->assertOk()
         ->assertSeeText('Kontaktdaten werden in den Plattform-Einstellungen hinterlegt');
+});
+
+it('shows register and login CTAs when self-service registration is enabled', function () {
+    SystemSetting::set('registration_enabled', true);
+
+    $this->get('/')
+        ->assertOk()
+        ->assertSeeText('Kostenlos starten')
+        ->assertSeeText('Anmelden')
+        ->assertSee(route('register'), false)
+        ->assertSee(route('login'), false);
+});
+
+it('shows the company name in the footer unobtrusively', function () {
+    $this->get('/')
+        ->assertOk()
+        ->assertSeeText('Arento AI GmbH i. G.')
+        ->assertSeeText('Ein Produkt der');
 });
 
 it('links the legal routes from the welcome page footer', function () {
