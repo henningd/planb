@@ -109,9 +109,24 @@ export function initEmployeeHierarchy(opts) {
                     'border-color': '#1d4ed8',
                 },
             },
+            {
+                selector: '.is-hidden',
+                style: { display: 'none' },
+            },
         ],
         layout: DAGRE_LAYOUT,
     });
+
+    // Container kann beim ersten Mount (Tab-Wechsel) noch 0×0 groß sein —
+    // dann legt Cytoscape den Graph in den Nullpunkt. ResizeObserver triggert
+    // ein resize+fit, sobald das Layout des Containers fertig ist.
+    if (typeof ResizeObserver !== 'undefined') {
+        const ro = new ResizeObserver(() => {
+            cy.resize();
+            cy.fit(undefined, 30);
+        });
+        ro.observe(root);
+    }
 
     const fadeOthers = (nodes, edges) => {
         cy.elements().addClass('faded');
@@ -180,14 +195,25 @@ export function initEmployeeHierarchy(opts) {
                     const label = (n.data('label') || '').toLowerCase();
                     const deptOk = !department || dept === department;
                     const searchOk = !haystack || label.includes(haystack);
-                    n.style('display', deptOk && searchOk ? 'element' : 'none');
+                    if (deptOk && searchOk) {
+                        n.removeClass('is-hidden');
+                    } else {
+                        n.addClass('is-hidden');
+                    }
                 });
                 cy.edges().forEach((e) => {
-                    const sv = e.source().style('display') !== 'none';
-                    const tv = e.target().style('display') !== 'none';
-                    e.style('display', sv && tv ? 'element' : 'none');
+                    const sv = !e.source().hasClass('is-hidden');
+                    const tv = !e.target().hasClass('is-hidden');
+                    if (sv && tv) {
+                        e.removeClass('is-hidden');
+                    } else {
+                        e.addClass('is-hidden');
+                    }
                 });
             });
+            // Layout neu rechnen, damit sichtbare Knoten nicht in alten
+            // Positionen zwischen ausgeblendeten Lücken hängen bleiben.
+            cy.layout(DAGRE_LAYOUT).run();
         },
         destroy() {
             cy.destroy();
