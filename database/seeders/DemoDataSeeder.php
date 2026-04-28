@@ -13,13 +13,22 @@ use App\Enums\Industry;
 use App\Enums\InsuranceType;
 use App\Enums\KritisRelevance;
 use App\Enums\LegalForm;
+use App\Enums\LessonLearnedActionItemStatus;
 use App\Enums\Nis2Classification;
 use App\Enums\ReportingObligation;
+use App\Enums\RiskCategory;
+use App\Enums\RiskMitigationStatus;
+use App\Enums\RiskStatus;
+use App\Enums\RiskTreatmentStrategy;
 use App\Enums\ScenarioRunMode;
 use App\Enums\ServiceProviderType;
 use App\Enums\TeamRole;
+use App\Models\ApiToken;
+use App\Models\CommunicationDispatch;
+use App\Models\CommunicationDispatchRecipient;
 use App\Models\CommunicationTemplate;
 use App\Models\Company;
+use App\Models\ComplianceScoreSnapshot;
 use App\Models\EmergencyResource;
 use App\Models\Employee;
 use App\Models\GlobalScenario;
@@ -29,7 +38,12 @@ use App\Models\HandbookVersion;
 use App\Models\IncidentReport;
 use App\Models\IncidentReportObligation;
 use App\Models\InsurancePolicy;
+use App\Models\LessonLearned;
+use App\Models\LessonLearnedActionItem;
 use App\Models\Location;
+use App\Models\MonitoringAlert;
+use App\Models\Risk;
+use App\Models\RiskMitigation;
 use App\Models\Role;
 use App\Models\Scenario;
 use App\Models\ScenarioRun;
@@ -42,6 +56,7 @@ use App\Models\Team;
 use App\Models\User;
 use App\Scopes\CurrentCompanyScope;
 use App\Support\AssignmentSync;
+use App\Support\Compliance\Evaluator;
 use App\Support\HandbookPdfGenerator;
 use App\Support\IndustryTemplates;
 use Illuminate\Database\Seeder;
@@ -129,6 +144,14 @@ class DemoDataSeeder extends Seeder
         $this->seedHandbookShares($company, $user);
         $this->seedEmergencyResources($company);
         $this->seedHandbookTests($company);
+        $this->seedRisks($company, $user);
+        $this->seedLessonsLearned($company, $user);
+        $this->seedMonitoringKeysOnSystems($company);
+        $this->seedApiTokens($company, $user);
+        $this->seedMonitoringAlerts($company);
+        $this->seedCommunicationDispatches($company, $user);
+        $this->seedComplianceSnapshots($company);
+        $this->seedBranding($company);
 
         $this->command?->info('Demo-Daten bereit. Logins: max@mustermann.de / password · maxigreis@icloud.com / passworD321!1');
     }
@@ -1221,6 +1244,492 @@ class DemoDataSeeder extends Seeder
                     'token' => HandbookShare::generateToken(),
                 ], $data),
             );
+        }
+    }
+
+    /**
+     * Sechs Demo-Risiken in unterschiedlichen Kategorien und Schweregraden,
+     * mit Maßnahmen und Verknüpfung zu existierenden Systemen — bildet alle
+     * Zustände der Risk-UI ab.
+     */
+    private function seedRisks(Company $company, User $user): void
+    {
+        $systems = System::withoutGlobalScope(CurrentCompanyScope::class)
+            ->where('company_id', $company->id)
+            ->get()
+            ->keyBy(fn ($s) => mb_strtolower($s->name));
+
+        $risks = [
+            [
+                'title' => 'Ransomware-Befall des Datei-Servers',
+                'description' => 'Verschlüsselung kritischer Geschäftsdaten durch Krypto-Trojaner über Phishing-Mail.',
+                'category' => RiskCategory::Technical,
+                'probability' => 4, 'impact' => 5,
+                'residual_probability' => 2, 'residual_impact' => 4,
+                'status' => RiskStatus::Mitigated,
+                'treatment_strategy' => RiskTreatmentStrategy::Mitigate,
+                'review_due_at' => now()->addMonths(3)->toDateString(),
+                'system_keywords' => ['server', 'e-mail'],
+                'mitigations' => [
+                    ['title' => 'Offline-Backup-Strategie etablieren', 'status' => RiskMitigationStatus::Verified, 'target_date' => now()->subMonths(2)->toDateString(), 'implemented_at' => now()->subMonths(2)->toDateString()],
+                    ['title' => 'Phishing-Awareness-Training quartalsweise', 'status' => RiskMitigationStatus::InProgress, 'target_date' => now()->addDays(30)->toDateString()],
+                    ['title' => 'EDR-Lösung auf allen Endpoints', 'status' => RiskMitigationStatus::Implemented, 'implemented_at' => now()->subWeeks(6)->toDateString()],
+                ],
+            ],
+            [
+                'title' => 'Stromausfall am Hauptstandort',
+                'description' => 'Längerer Stromausfall macht alle stationären Systeme unbenutzbar.',
+                'category' => RiskCategory::Operational,
+                'probability' => 3, 'impact' => 4,
+                'residual_probability' => 2, 'residual_impact' => 3,
+                'status' => RiskStatus::Mitigated,
+                'treatment_strategy' => RiskTreatmentStrategy::Mitigate,
+                'review_due_at' => now()->addMonths(6)->toDateString(),
+                'system_keywords' => ['strom', 'server'],
+                'mitigations' => [
+                    ['title' => 'USV für Server-Schrank', 'status' => RiskMitigationStatus::Verified, 'implemented_at' => now()->subYear()->toDateString()],
+                    ['title' => 'Notstrom-Aggregat mieten (Vertrag)', 'status' => RiskMitigationStatus::Planned, 'target_date' => now()->addMonths(2)->toDateString()],
+                ],
+            ],
+            [
+                'title' => 'Ausfall des einzigen IT-Dienstleisters',
+                'description' => 'Insolvenz oder längerfristige Nichtverfügbarkeit des externen IT-Dienstleisters.',
+                'category' => RiskCategory::ThirdParty,
+                'probability' => 2, 'impact' => 5,
+                'residual_probability' => null, 'residual_impact' => null,
+                'status' => RiskStatus::Identified,
+                'treatment_strategy' => null,
+                'review_due_at' => now()->subDays(10)->toDateString(),
+                'system_keywords' => [],
+                'mitigations' => [],
+            ],
+            [
+                'title' => 'Datenpanne durch interne Fehlbedienung',
+                'description' => 'Versehentlicher Versand personenbezogener Daten an falschen Empfänger.',
+                'category' => RiskCategory::Organizational,
+                'probability' => 3, 'impact' => 3,
+                'residual_probability' => 2, 'residual_impact' => 2,
+                'status' => RiskStatus::Assessed,
+                'treatment_strategy' => RiskTreatmentStrategy::Mitigate,
+                'review_due_at' => now()->addMonths(2)->toDateString(),
+                'system_keywords' => ['e-mail'],
+                'mitigations' => [
+                    ['title' => 'DSGVO-Schulung für Bürobesetzung', 'status' => RiskMitigationStatus::Implemented, 'implemented_at' => now()->subMonth()->toDateString()],
+                ],
+            ],
+            [
+                'title' => 'NIS2-Berichtspflichten nicht erfüllbar',
+                'description' => 'Im Vorfall keine zeitnahen Meldungen an BSI/Aufsicht möglich.',
+                'category' => RiskCategory::Legal,
+                'probability' => 2, 'impact' => 4,
+                'residual_probability' => null, 'residual_impact' => null,
+                'status' => RiskStatus::Identified,
+                'treatment_strategy' => null,
+                'review_due_at' => null,
+                'system_keywords' => [],
+                'mitigations' => [],
+            ],
+            [
+                'title' => 'Diebstahl mobiler Endgeräte vom Außendienst',
+                'description' => 'Notebook oder Tablet entwendet, Festplatte unverschlüsselt.',
+                'category' => RiskCategory::Technical,
+                'probability' => 3, 'impact' => 3,
+                'residual_probability' => 1, 'residual_impact' => 2,
+                'status' => RiskStatus::Mitigated,
+                'treatment_strategy' => RiskTreatmentStrategy::Mitigate,
+                'review_due_at' => now()->addMonths(4)->toDateString(),
+                'system_keywords' => [],
+                'mitigations' => [
+                    ['title' => 'BitLocker auf allen Notebooks aktivieren', 'status' => RiskMitigationStatus::Verified, 'implemented_at' => now()->subMonths(3)->toDateString()],
+                    ['title' => 'MDM-Lösung mit Remote-Wipe einführen', 'status' => RiskMitigationStatus::InProgress, 'target_date' => now()->addDays(45)->toDateString()],
+                ],
+            ],
+        ];
+
+        foreach ($risks as $data) {
+            $risk = Risk::withoutGlobalScope(CurrentCompanyScope::class)
+                ->updateOrCreate(
+                    ['company_id' => $company->id, 'title' => $data['title']],
+                    [
+                        'description' => $data['description'],
+                        'category' => $data['category'],
+                        'probability' => $data['probability'],
+                        'impact' => $data['impact'],
+                        'residual_probability' => $data['residual_probability'],
+                        'residual_impact' => $data['residual_impact'],
+                        'status' => $data['status'],
+                        'treatment_strategy' => $data['treatment_strategy'],
+                        'owner_user_id' => $user->id,
+                        'review_due_at' => $data['review_due_at'],
+                    ],
+                );
+
+            $systemIds = collect($data['system_keywords'])
+                ->map(fn ($kw) => $systems->first(fn ($s, $key) => str_contains($key, mb_strtolower((string) $kw))))
+                ->filter()
+                ->pluck('id')
+                ->all();
+            $risk->systems()->sync($systemIds);
+
+            foreach ($data['mitigations'] as $mitData) {
+                RiskMitigation::query()->updateOrCreate(
+                    ['risk_id' => $risk->id, 'title' => $mitData['title']],
+                    [
+                        'status' => $mitData['status'],
+                        'target_date' => $mitData['target_date'] ?? null,
+                        'implemented_at' => $mitData['implemented_at'] ?? null,
+                    ],
+                );
+            }
+        }
+    }
+
+    /**
+     * Drei Lessons Learned aus den existierenden Vorfällen und Übungen,
+     * mit Action-Items in unterschiedlichen Status-Stufen.
+     */
+    private function seedLessonsLearned(Company $company, User $user): void
+    {
+        $employees = Employee::withoutGlobalScope(CurrentCompanyScope::class)
+            ->where('company_id', $company->id)
+            ->take(3)
+            ->get();
+
+        $latestRun = ScenarioRun::withoutGlobalScope(CurrentCompanyScope::class)
+            ->where('company_id', $company->id)
+            ->latest('started_at')
+            ->first();
+        $latestIncident = IncidentReport::withoutGlobalScope(CurrentCompanyScope::class)
+            ->where('company_id', $company->id)
+            ->latest('occurred_at')
+            ->first();
+        $latestVersion = HandbookVersion::withoutGlobalScope(CurrentCompanyScope::class)
+            ->where('company_id', $company->id)
+            ->whereNotNull('approved_at')
+            ->latest('approved_at')
+            ->first();
+
+        $lessons = [
+            [
+                'title' => 'Tabletop Ransomware: Eskalationskette zu langsam',
+                'root_cause' => 'Stellvertretung des IT-Leiters war nicht informiert; Telefon-Rückruf-Schleife > 25 Minuten.',
+                'what_went_well' => 'Erstmeldung an GF binnen 5 Minuten. Backup-Restore-Prozess war griffbereit.',
+                'what_went_poorly' => 'Niemand wusste, ob Cyber-Versicherung bei Tabletop-Übung trotzdem zu informieren ist. Stellvertretung ITL wurde erst über Slack erreicht.',
+                'incident_report_id' => null,
+                'scenario_run_id' => $latestRun?->id,
+                'handbook_version_id' => $latestVersion?->id,
+                'finalized_at' => now()->subDays(5),
+                'actions' => [
+                    ['description' => 'Stellvertretungs-Telefonnummern auf Krisen-Aushang nachpflegen', 'status' => LessonLearnedActionItemStatus::Done, 'due_in' => -7, 'completed_days_ago' => 2],
+                    ['description' => 'Cyber-Versicherung kontaktieren: Meldung bei Übung pflichtig?', 'status' => LessonLearnedActionItemStatus::InProgress, 'due_in' => 14],
+                    ['description' => 'Slack als Krisen-Kanal etablieren oder Telegram-Backup', 'status' => LessonLearnedActionItemStatus::Open, 'due_in' => 30],
+                ],
+            ],
+            [
+                'title' => 'Phishing-Welle Buchhaltung: Klickrate höher als erwartet',
+                'root_cause' => 'Letzte Awareness-Schulung lag > 14 Monate zurück; neue Mitarbeiter ohne Onboarding-Modul.',
+                'what_went_well' => 'EDR hat 2 von 3 Anhängen automatisch isoliert. Meldungen aus dem Team kamen schnell.',
+                'what_went_poorly' => 'Eine Kollegin hat Anmeldedaten auf Phishing-Seite eingegeben. Erst über Logfile-Auswertung 2h später bemerkt.',
+                'incident_report_id' => $latestIncident?->id,
+                'scenario_run_id' => null,
+                'handbook_version_id' => null,
+                'finalized_at' => null,
+                'actions' => [
+                    ['description' => 'Quartalsweise Phishing-Übungen einplanen', 'status' => LessonLearnedActionItemStatus::InProgress, 'due_in' => 21],
+                    ['description' => 'Onboarding-Modul "IT-Sicherheit" für neue Mitarbeitende', 'status' => LessonLearnedActionItemStatus::Open, 'due_in' => 60],
+                    ['description' => 'Conditional Access in M365: nur aus DE/AT/CH zulassen', 'status' => LessonLearnedActionItemStatus::Open, 'due_in' => -3],
+                ],
+            ],
+            [
+                'title' => 'Stromausfall-Übung: USV reichte nur 18 statt 30 Min.',
+                'root_cause' => 'Akkus der USV waren 6 Jahre alt; im Wartungsplan war Test alle 12 Monate, nicht Tausch alle 4 Jahre.',
+                'what_went_well' => 'Geordnetes Shutdown-Skript hat funktioniert; keine Datenverluste.',
+                'what_went_poorly' => 'USV-Restlaufzeit war eine Black Box; nach Akku-Tausch nicht neu kalibriert.',
+                'incident_report_id' => null,
+                'scenario_run_id' => null,
+                'handbook_version_id' => $latestVersion?->id,
+                'finalized_at' => now()->subDays(20),
+                'actions' => [
+                    ['description' => 'USV-Akku-Tausch alle 4 Jahre in Maintenance-Plan aufnehmen', 'status' => LessonLearnedActionItemStatus::Done, 'completed_days_ago' => 18],
+                    ['description' => 'Notstrom-Aggregat-Vertrag prüfen', 'status' => LessonLearnedActionItemStatus::Cancelled, 'due_in' => 30],
+                ],
+            ],
+        ];
+
+        foreach ($lessons as $data) {
+            $lesson = LessonLearned::withoutGlobalScope(CurrentCompanyScope::class)
+                ->updateOrCreate(
+                    ['company_id' => $company->id, 'title' => $data['title']],
+                    [
+                        'incident_report_id' => $data['incident_report_id'],
+                        'scenario_run_id' => $data['scenario_run_id'],
+                        'handbook_version_id' => $data['handbook_version_id'],
+                        'root_cause' => $data['root_cause'],
+                        'what_went_well' => $data['what_went_well'],
+                        'what_went_poorly' => $data['what_went_poorly'],
+                        'author_user_id' => $user->id,
+                        'finalized_at' => $data['finalized_at'],
+                    ],
+                );
+
+            foreach ($data['actions'] as $idx => $actionData) {
+                LessonLearnedActionItem::query()->updateOrCreate(
+                    ['lesson_learned_id' => $lesson->id, 'description' => $actionData['description']],
+                    [
+                        'responsible_employee_id' => $employees->get($idx % $employees->count())?->id,
+                        'due_date' => isset($actionData['due_in']) ? now()->addDays($actionData['due_in'])->toDateString() : null,
+                        'status' => $actionData['status'],
+                        'completed_at' => isset($actionData['completed_days_ago']) ? now()->subDays($actionData['completed_days_ago']) : null,
+                    ],
+                );
+            }
+        }
+    }
+
+    /**
+     * Setzt Monitoring-Hostname-Mappings auf einigen Systemen, damit
+     * Inbound-Alerts auf der API-Tokens-Seite Treffer produzieren.
+     */
+    private function seedMonitoringKeysOnSystems(Company $company): void
+    {
+        $mapping = [
+            'server' => ['srv-prod-01', 'fileserver.local'],
+            'e-mail' => ['mail.local', 'm365-tenant'],
+            'kassensystem' => ['pos-01', 'pos-02'],
+            'warenwirtschaft' => ['wawi.local', 'erp-app'],
+        ];
+
+        $systems = System::withoutGlobalScope(CurrentCompanyScope::class)
+            ->where('company_id', $company->id)
+            ->get();
+
+        foreach ($systems as $system) {
+            foreach ($mapping as $keyword => $keys) {
+                if (str_contains(mb_strtolower($system->name), $keyword)) {
+                    $system->forceFill(['monitoring_keys' => $keys])->save();
+                    break;
+                }
+            }
+        }
+    }
+
+    /**
+     * Zwei Demo-API-Tokens: einer aktiv (für Zabbix-Demo), einer widerrufen.
+     * Klartext wird nur einmalig auf der Konsole ausgegeben — danach nicht
+     * mehr rekonstruierbar.
+     */
+    private function seedApiTokens(Company $company, User $user): void
+    {
+        $existing = ApiToken::query()
+            ->withoutGlobalScope(CurrentCompanyScope::class)
+            ->where('company_id', $company->id)
+            ->count();
+
+        if ($existing > 0) {
+            return; // idempotent: keine neuen Tokens nachreichen
+        }
+
+        $active = ApiToken::issue($company->id, 'Zabbix Produktion', ['monitoring.write'], $user->id);
+        $active['model']->forceFill(['last_used_at' => now()->subHours(3)])->save();
+
+        $revoked = ApiToken::issue($company->id, 'Alter Test-Token', ['monitoring.write'], $user->id);
+        $revoked['model']->forceFill([
+            'revoked_at' => now()->subDays(14),
+            'last_used_at' => now()->subDays(20),
+        ])->save();
+
+        $this->command?->info('Demo-API-Token (nur jetzt sichtbar): '.$active['token']);
+    }
+
+    /**
+     * Zehn Beispiel-Alerts über alle Verarbeitungs-Pfade hinweg
+     * (created_incident, matched_existing, severity_below_threshold,
+     * no_system_match, ignored).
+     */
+    private function seedMonitoringAlerts(Company $company): void
+    {
+        $token = ApiToken::query()
+            ->withoutGlobalScope(CurrentCompanyScope::class)
+            ->where('company_id', $company->id)
+            ->whereNull('revoked_at')
+            ->first();
+        if (! $token) {
+            return;
+        }
+
+        $serverSystem = System::withoutGlobalScope(CurrentCompanyScope::class)
+            ->where('company_id', $company->id)
+            ->where('name', 'like', '%erver%')
+            ->first();
+        $existingIncident = IncidentReport::withoutGlobalScope(CurrentCompanyScope::class)
+            ->where('company_id', $company->id)
+            ->latest('occurred_at')
+            ->first();
+
+        $alerts = [
+            ['source' => 'zabbix', 'idempotency_key' => 'evt:101', 'severity' => 'high', 'status' => 'firing', 'host' => 'srv-prod-01', 'subject' => 'Disk usage 95%', 'handling' => 'created_incident', 'system_id' => $serverSystem?->id, 'incident_id' => $existingIncident?->id, 'received' => now()->subHours(8)],
+            ['source' => 'zabbix', 'idempotency_key' => 'evt:102', 'severity' => 'critical', 'status' => 'firing', 'host' => 'srv-prod-01', 'subject' => 'Service mysql down', 'handling' => 'matched_existing', 'system_id' => $serverSystem?->id, 'incident_id' => $existingIncident?->id, 'received' => now()->subHours(7)],
+            ['source' => 'zabbix', 'idempotency_key' => 'evt:103', 'severity' => 'information', 'status' => 'firing', 'host' => 'srv-prod-01', 'subject' => 'Backup completed', 'handling' => 'severity_below_threshold', 'system_id' => $serverSystem?->id, 'incident_id' => null, 'received' => now()->subHours(6)],
+            ['source' => 'prometheus', 'idempotency_key' => 'fp:abc123:firing', 'severity' => 'critical', 'status' => 'firing', 'host' => 'mail.local', 'subject' => 'High mail queue', 'handling' => 'created_incident', 'system_id' => null, 'incident_id' => null, 'received' => now()->subHours(2)],
+            ['source' => 'prometheus', 'idempotency_key' => 'fp:abc123:resolved', 'severity' => 'critical', 'status' => 'resolved', 'host' => 'mail.local', 'subject' => 'Mail queue normal', 'handling' => 'matched_existing', 'system_id' => null, 'incident_id' => null, 'received' => now()->subMinutes(45)],
+            ['source' => 'zabbix', 'idempotency_key' => 'evt:201', 'severity' => 'high', 'status' => 'firing', 'host' => 'unknown-host', 'subject' => 'CPU 100%', 'handling' => 'no_system_match', 'system_id' => null, 'incident_id' => null, 'received' => now()->subDays(1)],
+            ['source' => 'zabbix', 'idempotency_key' => 'evt:202', 'severity' => 'high', 'status' => 'resolved', 'host' => 'srv-prod-01', 'subject' => 'Disk usage normal', 'handling' => 'ignored', 'system_id' => $serverSystem?->id, 'incident_id' => null, 'received' => now()->subDays(2)],
+        ];
+
+        foreach ($alerts as $a) {
+            MonitoringAlert::withoutGlobalScope(CurrentCompanyScope::class)->updateOrCreate(
+                [
+                    'company_id' => $company->id,
+                    'source' => $a['source'],
+                    'idempotency_key' => $a['idempotency_key'],
+                ],
+                [
+                    'api_token_id' => $token->id,
+                    'system_id' => $a['system_id'],
+                    'incident_report_id' => $a['incident_id'],
+                    'severity' => $a['severity'],
+                    'status' => $a['status'],
+                    'host' => $a['host'],
+                    'subject' => $a['subject'],
+                    'payload' => ['demo' => true, 'host' => $a['host']],
+                    'handling' => $a['handling'],
+                    'received_at' => $a['received'],
+                ],
+            );
+        }
+    }
+
+    /**
+     * Drei Versand-Historien: erfolgreiche E-Mail, gemischter SMS-Versand
+     * und Slack-Webhook-Posting. Demonstriert die Audit-Spur.
+     */
+    private function seedCommunicationDispatches(Company $company, User $user): void
+    {
+        $emailTemplate = CommunicationTemplate::withoutGlobalScope(CurrentCompanyScope::class)
+            ->where('company_id', $company->id)
+            ->where('channel', CommunicationChannel::Email->value)
+            ->first();
+        $smsTemplate = CommunicationTemplate::withoutGlobalScope(CurrentCompanyScope::class)
+            ->where('company_id', $company->id)
+            ->where('channel', CommunicationChannel::Sms->value)
+            ->first();
+
+        $employees = Employee::withoutGlobalScope(CurrentCompanyScope::class)
+            ->where('company_id', $company->id)
+            ->whereNotNull('email')
+            ->take(3)
+            ->get();
+
+        if ($emailTemplate && $employees->isNotEmpty()) {
+            $dispatch = CommunicationDispatch::withoutGlobalScope(CurrentCompanyScope::class)->updateOrCreate(
+                [
+                    'company_id' => $company->id,
+                    'communication_template_id' => $emailTemplate->id,
+                    'subject' => 'Information an Mitarbeiter',
+                    'dispatched_at' => now()->subDays(3)->setTime(10, 15),
+                ],
+                [
+                    'dispatched_by_user_id' => $user->id,
+                    'channel' => CommunicationChannel::Email->value,
+                    'body' => 'Demo-E-Mail-Body. Wurde an alle Beschäftigten zur Information versandt.',
+                    'recipient_count' => $employees->count(),
+                    'success_count' => $employees->count(),
+                    'failed_count' => 0,
+                ],
+            );
+            foreach ($employees as $emp) {
+                CommunicationDispatchRecipient::query()->updateOrCreate(
+                    ['communication_dispatch_id' => $dispatch->id, 'email' => $emp->email],
+                    [
+                        'employee_id' => $emp->id,
+                        'name' => trim($emp->first_name.' '.$emp->last_name),
+                        'status' => 'sent',
+                        'sent_at' => $dispatch->dispatched_at,
+                    ],
+                );
+            }
+        }
+
+        if ($smsTemplate) {
+            $dispatch = CommunicationDispatch::withoutGlobalScope(CurrentCompanyScope::class)->updateOrCreate(
+                [
+                    'company_id' => $company->id,
+                    'communication_template_id' => $smsTemplate->id,
+                    'subject' => null,
+                    'dispatched_at' => now()->subDays(8)->setTime(14, 30),
+                ],
+                [
+                    'dispatched_by_user_id' => $user->id,
+                    'channel' => CommunicationChannel::Sms->value,
+                    'body' => 'Demo-SMS: Treffpunkt 15:00 Uhr Eingang Hauptgebäude.',
+                    'recipient_count' => 4,
+                    'success_count' => 3,
+                    'failed_count' => 1,
+                ],
+            );
+            $smsRecipients = [
+                ['email' => 'sms:+491701111111', 'name' => 'Anna B.', 'status' => 'sent'],
+                ['email' => 'sms:+491702222222', 'name' => 'Ben S.', 'status' => 'sent'],
+                ['email' => 'sms:+491703333333', 'name' => 'Carla M.', 'status' => 'sent'],
+                ['email' => 'sms:+491704444444', 'name' => 'Dirk K.', 'status' => 'failed', 'error' => 'Mobilnummer ungültig (Provider-Antwort)'],
+            ];
+            foreach ($smsRecipients as $r) {
+                CommunicationDispatchRecipient::query()->updateOrCreate(
+                    ['communication_dispatch_id' => $dispatch->id, 'email' => $r['email']],
+                    [
+                        'name' => $r['name'],
+                        'status' => $r['status'],
+                        'error_message' => $r['error'] ?? null,
+                        'sent_at' => $r['status'] === 'sent' ? $dispatch->dispatched_at : null,
+                        'failed_at' => $r['status'] === 'failed' ? $dispatch->dispatched_at : null,
+                    ],
+                );
+            }
+        }
+    }
+
+    /**
+     * 30 tägliche Compliance-Snapshots, damit das Trend-Diagramm einen
+     * realistischen Verlauf zeigt (von „kritisch" zu „gut" steigend).
+     */
+    private function seedComplianceSnapshots(Company $company): void
+    {
+        $current = Evaluator::for($company);
+        $finalScore = $current->score();
+        if ($finalScore <= 0) {
+            $finalScore = 65;
+        }
+
+        for ($i = 30; $i >= 0; $i--) {
+            $progress = (30 - $i) / 30;
+            $score = (int) round(35 + ($finalScore - 35) * $progress + (mt_rand(-3, 3)));
+            $score = max(0, min(100, $score));
+
+            ComplianceScoreSnapshot::query()->updateOrCreate(
+                [
+                    'company_id' => $company->id,
+                    'snapshot_date' => now()->subDays($i)->toDateString(),
+                ],
+                [
+                    'score' => $score,
+                    'breakdown' => null,
+                ],
+            );
+        }
+    }
+
+    /**
+     * Branding-Defaults für die Demo-Company: Anzeigename + Primärfarbe.
+     * Logo lassen wir bewusst leer, damit der Default-Gradient sichtbar
+     * ist und die UI für „Logo hochladen" zum Testen einlädt.
+     */
+    private function seedBranding(Company $company): void
+    {
+        if ($company->display_name === null || $company->primary_color === null) {
+            $company->forceFill([
+                'display_name' => $company->display_name ?? 'Musterfirma · Krisenstab',
+                'primary_color' => $company->primary_color ?? '#0ea5e9',
+            ])->save();
         }
     }
 }
