@@ -628,7 +628,7 @@ new #[Title('Mitarbeiter')] class extends Component {
                             <flux:checkbox
                                 wire:model="manager_ids"
                                 value="{{ $candidate->id }}"
-                                :label="$candidate->fullName().($candidate->position ? ' · '.$candidate->position : '')"
+                                :label="$candidate->nameLastFirst().($candidate->position ? ' · '.$candidate->position : '')"
                             />
                         @endforeach
                     </div>
