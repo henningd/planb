@@ -291,7 +291,15 @@ new #[Title('Systemeinstellungen')] class extends Component {
                     </label>
                 @endforeach
             </div>
-            <div class="flex items-center justify-end border-t border-zinc-100 px-5 py-4 dark:border-zinc-800">
+            <div class="flex flex-wrap items-center justify-end gap-2 border-t border-zinc-100 px-5 py-4 dark:border-zinc-800">
+                <flux:button
+                    variant="filled"
+                    icon="archive-box-arrow-down"
+                    :href="route('system-settings.archive.download', ['current_team' => auth()->user()->currentTeam->slug])"
+                    title="{{ __('Stammdaten + Audit-Log + alle Handbuch-PDFs als ZIP') }}"
+                >
+                    {{ __('Vollständiges Archiv (ZIP)') }}
+                </flux:button>
                 <flux:button
                     variant="primary"
                     icon="arrow-down-tray"
