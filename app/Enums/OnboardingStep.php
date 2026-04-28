@@ -88,10 +88,10 @@ enum OnboardingStep: string
             self::CompanyProfile,
             self::IndustryTemplate,
             self::Locations,
-            self::CrisisRoles,
             self::Employees,
-            self::Systems,
+            self::CrisisRoles,
             self::ServiceProviders,
+            self::Systems,
             self::EmergencyResources,
             self::HandbookRelease,
         ];
