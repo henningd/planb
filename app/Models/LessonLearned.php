@@ -16,6 +16,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'company_id',
     'incident_report_id',
     'scenario_run_id',
+    'handbook_version_id',
     'title',
     'root_cause',
     'what_went_well',
@@ -44,6 +45,14 @@ class LessonLearned extends Model
     public function scenarioRun(): BelongsTo
     {
         return $this->belongsTo(ScenarioRun::class);
+    }
+
+    /**
+     * @return BelongsTo<HandbookVersion, $this>
+     */
+    public function handbookVersion(): BelongsTo
+    {
+        return $this->belongsTo(HandbookVersion::class);
     }
 
     /**

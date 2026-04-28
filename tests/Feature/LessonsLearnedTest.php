@@ -4,6 +4,7 @@ use App\Enums\LessonLearnedActionItemStatus;
 use App\Models\AuditLogEntry;
 use App\Models\Company;
 use App\Models\Employee;
+use App\Models\HandbookVersion;
 use App\Models\IncidentReport;
 use App\Models\LessonLearned;
 use App\Models\LessonLearnedActionItem;
@@ -220,6 +221,48 @@ it('aborts show when accessed cross-tenant', function () {
     Livewire\Livewire::actingAs($user->fresh())
         ->test('pages::lessons-learned.show', ['lesson' => $foreignLesson])
         ->assertStatus(403);
+});
+
+it('links a lesson to a handbook version', function () {
+    $user = User::factory()->create();
+    $company = Company::factory()->for($user->currentTeam)->create();
+    $version = HandbookVersion::withoutGlobalScope(CurrentCompanyScope::class)->create([
+        'company_id' => $company->id,
+        'version' => '1.2',
+        'changed_at' => now(),
+        'change_reason' => 'Test',
+    ]);
+
+    Livewire\Livewire::actingAs($user->fresh())
+        ->test('pages::lessons-learned.create')
+        ->set('title', 'Auswertung mit Versions-Bezug')
+        ->set('handbook_version_id', $version->id)
+        ->call('save');
+
+    $lesson = LessonLearned::first();
+    expect($lesson->handbook_version_id)->toBe($version->id);
+    expect($lesson->handbookVersion->is($version))->toBeTrue();
+    expect($version->fresh()->lessonsLearned->pluck('id')->all())->toBe([$lesson->id]);
+});
+
+it('nulls handbook_version_id when the version is deleted', function () {
+    $user = User::factory()->create();
+    $company = Company::factory()->for($user->currentTeam)->create();
+    $version = HandbookVersion::withoutGlobalScope(CurrentCompanyScope::class)->create([
+        'company_id' => $company->id,
+        'version' => '1.0',
+        'changed_at' => now(),
+        'change_reason' => 'Test',
+    ]);
+    $lesson = LessonLearned::withoutGlobalScope(CurrentCompanyScope::class)->create([
+        'company_id' => $company->id,
+        'title' => 'Lesson',
+        'handbook_version_id' => $version->id,
+    ]);
+
+    $version->delete();
+
+    expect($lesson->fresh()->handbook_version_id)->toBeNull();
 });
 
 it('hides the route when feature flag is disabled', function () {

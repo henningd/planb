@@ -27,7 +27,7 @@ new #[Title('Lessons-Learned-Detail')] class extends Component {
     {
         abort_if($lesson->company_id !== Auth::user()->currentCompany()?->id, 403);
 
-        $this->lesson = $lesson->load(['incidentReport', 'scenarioRun', 'author', 'actionItems.responsibleEmployee']);
+        $this->lesson = $lesson->load(['incidentReport', 'scenarioRun', 'handbookVersion', 'author', 'actionItems.responsibleEmployee']);
     }
 
     #[Computed]
@@ -151,6 +151,9 @@ new #[Title('Lessons-Learned-Detail')] class extends Component {
                 @endif
                 @if ($lesson->scenarioRun)
                     · <a class="underline" href="{{ route('scenario-runs.show', $lesson->scenarioRun) }}" wire:navigate>{{ __('Übung:') }} {{ $lesson->scenarioRun->title }}</a>
+                @endif
+                @if ($lesson->handbookVersion)
+                    · <a class="underline" href="{{ route('handbook-versions.index') }}" wire:navigate>{{ __('Handbuch-Version:') }} {{ $lesson->handbookVersion->version }}</a>
                 @endif
             </flux:text>
         </div>

@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\HandbookVersion;
 use App\Models\IncidentReport;
 use App\Models\LessonLearned;
 use App\Models\ScenarioRun;
@@ -13,6 +14,8 @@ new #[Title('Neue Lessons-Learned-Auswertung')] class extends Component {
     public ?string $incident_report_id = null;
 
     public ?string $scenario_run_id = null;
+
+    public ?string $handbook_version_id = null;
 
     public string $title = '';
 
@@ -61,6 +64,12 @@ new #[Title('Neue Lessons-Learned-Auswertung')] class extends Component {
         return ScenarioRun::orderByDesc('started_at')->limit(50)->get();
     }
 
+    #[Computed]
+    public function handbookVersions()
+    {
+        return HandbookVersion::orderByDesc('changed_at')->limit(50)->get();
+    }
+
     public function updatedBindKind(string $value): void
     {
         if ($value !== 'incident') {
@@ -84,6 +93,7 @@ new #[Title('Neue Lessons-Learned-Auswertung')] class extends Component {
             'what_went_poorly' => ['nullable', 'string', 'max:5000'],
             'incident_report_id' => ['nullable', 'uuid', 'exists:incident_reports,id'],
             'scenario_run_id' => ['nullable', 'uuid', 'exists:scenario_runs,id'],
+            'handbook_version_id' => ['nullable', 'uuid', 'exists:handbook_versions,id'],
             'bind_kind' => ['required', 'in:none,incident,run'],
         ]);
 
@@ -106,6 +116,7 @@ new #[Title('Neue Lessons-Learned-Auswertung')] class extends Component {
                 'what_went_poorly' => $validated['what_went_poorly'] ?: null,
                 'incident_report_id' => $validated['bind_kind'] === 'incident' ? $validated['incident_report_id'] : null,
                 'scenario_run_id' => $validated['bind_kind'] === 'run' ? $validated['scenario_run_id'] : null,
+                'handbook_version_id' => $validated['handbook_version_id'] ?? null,
                 'author_user_id' => Auth::id(),
             ]);
         });
@@ -151,6 +162,17 @@ new #[Title('Neue Lessons-Learned-Auswertung')] class extends Component {
                 @foreach ($this->scenarioRuns as $run)
                     <flux:select.option value="{{ $run->id }}">
                         {{ $run->started_at->format('d.m.Y') }} · {{ $run->title }}
+                    </flux:select.option>
+                @endforeach
+            </flux:select>
+        @endif
+
+        @if ($this->handbookVersions->isNotEmpty())
+            <flux:select wire:model="handbook_version_id" :label="__('Bezug auf Handbuch-Version (optional)')">
+                <flux:select.option value="">{{ __('— keine —') }}</flux:select.option>
+                @foreach ($this->handbookVersions as $version)
+                    <flux:select.option value="{{ $version->id }}">
+                        {{ __('Version') }} {{ $version->version }} · {{ $version->changed_at?->format('d.m.Y') }}
                     </flux:select.option>
                 @endforeach
             </flux:select>
