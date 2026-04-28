@@ -88,10 +88,41 @@ class Importer
                     $rows = self::remapForeignKeys($rows, $area['id_remap'] ?? [], $idMap);
                 }
 
+                // Sonderfall „employees": das Legacy-Feld manager_id wird aus
+                // den Insert-Reihen rausgenommen und nach dem Insert als
+                // Pivot-Eintrag (employee_manager) angelegt. Damit bleiben
+                // Industry-Template-Payloads, die noch mit dem alten Spalten-
+                // Schema arbeiten, weiter kompatibel.
+                $managerLinks = [];
+                if ($key === 'employees') {
+                    foreach ($rows as &$row) {
+                        if (array_key_exists('manager_id', $row)) {
+                            $managerId = $row['manager_id'];
+                            unset($row['manager_id']);
+                            if ($managerId !== null && $managerId !== '') {
+                                if ($regenerateIds && isset($idMap['employees'][$managerId])) {
+                                    $managerId = $idMap['employees'][$managerId];
+                                }
+                                if (isset($row['id'])) {
+                                    $managerLinks[] = [
+                                        'employee_id' => $row['id'],
+                                        'manager_id' => $managerId,
+                                    ];
+                                }
+                            }
+                        }
+                    }
+                    unset($row);
+                }
+
                 $rows = self::prepareRowsForInsert($rows, $area, $company);
 
                 if ($rows !== []) {
                     DB::table($area['table'])->insert($rows);
+                }
+
+                if ($managerLinks !== []) {
+                    DB::table('employee_manager')->insertOrIgnore($managerLinks);
                 }
 
                 $summary[$key]['inserted'] = count($rows);
