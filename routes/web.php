@@ -109,6 +109,50 @@ Route::get('/.well-known/security.txt', function () {
     return response($body, 200, ['Content-Type' => 'text/plain; charset=utf-8']);
 })->name('legal.security_txt');
 
+Route::get('/status', function () {
+    $state = (string) SystemSetting::get('platform_status_state');
+    $content = (string) SystemSetting::get('platform_status_incidents');
+
+    /** @var array<string, array{label: string, banner: string, dot: string}> $states */
+    $states = [
+        'operational' => [
+            'label' => __('Alle Systeme funktionieren'),
+            'banner' => 'bg-emerald-50 border-emerald-300 text-emerald-900',
+            'dot' => 'bg-emerald-500',
+        ],
+        'degraded' => [
+            'label' => __('Eingeschränkt'),
+            'banner' => 'bg-amber-50 border-amber-300 text-amber-900',
+            'dot' => 'bg-amber-500',
+        ],
+        'outage' => [
+            'label' => __('Störung'),
+            'banner' => 'bg-rose-50 border-rose-300 text-rose-900',
+            'dot' => 'bg-rose-500',
+        ],
+        'maintenance' => [
+            'label' => __('Wartungsfenster'),
+            'banner' => 'bg-sky-50 border-sky-300 text-sky-900',
+            'dot' => 'bg-sky-500',
+        ],
+    ];
+
+    $current = $states[$state] ?? $states['operational'];
+
+    return view('status-page', [
+        'productName' => SystemSetting::get('platform_name') ?: config('app.name', 'PlanB'),
+        'heading' => __('Plattform-Status'),
+        'state' => $state,
+        'stateLabel' => $current['label'],
+        'bannerClasses' => $current['banner'],
+        'dotClasses' => $current['dot'],
+        'content' => $content,
+        'html' => ManualRenderer::toHtml($content),
+        'emptyHint' => __('Hier erscheint die Historie der Incidents — Datum, Titel, Status, Beschreibung.'),
+        'settingKey' => 'platform_status_incidents',
+    ]);
+})->name('legal.status');
+
 Route::get('/funktionen/{slug}', function (string $slug) {
     $feature = FeatureCatalog::find($slug);
     abort_unless($feature !== null, 404);
