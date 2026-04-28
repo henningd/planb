@@ -106,7 +106,11 @@ class BackupCatalog
                 'table' => 'employees',
                 'mode' => 'replace',
                 'order' => 20, // nach locations
-                'id_remap' => ['location_id' => 'locations', 'manager_id' => 'employees'],
+                'id_remap' => ['location_id' => 'locations'],
+                // Hinweis: Manager-Beziehungen (employee_manager-Pivot) werden
+                // im Backup-Export aktuell nicht mit transportiert. Wenn das
+                // benötigt wird, muss der Exporter/Importer um Pivot-Support
+                // mit doppeltem FK-Remap erweitert werden.
             ],
             'communication_templates' => [
                 'label' => 'Kommunikations-Vorlagen',

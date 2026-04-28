@@ -29,7 +29,6 @@ class EmployeeFactory extends Factory
             'email' => fake()->safeEmail(),
             'location_id' => null,
             'emergency_contact' => null,
-            'manager_id' => null,
             'is_key_personnel' => false,
             'crisis_role' => null,
             'is_crisis_deputy' => false,

@@ -6,8 +6,10 @@ use App\Models\Company;
 use App\Scopes\CurrentCompanyScope;
 use App\Support\Backup\BackupCatalog;
 use App\Support\Backup\Exporter;
+use App\Support\Backup\TenantArchiveExporter;
 use App\Support\CurrentCompany;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class BackupController extends Controller
@@ -43,5 +45,26 @@ class BackupController extends Controller
             $filename,
             ['Content-Type' => 'application/json'],
         );
+    }
+
+    /**
+     * Liefert das vollständige Mandanten-Archiv als ZIP:
+     * Stammdaten (JSON) + Audit-Log (CSV) + alle Handbuch-PDFs.
+     */
+    public function archive(): BinaryFileResponse
+    {
+        $companyId = CurrentCompany::id();
+        abort_unless($companyId !== null, 404);
+
+        $company = Company::withoutGlobalScope(CurrentCompanyScope::class)
+            ->findOrFail($companyId);
+
+        $path = TenantArchiveExporter::export($company);
+
+        return response()->download(
+            $path,
+            TenantArchiveExporter::filename($company),
+            ['Content-Type' => 'application/zip'],
+        )->deleteFileAfterSend(true);
     }
 }

@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 #[Fillable([
     'company_id',
@@ -93,6 +94,14 @@ class SystemTask extends Model
         return $this->belongsToMany(Role::class, 'role_system_task')
             ->withPivot(['id', 'raci_role', 'is_deputy', 'sort', 'assigned_at', 'assigned_by_user_id', 'removed_at', 'removed_by_user_id'])
             ->withTimestamps();
+    }
+
+    /**
+     * @return HasOne<RiskMitigation, $this>
+     */
+    public function riskMitigation(): HasOne
+    {
+        return $this->hasOne(RiskMitigation::class);
     }
 
     public function isDone(): bool

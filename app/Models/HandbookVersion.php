@@ -65,6 +65,14 @@ class HandbookVersion extends Model
         return $this->hasMany(HandbookVersionAcknowledgement::class);
     }
 
+    /**
+     * @return HasMany<LessonLearned, $this>
+     */
+    public function lessonsLearned(): HasMany
+    {
+        return $this->hasMany(LessonLearned::class);
+    }
+
     public function isApproved(): bool
     {
         return $this->approved_at !== null;

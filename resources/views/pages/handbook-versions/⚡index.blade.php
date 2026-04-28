@@ -53,7 +53,8 @@ new #[Title('Versionshistorie')] class extends Component {
     #[Computed]
     public function versions(): Collection
     {
-        return HandbookVersion::with(['changedBy', 'approvedBy', 'acknowledgements.employee'])
+        return HandbookVersion::with(['changedBy', 'approvedBy', 'acknowledgements.employee', 'lessonsLearned'])
+            ->withCount('lessonsLearned')
             ->orderByDesc('changed_at')
             ->orderByDesc('created_at')
             ->get();
@@ -311,6 +312,19 @@ new #[Title('Versionshistorie')] class extends Component {
                     <flux:text class="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
                         {{ __('Freigegeben durch') }}: {{ $version->approvedBy?->fullName() ?? $version->approved_by_name }}
                     </flux:text>
+                @endif
+
+                @if ($version->lessons_learned_count > 0)
+                    <div class="mt-3 flex items-center gap-2 border-t border-zinc-100 pt-3 dark:border-zinc-800">
+                        <flux:text class="text-xs text-zinc-500 dark:text-zinc-400">{{ __('Lessons Learned') }}:</flux:text>
+                        @if (config('features.lessons_learned'))
+                            <a href="{{ route('lessons-learned.index') }}" wire:navigate>
+                                <flux:badge color="violet" size="sm">{{ $version->lessons_learned_count }} {{ __('zugeordnet') }}</flux:badge>
+                            </a>
+                        @else
+                            <flux:badge color="violet" size="sm">{{ $version->lessons_learned_count }} {{ __('zugeordnet') }}</flux:badge>
+                        @endif
+                    </div>
                 @endif
 
                 @if ($version->isApproved())

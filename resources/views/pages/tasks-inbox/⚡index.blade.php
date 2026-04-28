@@ -38,7 +38,7 @@ new #[Title('Aufgaben-Inbox')] class extends Component {
     #[Computed]
     public function tasks(): Collection
     {
-        $query = SystemTask::with(['system', 'assignees'])
+        $query = SystemTask::with(['system', 'assignees', 'riskMitigation.risk'])
             ->when($this->systemFilter !== '', fn ($q) => $q->where('system_id', $this->systemFilter))
             ->when($this->search !== '', function ($q) {
                 $term = '%'.strtolower($this->search).'%';
@@ -265,8 +265,13 @@ new #[Title('Aufgaben-Inbox')] class extends Component {
             ])>
                 <div class="min-w-0 flex-1">
                     <div class="flex flex-wrap items-center gap-2">
-                        <flux:heading size="base" :class="$task->isDone() ? 'line-through' : ''">{{ $task->title }}</flux:heading>
+                        <flux:heading size="base" :class="$task->isDone() ? 'line-through' : ''" id="task-{{ $task->id }}">{{ $task->title }}</flux:heading>
                         <flux:badge color="zinc" size="sm">{{ $task->system?->name }}</flux:badge>
+                        @if ($task->riskMitigation && $task->riskMitigation->risk && config('features.risk_register'))
+                            <a href="{{ route('risks.show', $task->riskMitigation->risk) }}" wire:navigate>
+                                <flux:badge color="rose" size="sm" icon="shield-exclamation">{{ __('aus Risiko') }}</flux:badge>
+                            </a>
+                        @endif
                         <flux:badge color="{{ $due['color'] }}" size="sm">{{ $due['text'] }}</flux:badge>
                         @if ($task->isDone())
                             <flux:badge color="emerald" size="sm">{{ __('Erledigt') }}</flux:badge>

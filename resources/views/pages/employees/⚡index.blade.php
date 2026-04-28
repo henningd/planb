@@ -33,7 +33,8 @@ new #[Title('Mitarbeiter')] class extends Component {
 
     public string $emergency_contact = '';
 
-    public ?string $manager_id = null;
+    /** @var array<int, string> */
+    public array $manager_ids = [];
 
     public bool $is_key_personnel = false;
 
@@ -53,7 +54,7 @@ new #[Title('Mitarbeiter')] class extends Component {
     public function employees()
     {
         return Employee::query()
-            ->with(['manager', 'location'])
+            ->with(['managers', 'location'])
             ->when($this->search !== '', function ($q) {
                 $term = '%'.$this->search.'%';
                 $q->where(function ($q) use ($term) {
@@ -137,7 +138,7 @@ new #[Title('Mitarbeiter')] class extends Component {
         $this->email = (string) $e->email;
         $this->location_id = $e->location_id;
         $this->emergency_contact = (string) $e->emergency_contact;
-        $this->manager_id = $e->manager_id;
+        $this->manager_ids = $e->managers->pluck('id')->all();
         $this->is_key_personnel = (bool) $e->is_key_personnel;
         $this->crisis_role = $e->crisis_role?->value ?? '';
         $this->is_crisis_deputy = (bool) $e->is_crisis_deputy;
@@ -165,7 +166,8 @@ new #[Title('Mitarbeiter')] class extends Component {
             'email' => ['nullable', 'email', 'max:255'],
             'location_id' => ['nullable', 'uuid', 'exists:locations,id'],
             'emergency_contact' => ['nullable', 'string', 'max:1000'],
-            'manager_id' => ['nullable', 'uuid', 'exists:employees,id'],
+            'manager_ids' => ['array'],
+            'manager_ids.*' => ['uuid', 'exists:employees,id'],
             'is_key_personnel' => ['boolean'],
             'crisis_role' => ['nullable', 'string', Rule::in(collect(CrisisRole::cases())->pluck('value'))],
             'is_crisis_deputy' => ['boolean'],
@@ -189,11 +191,21 @@ new #[Title('Mitarbeiter')] class extends Component {
             $validated['is_crisis_deputy'] = false;
         }
 
+        $managerIds = collect($validated['manager_ids'] ?? [])
+            ->filter(fn ($id) => $id !== null && $id !== '')
+            ->filter(fn ($id) => $id !== $this->editingId) // niemand ist sein eigener Vorgesetzter
+            ->unique()
+            ->values()
+            ->all();
+        unset($validated['manager_ids']);
+
         if ($this->editingId) {
-            Employee::findOrFail($this->editingId)->update($validated);
+            $employee = Employee::findOrFail($this->editingId);
+            $employee->update($validated);
         } else {
-            Employee::create($validated);
+            $employee = Employee::create($validated);
         }
+        $employee->managers()->sync($managerIds);
 
         Flux::modal('employee-form')->close();
         $this->resetForm();
@@ -224,7 +236,7 @@ new #[Title('Mitarbeiter')] class extends Component {
         $this->reset([
             'editingId', 'first_name', 'last_name', 'position', 'department',
             'work_phone', 'mobile_phone', 'private_phone', 'email', 'location_id',
-            'emergency_contact', 'manager_id', 'is_key_personnel',
+            'emergency_contact', 'manager_ids', 'is_key_personnel',
             'crisis_role', 'is_crisis_deputy', 'notes',
         ]);
     }
@@ -352,9 +364,9 @@ new #[Title('Mitarbeiter')] class extends Component {
                         </div>
                     @endif
 
-                    @if ($employee->manager)
+                    @if ($employee->managers->isNotEmpty())
                         <flux:text class="mt-3 border-t border-zinc-100 pt-3 text-xs text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
-                            {{ __('Vorgesetzt:') }} {{ $employee->manager->fullName() }}
+                            {{ __('Vorgesetzt von:') }} {{ $employee->managers->map(fn ($m) => $m->fullName())->implode(', ') }}
                         </flux:text>
                     @endif
                 </div>
@@ -406,12 +418,27 @@ new #[Title('Mitarbeiter')] class extends Component {
                 placeholder="z. B. Angehöriger: Max Mustermann (Ehemann), 0171 …"
             />
 
-            <flux:select wire:model="manager_id" :label="__('Vorgesetzt von')" placeholder="{{ __('Niemandem') }}">
-                <flux:select.option value="">{{ __('Niemandem') }}</flux:select.option>
-                @foreach ($this->managerOptions as $candidate)
-                    <flux:select.option value="{{ $candidate->id }}">{{ $candidate->fullName() }}</flux:select.option>
-                @endforeach
-            </flux:select>
+            <flux:field>
+                <flux:label>{{ __('Vorgesetzt von') }}</flux:label>
+                <flux:description>
+                    {{ __('Mehrere Vorgesetzte möglich (z. B. fachlich + disziplinarisch). Wenn niemand ausgewählt: keine Vorgesetzten.') }}
+                </flux:description>
+                @if ($this->managerOptions->isEmpty())
+                    <flux:text class="text-sm text-zinc-500">
+                        {{ __('Es sind noch keine anderen Mitarbeiter erfasst.') }}
+                    </flux:text>
+                @else
+                    <div class="max-h-48 space-y-1 overflow-y-auto rounded-lg border border-zinc-200 p-3 dark:border-zinc-700">
+                        @foreach ($this->managerOptions as $candidate)
+                            <flux:checkbox
+                                wire:model="manager_ids"
+                                value="{{ $candidate->id }}"
+                                :label="$candidate->fullName().($candidate->position ? ' · '.$candidate->position : '')"
+                            />
+                        @endforeach
+                    </div>
+                @endif
+            </flux:field>
 
             <flux:switch wire:model="is_key_personnel" :label="__('Schlüsselmitarbeiter – besonders wichtig für den Betrieb')" />
 

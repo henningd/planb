@@ -18,10 +18,14 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Storage;
 
 #[Fillable([
     'team_id',
     'name',
+    'display_name',
+    'logo_path',
+    'primary_color',
     'industry',
     'legal_form',
     'kritis_relevant',
@@ -229,6 +233,41 @@ class Company extends Model
         $due = $this->reviewDueAt();
 
         return $due !== null && $due->isPast();
+    }
+
+    /**
+     * Anzeige-Name des Mandanten — fällt auf den Firmennamen zurück.
+     */
+    public function brandName(): string
+    {
+        return trim((string) $this->display_name) !== ''
+            ? (string) $this->display_name
+            : (string) $this->name;
+    }
+
+    /**
+     * Öffentlich aufrufbare URL des hochgeladenen Logos oder null.
+     */
+    public function logoUrl(): ?string
+    {
+        if ($this->logo_path === null || $this->logo_path === '') {
+            return null;
+        }
+
+        return Storage::disk('public')->url($this->logo_path);
+    }
+
+    /**
+     * Primärfarbe als Hex (#rrggbb), Fallback ist die Plattform-Default-Farbe.
+     */
+    public function brandColor(): string
+    {
+        $color = (string) $this->primary_color;
+        if (preg_match('/^#[0-9a-fA-F]{6}$/', $color) === 1) {
+            return $color;
+        }
+
+        return '#4f46e5';
     }
 
     /**

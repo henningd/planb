@@ -13,6 +13,9 @@ use App\Models\System;
 use App\Scopes\CurrentCompanyScope;
 use App\Support\CurrentCompany;
 use App\Support\HandbookData;
+use App\Support\Manual\ManualCatalog;
+use App\Support\Manual\ManualRenderer;
+use App\Support\Marketing\FeatureCatalog;
 use App\Support\Settings\SystemSetting;
 use App\Support\SystemImport;
 use Illuminate\Support\Facades\Route;
@@ -25,10 +28,189 @@ Route::get('/', function () {
     ]);
 })->name('home');
 
+Route::get('/impressum', function () {
+    return view('legal-page', [
+        'productName' => SystemSetting::get('platform_name') ?: config('app.name', 'PlanB'),
+        'heading' => __('Impressum'),
+        'content' => (string) SystemSetting::get('platform_imprint'),
+        'emptyHint' => __('Hier erscheinen die Pflichtangaben nach §5 TMG (Anbieter, Anschrift, Vertretungsberechtigte, Kontakt, Registereintrag, USt-IdNr).'),
+        'settingKey' => 'platform_imprint',
+    ]);
+})->name('legal.imprint');
+
+Route::get('/datenschutz', function () {
+    return view('legal-page', [
+        'productName' => SystemSetting::get('platform_name') ?: config('app.name', 'PlanB'),
+        'heading' => __('Datenschutzerklärung'),
+        'content' => (string) SystemSetting::get('platform_privacy'),
+        'emptyHint' => __('Hier erscheint die DSGVO-Datenschutzerklärung — welche Daten werden verarbeitet, auf welcher Rechtsgrundlage, wie lange, an wen weitergegeben.'),
+        'settingKey' => 'platform_privacy',
+    ]);
+})->name('legal.privacy');
+
+Route::get('/agb', function () {
+    return view('legal-page', [
+        'productName' => SystemSetting::get('platform_name') ?: config('app.name', 'PlanB'),
+        'heading' => __('Allgemeine Geschäftsbedingungen'),
+        'content' => (string) SystemSetting::get('platform_terms'),
+        'emptyHint' => __('Hier erscheinen die AGB des Plattform-Betreibers.'),
+        'settingKey' => 'platform_terms',
+    ]);
+})->name('legal.terms');
+
+Route::get('/auftragsverarbeitung', function () {
+    $content = (string) SystemSetting::get('platform_av_contract');
+
+    return view('legal-page-markdown', [
+        'productName' => SystemSetting::get('platform_name') ?: config('app.name', 'PlanB'),
+        'heading' => __('Auftragsverarbeitung (AVV)'),
+        'content' => $content,
+        'html' => ManualRenderer::toHtml($content),
+        'emptyHint' => __('Hier erscheint der Vertrag zur Auftragsverarbeitung nach Art. 28 DSGVO.'),
+        'settingKey' => 'platform_av_contract',
+    ]);
+})->name('legal.av_contract');
+
+Route::get('/tom', function () {
+    $content = (string) SystemSetting::get('platform_tom');
+
+    return view('legal-page-markdown', [
+        'productName' => SystemSetting::get('platform_name') ?: config('app.name', 'PlanB'),
+        'heading' => __('Technische und organisatorische Maßnahmen'),
+        'content' => $content,
+        'html' => ManualRenderer::toHtml($content),
+        'emptyHint' => __('Hier erscheinen die TOM nach Art. 32 DSGVO als Anlage zum AVV.'),
+        'settingKey' => 'platform_tom',
+    ]);
+})->name('legal.tom');
+
+Route::get('/subprocessors', function () {
+    $content = (string) SystemSetting::get('platform_subprocessors');
+
+    return view('legal-page-markdown', [
+        'productName' => SystemSetting::get('platform_name') ?: config('app.name', 'PlanB'),
+        'heading' => __('Subprocessors / Unterauftragsverarbeiter'),
+        'content' => $content,
+        'html' => ManualRenderer::toHtml($content),
+        'emptyHint' => __('Hier erscheint die Liste der eingesetzten Unterauftragsverarbeiter.'),
+        'settingKey' => 'platform_subprocessors',
+    ]);
+})->name('legal.subprocessors');
+
+Route::get('/barrierefreiheit', function () {
+    $content = (string) SystemSetting::get('platform_accessibility');
+
+    return view('legal-page-markdown', [
+        'productName' => SystemSetting::get('platform_name') ?: config('app.name', 'PlanB'),
+        'heading' => __('Erklärung zur Barrierefreiheit'),
+        'content' => $content,
+        'html' => ManualRenderer::toHtml($content),
+        'emptyHint' => __('Hier erscheint die Erklärung zur digitalen Barrierefreiheit nach BITV 2.0 / BFSG.'),
+        'settingKey' => 'platform_accessibility',
+    ]);
+})->name('legal.accessibility');
+
+Route::get('/.well-known/security.txt', function () {
+    $contact = (string) SystemSetting::get('platform_security_contact');
+    $expires = now()->addYear()->format('Y-m-d\TH:i:s\Z');
+
+    $body = "Contact: mailto:{$contact}\n"
+        ."Expires: {$expires}\n"
+        ."Preferred-Languages: de, en\n"
+        .'Canonical: '.url('/.well-known/security.txt')."\n";
+
+    return response($body, 200, ['Content-Type' => 'text/plain; charset=utf-8']);
+})->name('legal.security_txt');
+
+Route::get('/status', function () {
+    $state = (string) SystemSetting::get('platform_status_state');
+    $content = (string) SystemSetting::get('platform_status_incidents');
+
+    /** @var array<string, array{label: string, banner: string, dot: string}> $states */
+    $states = [
+        'operational' => [
+            'label' => __('Alle Systeme funktionieren'),
+            'banner' => 'bg-emerald-50 border-emerald-300 text-emerald-900',
+            'dot' => 'bg-emerald-500',
+        ],
+        'degraded' => [
+            'label' => __('Eingeschränkt'),
+            'banner' => 'bg-amber-50 border-amber-300 text-amber-900',
+            'dot' => 'bg-amber-500',
+        ],
+        'outage' => [
+            'label' => __('Störung'),
+            'banner' => 'bg-rose-50 border-rose-300 text-rose-900',
+            'dot' => 'bg-rose-500',
+        ],
+        'maintenance' => [
+            'label' => __('Wartungsfenster'),
+            'banner' => 'bg-sky-50 border-sky-300 text-sky-900',
+            'dot' => 'bg-sky-500',
+        ],
+    ];
+
+    $current = $states[$state] ?? $states['operational'];
+
+    return view('status-page', [
+        'productName' => SystemSetting::get('platform_name') ?: config('app.name', 'PlanB'),
+        'heading' => __('Plattform-Status'),
+        'state' => $state,
+        'stateLabel' => $current['label'],
+        'bannerClasses' => $current['banner'],
+        'dotClasses' => $current['dot'],
+        'content' => $content,
+        'html' => ManualRenderer::toHtml($content),
+        'emptyHint' => __('Hier erscheint die Historie der Incidents — Datum, Titel, Status, Beschreibung.'),
+        'settingKey' => 'platform_status_incidents',
+    ]);
+})->name('legal.status');
+
+Route::get('/funktionen/{slug}', function (string $slug) {
+    $feature = FeatureCatalog::find($slug);
+    abort_unless($feature !== null, 404);
+
+    return view('feature-detail', [
+        'feature' => $feature,
+        'productName' => SystemSetting::get('platform_name') ?: config('app.name', 'PlanB'),
+        'canRegister' => Features::enabled(Features::registration())
+            && SystemSetting::get('registration_enabled', true),
+    ]);
+})->where('slug', '[a-z0-9-]+')->name('feature.show');
+
+Route::get('/handbuch', function () {
+    return view('manual.index', [
+        'productName' => SystemSetting::get('platform_name') ?: config('app.name', 'PlanB'),
+        'grouped' => ManualCatalog::grouped(),
+    ]);
+})->name('manual.index');
+
+Route::get('/handbuch/{slug}', function (string $slug) {
+    $entry = ManualCatalog::find($slug);
+    abort_unless($entry !== null, 404);
+
+    $markdown = ManualCatalog::content($slug);
+    abort_unless($markdown !== null, 404);
+
+    $all = ManualCatalog::all();
+    $idx = array_search($slug, array_column($all, 'slug'), true);
+
+    return view('manual.show', [
+        'productName' => SystemSetting::get('platform_name') ?: config('app.name', 'PlanB'),
+        'grouped' => ManualCatalog::grouped(),
+        'entry' => $entry,
+        'currentSlug' => $slug,
+        'html' => ManualRenderer::toHtml($markdown),
+        'previous' => $idx > 0 ? $all[$idx - 1] : null,
+        'next' => $idx < count($all) - 1 ? $all[$idx + 1] : null,
+    ]);
+})->where('slug', '[a-z0-9-]+')->name('manual.show');
+
 Route::prefix('{current_team}')
     ->middleware(['auth', 'verified', EnsureTeamMembership::class])
     ->group(function () {
         Route::livewire('dashboard', 'pages::dashboard')->name('dashboard');
+        Route::livewire('onboarding', 'pages::onboarding.index')->name('onboarding.index');
 
         Route::livewire('company', 'pages::company.edit')->name('company.edit');
         Route::livewire('locations', 'pages::locations.index')->name('locations.index');
@@ -63,6 +245,24 @@ Route::prefix('{current_team}')
         Route::livewire('incidents', 'pages::incidents.index')->name('incidents.index');
         Route::livewire('incidents/{report}', 'pages::incidents.show')->name('incidents.show');
 
+        if (config('features.lessons_learned')) {
+            Route::livewire('lessons-learned', 'pages::lessons-learned.index')->name('lessons-learned.index');
+            Route::livewire('lessons-learned/create', 'pages::lessons-learned.create')->name('lessons-learned.create');
+            Route::livewire('lessons-learned/{lesson}', 'pages::lessons-learned.show')
+                ->where('lesson', '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}')
+                ->name('lessons-learned.show');
+        }
+
+        if (config('features.risk_register')) {
+            Route::middleware([EnsureTeamMembership::class.':admin'])->group(function () {
+                Route::livewire('risks', 'pages::risks.index')->name('risks.index');
+                Route::livewire('risks/create', 'pages::risks.create')->name('risks.create');
+                Route::livewire('risks/{risk}', 'pages::risks.show')
+                    ->where('risk', '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}')
+                    ->name('risks.show');
+            });
+        }
+
         Route::middleware([EnsureTeamMembership::class.':admin'])->group(function () {
             Route::livewire('insurance-policies', 'pages::insurance-policies.index')->name('insurance-policies.index');
             Route::livewire('communication-templates', 'pages::communication-templates.index')->name('communication-templates.index');
@@ -73,7 +273,9 @@ Route::prefix('{current_team}')
                 ->name('audit-log.export.pdf');
             Route::livewire('handbook-shares', 'pages::handbook-shares.index')->name('handbook-shares.index');
             Route::livewire('system-settings', 'pages::system-settings.index')->name('system-settings.index');
+            Route::livewire('branding', 'pages::branding.index')->name('branding.index');
             Route::get('system-settings/backup', [BackupController::class, 'download'])->name('system-settings.backup.download');
+            Route::get('system-settings/archive', [BackupController::class, 'archive'])->name('system-settings.archive.download');
             Route::livewire('handbook-versions', 'pages::handbook-versions.index')->name('handbook-versions.index');
             Route::get('handbook-versions/{version}/pdf', HandbookVersionPdfController::class)
                 ->where('version', '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}')
@@ -81,6 +283,9 @@ Route::prefix('{current_team}')
             Route::livewire('handbook-tests', 'pages::handbook-tests.index')->name('handbook-tests.index');
             if (config('features.compliance')) {
                 Route::livewire('compliance', 'pages::compliance.index')->name('compliance.index');
+            }
+            if (config('features.monitoring_api')) {
+                Route::livewire('api-tokens', 'pages::api-tokens.index')->name('api-tokens.index');
             }
         });
 
@@ -133,7 +338,7 @@ Route::prefix('{current_team}')
 
             return view('system-sticker', [
                 'system' => $systemModel,
-                'url' => route('systems.sticker', ['current_team' => $currentTeam, 'system' => $systemModel->id]),
+                'url' => route('systems.show', ['current_team' => $currentTeam, 'system' => $systemModel->id]),
             ]);
         })->name('systems.sticker');
     });

@@ -1,5 +1,8 @@
 @php
-    $productName = config('app.name', 'Notfallplan');
+    $productName = \App\Support\Settings\SystemSetting::get('platform_name') ?: config('app.name', 'Notfallplan');
+    $contactEmail = (string) \App\Support\Settings\SystemSetting::get('platform_contact_email');
+    $contactPhone = (string) \App\Support\Settings\SystemSetting::get('platform_contact_phone');
+    $companyName = 'Arento AI GmbH i. G.';
 
     $problems = [
         [
@@ -194,25 +197,30 @@
                 <a href="#problem" class="hover:text-slate-900 transition">Problem</a>
                 <a href="#loesung" class="hover:text-slate-900 transition">Lösung</a>
                 <a href="#features" class="hover:text-slate-900 transition">Funktionen</a>
+                <a href="#compliance" class="hover:text-slate-900 transition">Compliance</a>
                 <a href="#zielgruppen" class="hover:text-slate-900 transition">Zielgruppen</a>
                 <a href="#ablauf" class="hover:text-slate-900 transition">Ablauf</a>
             </nav>
 
             <div class="flex items-center gap-3">
-                @if (Route::has('login'))
-                    @auth
-                        <a href="{{ route('dashboard') }}" class="hidden sm:inline-flex items-center px-4 py-2 text-sm font-medium text-slate-700 hover:text-slate-900 transition">
-                            Dashboard
+                @auth
+                    <a href="{{ route('dashboard') }}" class="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg bg-slate-900 text-white hover:bg-slate-800 transition shadow-sm">
+                        Zum Dashboard
+                    </a>
+                @else
+                    <a href="{{ route('login') }}" class="hidden sm:inline-flex items-center px-4 py-2 text-sm font-medium text-slate-700 hover:text-slate-900 transition">
+                        Anmelden
+                    </a>
+                    @if ($canRegister)
+                        <a href="{{ route('register') }}" class="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg bg-slate-900 text-white hover:bg-slate-800 transition shadow-sm">
+                            Kostenlos starten
                         </a>
                     @else
-                        <a href="{{ route('login') }}" class="hidden sm:inline-flex items-center px-4 py-2 text-sm font-medium text-slate-700 hover:text-slate-900 transition">
-                            Anmelden
+                        <a href="#kontakt" class="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg bg-slate-900 text-white hover:bg-slate-800 transition shadow-sm">
+                            Demo anfragen
                         </a>
-                    @endauth
-                @endif
-                <a href="#kontakt" class="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg bg-slate-900 text-white hover:bg-slate-800 transition shadow-sm">
-                    Demo anfragen
-                </a>
+                    @endif
+                @endauth
             </div>
         </div>
     </header>
@@ -241,13 +249,29 @@
                     </p>
 
                     <div class="mt-8 flex flex-col sm:flex-row gap-3">
-                        <a href="#demo" class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-slate-900 text-white font-medium hover:bg-slate-800 transition shadow-sm">
-                            Demo ansehen
-                            <svg class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
-                        </a>
-                        <a href="#kontakt" class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-white text-slate-900 font-medium ring-1 ring-slate-200 hover:ring-slate-300 hover:bg-slate-50 transition">
-                            Kontakt aufnehmen
-                        </a>
+                        @auth
+                            <a href="{{ route('dashboard') }}" class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-slate-900 text-white font-medium hover:bg-slate-800 transition shadow-sm">
+                                Zum Dashboard
+                                <svg class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+                            </a>
+                        @else
+                            @if ($canRegister)
+                                <a href="{{ route('register') }}" class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-slate-900 text-white font-medium hover:bg-slate-800 transition shadow-sm">
+                                    Kostenlos starten
+                                    <svg class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+                                </a>
+                                <a href="{{ route('login') }}" class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-white text-slate-900 font-medium ring-1 ring-slate-200 hover:ring-slate-300 hover:bg-slate-50 transition">
+                                    Anmelden
+                                </a>
+                            @else
+                                <a href="#features" class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-slate-900 text-white font-medium hover:bg-slate-800 transition shadow-sm">
+                                    Funktionen ansehen
+                                </a>
+                                <a href="{{ route('login') }}" class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-white text-slate-900 font-medium ring-1 ring-slate-200 hover:ring-slate-300 hover:bg-slate-50 transition">
+                                    Anmelden
+                                </a>
+                            @endif
+                        @endauth
                     </div>
 
                     <div class="mt-10 flex flex-wrap items-center gap-x-6 gap-y-3 text-sm text-slate-500">
@@ -507,6 +531,135 @@
         </div>
     </section>
 
+    {{-- ============ COMPLIANCE & AUDIT ============ --}}
+    <section id="compliance" class="py-20 lg:py-28">
+        <div class="max-w-7xl mx-auto px-6 lg:px-8">
+            <div class="max-w-3xl">
+                <span class="text-sm font-semibold uppercase tracking-wide text-indigo-600">Compliance, Audit & Operations</span>
+                <h2 class="mt-3 text-3xl sm:text-4xl font-semibold tracking-tight text-slate-900">
+                    Vorbereitet für NIS2, BSI 200-4 und den nächsten Audit.
+                </h2>
+                <p class="mt-4 text-lg text-slate-600">
+                    Sie pflegen nicht nur ein Notfallhandbuch — Sie schaffen messbare Resilienz, dokumentierte Risikosteuerung und nachvollziehbare Audit-Spuren. Genau das, was Versicherer, Wirtschaftsprüfer und Aufsichtsbehörden sehen wollen.
+                </p>
+            </div>
+
+            <div class="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                {{-- Compliance-Dashboard --}}
+                <div class="p-6 rounded-xl bg-white ring-1 ring-slate-200 hover:ring-indigo-200 hover:shadow-md transition">
+                    <span class="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-indigo-50 text-indigo-600">
+                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 5-5"/>
+                        </svg>
+                    </span>
+                    <h3 class="mt-5 font-semibold text-slate-900">Compliance-Dashboard</h3>
+                    <p class="mt-2 text-sm text-slate-600 leading-relaxed">
+                        Reifegrad-Score nach BSI 200-4 und NIS2 — automatisch errechnet aus Ihren tatsächlichen Daten. 30-Tage-Trend, Top-Aktionen mit größtem Hebel und ein klarer Zustand: nicht vorbereitet, ausbaufähig, gut, hervorragend.
+                    </p>
+                    <a href="{{ route('feature.show', 'compliance-dashboard') }}" class="mt-4 inline-flex items-center gap-1 text-sm font-medium text-indigo-600 hover:text-indigo-800 transition">
+                        Mehr erfahren <span aria-hidden="true">→</span>
+                    </a>
+                </div>
+
+                {{-- Risiko-Register --}}
+                <div class="p-6 rounded-xl bg-white ring-1 ring-slate-200 hover:ring-indigo-200 hover:shadow-md transition">
+                    <span class="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-rose-50 text-rose-600">
+                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                            <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+                        </svg>
+                    </span>
+                    <h3 class="mt-5 font-semibold text-slate-900">Risiko-Register</h3>
+                    <p class="mt-2 text-sm text-slate-600 leading-relaxed">
+                        ISO-27001-konformes Register: 5×5-Heatmap, Eintrittswahrscheinlichkeit × Schaden, Restrisiko nach Maßnahmen, Eigentümer und Review-Termine. Maßnahmen lassen sich direkt in die Aufgaben-Inbox überführen.
+                    </p>
+                    <a href="{{ route('feature.show', 'risiko-register') }}" class="mt-4 inline-flex items-center gap-1 text-sm font-medium text-rose-600 hover:text-rose-800 transition">
+                        Mehr erfahren <span aria-hidden="true">→</span>
+                    </a>
+                </div>
+
+                {{-- Lessons Learned --}}
+                <div class="p-6 rounded-xl bg-white ring-1 ring-slate-200 hover:ring-indigo-200 hover:shadow-md transition">
+                    <span class="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-violet-50 text-violet-600">
+                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/>
+                        </svg>
+                    </span>
+                    <h3 class="mt-5 font-semibold text-slate-900">Lessons Learned</h3>
+                    <p class="mt-2 text-sm text-slate-600 leading-relaxed">
+                        Strukturierte After-Action-Auswertung pro Vorfall und Übung — Ursache, was lief gut, was nicht, plus konkrete Maßnahmen mit Fälligkeit. Verknüpft mit Handbuch-Versionen, damit Erkenntnisse nachweislich einfließen.
+                    </p>
+                    <a href="{{ route('feature.show', 'lessons-learned') }}" class="mt-4 inline-flex items-center gap-1 text-sm font-medium text-violet-600 hover:text-violet-800 transition">
+                        Mehr erfahren <span aria-hidden="true">→</span>
+                    </a>
+                </div>
+
+                {{-- War-Room / Echtzeit --}}
+                <div class="p-6 rounded-xl bg-white ring-1 ring-slate-200 hover:ring-indigo-200 hover:shadow-md transition">
+                    <span class="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-amber-50 text-amber-600">
+                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+                        </svg>
+                    </span>
+                    <h3 class="mt-5 font-semibold text-slate-900">Live-Krisenstab (War-Room)</h3>
+                    <p class="mt-2 text-sm text-slate-600 leading-relaxed">
+                        Mehrere Personen sehen in Echtzeit, wer welchen Schritt erledigt hat. Anwesenheits-Liste, Live-Updates auf Schritte und Notizen — aus dem Doku-Tool wird ein operativer Krisen-Kommandostand.
+                    </p>
+                    <a href="{{ route('feature.show', 'war-room') }}" class="mt-4 inline-flex items-center gap-1 text-sm font-medium text-amber-600 hover:text-amber-800 transition">
+                        Mehr erfahren <span aria-hidden="true">→</span>
+                    </a>
+                </div>
+
+                {{-- Audit-Log + Mandanten-Export --}}
+                <div class="p-6 rounded-xl bg-white ring-1 ring-slate-200 hover:ring-indigo-200 hover:shadow-md transition">
+                    <span class="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600">
+                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 8v13H3V8M1 3h22v5H1zM10 12h4"/>
+                        </svg>
+                    </span>
+                    <h3 class="mt-5 font-semibold text-slate-900">Audit-Log & Daten-Export</h3>
+                    <p class="mt-2 text-sm text-slate-600 leading-relaxed">
+                        Lückenlose Änderungshistorie pro Mandant, exportierbar als CSV oder PDF. Vollständiges Mandanten-Archiv (ZIP) für DSGVO-Auskunft: alle Stammdaten, Audit-Log und revisionssichere Handbuch-PDFs in einem Download.
+                    </p>
+                    <a href="{{ route('feature.show', 'audit-export') }}" class="mt-4 inline-flex items-center gap-1 text-sm font-medium text-emerald-600 hover:text-emerald-800 transition">
+                        Mehr erfahren <span aria-hidden="true">→</span>
+                    </a>
+                </div>
+
+                {{-- Monitoring-Integration --}}
+                <div class="p-6 rounded-xl bg-white ring-1 ring-slate-200 hover:ring-indigo-200 hover:shadow-md transition">
+                    <span class="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-sky-50 text-sky-600">
+                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+                        </svg>
+                    </span>
+                    <h3 class="mt-5 font-semibold text-slate-900">Monitoring-Integration</h3>
+                    <p class="mt-2 text-sm text-slate-600 leading-relaxed">
+                        Zabbix oder Prometheus Alertmanager melden kritische Vorfälle automatisch — die Plattform öffnet einen Incident, mappt das richtige System und löst die Eskalations-Kette aus. Krisen-Nachrichten via Slack, Microsoft Teams, E-Mail und SMS, jeweils mit Audit-Spur.
+                    </p>
+                    <a href="{{ route('feature.show', 'monitoring') }}" class="mt-4 inline-flex items-center gap-1 text-sm font-medium text-sky-600 hover:text-sky-800 transition">
+                        Mehr erfahren <span aria-hidden="true">→</span>
+                    </a>
+                </div>
+            </div>
+
+            <div class="mt-12 grid gap-4 sm:grid-cols-3">
+                <div class="rounded-xl bg-slate-50 ring-1 ring-slate-200 p-5">
+                    <div class="text-2xl font-semibold text-slate-900">2FA</div>
+                    <div class="mt-1 text-sm text-slate-600">Erzwingbar für Admins, plus Lesebestätigungen für jede Handbuch-Version.</div>
+                </div>
+                <div class="rounded-xl bg-slate-50 ring-1 ring-slate-200 p-5">
+                    <div class="text-2xl font-semibold text-slate-900">EU-only</div>
+                    <div class="mt-1 text-sm text-slate-600">Hosting und Datenhaltung ausschließlich in Frankfurt. Keine Drittland-Übermittlung im Standard-Setup.</div>
+                </div>
+                <div class="rounded-xl bg-slate-50 ring-1 ring-slate-200 p-5">
+                    <div class="text-2xl font-semibold text-slate-900">SHA-256</div>
+                    <div class="mt-1 text-sm text-slate-600">Revisionssichere Handbuch-PDFs mit Hash im Footer und Versionshistorie.</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
     {{-- ============ ZIELGRUPPEN ============ --}}
     <section id="zielgruppen" class="py-20 lg:py-28">
         <div class="max-w-7xl mx-auto px-6 lg:px-8">
@@ -637,22 +790,61 @@
                 <div class="absolute inset-0 -z-0 opacity-30 bg-[radial-gradient(ellipse_at_top_right,rgba(255,255,255,0.4),transparent_50%)]"></div>
                 <div class="relative max-w-2xl">
                     <h2 class="text-3xl sm:text-4xl font-semibold tracking-tight">
-                        Lernen Sie {{ $productName }} in einem kurzen Gespräch kennen.
+                        @auth
+                            Weiter mit {{ $productName }} im Dashboard.
+                        @else
+                            @if ($canRegister)
+                                In Minuten zum eigenen Notfallhandbuch.
+                            @else
+                                Lernen Sie {{ $productName }} in einem kurzen Gespräch kennen.
+                            @endif
+                        @endauth
                     </h2>
                     <p class="mt-4 text-lg text-indigo-100 leading-relaxed">
-                        Wir zeigen Ihnen, wie ein strukturiertes Notfallhandbuch für Ihr Unternehmen aussehen kann – praxisnah, verständlich und ohne Verpflichtung.
+                        @auth
+                            Sie sind angemeldet — alles ist vorbereitet. Eine kostenlose Testumgebung ist startbereit, sobald Sie ein Firmenprofil anlegen.
+                        @else
+                            @if ($canRegister)
+                                Konto anlegen, Firmenprofil ausfüllen, Branche wählen — der geführte Wizard erledigt den Rest. Kein Beratungsprojekt nötig.
+                            @else
+                                Wir zeigen Ihnen, wie ein strukturiertes Notfallhandbuch für Ihr Unternehmen aussehen kann – praxisnah, verständlich und ohne Verpflichtung.
+                            @endif
+                        @endauth
                     </p>
                     <div class="mt-8 flex flex-col sm:flex-row gap-3">
-                        <a href="#demo" class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-white text-slate-900 font-medium hover:bg-slate-100 transition shadow-sm">
-                            Demo anfragen
-                            <svg class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
-                        </a>
-                        <a href="#gespraech" class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-white/10 text-white font-medium ring-1 ring-white/20 hover:bg-white/15 transition">
-                            Gespräch vereinbaren
-                        </a>
-                        <a href="#produkt" class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg text-white font-medium hover:bg-white/10 transition">
-                            Produkt kennenlernen
-                        </a>
+                        @auth
+                            <a href="{{ route('dashboard') }}" class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-white text-slate-900 font-medium hover:bg-slate-100 transition shadow-sm">
+                                Zum Dashboard
+                                <svg class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+                            </a>
+                        @else
+                            @if ($canRegister)
+                                <a href="{{ route('register') }}" class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-white text-slate-900 font-medium hover:bg-slate-100 transition shadow-sm">
+                                    Kostenlos starten
+                                    <svg class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+                                </a>
+                                <a href="{{ route('login') }}" class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-white/10 text-white font-medium ring-1 ring-white/20 hover:bg-white/15 transition">
+                                    Anmelden
+                                </a>
+                            @endif
+                            @if ($contactEmail !== '')
+                                <a href="mailto:{{ $contactEmail }}" class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-white/10 text-white font-medium ring-1 ring-white/20 hover:bg-white/15 transition">
+                                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                                    {{ $contactEmail }}
+                                </a>
+                            @endif
+                            @if ($contactPhone !== '')
+                                <a href="tel:{{ preg_replace('/[^+0-9]/', '', $contactPhone) }}" class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-white/10 text-white font-medium ring-1 ring-white/20 hover:bg-white/15 transition">
+                                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                                    {{ $contactPhone }}
+                                </a>
+                            @endif
+                            @if ($contactEmail === '' && $contactPhone === '' && ! $canRegister)
+                                <div class="rounded-lg bg-white/10 ring-1 ring-white/20 px-5 py-4 text-sm text-indigo-100">
+                                    Kontaktdaten werden in den Plattform-Einstellungen hinterlegt (Schlüssel: platform_contact_email, platform_contact_phone).
+                                </div>
+                            @endif
+                        @endauth
                     </div>
                 </div>
             </div>
@@ -662,8 +854,8 @@
     {{-- ============ FOOTER ============ --}}
     <footer class="border-t border-slate-200 bg-white">
         <div class="max-w-7xl mx-auto px-6 lg:px-8 py-12">
-            <div class="grid md:grid-cols-4 gap-8">
-                <div class="md:col-span-2">
+            <div class="grid gap-8 md:grid-cols-2 lg:grid-cols-5">
+                <div class="md:col-span-2 lg:col-span-2">
                     <div class="flex items-center gap-2">
                         <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-600 to-blue-600 text-white">
                             <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -674,6 +866,9 @@
                     </div>
                     <p class="mt-4 text-sm text-slate-600 leading-relaxed max-w-md">
                         Das digitale Notfallhandbuch für kleine und mittelständische Unternehmen. Strukturiert vorbereitet auf Cyberangriff, Ausfall und Krise.
+                    </p>
+                    <p class="mt-3 text-xs text-slate-500">
+                        Ein Produkt der <a href="{{ route('legal.imprint') }}" class="hover:text-slate-900 transition">{{ $companyName }}</a>.
                     </p>
                 </div>
 
@@ -690,21 +885,34 @@
                 <div>
                     <div class="text-sm font-semibold text-slate-900">Unternehmen</div>
                     <ul class="mt-4 space-y-3 text-sm text-slate-600">
-                        <li><a href="#" class="hover:text-slate-900 transition">Kontakt</a></li>
-                        <li><a href="#" class="hover:text-slate-900 transition">Impressum</a></li>
-                        <li><a href="#" class="hover:text-slate-900 transition">Datenschutz</a></li>
-                        <li><a href="#" class="hover:text-slate-900 transition">AGB</a></li>
+                        <li><a href="#kontakt" class="hover:text-slate-900 transition">Kontakt</a></li>
+                        <li><a href="{{ route('manual.index') }}" class="hover:text-slate-900 transition">Benutzerhandbuch</a></li>
+                        <li><a href="{{ route('legal.imprint') }}" class="hover:text-slate-900 transition">Impressum</a></li>
+                        <li><a href="{{ route('legal.privacy') }}" class="hover:text-slate-900 transition">Datenschutz</a></li>
+                        <li><a href="{{ route('legal.terms') }}" class="hover:text-slate-900 transition">AGB</a></li>
+                    </ul>
+                </div>
+
+                <div>
+                    <div class="text-sm font-semibold text-slate-900">Compliance</div>
+                    <ul class="mt-4 space-y-3 text-sm text-slate-600">
+                        <li><a href="{{ route('legal.av_contract') }}" class="hover:text-slate-900 transition">Auftragsverarbeitung</a></li>
+                        <li><a href="{{ route('legal.tom') }}" class="hover:text-slate-900 transition">TOM (Art. 32 DSGVO)</a></li>
+                        <li><a href="{{ route('legal.subprocessors') }}" class="hover:text-slate-900 transition">Subprocessors</a></li>
+                        <li><a href="{{ route('legal.accessibility') }}" class="hover:text-slate-900 transition">Barrierefreiheit</a></li>
+                        <li><a href="{{ url('/.well-known/security.txt') }}" class="hover:text-slate-900 transition">security.txt</a></li>
                     </ul>
                 </div>
             </div>
 
             <div class="mt-12 pt-8 border-t border-slate-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div class="text-sm text-slate-500">
-                    &copy; {{ date('Y') }} {{ $productName }}. Alle Rechte vorbehalten.
+                    &copy; {{ date('Y') }} {{ $companyName }}. Alle Rechte vorbehalten.
                 </div>
                 <div class="flex items-center gap-6 text-sm text-slate-500">
-                    <a href="#" class="hover:text-slate-900 transition">Impressum</a>
-                    <a href="#" class="hover:text-slate-900 transition">Datenschutz</a>
+                    <a href="{{ route('legal.imprint') }}" class="hover:text-slate-900 transition">Impressum</a>
+                    <a href="{{ route('legal.privacy') }}" class="hover:text-slate-900 transition">Datenschutz</a>
+                    <a href="{{ route('legal.terms') }}" class="hover:text-slate-900 transition">AGB</a>
                 </div>
             </div>
         </div>

@@ -70,11 +70,62 @@ test('manager self-reference persists correctly', function () {
         'company_id' => $company->id,
         'first_name' => 'Anna',
         'last_name' => 'Beispiel',
-        'manager_id' => $chef->id,
+    ]);
+    $angestellter->managers()->attach($chef->id);
+
+    expect($angestellter->managers->first()->first_name)->toBe('Chef')
+        ->and($chef->reports)->toHaveCount(1);
+});
+
+test('employee can have multiple managers (fachlich + disziplinarisch)', function () {
+    $user = User::factory()->create();
+    $company = Company::factory()->for($user->currentTeam)->create();
+
+    $chef1 = Employee::withoutGlobalScope(CurrentCompanyScope::class)->create([
+        'company_id' => $company->id,
+        'first_name' => 'Fachlicher',
+        'last_name' => 'Vorgesetzter',
+    ]);
+    $chef2 = Employee::withoutGlobalScope(CurrentCompanyScope::class)->create([
+        'company_id' => $company->id,
+        'first_name' => 'Disziplinarischer',
+        'last_name' => 'Vorgesetzter',
     ]);
 
-    expect($angestellter->manager->first_name)->toBe('Chef')
-        ->and($chef->reports)->toHaveCount(1);
+    $angestellter = Employee::withoutGlobalScope(CurrentCompanyScope::class)->create([
+        'company_id' => $company->id,
+        'first_name' => 'Carla',
+        'last_name' => 'Untergebene',
+    ]);
+    $angestellter->managers()->sync([$chef1->id, $chef2->id]);
+
+    expect($angestellter->managers)->toHaveCount(2);
+    expect($chef1->reports->pluck('id')->all())->toContain($angestellter->id);
+    expect($chef2->reports->pluck('id')->all())->toContain($angestellter->id);
+});
+
+test('employees form saves multiple managers via the multi-select', function () {
+    $user = User::factory()->create();
+    $company = Company::factory()->for($user->currentTeam)->create();
+
+    $chef1 = Employee::withoutGlobalScope(CurrentCompanyScope::class)->create([
+        'company_id' => $company->id, 'first_name' => 'Fachlicher', 'last_name' => 'V',
+    ]);
+    $chef2 = Employee::withoutGlobalScope(CurrentCompanyScope::class)->create([
+        'company_id' => $company->id, 'first_name' => 'Disziplinarischer', 'last_name' => 'V',
+    ]);
+
+    Livewire\Livewire::actingAs($user->fresh())
+        ->test('pages::employees.index')
+        ->call('openCreate')
+        ->set('first_name', 'Anna')
+        ->set('last_name', 'Beispiel')
+        ->set('manager_ids', [$chef1->id, $chef2->id])
+        ->call('save')
+        ->assertHasNoErrors();
+
+    $anna = Employee::where('first_name', 'Anna')->first();
+    expect($anna->managers->pluck('id')->all())->toContain($chef1->id, $chef2->id);
 });
 
 test('employee can be assigned a location and the form persists it', function () {

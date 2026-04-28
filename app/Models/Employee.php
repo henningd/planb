@@ -12,7 +12,6 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable([
     'company_id',
@@ -26,7 +25,6 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'email',
     'location_id',
     'emergency_contact',
-    'manager_id',
     'is_key_personnel',
     'crisis_role',
     'is_crisis_deputy',
@@ -48,11 +46,24 @@ class Employee extends Model
     }
 
     /**
-     * @return BelongsTo<Employee, $this>
+     * Vorgesetzte (Mehrfachzuordnung): einer oder mehrere andere Mitarbeiter,
+     * die diesen Mitarbeiter führen — fachlich und/oder disziplinarisch.
+     *
+     * @return BelongsToMany<Employee, $this>
      */
-    public function manager(): BelongsTo
+    public function managers(): BelongsToMany
     {
-        return $this->belongsTo(Employee::class, 'manager_id');
+        return $this->belongsToMany(Employee::class, 'employee_manager', 'employee_id', 'manager_id');
+    }
+
+    /**
+     * Direkt unterstellte Mitarbeiter (Umkehrung von managers()).
+     *
+     * @return BelongsToMany<Employee, $this>
+     */
+    public function reports(): BelongsToMany
+    {
+        return $this->belongsToMany(Employee::class, 'employee_manager', 'manager_id', 'employee_id');
     }
 
     /**
@@ -61,14 +72,6 @@ class Employee extends Model
     public function location(): BelongsTo
     {
         return $this->belongsTo(Location::class);
-    }
-
-    /**
-     * @return HasMany<Employee, $this>
-     */
-    public function reports(): HasMany
-    {
-        return $this->hasMany(Employee::class, 'manager_id');
     }
 
     /**

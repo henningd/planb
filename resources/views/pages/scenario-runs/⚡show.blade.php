@@ -1,24 +1,33 @@
 <?php
 
+use App\Events\ScenarioRunNoteUpdated;
+use App\Events\ScenarioRunStepCompleted;
+use App\Events\ScenarioRunStepReopened;
 use App\Models\ScenarioRun;
-use App\Models\ScenarioRunStep;
 use Flux\Flux;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Computed;
+use Livewire\Attributes\On;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 
-new #[Title('Durchlauf')] class extends Component {
+new #[Title("Durchlauf")] class extends Component {
     public ScenarioRun $run;
 
     /** @var array<int, string> */
     public array $notes = [];
 
+    /** @var array<int, array{id: int, name: string, initials: string}> */
+    public array $presentUsers = [];
+
+    /** @var array<string, true> */
+    public array $recentlyChanged = [];
+
     public function mount(ScenarioRun $run): void
     {
         abort_if($run->company_id !== Auth::user()->currentCompany()?->id, 403);
 
-        $this->run = $run->load(['steps', 'startedBy', 'scenario']);
+        $this->run = $run->load(["steps", "startedBy", "scenario"]);
 
         foreach ($this->run->steps as $step) {
             $this->notes[$step->id] = (string) $step->note;
@@ -29,41 +38,55 @@ new #[Title('Durchlauf')] class extends Component {
     public function progress(): array
     {
         $total = $this->run->steps->count();
-        $done = $this->run->steps->whereNotNull('checked_at')->count();
+        $done = $this->run->steps->whereNotNull("checked_at")->count();
 
         return [
-            'done' => $done,
-            'total' => $total,
-            'percent' => $total > 0 ? (int) round($done / $total * 100) : 0,
+            "done" => $done,
+            "total" => $total,
+            "percent" => $total > 0 ? (int) round($done / $total * 100) : 0,
         ];
     }
 
     public function toggleStep(string $stepId): void
     {
-        $step = $this->run->steps->firstWhere('id', $stepId);
+        $step = $this->run->steps->firstWhere("id", $stepId);
 
         abort_unless($step, 404);
 
         if ($step->checked_at) {
-            $step->update(['checked_at' => null, 'checked_by_user_id' => null]);
+            $step->update(["checked_at" => null, "checked_by_user_id" => null]);
+            $step->refresh();
+
+            event(new ScenarioRunStepReopened($step, Auth::user()->name));
         } else {
             $step->update([
-                'checked_at' => now(),
-                'checked_by_user_id' => Auth::id(),
+                "checked_at" => now(),
+                "checked_by_user_id" => Auth::id(),
             ]);
+            $step->refresh();
+
+            event(new ScenarioRunStepCompleted(
+                $step,
+                Auth::user()->name,
+                $step->checked_at?->toIso8601String(),
+            ));
         }
 
-        $this->run->load('steps');
+        $this->run->load("steps");
     }
 
     public function saveNote(string $stepId): void
     {
-        $step = $this->run->steps->firstWhere('id', $stepId);
+        $step = $this->run->steps->firstWhere("id", $stepId);
 
         abort_unless($step, 404);
 
-        $step->update(['note' => $this->notes[$stepId] ?? null]);
-        Flux::toast(text: __('Notiz gespeichert.'));
+        $note = $this->notes[$stepId] ?? null;
+        $step->update(["note" => $note]);
+
+        event(new ScenarioRunNoteUpdated($step, Auth::user()->name, $note));
+
+        Flux::toast(text: __("Notiz gespeichert."));
     }
 
     public function complete(): void
@@ -72,10 +95,10 @@ new #[Title('Durchlauf')] class extends Component {
             return;
         }
 
-        $this->run->update(['ended_at' => now()]);
+        $this->run->update(["ended_at" => now()]);
         $this->run->refresh();
 
-        Flux::toast(variant: 'success', text: __('Durchlauf abgeschlossen.'));
+        Flux::toast(variant: "success", text: __("Durchlauf abgeschlossen."));
     }
 
     public function abort(): void
@@ -84,13 +107,80 @@ new #[Title('Durchlauf')] class extends Component {
             return;
         }
 
-        $this->run->update(['aborted_at' => now()]);
+        $this->run->update(["aborted_at" => now()]);
         $this->run->refresh();
 
-        Flux::modal('run-abort')->close();
-        Flux::toast(text: __('Durchlauf abgebrochen.'));
+        Flux::modal("run-abort")->close();
+        Flux::toast(text: __("Durchlauf abgebrochen."));
+    }
+
+    /**
+     * @param  array<int, array{id: int, name: string, initials: string}>  $users
+     */
+    #[On("echo-presence:scenario-run.{run.id}.presence,here")]
+    public function setPresent(array $users): void
+    {
+        $this->presentUsers = array_values($users);
+    }
+
+    /**
+     * @param  array{id: int, name: string, initials: string}  $user
+     */
+    #[On("echo-presence:scenario-run.{run.id}.presence,joining")]
+    public function addPresent(array $user): void
+    {
+        foreach ($this->presentUsers as $existing) {
+            if ((int) $existing["id"] === (int) $user["id"]) {
+                return;
+            }
+        }
+        $this->presentUsers[] = $user;
+    }
+
+    /**
+     * @param  array{id: int, name: string, initials: string}  $user
+     */
+    #[On("echo-presence:scenario-run.{run.id}.presence,leaving")]
+    public function removePresent(array $user): void
+    {
+        $this->presentUsers = array_values(array_filter(
+            $this->presentUsers,
+            fn (array $u): bool => (int) $u["id"] !== (int) $user["id"],
+        ));
+    }
+
+    /**
+     * @param  array{step_id: string, user_name: string, completed_at: ?string}  $payload
+     */
+    #[On("echo-private:scenario-run.{run.id},.step.completed")]
+    public function applyStepCompleted(array $payload): void
+    {
+        $this->run->load("steps");
+        $this->recentlyChanged[$payload["step_id"]] = true;
+    }
+
+    /**
+     * @param  array{step_id: string, user_name: string}  $payload
+     */
+    #[On("echo-private:scenario-run.{run.id},.step.reopened")]
+    public function applyStepReopened(array $payload): void
+    {
+        $this->run->load("steps");
+        $this->recentlyChanged[$payload["step_id"]] = true;
+    }
+
+    /**
+     * @param  array{step_id: string, user_name: string, note: ?string}  $payload
+     */
+    #[On("echo-private:scenario-run.{run.id},.note.updated")]
+    public function applyNoteUpdated(array $payload): void
+    {
+        $stepId = $payload["step_id"];
+        $this->notes[$stepId] = (string) ($payload["note"] ?? "");
+        $this->run->load("steps");
     }
 }; ?>
+
 
 <section class="w-full">
     <div class="mb-2">
@@ -98,6 +188,29 @@ new #[Title('Durchlauf')] class extends Component {
             ← {{ __('Alle Durchläufe') }}
         </flux:link>
     </div>
+
+    @if ($run->isActive())
+        <div class="mb-4 flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm dark:border-emerald-900 dark:bg-emerald-950">
+            <div class="flex h-2 w-2 shrink-0 animate-pulse rounded-full bg-emerald-500"></div>
+            <div class="flex-1">
+                <span class="font-medium text-emerald-900 dark:text-emerald-100">
+                    {{ __('Anwesend') }}
+                    (<span x-text="$wire.presentUsers.length">{{ count($presentUsers) }}</span>):
+                </span>
+                <span class="text-emerald-800 dark:text-emerald-200">
+                    @if (count($presentUsers) === 0)
+                        <em class="opacity-70">{{ __('Verbinde…') }}</em>
+                    @endif
+                    <template x-for="user in $wire.presentUsers" :key="user.id">
+                        <span class="ml-1 inline-flex items-center gap-1">
+                            <span class="inline-flex h-6 w-6 items-center justify-center rounded-full bg-emerald-200 text-xs font-semibold text-emerald-900 dark:bg-emerald-800 dark:text-emerald-100" x-text="user.initials"></span>
+                            <span x-text="user.name"></span>
+                        </span>
+                    </template>
+                </span>
+            </div>
+        </div>
+    @endif
 
     <div class="mb-6 rounded-xl border border-zinc-200 bg-white p-6 dark:border-zinc-700 dark:bg-zinc-900">
         <div class="flex items-start justify-between gap-4">
@@ -121,10 +234,10 @@ new #[Title('Durchlauf')] class extends Component {
 
             @if ($run->isActive())
                 <div class="flex items-center gap-2">
-                    <flux:button variant="ghost" wire:click="$dispatch('open-modal', 'run-abort')" x-on:click="$dispatch('open-modal', 'run-abort')">
+                    <flux:button type="button" variant="ghost" wire:click="$dispatch('open-modal', 'run-abort')" x-on:click="$dispatch('open-modal', 'run-abort')">
                         {{ __('Abbrechen') }}
                     </flux:button>
-                    <flux:button variant="primary" icon="check" wire:click="complete">
+                    <flux:button type="button" variant="primary" icon="check" wire:click="complete">
                         {{ __('Durchlauf abschließen') }}
                     </flux:button>
                 </div>
@@ -137,14 +250,22 @@ new #[Title('Durchlauf')] class extends Component {
                 <span>{{ $this->progress['done'] }} / {{ $this->progress['total'] }}</span>
             </div>
             <div class="mt-1 h-2 overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800">
-                <div class="h-full bg-emerald-500" style="width: {{ $this->progress['percent'] }}%"></div>
+                <div class="h-full bg-emerald-500 transition-all duration-500" style="width: {{ $this->progress['percent'] }}%"></div>
             </div>
         </div>
     </div>
 
     <div class="space-y-3">
         @foreach ($run->steps as $step)
-            <div class="rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900 {{ $step->checked_at ? 'opacity-75' : '' }}">
+            <div
+                wire:key="step-{{ $step->id }}"
+                @class([
+                    'rounded-xl border bg-white p-5 transition-colors duration-700 dark:bg-zinc-900',
+                    'opacity-75' => $step->checked_at,
+                    'border-emerald-300 dark:border-emerald-700' => isset($recentlyChanged[$step->id]),
+                    'border-zinc-200 dark:border-zinc-700' => ! isset($recentlyChanged[$step->id]),
+                ])
+            >
                 <div class="flex items-start gap-4">
                     <button
                         type="button"
@@ -187,7 +308,7 @@ new #[Title('Durchlauf')] class extends Component {
                                 placeholder="{{ __('Notiz zu diesem Schritt…') }}"
                             />
                             <div class="mt-2 flex justify-end">
-                                <flux:button size="sm" variant="ghost" wire:click="saveNote('{{ $step->id }}')">
+                                <flux:button type="button" size="sm" variant="ghost" wire:click="saveNote('{{ $step->id }}')">
                                     {{ __('Notiz speichern') }}
                                 </flux:button>
                             </div>
@@ -212,9 +333,9 @@ new #[Title('Durchlauf')] class extends Component {
             </div>
             <div class="flex items-center justify-end gap-2">
                 <flux:modal.close>
-                    <flux:button variant="filled">{{ __('Zurück') }}</flux:button>
+                    <flux:button type="button" variant="filled">{{ __('Zurück') }}</flux:button>
                 </flux:modal.close>
-                <flux:button variant="danger" wire:click="abort">{{ __('Abbrechen') }}</flux:button>
+                <flux:button type="button" variant="danger" wire:click="abort">{{ __('Abbrechen') }}</flux:button>
             </div>
         </div>
     </flux:modal>

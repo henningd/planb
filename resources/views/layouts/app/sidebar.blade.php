@@ -19,9 +19,17 @@
                     <flux:sidebar.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>
                         {{ __('Dashboard') }}
                     </flux:sidebar.item>
+                    <flux:sidebar.item icon="rocket-launch" :href="route('onboarding.index')" :current="request()->routeIs('onboarding.*')" wire:navigate>
+                        {{ __('Einrichtung') }}
+                    </flux:sidebar.item>
                     @if (config('features.compliance') && auth()->user()->isCurrentTeamAdmin())
                         <flux:sidebar.item icon="chart-bar" :href="route('compliance.index')" :current="request()->routeIs('compliance.*')" wire:navigate>
                             {{ __('Compliance') }}
+                        </flux:sidebar.item>
+                    @endif
+                    @if (config('features.risk_register') && auth()->user()->isCurrentTeamAdmin())
+                        <flux:sidebar.item icon="shield-exclamation" :href="route('risks.index')" :current="request()->routeIs('risks.*')" wire:navigate>
+                            {{ __('Risiken') }}
                         </flux:sidebar.item>
                     @endif
                 </flux:sidebar.group>
@@ -99,6 +107,11 @@
                     <flux:sidebar.item icon="clipboard-document-check" :href="route('scenario-runs.index')" :current="request()->routeIs('scenario-runs.*')" wire:navigate>
                         {{ __('Protokolle & Übungen') }}
                     </flux:sidebar.item>
+                    @if (config('features.lessons_learned'))
+                        <flux:sidebar.item icon="academic-cap" :href="route('lessons-learned.index')" :current="request()->routeIs('lessons-learned.*')" wire:navigate>
+                            {{ __('Lessons Learned') }}
+                        </flux:sidebar.item>
+                    @endif
                     @if (auth()->user()->isCurrentTeamAdmin())
                         <flux:sidebar.item icon="document-duplicate" :href="route('communication-templates.index')" :current="request()->routeIs('communication-templates.*')" wire:navigate>
                             {{ __('Vorlagen') }}
@@ -148,6 +161,14 @@
                         <flux:sidebar.item icon="cog-8-tooth" :href="route('system-settings.index')" :current="request()->routeIs('system-settings.*')" wire:navigate>
                             {{ __('System') }}
                         </flux:sidebar.item>
+                        <flux:sidebar.item icon="paint-brush" :href="route('branding.index')" :current="request()->routeIs('branding.*')" wire:navigate>
+                            {{ __('Branding') }}
+                        </flux:sidebar.item>
+                        @if (config('features.monitoring_api'))
+                            <flux:sidebar.item icon="bolt-slash" :href="route('api-tokens.index')" :current="request()->routeIs('api-tokens.*')" wire:navigate>
+                                {{ __('API & Webhooks') }}
+                            </flux:sidebar.item>
+                        @endif
                         @if (auth()->user()?->isSuperAdmin())
                             <flux:sidebar.item icon="globe-alt" :href="route('admin.settings.system.index')" :current="request()->routeIs('admin.settings.system.*')" wire:navigate>
                                 {{ __('Plattform') }}

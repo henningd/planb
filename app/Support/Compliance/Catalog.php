@@ -4,12 +4,14 @@ namespace App\Support\Compliance;
 
 use App\Enums\ComplianceCategory;
 use App\Enums\CrisisRole;
+use App\Enums\RiskStatus;
 use App\Enums\SystemOwnership;
 use App\Models\CommunicationTemplate;
 use App\Models\Company;
 use App\Models\EmergencyResource;
 use App\Models\HandbookTest;
 use App\Models\Location;
+use App\Models\Risk;
 use App\Models\Role;
 use App\Models\ScenarioRun;
 use App\Models\System;
@@ -41,6 +43,8 @@ class Catalog
             self::scenarioExercises(),
             self::emergencyResources(),
             self::communicationTemplates(),
+            self::risksHandled(),
+            self::risksReviewed(),
         ];
     }
 
@@ -489,6 +493,88 @@ class Catalog
                     (int) round($count / 3 * 100),
                     "{$count} von empfohlenen 3 Vorlagen vorhanden.",
                     action: $action,
+                );
+            },
+        );
+    }
+
+    private static function risksHandled(): Check
+    {
+        return new Check(
+            key: 'risks.critical_handled',
+            label: 'Kritische Risiken behandelt',
+            description: 'Risiken mit Score ≥ 15 (kritisch) sind nicht mehr im Erfassungs-/Bewertungs-Stadium, sondern behandelt, akzeptiert, übertragen oder geschlossen.',
+            category: ComplianceCategory::Systeme,
+            weight: 8,
+            evaluator: function (Company $company): Result {
+                if (! config('features.risk_register')) {
+                    return Result::notApplicable('Risiko-Register deaktiviert.');
+                }
+                $action = ['label' => 'Risiko-Register öffnen', 'route' => 'risks.index'];
+                $risks = Risk::query()->where('company_id', $company->id)->get();
+                $critical = $risks->filter(fn (Risk $r) => $r->score() >= 15);
+
+                if ($critical->isEmpty()) {
+                    return $risks->isEmpty()
+                        ? Result::partial(50, 'Noch keine Risiken erfasst – Register beginnen.', action: $action)
+                        : Result::pass('Keine kritischen Risiken (Score ≥ 15) erfasst.', action: $action);
+                }
+                $unhandled = $critical->filter(fn (Risk $r) => in_array(
+                    $r->status,
+                    [RiskStatus::Identified, RiskStatus::Assessed],
+                    true,
+                ));
+                $total = $critical->count();
+                $bad = $unhandled->count();
+                $good = $total - $bad;
+                $details = $unhandled->pluck('title')->take(5)->all();
+
+                if ($bad === 0) {
+                    return Result::pass("Alle {$total} kritischen Risiken sind behandelt oder akzeptiert.", action: $action);
+                }
+                if ($good === 0) {
+                    return Result::fail("Alle {$total} kritischen Risiken sind unbehandelt.", $details, $action);
+                }
+
+                return Result::partial(
+                    (int) round($good / $total * 100),
+                    "{$bad} von {$total} kritischen Risiken sind unbehandelt.",
+                    $details,
+                    $action,
+                );
+            },
+        );
+    }
+
+    private static function risksReviewed(): Check
+    {
+        return new Check(
+            key: 'risks.review_current',
+            label: 'Risiko-Reviews aktuell',
+            description: 'Keine Risiken haben einen überfälligen Review-Termin – das Register wird turnusmäßig gepflegt.',
+            category: ComplianceCategory::Systeme,
+            weight: 4,
+            evaluator: function (Company $company): Result {
+                if (! config('features.risk_register')) {
+                    return Result::notApplicable('Risiko-Register deaktiviert.');
+                }
+                $action = ['label' => 'Risiko-Register öffnen', 'route' => 'risks.index'];
+                $risks = Risk::query()->where('company_id', $company->id)->get();
+                if ($risks->isEmpty()) {
+                    return Result::notApplicable('Noch keine Risiken erfasst.');
+                }
+                $overdue = $risks->filter(fn (Risk $r) => $r->isOverdue());
+                $total = $risks->count();
+                $bad = $overdue->count();
+                if ($bad === 0) {
+                    return Result::pass("Alle {$total} Risiken haben einen aktuellen Review-Status.", action: $action);
+                }
+
+                return Result::partial(
+                    (int) round(($total - $bad) / $total * 100),
+                    "{$bad} von {$total} Risiken mit überfälligem Review.",
+                    $overdue->pluck('title')->take(5)->all(),
+                    $action,
                 );
             },
         );
