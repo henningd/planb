@@ -287,6 +287,246 @@ class SettingsCatalog
 
         TEXT;
 
+    private const DEFAULT_TERMS = <<<'TEXT'
+        ALLGEMEINE GESCHÄFTSBEDINGUNGEN
+
+        Stand: April 2026
+
+        Hinweis: Diese AGB richten sich ausschließlich an Unternehmer im Sinne
+        des § 14 BGB, juristische Personen des öffentlichen Rechts oder
+        öffentlich-rechtliche Sondervermögen. Verbraucher im Sinne des § 13 BGB
+        sind keine Vertragspartner.
+
+        § 1 GELTUNGSBEREICH
+
+        (1) Diese Allgemeinen Geschäftsbedingungen (nachfolgend „AGB") gelten
+        für alle Verträge zwischen der Arento AI GmbH i. G., Wiesenstr. 28,
+        53773 Hennef (nachfolgend „Anbieter") und ihren Kunden über die
+        Bereitstellung der unter dieser Domain erreichbaren Plattform
+        (nachfolgend „Plattform") sowie damit verbundene Leistungen.
+
+        (2) Abweichende, entgegenstehende oder ergänzende Bedingungen des
+        Kunden werden nicht Vertragsbestandteil, es sei denn, der Anbieter
+        stimmt ihrer Geltung ausdrücklich schriftlich zu.
+
+        (3) Maßgeblich ist die zum Zeitpunkt des Vertragsschlusses gültige
+        Fassung dieser AGB.
+
+        § 2 VERTRAGSGEGENSTAND
+
+        (1) Der Anbieter stellt dem Kunden die Plattform als Software-as-a-
+        Service (SaaS) zur Erfassung, Verwaltung und Auswertung von Notfall-
+        und Krisenmanagement-Daten zur Nutzung über das Internet bereit.
+
+        (2) Der Funktionsumfang ergibt sich aus der zum Zeitpunkt des Vertrags-
+        schlusses verfügbaren Leistungsbeschreibung auf der Plattform-Website
+        bzw. im jeweils gewählten Tarif. Der Anbieter ist berechtigt, den
+        Leistungsumfang fortlaufend weiterzuentwickeln, soweit dadurch die
+        bisherigen Hauptleistungen nicht wesentlich eingeschränkt werden.
+
+        (3) Eine Verschaffung der Software in Eigentum oder zur dauerhaften
+        Nutzung außerhalb der Plattform ist nicht geschuldet.
+
+        § 3 VERTRAGSSCHLUSS, TESTPHASE
+
+        (1) Die Darstellung der Leistungen auf der Website stellt kein
+        verbindliches Angebot dar, sondern eine Aufforderung zur Abgabe eines
+        Angebots durch den Kunden.
+
+        (2) Mit der Registrierung eines Kontos und der Bestätigung dieser AGB
+        gibt der Kunde ein Angebot zum Vertragsschluss ab. Der Vertrag kommt
+        mit der Aktivierung des Zugangs durch den Anbieter zustande.
+
+        (3) Der Anbieter kann unentgeltliche Testzugänge anbieten. Soweit
+        nicht ausdrücklich abweichend vereinbart, enden Testzugänge automatisch
+        nach Ablauf der vereinbarten Testdauer, ohne dass es einer Kündigung
+        bedarf.
+
+        § 4 LEISTUNGSUMFANG, VERFÜGBARKEIT
+
+        (1) Der Anbieter stellt die Plattform mit einer angestrebten Verfüg-
+        barkeit von 99 % im Jahresmittel bereit, gemessen am Anbieter-Server-
+        ausgang. Ausgenommen sind Zeiten, in denen die Plattform aufgrund von
+        Wartungsarbeiten, höherer Gewalt oder Störungen außerhalb des Einfluss-
+        bereichs des Anbieters nicht erreichbar ist.
+
+        (2) Geplante Wartungsfenster werden, soweit möglich, in betriebsarme
+        Zeiten gelegt und mit angemessener Vorankündigung mitgeteilt.
+
+        (3) Soweit zwischen den Parteien keine individuelle Service-Level-
+        Vereinbarung getroffen wurde, gilt vorstehende Verfügbarkeit als
+        ausreichend; weitergehende Reaktionszeiten oder Wiederherstellungs-
+        zeiten werden nicht geschuldet.
+
+        § 5 MITWIRKUNGSPFLICHTEN DES KUNDEN
+
+        (1) Der Kunde ist verpflichtet, eine zur Plattform-Nutzung geeignete
+        IT-Infrastruktur (insb. aktuellen Browser, stabile Internetverbindung)
+        vorzuhalten.
+
+        (2) Der Kunde ist verpflichtet, Zugangsdaten geheim zu halten, gegen
+        unbefugten Zugriff zu schützen und den Anbieter unverzüglich zu
+        informieren, wenn Anhaltspunkte für eine missbräuchliche Nutzung des
+        Kontos bestehen. Sicherheitsfunktionen wie Zwei-Faktor-Authentifizierung
+        sollen genutzt werden.
+
+        (3) Der Kunde ist allein verantwortlich für die Inhalte, die er in der
+        Plattform speichert oder über sie versendet, sowie dafür, dass er zur
+        Verarbeitung der dort eingestellten personenbezogenen Daten nach DSGVO
+        berechtigt ist.
+
+        (4) Der Kunde ist verpflichtet, die Plattform nicht zu missbrauchen,
+        insbesondere keine rechtswidrigen, beleidigenden oder Rechte Dritter
+        verletzenden Inhalte einzustellen, keine Schadsoftware einzubringen
+        und keine Sicherheitsmechanismen zu umgehen.
+
+        § 6 NUTZUNGSRECHT
+
+        (1) Der Anbieter räumt dem Kunden für die Vertragslaufzeit ein
+        nicht-ausschließliches, nicht übertragbares und nicht unterlizenzier-
+        bares Recht zur Nutzung der Plattform für die eigenen geschäftlichen
+        Zwecke des Kunden ein.
+
+        (2) Eine Weitergabe der Zugangsdaten an Dritte außerhalb der vom
+        Kunden eingerichteten Mitarbeiter-Konten ist nicht zulässig. Im
+        Rahmen des gewählten Tarifs ist die Anlage von Mitarbeiter-Konten
+        zulässig.
+
+        (3) Eine Vervielfältigung, Bearbeitung oder Reverse-Engineering der
+        Plattform-Software ist nur in den vom Gesetz zwingend zugelassenen
+        Fällen gestattet.
+
+        § 7 DATEN DES KUNDEN, AUFTRAGSVERARBEITUNG
+
+        (1) Sämtliche vom Kunden auf der Plattform gespeicherten Daten
+        bleiben Eigentum des Kunden.
+
+        (2) Soweit der Anbieter im Rahmen der Vertragsdurchführung perso-
+        nenbezogene Daten im Auftrag des Kunden verarbeitet, schließen die
+        Parteien zusätzlich einen Vertrag zur Auftragsverarbeitung nach
+        Art. 28 DSGVO. Der Kunde bleibt Verantwortlicher im Sinne der DSGVO.
+
+        (3) Der Anbieter führt regelmäßige Datensicherungen durch. Der
+        Kunde ist gleichwohl gehalten, eigene Sicherungen wesentlicher
+        Daten vorzunehmen, soweit diese außerhalb der Plattform benötigt
+        werden. Die Plattform stellt hierfür Export-Funktionen bereit.
+
+        (4) Nach Vertragsende stellt der Anbieter dem Kunden auf Anforderung
+        innerhalb einer angemessenen Frist die Kundendaten in einem strukturierten,
+        maschinenlesbaren Format zur Verfügung. Anschließend werden die
+        Daten gelöscht, soweit keine gesetzlichen Aufbewahrungspflichten
+        entgegenstehen.
+
+        § 8 VERGÜTUNG, ZAHLUNGSBEDINGUNGEN
+
+        (1) Die Vergütung richtet sich nach dem zum Zeitpunkt des Vertrags-
+        schlusses gültigen Tarif. Die ausgewiesenen Preise sind Netto-Preise
+        zzgl. der jeweils geltenden gesetzlichen Umsatzsteuer.
+
+        (2) Soweit nicht anders vereinbart, erfolgt die Abrechnung im Voraus
+        für die jeweils gewählte Abrechnungsperiode (z. B. monatlich oder
+        jährlich) per Lastschrift, Kreditkarte oder Rechnung.
+
+        (3) Bei Zahlungsverzug ist der Anbieter berechtigt, gesetzliche
+        Verzugszinsen geltend zu machen und nach erfolgloser Mahnung den
+        Zugang zur Plattform zu sperren.
+
+        (4) Der Anbieter ist berechtigt, die Vergütung mit einer Ankündigungs-
+        frist von mindestens sechs (6) Wochen zum Beginn einer neuen Abrech-
+        nungsperiode anzupassen. Erhöht der Anbieter die Vergütung um mehr
+        als 5 Prozent gegenüber der vorigen Periode, steht dem Kunden ein
+        Sonderkündigungsrecht zum Wirksamwerden der Erhöhung zu.
+
+        § 9 VERTRAGSLAUFZEIT, KÜNDIGUNG
+
+        (1) Der Vertrag wird, soweit nicht abweichend vereinbart, auf
+        unbestimmte Zeit geschlossen und kann von jeder Partei mit einer
+        Frist von einem Monat zum Ende eines jeden Abrechnungszeitraums
+        gekündigt werden.
+
+        (2) Eine Kündigung aus wichtigem Grund bleibt unberührt. Ein wichtiger
+        Grund liegt für den Anbieter insbesondere bei wesentlichem Verstoß
+        des Kunden gegen seine Mitwirkungspflichten oder bei Zahlungsverzug
+        von mehr als zwei aufeinanderfolgenden Abrechnungszeiträumen vor.
+
+        (3) Kündigungen bedürfen mindestens der Textform (E-Mail an die im
+        Impressum genannte Adresse genügt).
+
+        § 10 ÄNDERUNGEN DIESER AGB UND DER LEISTUNGEN
+
+        (1) Der Anbieter ist berechtigt, diese AGB sowie die Leistungs-
+        beschreibung mit einer Ankündigungsfrist von mindestens sechs (6)
+        Wochen anzupassen, soweit dies aus rechtlichen, technischen oder
+        wirtschaftlichen Gründen erforderlich ist und die Anpassung den
+        Kunden nicht unangemessen benachteiligt.
+
+        (2) Widerspricht der Kunde der Änderung nicht innerhalb von vier (4)
+        Wochen nach Zugang der Änderungsmitteilung in Textform, gilt die
+        Änderung als angenommen. Auf diese Folge wird der Anbieter in der
+        Änderungsmitteilung gesondert hinweisen. Im Falle eines fristgerechten
+        Widerspruchs steht dem Anbieter ein Sonderkündigungsrecht zum Wirksam-
+        werden der Änderung zu.
+
+        § 11 HAFTUNG
+
+        (1) Der Anbieter haftet unbeschränkt für Schäden aus der Verletzung
+        des Lebens, des Körpers oder der Gesundheit, die auf einer vorsätz-
+        lichen oder fahrlässigen Pflichtverletzung des Anbieters, eines seiner
+        gesetzlichen Vertreter oder Erfüllungsgehilfen beruhen, sowie für
+        sonstige Schäden, die auf einer vorsätzlichen oder grob fahrlässigen
+        Pflichtverletzung beruhen.
+
+        (2) Bei leicht fahrlässiger Verletzung wesentlicher Vertragspflichten
+        (Kardinalpflichten) ist die Haftung des Anbieters auf den vertrags-
+        typisch vorhersehbaren Schaden begrenzt. Wesentliche Vertragspflichten
+        sind solche, deren Erfüllung die ordnungsgemäße Durchführung des
+        Vertrages überhaupt erst ermöglicht und auf deren Einhaltung der
+        Kunde regelmäßig vertrauen darf.
+
+        (3) Im Übrigen ist die Haftung für leichte Fahrlässigkeit ausge-
+        schlossen, soweit nicht zwingend gesetzlich gehaftet wird (z. B.
+        nach dem Produkthaftungsgesetz).
+
+        (4) Für den Verlust von Daten haftet der Anbieter nur in dem Umfang,
+        in dem ein Schaden auch bei ordnungsgemäßer und regelmäßiger Daten-
+        sicherung durch den Kunden eingetreten wäre. Der Kunde ist gehalten,
+        eigene Datensicherungen vorzunehmen.
+
+        § 12 SCHUTZRECHTE, GEHEIMHALTUNG
+
+        (1) Sämtliche Rechte an der Plattform-Software, deren Quellcode,
+        zugehörigen Dokumentationen und Marken stehen dem Anbieter zu.
+
+        (2) Die Parteien werden alle ihnen im Rahmen der Geschäftsbeziehung
+        bekannt gewordenen vertraulichen Informationen der jeweils anderen
+        Partei vertraulich behandeln und nicht an Dritte weitergeben, es sei
+        denn, dies ist zur Erfüllung des Vertrages oder aufgrund gesetzlicher
+        Vorgaben erforderlich.
+
+        § 13 SCHLUSSBESTIMMUNGEN
+
+        (1) Nebenabreden, Änderungen und Ergänzungen dieses Vertrages
+        bedürfen mindestens der Textform. Dies gilt auch für die Aufhebung
+        dieser Klausel.
+
+        (2) Auf das Vertragsverhältnis findet ausschließlich das Recht der
+        Bundesrepublik Deutschland unter Ausschluss des UN-Kaufrechts
+        (CISG) Anwendung.
+
+        (3) Ausschließlicher Gerichtsstand für alle Streitigkeiten aus oder
+        im Zusammenhang mit diesem Vertrag ist, soweit der Kunde Kaufmann,
+        juristische Person des öffentlichen Rechts oder öffentlich-rechtliches
+        Sondervermögen ist, der Sitz des Anbieters.
+
+        (4) Sollte eine Bestimmung dieses Vertrages unwirksam sein oder
+        werden, so berührt dies die Wirksamkeit der übrigen Bestimmungen
+        nicht. An die Stelle der unwirksamen Bestimmung tritt die gesetzliche
+        Regelung; ist eine solche nicht vorhanden, gilt eine wirksame Regelung
+        als vereinbart, die dem wirtschaftlichen Zweck der unwirksamen
+        Bestimmung am nächsten kommt.
+
+        TEXT;
+
     /**
      * @return array<string, array{scope: string, type: string, default: mixed, label: string, description: string, enum?: array<string,string>, min?: int, max?: int}>
      */
@@ -352,7 +592,7 @@ class SettingsCatalog
             'platform_terms' => [
                 'scope' => self::SYSTEM,
                 'type' => 'string',
-                'default' => "Anbieter\nArento AI GmbH i. G., Wiesenstr. 28, 53773 Hennef, info@arento.ai\n\nHinweis\nDieser Text ist ein Platzhalter und ersetzt KEINE wirksamen AGB. Bitte vor Produktivbetrieb durch eine fachkundige Stelle ausarbeiten lassen — insbesondere zu: Vertragsgegenstand, Leistungsumfang, Verfügbarkeit/SLA, Vergütung, Laufzeit/Kündigung, Haftung, Datenschutzauftragsverarbeitung, Gerichtsstand und anwendbarem Recht.",
+                'default' => self::DEFAULT_TERMS,
                 'label' => 'AGB (Plain-Text/Markdown)',
                 'description' => 'Allgemeine Geschäftsbedingungen. Wird unter /agb gerendert.',
             ],
