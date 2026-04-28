@@ -189,21 +189,82 @@ new #[Title('Recovery-Zeitplan')] class extends Component {
                                     >{{ $system->name }}</a>
                                 </div>
                                 <div class="relative h-7 rounded bg-zinc-50 dark:bg-zinc-800/60">
+                                    {{-- Layer 1: graue „Sichtbarkeits-Verlängerung" — sorgt für Mindest-Breite 28 px,
+                                         damit selbst sehr kurze Wiederanlauf-Zeiten klick- und sichtbar bleiben.
+                                         Diagonale Schraffur signalisiert: „dies ist Fülle, nicht echte Dauer". --}}
                                     <div
-                                        class="absolute top-0 flex h-full min-w-[28px] items-center gap-1 overflow-hidden rounded px-1.5 text-[10px] font-medium text-white shadow-sm"
+                                        class="absolute top-0 h-full min-w-[28px] rounded"
+                                        style="margin-left: {{ $marginLeft }}%; width: {{ $width }}%; background-image: repeating-linear-gradient(45deg, rgb(161 161 170 / 0.55), rgb(161 161 170 / 0.55) 4px, rgb(212 212 216 / 0.55) 4px, rgb(212 212 216 / 0.55) 8px);"
+                                        aria-hidden="true"
+                                    ></div>
+
+                                    {{-- Layer 2: farbiger Bar = exakte proportionale Dauer (kein min-width).
+                                         Äußeres Div trägt nur die Box-Maße + Hintergrund, das innere Flex-Div
+                                         enthält Icon und Label und wird durch overflow:hidden geclippt, wenn
+                                         der Bar zu schmal wird. Padding/Flex am äußeren Div würde sonst die
+                                         expliziten Width-% durch Inhalts-Breite überschreiben. --}}
+                                    <div
+                                        class="absolute top-0 h-full overflow-hidden rounded shadow-sm"
                                         style="margin-left: {{ $marginLeft }}%; width: {{ $width }}%; background-color: {{ $entry['level_color'] }};"
                                         title="{{ $tooltip }} | {{ $entry['level_label'] }}"
                                     >
-                                        @if ($entry['rto_missing'])
-                                            <span data-bar-icon="clock" aria-label="{{ __('RTO-Vorgabe (60 min angenommen)') }}">
-                                                <flux:icon name="clock" variant="micro" class="shrink-0 opacity-90" />
-                                            </span>
-                                        @else
-                                            <span data-bar-icon="{{ $entry['level_icon'] }}" aria-hidden="true">
-                                                <flux:icon :name="$entry['level_icon']" variant="micro" class="shrink-0 opacity-90" />
-                                            </span>
-                                        @endif
-                                        <span class="truncate tabular-nums">{{ \App\Support\Graph\RecoveryTimelineBuilder::formatMinutes($duration) }}@if ($entry['rto_missing']) *@endif</span>
+                                        <div class="absolute inset-0 flex items-center gap-1 px-1.5 text-[10px] font-medium text-white">
+                                            @if ($entry['rto_missing'])
+                                                <span data-bar-icon="clock" aria-label="{{ __('RTO-Vorgabe (60 min angenommen)') }}">
+                                                    <flux:icon name="clock" variant="micro" class="shrink-0 opacity-90" />
+                                                </span>
+                                            @else
+                                                <span data-bar-icon="{{ $entry['level_icon'] }}" aria-hidden="true">
+                                                    <flux:icon :name="$entry['level_icon']" variant="micro" class="shrink-0 opacity-90" />
+                                                </span>
+                                            @endif
+                                            <span class="truncate tabular-nums">{{ \App\Support\Graph\RecoveryTimelineBuilder::formatMinutes($duration) }}@if ($entry['rto_missing']) *@endif</span>
+                                        </div>
+                                    </div>
+
+                                    {{-- Layer 3: Info-Button am rechten Bar-Ende. Hover = Details, Klick = Details bleiben sichtbar. --}}
+                                    <div
+                                        class="pointer-events-none absolute top-0 h-full min-w-[28px]"
+                                        style="margin-left: {{ $marginLeft }}%; width: {{ $width }}%;"
+                                    >
+                                        <div
+                                            x-data="{ open: false, locked: false, show() { this.open = true; }, hide() { if (!this.locked) this.open = false; }, toggleLock() { this.locked = !this.locked; this.open = this.locked ? true : this.open; } }"
+                                            class="pointer-events-auto absolute right-0 top-0 flex h-full items-center pr-1"
+                                        >
+                                            <button
+                                                type="button"
+                                                class="flex size-4 items-center justify-center rounded-full bg-white/95 text-zinc-700 shadow-sm transition hover:bg-white hover:text-zinc-900 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700"
+                                                @click.stop="toggleLock()"
+                                                @mouseenter="show()"
+                                                @mouseleave="hide()"
+                                                :aria-expanded="open"
+                                                aria-label="{{ __('Details anzeigen') }}"
+                                            >
+                                                <flux:icon name="information-circle" variant="micro" class="size-3" />
+                                            </button>
+                                            <div
+                                                x-show="open"
+                                                x-cloak
+                                                x-transition.opacity
+                                                @click.outside="open = false; locked = false"
+                                                class="absolute right-0 top-full z-30 mt-1 min-w-[16rem] max-w-xs rounded-lg border border-zinc-200 bg-white p-3 text-xs shadow-lg dark:border-zinc-700 dark:bg-zinc-900"
+                                            >
+                                                <div class="font-semibold text-zinc-900 dark:text-zinc-50">{{ $system->name }}</div>
+                                                <div class="mt-2 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 tabular-nums text-zinc-700 dark:text-zinc-300">
+                                                    <span class="text-zinc-500 dark:text-zinc-400">{{ __('Start') }}</span>
+                                                    <span>{{ \App\Support\Graph\RecoveryTimelineBuilder::formatMinutes($start) }}</span>
+                                                    <span class="text-zinc-500 dark:text-zinc-400">{{ __('Ende') }}</span>
+                                                    <span>{{ \App\Support\Graph\RecoveryTimelineBuilder::formatMinutes($end) }}</span>
+                                                    <span class="text-zinc-500 dark:text-zinc-400">{{ __('RTO') }}</span>
+                                                    <span>{{ \App\Support\Graph\RecoveryTimelineBuilder::formatMinutes($duration) }}@if ($entry['rto_missing']) *@endif</span>
+                                                    <span class="text-zinc-500 dark:text-zinc-400">{{ __('Stufe') }}</span>
+                                                    <span>{{ $entry['level_label'] }}</span>
+                                                </div>
+                                                @if ($entry['rto_missing'])
+                                                    <p class="mt-2 text-amber-600 dark:text-amber-400">{{ __('* RTO nicht gepflegt — 60 min als Default angenommen.') }}</p>
+                                                @endif
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>

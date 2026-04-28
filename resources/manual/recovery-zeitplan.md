@@ -18,7 +18,19 @@ Oben rechts in der Zeitleiste gibt es einen Toggle-Schalter zwischen **Logarithm
 - **Logarithmisch**: Kurze Wiederanlauf-Zeiten (z. B. 15 Minuten Stromversorgung) und lange (z. B. 72 Stunden GPS-Ortung) liegen optisch ähnlich weit auseinander. Damit sind auch die kritischsten Sofort-Recovery-Systeme klar erkennbar — sie würden auf einer linearen 72-h-Skala in einem winzigen Strich verschwinden. Die Tick-Beschriftungen sind die vertrauten Zeit-Sprünge: 15 min, 30 min, 1 h, 2 h, 4 h, 8 h, 24 h, 48 h, 72 h.
 - **Linear**: Die Balken-Längen sind exakt proportional zur Dauer — ein 8-h-System ist doppelt so breit wie ein 4-h-System. Wenn Sie genaue Längen-Vergleiche brauchen (z. B. „wie viel länger dauert Wiederanlauf X gegenüber Y?"), wechseln Sie hierhin.
 
-In beiden Modi haben Balken eine Mindest-Breite, sodass selbst sehr kurze Wiederanlauf-Zeiten klickbar bleiben.
+In beiden Modi haben Balken eine Mindest-Breite von 28 Pixel, sodass selbst sehr kurze Wiederanlauf-Zeiten klick- und sichtbar bleiben. Wenn die echte proportionale Breite kleiner als das Minimum ist, zeigt sich der **Rest des Balkens als diagonal schraffierte graue Fülle** — so erkennen Sie auf einen Blick, welcher Teil des Balkens die echte Dauer abbildet und welcher nur Sichtbarkeits-Filler ist.
+
+## Info-Symbol pro Balken
+
+Am rechten Ende jedes Balkens sitzt ein kleines runde **Info-Symbol**. Beim Hover oder Klick darauf öffnet sich eine Detail-Karte mit:
+
+- **System-Name**
+- **Start** (Wiederanlauf-Beginn nach Vorfall)
+- **Ende** (System wieder verfügbar)
+- **RTO** (gesetzte Wiederanlauf-Zeit, * markiert wenn als 60-min-Default angenommen)
+- **Stufe** (Notfall-Level)
+
+Klick lässt die Karte offen, ein Klick außerhalb schließt sie wieder.
 
 Systeme, die voneinander abhängen, werden so angeordnet, dass die Abhängigkeit zuerst läuft.
 
