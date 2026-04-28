@@ -99,6 +99,11 @@
                     <flux:sidebar.item icon="clipboard-document-check" :href="route('scenario-runs.index')" :current="request()->routeIs('scenario-runs.*')" wire:navigate>
                         {{ __('Protokolle & Übungen') }}
                     </flux:sidebar.item>
+                    @if (config('features.lessons_learned'))
+                        <flux:sidebar.item icon="academic-cap" :href="route('lessons-learned.index')" :current="request()->routeIs('lessons-learned.*')" wire:navigate>
+                            {{ __('Lessons Learned') }}
+                        </flux:sidebar.item>
+                    @endif
                     @if (auth()->user()->isCurrentTeamAdmin())
                         <flux:sidebar.item icon="document-duplicate" :href="route('communication-templates.index')" :current="request()->routeIs('communication-templates.*')" wire:navigate>
                             {{ __('Vorlagen') }}

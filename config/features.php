@@ -18,4 +18,6 @@ return [
     'dependencies' => filter_var(env('FEATURE_DEPENDENCIES_ENABLED', true), FILTER_VALIDATE_BOOLEAN),
 
     'incident_mode' => filter_var(env('FEATURE_INCIDENT_MODE_ENABLED', true), FILTER_VALIDATE_BOOLEAN),
+
+    'lessons_learned' => filter_var(env('FEATURE_LESSONS_LEARNED_ENABLED', true), FILTER_VALIDATE_BOOLEAN),
 ];

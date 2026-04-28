@@ -63,6 +63,14 @@ Route::prefix('{current_team}')
         Route::livewire('incidents', 'pages::incidents.index')->name('incidents.index');
         Route::livewire('incidents/{report}', 'pages::incidents.show')->name('incidents.show');
 
+        if (config('features.lessons_learned')) {
+            Route::livewire('lessons-learned', 'pages::lessons-learned.index')->name('lessons-learned.index');
+            Route::livewire('lessons-learned/create', 'pages::lessons-learned.create')->name('lessons-learned.create');
+            Route::livewire('lessons-learned/{lesson}', 'pages::lessons-learned.show')
+                ->where('lesson', '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}')
+                ->name('lessons-learned.show');
+        }
+
         Route::middleware([EnsureTeamMembership::class.':admin'])->group(function () {
             Route::livewire('insurance-policies', 'pages::insurance-policies.index')->name('insurance-policies.index');
             Route::livewire('communication-templates', 'pages::communication-templates.index')->name('communication-templates.index');
