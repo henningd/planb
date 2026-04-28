@@ -172,16 +172,35 @@ new #[Title('Risiko-Register')] class extends Component {
                                     $score >= 5 => 'bg-amber-200 dark:bg-amber-900',
                                     default => 'bg-zinc-100 dark:bg-zinc-800',
                                 };
+                                $iconColor = match (true) {
+                                    $score >= 15 => 'text-rose-700 dark:text-rose-200',
+                                    $score >= 10 => 'text-orange-700 dark:text-orange-200',
+                                    $score >= 5 => 'text-amber-700 dark:text-amber-200',
+                                    default => 'text-zinc-500 dark:text-zinc-400',
+                                };
+                                $icon = App\Models\Risk::iconForScore($score);
+                                $severityLabel = match (true) {
+                                    $score >= 15 => __('Kritisch'),
+                                    $score >= 10 => __('Hoch'),
+                                    $score >= 5 => __('Mittel'),
+                                    default => __('Niedrig'),
+                                };
                                 $isSelected = $cell_probability === $p && $cell_impact === $i;
                             @endphp
                             <button
                                 type="button"
                                 wire:click="selectCell({{ $p }}, {{ $i }})"
-                                class="aspect-square rounded {{ $bg }} flex flex-col items-center justify-center text-xs cursor-pointer hover:opacity-80 transition {{ $isSelected ? 'ring-2 ring-offset-1 ring-sky-500' : '' }}"
-                                title="W={{ $p }} · S={{ $i }} · Score={{ $score }}"
+                                data-severity-icon="{{ $icon }}"
+                                data-severity-level="{{ $severityLabel }}"
+                                class="aspect-square rounded {{ $bg }} flex flex-col items-center justify-center gap-0.5 text-xs cursor-pointer hover:opacity-80 transition {{ $isSelected ? 'ring-2 ring-offset-1 ring-sky-500' : '' }}"
+                                title="W={{ $p }} · S={{ $i }} · Score={{ $score }} · {{ $severityLabel }} · {{ $count }} {{ $count === 1 ? __('Risiko') : __('Risiken') }}"
+                                aria-label="{{ __('Wahrscheinlichkeit') }} {{ $p }}, {{ __('Schaden') }} {{ $i }}, Score {{ $score }} ({{ $severityLabel }}), {{ $count }} {{ $count === 1 ? __('Risiko') : __('Risiken') }}"
                             >
-                                <span class="text-base font-semibold">{{ $count }}</span>
-                                <span class="text-[10px] text-zinc-600 dark:text-zinc-400">{{ $score }}</span>
+                                <flux:icon :name="$icon" class="h-3 w-3 {{ $iconColor }}" aria-hidden="true" />
+                                <span class="text-[10px] font-semibold leading-none text-zinc-700 dark:text-zinc-200">{{ __('Score') }} {{ $score }}</span>
+                                <span class="text-[10px] leading-none text-zinc-600 dark:text-zinc-300">
+                                    {{ $count }} {{ $count === 1 ? __('Risiko') : __('Risiken') }}
+                                </span>
                             </button>
                         @endfor
                     @endfor
@@ -190,6 +209,51 @@ new #[Title('Risiko-Register')] class extends Component {
                     <span>← {{ __('weniger Schaden') }}</span>
                     <span>{{ __('Schaden') }}</span>
                     <span>{{ __('mehr Schaden') }} →</span>
+                </div>
+
+                <div class="mt-4 border-t border-zinc-200 pt-3 dark:border-zinc-700">
+                    <div class="mb-2 text-xs font-medium text-zinc-600 dark:text-zinc-400">{{ __('Legende') }}</div>
+                    <ul class="grid gap-2 text-xs sm:grid-cols-2 lg:grid-cols-4">
+                        <li class="flex items-center gap-2" data-severity-legend="low" data-severity-icon="check">
+                            <span class="inline-flex h-6 w-6 items-center justify-center rounded bg-zinc-100 dark:bg-zinc-800" aria-hidden="true">
+                                <flux:icon name="check" class="h-3 w-3 text-zinc-500 dark:text-zinc-400" />
+                            </span>
+                            <span class="text-zinc-700 dark:text-zinc-200">
+                                <strong class="font-semibold">{{ __('Niedrig') }}</strong>
+                                <span class="text-zinc-500 dark:text-zinc-400">({{ __('Score 1–4') }})</span>
+                            </span>
+                        </li>
+                        <li class="flex items-center gap-2" data-severity-legend="medium" data-severity-icon="eye">
+                            <span class="inline-flex h-6 w-6 items-center justify-center rounded bg-amber-200 dark:bg-amber-900" aria-hidden="true">
+                                <flux:icon name="eye" class="h-3 w-3 text-amber-700 dark:text-amber-200" />
+                            </span>
+                            <span class="text-zinc-700 dark:text-zinc-200">
+                                <strong class="font-semibold">{{ __('Mittel') }}</strong>
+                                <span class="text-zinc-500 dark:text-zinc-400">({{ __('Score 5–9') }})</span>
+                            </span>
+                        </li>
+                        <li class="flex items-center gap-2" data-severity-legend="high" data-severity-icon="exclamation-triangle">
+                            <span class="inline-flex h-6 w-6 items-center justify-center rounded bg-orange-200 dark:bg-orange-900" aria-hidden="true">
+                                <flux:icon name="exclamation-triangle" class="h-3 w-3 text-orange-700 dark:text-orange-200" />
+                            </span>
+                            <span class="text-zinc-700 dark:text-zinc-200">
+                                <strong class="font-semibold">{{ __('Hoch') }}</strong>
+                                <span class="text-zinc-500 dark:text-zinc-400">({{ __('Score 10–14') }})</span>
+                            </span>
+                        </li>
+                        <li class="flex items-center gap-2" data-severity-legend="critical" data-severity-icon="shield-exclamation">
+                            <span class="inline-flex h-6 w-6 items-center justify-center rounded bg-rose-200 dark:bg-rose-900" aria-hidden="true">
+                                <flux:icon name="shield-exclamation" class="h-3 w-3 text-rose-700 dark:text-rose-200" />
+                            </span>
+                            <span class="text-zinc-700 dark:text-zinc-200">
+                                <strong class="font-semibold">{{ __('Kritisch') }}</strong>
+                                <span class="text-zinc-500 dark:text-zinc-400">({{ __('Score ≥ 15') }})</span>
+                            </span>
+                        </li>
+                    </ul>
+                    <p class="mt-2 text-[11px] text-zinc-500 dark:text-zinc-400">
+                        {{ __('Severity ist über Farbe und Symbol erkennbar — auch in Graustufen oder bei Rot-Grün-Schwäche.') }}
+                    </p>
                 </div>
             </div>
         </div>
