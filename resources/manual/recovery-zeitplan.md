@@ -9,7 +9,7 @@ Erreichbar über die Sidebar **„Notfallhandbuch → Recovery-Zeitplan"**.
 - **Y-Achse**: alle Systeme, sortiert nach Wiederanlauf-Reihenfolge.
 - **X-Achse**: Zeit ab Stunde 0 (Beginn des Wiederanlaufs).
 - **Balkenlänge**: das RTO des Systems (wie lange darf der Ausfall maximal dauern).
-- **Farbe**: Notfall-Level (rot = kritisch, orange = hoch, gelb = mittel, grau = niedrig).
+- **Farbe + Symbol**: Notfall-Level wird sowohl über die Balken-Farbe (rot = kritisch, orange = hoch, blau = mittel, grün = niedrig) als auch über ein Heroicon links neben jeder Zeile signalisiert (Schild mit Ausrufezeichen / Warn-Dreieck / Schild mit Häkchen / Häkchen-Kreis). So bleibt die Stufe auch bei Rot-Grün-Schwäche oder im Graustufen-Druck eindeutig erkennbar.
 
 Systeme, die voneinander abhängen, werden so angeordnet, dass die Abhängigkeit zuerst läuft.
 

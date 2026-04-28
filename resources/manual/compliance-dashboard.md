@@ -50,6 +50,8 @@ Pro Aktion ein direkter Klick-Pfad zur richtigen Detail-Seite.
 
 Tägliche Snapshots werden automatisch durch einen Hintergrund-Job angelegt. Das Dashboard zeigt den Verlauf der letzten 30 Tage als Mini-Chart. Plötzliche Einbrüche (z. B. weil eine Pflichtrolle frei wurde, ein Test überfällig ist) werden so sichtbar.
 
+Neben dem aktuellen Score sind die 7- und 30-Tage-Deltas mit **Trend-Pfeil und Vorzeichen** angegeben (↗ +5 Pkt., ↘ −2 Pkt., — ±0 Pkt.) — die Richtung ist damit unabhängig von Farbsehen und Graustufen-Druck eindeutig erkennbar.
+
 ## Bezug zu Standards
 
 - **BSI 200-4** (Notfallmanagement): Pflichtrollen, Wiederanlauf, Tests sind die Säulen.
