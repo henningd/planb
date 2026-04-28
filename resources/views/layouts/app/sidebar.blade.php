@@ -161,6 +161,9 @@
                         <flux:sidebar.item icon="cog-8-tooth" :href="route('system-settings.index')" :current="request()->routeIs('system-settings.*')" wire:navigate>
                             {{ __('System') }}
                         </flux:sidebar.item>
+                        <flux:sidebar.item icon="paint-brush" :href="route('branding.index')" :current="request()->routeIs('branding.*')" wire:navigate>
+                            {{ __('Branding') }}
+                        </flux:sidebar.item>
                         @if (config('features.monitoring_api'))
                             <flux:sidebar.item icon="bolt-slash" :href="route('api-tokens.index')" :current="request()->routeIs('api-tokens.*')" wire:navigate>
                                 {{ __('API & Webhooks') }}

@@ -122,6 +122,7 @@ Route::prefix('{current_team}')
                 ->name('audit-log.export.pdf');
             Route::livewire('handbook-shares', 'pages::handbook-shares.index')->name('handbook-shares.index');
             Route::livewire('system-settings', 'pages::system-settings.index')->name('system-settings.index');
+            Route::livewire('branding', 'pages::branding.index')->name('branding.index');
             Route::get('system-settings/backup', [BackupController::class, 'download'])->name('system-settings.backup.download');
             Route::get('system-settings/archive', [BackupController::class, 'archive'])->name('system-settings.archive.download');
             Route::livewire('handbook-versions', 'pages::handbook-versions.index')->name('handbook-versions.index');
