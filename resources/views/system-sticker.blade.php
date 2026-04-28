@@ -149,6 +149,24 @@
             </div>
         </div>
 
+        @if ($system->fallback_process || $system->runbook_reference)
+            <h2>{{ __('Wenn das System ausfällt') }}</h2>
+            <table>
+                @if ($system->fallback_process)
+                    <tr>
+                        <td class="label">{{ __('Notfall-Workaround') }}</td>
+                        <td>{{ $system->fallback_process }}</td>
+                    </tr>
+                @endif
+                @if ($system->runbook_reference)
+                    <tr>
+                        <td class="label">{{ __('Runbook') }}</td>
+                        <td>{{ $system->runbook_reference }}</td>
+                    </tr>
+                @endif
+            </table>
+        @endif
+
         <h2>{{ __('Kenngrößen') }}</h2>
         <table>
             @if ($system->rto_minutes)

@@ -151,7 +151,7 @@ Route::prefix('{current_team}')
 
             return view('system-sticker', [
                 'system' => $systemModel,
-                'url' => route('systems.sticker', ['current_team' => $currentTeam, 'system' => $systemModel->id]),
+                'url' => route('systems.show', ['current_team' => $currentTeam, 'system' => $systemModel->id]),
             ]);
         })->name('systems.sticker');
     });
