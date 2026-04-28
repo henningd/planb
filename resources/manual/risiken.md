@@ -11,7 +11,11 @@ Oben auf der Seite sehen Sie eine **5×5-Matrix**:
 - **Y-Achse**: Eintrittswahrscheinlichkeit (1 unten = unwahrscheinlich, 5 oben = sehr wahrscheinlich).
 - **X-Achse**: Schaden (1 links = vernachlässigbar, 5 rechts = existenzbedrohend).
 - **Farbe der Zellen**: Severity-Level (rot/orange/gelb/zinc).
-- **Zahl in der Zelle**: Anzahl Risiken in dieser Konstellation.
+- **Symbol in der Zelle**: zusätzliches Erkennungsmerkmal pro Stufe — Häkchen (niedrig), Auge (mittel), Warndreieck (hoch), Schild mit Ausrufezeichen (kritisch). So bleibt die Heatmap auch in Graustufen und bei Rot-Grün-Schwäche eindeutig (WCAG 2.1 AA, Erfolgskriterium 1.4.1).
+- **Score in der Zelle**: numerisch ausgewiesen (1–25) — der Maximalwert oben rechts liegt bei 25.
+- **Anzahl Risiken in der Zelle**: explizit als Text („3 Risiken"), nicht nur über Farbintensität.
+
+Unter der Matrix steht eine **Legende**, die Farbe + Symbol + Stufenbezeichnung verbindet.
 
 Klick auf eine Zelle filtert die Liste darunter — z. B. nur die Risiken mit Score ≥ 15 (oben rechts).
 

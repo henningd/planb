@@ -105,6 +105,36 @@ class Risk extends Model
         };
     }
 
+    /**
+     * Heroicon name for a given severity level — used so the heatmap is
+     * readable in greyscale and for users with red-green colour blindness
+     * (WCAG 2.1 AA, success criterion 1.4.1).
+     */
+    public function severityIcon(?int $score = null): string
+    {
+        return self::iconForSeverity($this->severityLevel($score));
+    }
+
+    public static function iconForSeverity(string $level): string
+    {
+        return match ($level) {
+            'critical' => 'shield-exclamation',
+            'high' => 'exclamation-triangle',
+            'medium' => 'eye',
+            default => 'check',
+        };
+    }
+
+    public static function iconForScore(int $score): string
+    {
+        return self::iconForSeverity(match (true) {
+            $score >= 15 => 'critical',
+            $score >= 10 => 'high',
+            $score >= 5 => 'medium',
+            default => 'low',
+        });
+    }
+
     public function isOverdue(): bool
     {
         return $this->review_due_at !== null && $this->review_due_at->isPast();
