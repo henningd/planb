@@ -158,6 +158,11 @@
                         <flux:sidebar.item icon="cog-8-tooth" :href="route('system-settings.index')" :current="request()->routeIs('system-settings.*')" wire:navigate>
                             {{ __('System') }}
                         </flux:sidebar.item>
+                        @if (config('features.monitoring_api'))
+                            <flux:sidebar.item icon="bolt-slash" :href="route('api-tokens.index')" :current="request()->routeIs('api-tokens.*')" wire:navigate>
+                                {{ __('API & Webhooks') }}
+                            </flux:sidebar.item>
+                        @endif
                         @if (auth()->user()?->isSuperAdmin())
                             <flux:sidebar.item icon="globe-alt" :href="route('admin.settings.system.index')" :current="request()->routeIs('admin.settings.system.*')" wire:navigate>
                                 {{ __('Plattform') }}

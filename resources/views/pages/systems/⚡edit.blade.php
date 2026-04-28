@@ -41,6 +41,8 @@ new #[Title('System bearbeiten')] class extends Component {
 
     public ?int $downtime_cost_per_hour = null;
 
+    public string $monitoring_keys_text = '';
+
     /** @var array<int, array{provider_id: string, ownership_kind: string, is_deputy: bool, note: string}> */
     public array $providerAssignments = [];
 
@@ -79,6 +81,9 @@ new #[Title('System bearbeiten')] class extends Component {
             $this->rto_minutes = $system->rto_minutes;
             $this->rpo_minutes = $system->rpo_minutes;
             $this->downtime_cost_per_hour = $system->downtime_cost_per_hour;
+            $this->monitoring_keys_text = is_array($system->monitoring_keys)
+                ? implode("\n", $system->monitoring_keys)
+                : '';
             $this->providerAssignments = $system->serviceProviders
                 ->map(fn (ServiceProvider $p) => [
                     'provider_id' => $p->id,
@@ -595,6 +600,7 @@ new #[Title('System bearbeiten')] class extends Component {
             'rto_minutes' => ['nullable', 'integer', 'in:'.implode(',', $validDurations)],
             'rpo_minutes' => ['nullable', 'integer', 'in:'.implode(',', $validDurations)],
             'downtime_cost_per_hour' => ['nullable', 'integer', 'min:0', 'max:100000000'],
+            'monitoring_keys_text' => ['nullable', 'string', 'max:2000'],
             'providerAssignments' => ['array'],
             'providerAssignments.*.provider_id' => ['required', 'uuid', 'exists:service_providers,id'],
             'providerAssignments.*.ownership_kind' => ['nullable', 'in:'.$ownershipValues],
@@ -619,7 +625,15 @@ new #[Title('System bearbeiten')] class extends Component {
         $responsibles = $validated['responsibles'] ?? [];
         $dependencyAssignments = $validated['dependencyAssignments'] ?? [];
         $roleAssignments = $validated['roleAssignments'] ?? [];
-        unset($validated['providerAssignments'], $validated['responsibles'], $validated['dependencyAssignments'], $validated['roleAssignments']);
+
+        $monitoringKeys = collect(preg_split('/[\r\n,]+/', (string) ($validated['monitoring_keys_text'] ?? '')))
+            ->map(fn ($k) => trim((string) $k))
+            ->filter()
+            ->values()
+            ->all();
+        $validated['monitoring_keys'] = $monitoringKeys === [] ? null : $monitoringKeys;
+
+        unset($validated['providerAssignments'], $validated['responsibles'], $validated['dependencyAssignments'], $validated['roleAssignments'], $validated['monitoring_keys_text']);
 
         if ($this->system !== null) {
             $forbidden = $this->descendantIds($this->system->id);
@@ -818,6 +832,16 @@ new #[Title('System bearbeiten')] class extends Component {
                 </flux:description>
                 <flux:input wire:model="downtime_cost_per_hour" type="number" min="0" step="1" placeholder="z. B. 250" />
             </flux:field>
+
+            @if (config('features.monitoring_api'))
+                <flux:field>
+                    <flux:label>{{ __('Monitoring-Hostnamen / Labels') }}</flux:label>
+                    <flux:description>
+                        {{ __('Eine Bezeichnung pro Zeile (oder kommasepariert). Wenn ein Zabbix-/Prometheus-Alarm einen dieser Begriffe in Host oder Subject trägt, wird er automatisch diesem System zugeordnet. Beispiel: srv-prod-01, warenwirtschaft.local') }}
+                    </flux:description>
+                    <flux:textarea wire:model="monitoring_keys_text" rows="3" placeholder="srv-prod-01&#10;warenwirtschaft.local" />
+                </flux:field>
+            @endif
 
             <div class="grid gap-4 sm:grid-cols-2">
                 <flux:field>

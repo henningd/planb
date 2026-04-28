@@ -22,4 +22,6 @@ return [
     'lessons_learned' => filter_var(env('FEATURE_LESSONS_LEARNED_ENABLED', true), FILTER_VALIDATE_BOOLEAN),
 
     'risk_register' => filter_var(env('FEATURE_RISK_REGISTER_ENABLED', true), FILTER_VALIDATE_BOOLEAN),
+
+    'monitoring_api' => filter_var(env('FEATURE_MONITORING_API_ENABLED', true), FILTER_VALIDATE_BOOLEAN),
 ];

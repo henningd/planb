@@ -101,6 +101,9 @@ Route::prefix('{current_team}')
             if (config('features.compliance')) {
                 Route::livewire('compliance', 'pages::compliance.index')->name('compliance.index');
             }
+            if (config('features.monitoring_api')) {
+                Route::livewire('api-tokens', 'pages::api-tokens.index')->name('api-tokens.index');
+            }
         });
 
         Route::get('systems/export', function () {
