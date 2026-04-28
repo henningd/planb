@@ -738,6 +738,38 @@ class SettingsCatalog
 
         TEXT;
 
+    private const DEFAULT_STATUS_INCIDENTS = <<<'TEXT'
+        ### 2026-03-15 — Wartungsfenster Frankfurt-Cluster
+
+        *Status:* Behoben
+
+        Geplantes Wartungsfenster zur Aktualisierung der Datenbank-Engine im
+        Rechenzentrum Frankfurt (FRA1). Während des Fensters von 02:00 bis
+        02:45 Uhr MEZ war die Plattform für ca. 14 Minuten nicht erreichbar.
+        Wartung wurde mit 7 Tagen Vorlauf angekündigt; Notfallhandbuch-PDFs
+        und Audit-Log waren zu jeder Zeit lokal verfügbar.
+
+        ### 2026-02-08 — Erhöhte Latenz beim PDF-Export
+
+        *Status:* Behoben
+
+        Zwischen 11:30 und 12:10 Uhr MEZ war die Erzeugung von Handbuch-PDFs
+        verlangsamt (Wartezeiten bis zu 90 Sekunden statt üblicher 8–15
+        Sekunden). Ursache war ein verklemmter Worker-Pool nach einem
+        Deployment. Nach Neustart der PDF-Worker normale Antwortzeiten.
+        Keine Datenverluste, kein Login-Impact.
+
+        ### 2025-11-22 — Kurzzeitige Störung E-Mail-Versand
+
+        *Status:* Behoben
+
+        Strato-API meldete zwischen 09:14 und 09:38 Uhr MEZ HTTP-503 für
+        ausgehende Mails. 3 Krisen-Mails wurden in die Wiederholungs-Warteschlange
+        eingestellt und nach Wiederherstellung der API-Verbindung erfolgreich
+        zugestellt. SMS- und Webhook-Kanäle waren nicht betroffen.
+
+        TEXT;
+
     private const DEFAULT_SUBPROCESSORS = <<<'TEXT'
         SUBUNTERAUFTRAGSVERARBEITER (SUBPROCESSORS)
 
@@ -873,6 +905,26 @@ class SettingsCatalog
                 'default' => 'security@arento.ai',
                 'label' => 'Security-Kontakt-E-Mail',
                 'description' => 'Wird in /.well-known/security.txt gerendert (RFC 9116). Empfehlung: dedizierte Adresse, nicht die Firmen-Hauptadresse.',
+            ],
+            'platform_status_state' => [
+                'scope' => self::SYSTEM,
+                'type' => 'enum',
+                'default' => 'operational',
+                'enum' => [
+                    'operational' => 'Alle Systeme funktionieren',
+                    'degraded' => 'Eingeschränkt',
+                    'outage' => 'Störung',
+                    'maintenance' => 'Wartungsfenster',
+                ],
+                'label' => 'Plattform-Status',
+                'description' => 'Globaler Status für /status. Wird als farbiges Banner gerendert.',
+            ],
+            'platform_status_incidents' => [
+                'scope' => self::SYSTEM,
+                'type' => 'string',
+                'default' => self::DEFAULT_STATUS_INCIDENTS,
+                'label' => 'Incident-Historie (Markdown)',
+                'description' => 'Markdown-Block mit Datum, Titel, Status und Beschreibung der vergangenen Incidents. Wird unter /status gerendert.',
             ],
 
             'auto_pdf_enabled' => [
