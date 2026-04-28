@@ -211,9 +211,13 @@ export function initEmployeeHierarchy(opts) {
                     }
                 });
             });
-            // Layout neu rechnen, damit sichtbare Knoten nicht in alten
-            // Positionen zwischen ausgeblendeten Lücken hängen bleiben.
-            cy.layout(DAGRE_LAYOUT).run();
+            // Positionen NICHT neu rechnen — sonst gehen Knoten verloren,
+            // wenn Layout auf einer Teilmenge läuft. Stattdessen einfach
+            // den Viewport auf die sichtbaren Knoten anpassen.
+            const visible = cy.elements(':visible');
+            if (visible.length > 0) {
+                cy.fit(visible, 30);
+            }
         },
         destroy() {
             cy.destroy();

@@ -320,6 +320,38 @@ class DemoDataSeeder extends Seeder
                 array_merge(['company_id' => $company->id], $data),
             );
         }
+
+        // Vorgesetzten-Hierarchie für die Hierarchie-Visualisierung.
+        // Anna Beispiel hat zwei Vorgesetzte (Matrix-Organisation: fachlich
+        // an Max, disziplinarisch zusätzlich an Sabine) — gewollt, damit
+        // der DAG-Charakter sichtbar wird.
+        $idByEmail = Employee::withoutGlobalScope(CurrentCompanyScope::class)
+            ->where('company_id', $company->id)
+            ->pluck('id', 'email');
+
+        $managerMap = [
+            'sabine@mustermann.de' => ['max@mustermann.de'],
+            'anna@mustermann.de' => ['max@mustermann.de', 'sabine@mustermann.de'],
+            'bernd.schneider@mustermann.de' => ['max@mustermann.de'],
+            'dieter.klein@mustermann.de' => ['anna@mustermann.de'],
+            'eva.kommer@mustermann.de' => ['sabine@mustermann.de'],
+            'tobias.fischer@mustermann.de' => ['anna@mustermann.de'],
+            'jonas.mueller@mustermann.de' => ['bernd.schneider@mustermann.de'],
+        ];
+
+        foreach ($managerMap as $email => $managerEmails) {
+            $employeeId = $idByEmail[$email] ?? null;
+            if ($employeeId === null) {
+                continue;
+            }
+            $managerIds = collect($managerEmails)
+                ->map(fn (string $e) => $idByEmail[$e] ?? null)
+                ->filter()
+                ->all();
+
+            $employee = Employee::withoutGlobalScope(CurrentCompanyScope::class)->find($employeeId);
+            $employee?->managers()->sync($managerIds);
+        }
     }
 
     private function seedRoles(Company $company): void
