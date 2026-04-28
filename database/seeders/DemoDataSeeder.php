@@ -1318,33 +1318,42 @@ class DemoDataSeeder extends Seeder
                 ],
             ],
             [
-                'title' => 'NIS2-Berichtspflichten nicht erfüllbar',
-                'description' => 'Im Vorfall keine zeitnahen Meldungen an BSI/Aufsicht möglich.',
-                'category' => RiskCategory::Legal,
-                'probability' => 2, 'impact' => 4,
-                'residual_probability' => null, 'residual_impact' => null,
-                'status' => RiskStatus::Identified,
-                'treatment_strategy' => null,
-                'review_due_at' => null,
-                'system_keywords' => [],
-                'mitigations' => [],
+                'title' => 'Ausfall der zentralen Handwerkersoftware',
+                'description' => 'Die Branchen-Software für Auftragsabwicklung, Aufmaß und Rechnungsstellung ist nicht erreichbar — keine neuen Aufträge, keine Rechnungslegung, keine Materialbestellung möglich.',
+                'category' => RiskCategory::Operational,
+                'probability' => 3, 'impact' => 4,
+                'residual_probability' => 2, 'residual_impact' => 3,
+                'status' => RiskStatus::Assessed,
+                'treatment_strategy' => RiskTreatmentStrategy::Mitigate,
+                'review_due_at' => now()->addMonths(2)->toDateString(),
+                'system_keywords' => ['handwerker', 'rechnungs', 'internet'],
+                'mitigations' => [
+                    ['title' => 'Hersteller-SLA und Notfall-Hotline dokumentieren', 'status' => RiskMitigationStatus::Implemented, 'implemented_at' => now()->subMonths(2)->toDateString()],
+                    ['title' => 'Lokale Backup-Kopie der Stammdaten täglich sichern', 'status' => RiskMitigationStatus::InProgress, 'target_date' => now()->addDays(21)->toDateString()],
+                ],
             ],
             [
                 'title' => 'Diebstahl mobiler Endgeräte vom Außendienst',
-                'description' => 'Notebook oder Tablet entwendet, Festplatte unverschlüsselt.',
+                'description' => 'Tablet oder Notebook der Monteure entwendet — auf den Geräten laufen Baustellen-App und Fuhrpark-Telematik mit Kunden- und Standortdaten.',
                 'category' => RiskCategory::Technical,
                 'probability' => 3, 'impact' => 3,
                 'residual_probability' => 1, 'residual_impact' => 2,
                 'status' => RiskStatus::Mitigated,
                 'treatment_strategy' => RiskTreatmentStrategy::Mitigate,
                 'review_due_at' => now()->addMonths(4)->toDateString(),
-                'system_keywords' => [],
+                'system_keywords' => ['baustellen', 'gps', 'kalender'],
                 'mitigations' => [
                     ['title' => 'BitLocker auf allen Notebooks aktivieren', 'status' => RiskMitigationStatus::Verified, 'implemented_at' => now()->subMonths(3)->toDateString()],
                     ['title' => 'MDM-Lösung mit Remote-Wipe einführen', 'status' => RiskMitigationStatus::InProgress, 'target_date' => now()->addDays(45)->toDateString()],
                 ],
             ],
         ];
+
+        // Altes NIS2-Risiko aus früherem Seed-Lauf entfernen, falls vorhanden.
+        Risk::withoutGlobalScope(CurrentCompanyScope::class)
+            ->where('company_id', $company->id)
+            ->where('title', 'NIS2-Berichtspflichten nicht erfüllbar')
+            ->delete();
 
         foreach ($risks as $data) {
             $risk = Risk::withoutGlobalScope(CurrentCompanyScope::class)
@@ -1694,6 +1703,14 @@ class DemoDataSeeder extends Seeder
      */
     private function seedComplianceSnapshots(Company $company): void
     {
+        // Snapshots dieser Company komplett neu aufbauen, weil die DB
+        // Datum-/Datetime-Werte für (company_id, snapshot_date) sonst
+        // beim Re-Seed als unterschiedliche Schlüssel sieht und in den
+        // Unique-Constraint läuft.
+        ComplianceScoreSnapshot::query()
+            ->where('company_id', $company->id)
+            ->delete();
+
         $current = Evaluator::for($company);
         $finalScore = $current->score();
         if ($finalScore <= 0) {
