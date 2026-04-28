@@ -4,8 +4,10 @@ use App\Enums\RiskMitigationStatus;
 use App\Enums\RiskStatus;
 use App\Models\Risk;
 use App\Models\RiskMitigation;
+use App\Models\SystemTask;
 use Flux\Flux;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -25,7 +27,48 @@ new #[Title('Risiko-Detail')] class extends Component {
     {
         abort_if($risk->company_id !== Auth::user()->currentCompany()?->id, 403);
 
-        $this->risk = $risk->load(['systems', 'owner', 'mitigations.responsibleEmployee']);
+        $this->risk = $risk->load(['systems', 'owner', 'mitigations.responsibleEmployee', 'mitigations.systemTask']);
+    }
+
+    public function materializeAsTask(string $mitigationId): void
+    {
+        $mitigation = RiskMitigation::whereKey($mitigationId)
+            ->where('risk_id', $this->risk->id)
+            ->first();
+
+        if (! $mitigation || $mitigation->system_task_id !== null) {
+            return;
+        }
+
+        $system = $this->risk->systems->first();
+        if (! $system) {
+            $this->dispatch('toast', message: __('Bitte zunächst ein System mit dem Risiko verknüpfen.'), type: 'warning');
+
+            return;
+        }
+
+        DB::transaction(function () use ($mitigation, $system) {
+            $task = SystemTask::create([
+                'system_id' => $system->id,
+                'title' => $mitigation->title,
+                'description' => $mitigation->description,
+                'due_date' => $mitigation->target_date,
+            ]);
+
+            $mitigation->forceFill(['system_task_id' => $task->id])->save();
+
+            if ($mitigation->responsible_employee_id) {
+                $task->assignees()->attach($mitigation->responsible_employee_id, [
+                    'id' => (string) \Illuminate\Support\Str::uuid(),
+                    'raci_role' => 'responsible',
+                    'is_deputy' => false,
+                    'assigned_at' => now(),
+                    'assigned_by_user_id' => Auth::id(),
+                ]);
+            }
+        });
+
+        $this->risk->load('mitigations.responsibleEmployee', 'mitigations.systemTask');
     }
 
     public function changeStatus(string $value): void
@@ -236,6 +279,26 @@ new #[Title('Risiko-Detail')] class extends Component {
                     </div>
                 </div>
                 <div class="flex items-center gap-2">
+                    @if ($mitigation->systemTask)
+                        <a
+                            href="{{ route('tasks-inbox.index', ['current_team' => auth()->user()->currentTeam->slug]) }}#task-{{ $mitigation->systemTask->id }}"
+                            wire:navigate
+                            class="cursor-pointer"
+                            title="{{ __('Verknüpfte Aufgabe in der Inbox öffnen') }}"
+                        >
+                            <flux:badge color="sky" size="sm" icon="inbox">{{ __('In Inbox') }}</flux:badge>
+                        </a>
+                    @else
+                        <flux:button
+                            size="sm"
+                            variant="ghost"
+                            icon="inbox-arrow-down"
+                            wire:click="materializeAsTask('{{ $mitigation->id }}')"
+                            title="{{ __('Als System-Aufgabe in die Inbox überführen') }}"
+                        >
+                            {{ __('Zur Inbox') }}
+                        </flux:button>
+                    @endif
                     <button type="button" wire:click="cycleMitigationStatus('{{ $mitigation->id }}')" class="cursor-pointer">
                         <flux:badge :color="$mitigation->status->color()">{{ $mitigation->status->label() }}</flux:badge>
                     </button>

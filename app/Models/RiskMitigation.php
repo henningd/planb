@@ -18,6 +18,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'target_date',
     'implemented_at',
     'responsible_employee_id',
+    'system_task_id',
 ])]
 class RiskMitigation extends Model
 {
@@ -38,6 +39,14 @@ class RiskMitigation extends Model
     public function responsibleEmployee(): BelongsTo
     {
         return $this->belongsTo(Employee::class, 'responsible_employee_id');
+    }
+
+    /**
+     * @return BelongsTo<SystemTask, $this>
+     */
+    public function systemTask(): BelongsTo
+    {
+        return $this->belongsTo(SystemTask::class);
     }
 
     /**

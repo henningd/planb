@@ -5,9 +5,11 @@ use App\Enums\RiskMitigationStatus;
 use App\Enums\RiskStatus;
 use App\Models\AuditLogEntry;
 use App\Models\Company;
+use App\Models\Employee;
 use App\Models\Risk;
 use App\Models\RiskMitigation;
 use App\Models\System;
+use App\Models\SystemTask;
 use App\Models\Team;
 use App\Models\User;
 use App\Scopes\CurrentCompanyScope;
@@ -250,6 +252,109 @@ it('filters by category, status, and only critical', function () {
         ->set('only_critical', true);
 
     expect($component->get('risks')->pluck('title')->all())->toBe(['Technisch']);
+});
+
+it('materializes a mitigation as a system task', function () {
+    $user = User::factory()->create();
+    $company = Company::factory()->for($user->currentTeam)->create();
+    $system = System::withoutGlobalScope(CurrentCompanyScope::class)->create([
+        'company_id' => $company->id,
+        'name' => 'Warenwirtschaft',
+        'category' => 'geschaeftsbetrieb',
+    ]);
+    $employee = Employee::withoutGlobalScope(CurrentCompanyScope::class)->create([
+        'company_id' => $company->id,
+        'first_name' => 'Anna',
+        'last_name' => 'Müller',
+    ]);
+    $risk = Risk::withoutGlobalScope(CurrentCompanyScope::class)->create([
+        'company_id' => $company->id,
+        'title' => 'R',
+        'category' => RiskCategory::Operational,
+        'probability' => 4,
+        'impact' => 4,
+        'status' => RiskStatus::Identified,
+    ]);
+    $risk->systems()->attach($system->id);
+    $mitigation = RiskMitigation::create([
+        'risk_id' => $risk->id,
+        'title' => 'USV-Anlage prüfen',
+        'description' => 'Quartalsweise',
+        'status' => RiskMitigationStatus::Planned,
+        'target_date' => now()->addDays(30)->toDateString(),
+        'responsible_employee_id' => $employee->id,
+    ]);
+
+    Livewire\Livewire::actingAs($user->fresh())
+        ->test('pages::risks.show', ['risk' => $risk->fresh()])
+        ->call('materializeAsTask', $mitigation->id);
+
+    $mitigation->refresh();
+    expect($mitigation->system_task_id)->not->toBeNull();
+
+    $task = SystemTask::find($mitigation->system_task_id);
+    expect($task)->not->toBeNull();
+    expect($task->title)->toBe('USV-Anlage prüfen');
+    expect($task->system_id)->toBe($system->id);
+    expect($task->due_date->toDateString())->toBe($mitigation->target_date->toDateString());
+    expect($task->assignees->pluck('id')->all())->toContain($employee->id);
+});
+
+it('skips materialization when risk has no system', function () {
+    $user = User::factory()->create();
+    $company = Company::factory()->for($user->currentTeam)->create();
+    $risk = Risk::withoutGlobalScope(CurrentCompanyScope::class)->create([
+        'company_id' => $company->id,
+        'title' => 'Kein System',
+        'category' => RiskCategory::Operational,
+        'probability' => 3,
+        'impact' => 3,
+        'status' => RiskStatus::Identified,
+    ]);
+    $mitigation = RiskMitigation::create([
+        'risk_id' => $risk->id,
+        'title' => 'Maßnahme',
+        'status' => RiskMitigationStatus::Planned,
+    ]);
+
+    Livewire\Livewire::actingAs($user->fresh())
+        ->test('pages::risks.show', ['risk' => $risk->fresh()])
+        ->call('materializeAsTask', $mitigation->id);
+
+    expect($mitigation->fresh()->system_task_id)->toBeNull();
+    expect(SystemTask::count())->toBe(0);
+});
+
+it('does not double-materialize a mitigation', function () {
+    $user = User::factory()->create();
+    $company = Company::factory()->for($user->currentTeam)->create();
+    $system = System::withoutGlobalScope(CurrentCompanyScope::class)->create([
+        'company_id' => $company->id,
+        'name' => 'S',
+        'category' => 'geschaeftsbetrieb',
+    ]);
+    $risk = Risk::withoutGlobalScope(CurrentCompanyScope::class)->create([
+        'company_id' => $company->id,
+        'title' => 'R',
+        'category' => RiskCategory::Operational,
+        'probability' => 3,
+        'impact' => 3,
+        'status' => RiskStatus::Identified,
+    ]);
+    $risk->systems()->attach($system->id);
+    $mitigation = RiskMitigation::create([
+        'risk_id' => $risk->id,
+        'title' => 'Maßnahme',
+        'status' => RiskMitigationStatus::Planned,
+    ]);
+
+    $component = Livewire\Livewire::actingAs($user->fresh())
+        ->test('pages::risks.show', ['risk' => $risk->fresh()]);
+
+    $component->call('materializeAsTask', $mitigation->id);
+    $component->call('materializeAsTask', $mitigation->id);
+
+    expect(SystemTask::count())->toBe(1);
 });
 
 it('aborts cross-tenant show', function () {
