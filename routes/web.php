@@ -13,6 +13,8 @@ use App\Models\System;
 use App\Scopes\CurrentCompanyScope;
 use App\Support\CurrentCompany;
 use App\Support\HandbookData;
+use App\Support\Manual\ManualCatalog;
+use App\Support\Manual\ManualRenderer;
 use App\Support\Marketing\FeatureCatalog;
 use App\Support\Settings\SystemSetting;
 use App\Support\SystemImport;
@@ -67,6 +69,34 @@ Route::get('/funktionen/{slug}', function (string $slug) {
             && SystemSetting::get('registration_enabled', true),
     ]);
 })->where('slug', '[a-z0-9-]+')->name('feature.show');
+
+Route::get('/handbuch', function () {
+    return view('manual.index', [
+        'productName' => SystemSetting::get('platform_name') ?: config('app.name', 'PlanB'),
+        'grouped' => ManualCatalog::grouped(),
+    ]);
+})->name('manual.index');
+
+Route::get('/handbuch/{slug}', function (string $slug) {
+    $entry = ManualCatalog::find($slug);
+    abort_unless($entry !== null, 404);
+
+    $markdown = ManualCatalog::content($slug);
+    abort_unless($markdown !== null, 404);
+
+    $all = ManualCatalog::all();
+    $idx = array_search($slug, array_column($all, 'slug'), true);
+
+    return view('manual.show', [
+        'productName' => SystemSetting::get('platform_name') ?: config('app.name', 'PlanB'),
+        'grouped' => ManualCatalog::grouped(),
+        'entry' => $entry,
+        'currentSlug' => $slug,
+        'html' => ManualRenderer::toHtml($markdown),
+        'previous' => $idx > 0 ? $all[$idx - 1] : null,
+        'next' => $idx < count($all) - 1 ? $all[$idx + 1] : null,
+    ]);
+})->where('slug', '[a-z0-9-]+')->name('manual.show');
 
 Route::prefix('{current_team}')
     ->middleware(['auth', 'verified', EnsureTeamMembership::class])

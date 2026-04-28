@@ -886,6 +886,7 @@
                     <div class="text-sm font-semibold text-slate-900">Unternehmen</div>
                     <ul class="mt-4 space-y-3 text-sm text-slate-600">
                         <li><a href="#kontakt" class="hover:text-slate-900 transition">Kontakt</a></li>
+                        <li><a href="{{ route('manual.index') }}" class="hover:text-slate-900 transition">Benutzerhandbuch</a></li>
                         <li><a href="{{ route('legal.imprint') }}" class="hover:text-slate-900 transition">Impressum</a></li>
                         <li><a href="{{ route('legal.privacy') }}" class="hover:text-slate-900 transition">Datenschutz</a></li>
                         <li><a href="{{ route('legal.terms') }}" class="hover:text-slate-900 transition">AGB</a></li>
