@@ -3,6 +3,8 @@
 use App\Enums\CommunicationAudience;
 use App\Enums\CommunicationChannel;
 use App\Enums\ComplianceCategory;
+use App\Enums\RiskCategory;
+use App\Enums\RiskStatus;
 use App\Enums\TeamRole;
 use App\Models\CommunicationTemplate;
 use App\Models\Company;
@@ -10,7 +12,9 @@ use App\Models\EmergencyResource;
 use App\Models\HandbookTest;
 use App\Models\HandbookVersion;
 use App\Models\Location;
+use App\Models\Risk;
 use App\Models\User;
+use App\Scopes\CurrentCompanyScope;
 use App\Support\Compliance\Catalog;
 use App\Support\Compliance\Evaluator;
 use App\Support\Compliance\Status;
@@ -100,6 +104,84 @@ test('compliance page renders for an admin user', function () {
         ->assertOk()
         ->assertSeeText('Compliance')
         ->assertSeeText('Reifegrad');
+});
+
+test('unhandled critical risks fail the risks.critical_handled check', function () {
+    $user = User::factory()->create();
+    $company = Company::factory()->for($user->currentTeam)->create();
+
+    Risk::withoutGlobalScope(CurrentCompanyScope::class)->create([
+        'company_id' => $company->id,
+        'title' => 'Kritisch unbehandelt',
+        'category' => RiskCategory::Operational,
+        'probability' => 5,
+        'impact' => 5,
+        'status' => RiskStatus::Identified,
+    ]);
+
+    $this->actingAs($user->fresh());
+
+    $report = Evaluator::for($company);
+    $entry = collect($report->items)->first(fn ($i) => $i['check']->key === 'risks.critical_handled');
+
+    expect($entry['result']->status)->toBe(Status::Fail);
+});
+
+test('handled critical risks pass the risks.critical_handled check', function () {
+    $user = User::factory()->create();
+    $company = Company::factory()->for($user->currentTeam)->create();
+
+    Risk::withoutGlobalScope(CurrentCompanyScope::class)->create([
+        'company_id' => $company->id,
+        'title' => 'Kritisch behandelt',
+        'category' => RiskCategory::Operational,
+        'probability' => 5,
+        'impact' => 5,
+        'status' => RiskStatus::Mitigated,
+    ]);
+
+    $this->actingAs($user->fresh());
+
+    $report = Evaluator::for($company);
+    $entry = collect($report->items)->first(fn ($i) => $i['check']->key === 'risks.critical_handled');
+
+    expect($entry['result']->status)->toBe(Status::Pass);
+});
+
+test('overdue risk reviews degrade the risks.review_current check', function () {
+    $user = User::factory()->create();
+    $company = Company::factory()->for($user->currentTeam)->create();
+
+    Risk::withoutGlobalScope(CurrentCompanyScope::class)->create([
+        'company_id' => $company->id,
+        'title' => 'Überfälliger Review',
+        'category' => RiskCategory::Operational,
+        'probability' => 2,
+        'impact' => 2,
+        'status' => RiskStatus::Mitigated,
+        'review_due_at' => now()->subDays(10)->toDateString(),
+    ]);
+
+    $this->actingAs($user->fresh());
+
+    $report = Evaluator::for($company);
+    $entry = collect($report->items)->first(fn ($i) => $i['check']->key === 'risks.review_current');
+
+    expect($entry['result']->status)->toBe(Status::Partial);
+});
+
+test('risks checks fall back to notApplicable when feature flag is off', function () {
+    config(['features.risk_register' => false]);
+
+    $user = User::factory()->create();
+    $company = Company::factory()->for($user->currentTeam)->create();
+
+    $this->actingAs($user->fresh());
+
+    $report = Evaluator::for($company);
+    $entry = collect($report->items)->first(fn ($i) => $i['check']->key === 'risks.critical_handled');
+
+    expect($entry['result']->status)->toBe(Status::NotApplicable);
 });
 
 test('compliance page is forbidden for non-admin users', function () {
