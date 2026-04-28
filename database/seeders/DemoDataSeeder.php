@@ -305,6 +305,46 @@ class DemoDataSeeder extends Seeder
                 'location_name' => 'Werkstatt Vaihingen',
                 'is_key_personnel' => false,
             ],
+            [
+                'first_name' => 'Lukas', 'last_name' => 'Bauer',
+                'position' => 'Geselle', 'department' => 'Werkstatt',
+                'mobile_phone' => '0171 9012345',
+                'email' => 'lukas.bauer@mustermann.de',
+                'location_name' => 'Werkstatt Vaihingen',
+                'is_key_personnel' => false,
+            ],
+            [
+                'first_name' => 'Stefan', 'last_name' => 'Weiß',
+                'position' => 'Auszubildender', 'department' => 'Werkstatt',
+                'mobile_phone' => '0171 0123456',
+                'email' => 'stefan.weiss@mustermann.de',
+                'location_name' => 'Werkstatt Vaihingen',
+                'is_key_personnel' => false,
+            ],
+            [
+                'first_name' => 'Ben', 'last_name' => 'Hartmann',
+                'position' => 'Auszubildender', 'department' => 'Werkstatt',
+                'mobile_phone' => '0172 1234567',
+                'email' => 'ben.hartmann@mustermann.de',
+                'location_name' => 'Werkstatt Vaihingen',
+                'is_key_personnel' => false,
+            ],
+            [
+                'first_name' => 'Lara', 'last_name' => 'Hoffmann',
+                'position' => 'Sachbearbeiterin Buchhaltung', 'department' => 'Verwaltung',
+                'mobile_phone' => '0172 2345678',
+                'email' => 'lara.hoffmann@mustermann.de',
+                'location_name' => 'Hauptsitz',
+                'is_key_personnel' => false,
+            ],
+            [
+                'first_name' => 'Marc', 'last_name' => 'Vogel',
+                'position' => 'Junior IT-Support', 'department' => 'Verwaltung',
+                'mobile_phone' => '0172 3456789',
+                'email' => 'marc.vogel@mustermann.de',
+                'location_name' => 'Hauptsitz',
+                'is_key_personnel' => false,
+            ],
         ];
 
         foreach ($employees as $data) {
@@ -337,6 +377,18 @@ class DemoDataSeeder extends Seeder
             'eva.kommer@mustermann.de' => ['sabine@mustermann.de'],
             'tobias.fischer@mustermann.de' => ['anna@mustermann.de'],
             'jonas.mueller@mustermann.de' => ['bernd.schneider@mustermann.de'],
+            // Werkstatt-Untergebene: Bernd hat insgesamt vier Reports (Jonas
+            // als Geselle, Lukas als Geselle, Stefan und Ben als Azubis).
+            'lukas.bauer@mustermann.de' => ['bernd.schneider@mustermann.de'],
+            'stefan.weiss@mustermann.de' => ['bernd.schneider@mustermann.de'],
+            // Ben ist Azubi mit Doppel-Mentor: Bernd disziplinarisch,
+            // Jonas fachlich (Geselle als Ausbildungs-Pate).
+            'ben.hartmann@mustermann.de' => ['bernd.schneider@mustermann.de', 'jonas.mueller@mustermann.de'],
+            // Tiefere Hierarchie-Pfade: Tobias und Dieter haben jeweils
+            // ihre eigenen Reports — damit gibt es 4 Ebenen
+            // (Max → Sabine → Anna → Tobias → Lara).
+            'lara.hoffmann@mustermann.de' => ['tobias.fischer@mustermann.de'],
+            'marc.vogel@mustermann.de' => ['dieter.klein@mustermann.de'],
         ];
 
         foreach ($managerMap as $email => $managerEmails) {
