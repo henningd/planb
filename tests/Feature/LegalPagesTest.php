@@ -75,3 +75,16 @@ it('links the legal routes from the welcome page footer', function () {
         ->assertSee(route('legal.privacy'), false)
         ->assertSee(route('legal.terms'), false);
 });
+
+it('shows the compliance & audit section on the home page', function () {
+    $this->get('/')
+        ->assertOk()
+        ->assertSeeText('Compliance, Audit & Operations')
+        ->assertSeeText('Compliance-Dashboard')
+        ->assertSeeText('Risiko-Register')
+        ->assertSeeText('Lessons Learned')
+        ->assertSeeText('Live-Krisenstab')
+        ->assertSeeText('Audit-Log')
+        ->assertSeeText('Monitoring-Integration')
+        ->assertSee('id="compliance"', false);
+});

@@ -196,6 +196,7 @@
                 <a href="#problem" class="hover:text-slate-900 transition">Problem</a>
                 <a href="#loesung" class="hover:text-slate-900 transition">Lösung</a>
                 <a href="#features" class="hover:text-slate-900 transition">Funktionen</a>
+                <a href="#compliance" class="hover:text-slate-900 transition">Compliance</a>
                 <a href="#zielgruppen" class="hover:text-slate-900 transition">Zielgruppen</a>
                 <a href="#ablauf" class="hover:text-slate-900 transition">Ablauf</a>
             </nav>
@@ -505,6 +506,117 @@
                         <p class="mt-2 text-sm text-slate-600 leading-relaxed">{{ $feature['text'] }}</p>
                     </div>
                 @endforeach
+            </div>
+        </div>
+    </section>
+
+    {{-- ============ COMPLIANCE & AUDIT ============ --}}
+    <section id="compliance" class="py-20 lg:py-28">
+        <div class="max-w-7xl mx-auto px-6 lg:px-8">
+            <div class="max-w-3xl">
+                <span class="text-sm font-semibold uppercase tracking-wide text-indigo-600">Compliance, Audit & Operations</span>
+                <h2 class="mt-3 text-3xl sm:text-4xl font-semibold tracking-tight text-slate-900">
+                    Vorbereitet für NIS2, BSI 200-4 und den nächsten Audit.
+                </h2>
+                <p class="mt-4 text-lg text-slate-600">
+                    Sie pflegen nicht nur ein Notfallhandbuch — Sie schaffen messbare Resilienz, dokumentierte Risikosteuerung und nachvollziehbare Audit-Spuren. Genau das, was Versicherer, Wirtschaftsprüfer und Aufsichtsbehörden sehen wollen.
+                </p>
+            </div>
+
+            <div class="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                {{-- Compliance-Dashboard --}}
+                <div class="p-6 rounded-xl bg-white ring-1 ring-slate-200 hover:ring-indigo-200 hover:shadow-md transition">
+                    <span class="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-indigo-50 text-indigo-600">
+                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 5-5"/>
+                        </svg>
+                    </span>
+                    <h3 class="mt-5 font-semibold text-slate-900">Compliance-Dashboard</h3>
+                    <p class="mt-2 text-sm text-slate-600 leading-relaxed">
+                        Reifegrad-Score nach BSI 200-4 und NIS2 — automatisch errechnet aus Ihren tatsächlichen Daten. 30-Tage-Trend, Top-Aktionen mit größtem Hebel und ein klarer Zustand: nicht vorbereitet, ausbaufähig, gut, hervorragend.
+                    </p>
+                </div>
+
+                {{-- Risiko-Register --}}
+                <div class="p-6 rounded-xl bg-white ring-1 ring-slate-200 hover:ring-indigo-200 hover:shadow-md transition">
+                    <span class="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-rose-50 text-rose-600">
+                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                            <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+                        </svg>
+                    </span>
+                    <h3 class="mt-5 font-semibold text-slate-900">Risiko-Register</h3>
+                    <p class="mt-2 text-sm text-slate-600 leading-relaxed">
+                        ISO-27001-konformes Register: 5×5-Heatmap, Eintrittswahrscheinlichkeit × Schaden, Restrisiko nach Maßnahmen, Eigentümer und Review-Termine. Maßnahmen lassen sich direkt in die Aufgaben-Inbox überführen.
+                    </p>
+                </div>
+
+                {{-- Lessons Learned --}}
+                <div class="p-6 rounded-xl bg-white ring-1 ring-slate-200 hover:ring-indigo-200 hover:shadow-md transition">
+                    <span class="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-violet-50 text-violet-600">
+                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/>
+                        </svg>
+                    </span>
+                    <h3 class="mt-5 font-semibold text-slate-900">Lessons Learned</h3>
+                    <p class="mt-2 text-sm text-slate-600 leading-relaxed">
+                        Strukturierte After-Action-Auswertung pro Vorfall und Übung — Ursache, was lief gut, was nicht, plus konkrete Maßnahmen mit Fälligkeit. Verknüpft mit Handbuch-Versionen, damit Erkenntnisse nachweislich einfließen.
+                    </p>
+                </div>
+
+                {{-- War-Room / Echtzeit --}}
+                <div class="p-6 rounded-xl bg-white ring-1 ring-slate-200 hover:ring-indigo-200 hover:shadow-md transition">
+                    <span class="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-amber-50 text-amber-600">
+                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+                        </svg>
+                    </span>
+                    <h3 class="mt-5 font-semibold text-slate-900">Live-Krisenstab (War-Room)</h3>
+                    <p class="mt-2 text-sm text-slate-600 leading-relaxed">
+                        Mehrere Personen sehen in Echtzeit, wer welchen Schritt erledigt hat. Anwesenheits-Liste, Live-Updates auf Schritte und Notizen — aus dem Doku-Tool wird ein operativer Krisen-Kommandostand.
+                    </p>
+                </div>
+
+                {{-- Audit-Log + Mandanten-Export --}}
+                <div class="p-6 rounded-xl bg-white ring-1 ring-slate-200 hover:ring-indigo-200 hover:shadow-md transition">
+                    <span class="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600">
+                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 8v13H3V8M1 3h22v5H1zM10 12h4"/>
+                        </svg>
+                    </span>
+                    <h3 class="mt-5 font-semibold text-slate-900">Audit-Log & Daten-Export</h3>
+                    <p class="mt-2 text-sm text-slate-600 leading-relaxed">
+                        Lückenlose Änderungshistorie pro Mandant, exportierbar als CSV oder PDF. Vollständiges Mandanten-Archiv (ZIP) für DSGVO-Auskunft: alle Stammdaten, Audit-Log und revisionssichere Handbuch-PDFs in einem Download.
+                    </p>
+                </div>
+
+                {{-- Monitoring-Integration --}}
+                <div class="p-6 rounded-xl bg-white ring-1 ring-slate-200 hover:ring-indigo-200 hover:shadow-md transition">
+                    <span class="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-sky-50 text-sky-600">
+                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+                        </svg>
+                    </span>
+                    <h3 class="mt-5 font-semibold text-slate-900">Monitoring-Integration</h3>
+                    <p class="mt-2 text-sm text-slate-600 leading-relaxed">
+                        Zabbix oder Prometheus Alertmanager melden kritische Vorfälle automatisch — die Plattform öffnet einen Incident, mappt das richtige System und löst die Eskalations-Kette aus. Krisen-Nachrichten via Slack, Microsoft Teams, E-Mail und SMS, jeweils mit Audit-Spur.
+                    </p>
+                </div>
+            </div>
+
+            <div class="mt-12 grid gap-4 sm:grid-cols-3">
+                <div class="rounded-xl bg-slate-50 ring-1 ring-slate-200 p-5">
+                    <div class="text-2xl font-semibold text-slate-900">2FA</div>
+                    <div class="mt-1 text-sm text-slate-600">Erzwingbar für Admins, plus Lesebestätigungen für jede Handbuch-Version.</div>
+                </div>
+                <div class="rounded-xl bg-slate-50 ring-1 ring-slate-200 p-5">
+                    <div class="text-2xl font-semibold text-slate-900">EU-only</div>
+                    <div class="mt-1 text-sm text-slate-600">Hosting und Datenhaltung ausschließlich in Frankfurt. Keine Drittland-Übermittlung im Standard-Setup.</div>
+                </div>
+                <div class="rounded-xl bg-slate-50 ring-1 ring-slate-200 p-5">
+                    <div class="text-2xl font-semibold text-slate-900">SHA-256</div>
+                    <div class="mt-1 text-sm text-slate-600">Revisionssichere Handbuch-PDFs mit Hash im Footer und Versionshistorie.</div>
+                </div>
             </div>
         </div>
     </section>
