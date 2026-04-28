@@ -1744,7 +1744,7 @@ class DemoDataSeeder extends Seeder
     {
         if ($company->display_name === null || $company->primary_color === null) {
             $company->forceFill([
-                'display_name' => $company->display_name ?? 'Musterfirma · Krisenstab',
+                'display_name' => $company->display_name ?? 'Holzbau Wagner GmbH',
                 'primary_color' => $company->primary_color ?? '#0ea5e9',
             ])->save();
         }

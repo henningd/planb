@@ -77,9 +77,9 @@
         <section class="py-12 lg:py-16 bg-slate-50 border-y border-slate-100">
             <div class="max-w-5xl mx-auto px-6 lg:px-8">
                 <div class="max-w-2xl">
-                    <span class="text-sm font-semibold uppercase tracking-wide {{ $color['text'] }}">Aus dem Demo-Mandanten</span>
+                    <span class="text-sm font-semibold uppercase tracking-wide {{ $color['text'] }}">In der Anwendung</span>
                     <h2 class="mt-3 text-2xl sm:text-3xl font-semibold tracking-tight text-slate-900">
-                        Echte Daten, echte Ansicht.
+                        So sieht das im laufenden Betrieb aus.
                     </h2>
                     @if (! empty($feature['demo_hint']))
                         <p class="mt-3 text-slate-600 leading-relaxed">{{ $feature['demo_hint'] }}</p>
