@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\System;
+use App\Support\Accessibility\SeverityIndicator;
 use App\Support\Duration;
 use App\Support\RecoveryOrder;
 use Illuminate\Support\Facades\Auth;
@@ -88,12 +89,16 @@ new #[Title('Wiederanlauf')] class extends Component {
                                         <div class="flex items-center gap-2">
                                             <span class="font-medium">{{ $system->name }}</span>
                                             @if ($system->priority)
-                                                <flux:badge
-                                                    :color="match ($system->priority->sort) { 1 => 'rose', 2 => 'amber', default => 'zinc' }"
-                                                    size="sm"
-                                                >
-                                                    {{ $system->priority->name }}
-                                                </flux:badge>
+                                                @php($priorityIcon = SeverityIndicator::systemPriorityIcon((int) $system->priority->sort))
+                                                <span data-severity-icon="{{ $priorityIcon }}">
+                                                    <flux:badge
+                                                        :color="match ($system->priority->sort) { 1 => 'rose', 2 => 'amber', default => 'zinc' }"
+                                                        size="sm"
+                                                        :icon="$priorityIcon"
+                                                    >
+                                                        {{ $system->priority->name }}
+                                                    </flux:badge>
+                                                </span>
                                             @endif
                                             <flux:badge color="zinc" size="sm">{{ $system->category->label() }}</flux:badge>
                                         </div>

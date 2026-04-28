@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\EmergencyLevel;
+use App\Support\Accessibility\SeverityIndicator;
 use Flux\Flux;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Computed;
@@ -133,7 +134,11 @@ new #[Title('Notfall-Level')] class extends Component {
                                 {{ $level->sort }}
                             </span>
                             <div class="min-w-0 flex-1">
-                                <flux:heading size="base">{{ $level->name }}</flux:heading>
+                                @php($levelIcon = SeverityIndicator::emergencyLevelIcon((int) $level->sort))
+                                <div class="flex items-center gap-2" data-severity-icon="{{ $levelIcon }}">
+                                    <flux:icon :name="$levelIcon" class="h-5 w-5 shrink-0 text-zinc-500 dark:text-zinc-400" />
+                                    <flux:heading size="base">{{ $level->name }}</flux:heading>
+                                </div>
                                 @if ($level->description)
                                     <flux:text class="mt-1 text-sm text-zinc-500 dark:text-zinc-400">{{ $level->description }}</flux:text>
                                 @endif

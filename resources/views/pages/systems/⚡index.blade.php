@@ -2,6 +2,7 @@
 
 use App\Enums\SystemCategory;
 use App\Models\System;
+use App\Support\Accessibility\SeverityIndicator;
 use App\Support\IndustryTemplates;
 use App\Support\SystemImport;
 use Flux\Flux;
@@ -292,14 +293,20 @@ new #[Title('Systeme')] class extends Component {
                                         <div class="flex flex-wrap items-center gap-2">
                                             <span class="truncate font-medium text-zinc-900 hover:underline dark:text-white">{{ $system->name }}</span>
                                             @if ($system->emergencyLevel)
-                                                <flux:badge
-                                                    :color="match ($system->emergencyLevel->sort) { 1 => 'rose', 2 => 'amber', 3 => 'yellow', default => 'zinc' }"
-                                                    size="sm"
-                                                >
-                                                    {{ $system->emergencyLevel->name }}
-                                                </flux:badge>
+                                                @php($levelIcon = SeverityIndicator::emergencyLevelIcon((int) $system->emergencyLevel->sort))
+                                                <span data-severity-icon="{{ $levelIcon }}">
+                                                    <flux:badge
+                                                        :color="match ($system->emergencyLevel->sort) { 1 => 'rose', 2 => 'amber', 3 => 'yellow', default => 'zinc' }"
+                                                        size="sm"
+                                                        :icon="$levelIcon"
+                                                    >
+                                                        {{ $system->emergencyLevel->name }}
+                                                    </flux:badge>
+                                                </span>
                                             @else
-                                                <flux:badge color="zinc" size="sm">{{ __('Ohne Notfall-Level') }}</flux:badge>
+                                                <span data-severity-icon="minus-circle">
+                                                    <flux:badge color="zinc" size="sm" icon="minus-circle">{{ __('Ohne Notfall-Level') }}</flux:badge>
+                                                </span>
                                             @endif
                                         </div>
                                     </a>

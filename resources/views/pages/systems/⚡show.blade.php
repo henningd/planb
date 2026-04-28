@@ -6,6 +6,7 @@ use App\Models\Role;
 use App\Models\ServiceProvider;
 use App\Models\System;
 use App\Models\SystemTask;
+use App\Support\Accessibility\SeverityIndicator;
 use App\Support\AssignmentHistory;
 use App\Support\AssignmentSync;
 use App\Support\Duration;
@@ -547,11 +548,15 @@ new #[Title('System')] class extends Component {
                 <div class="flex items-center gap-2">
                     <flux:heading size="xl">{{ $system->name }}</flux:heading>
                     @if ($system->priority)
-                        <flux:badge
-                            :color="match ($system->priority->sort) { 1 => 'rose', 2 => 'amber', default => 'zinc' }"
-                        >
-                            {{ $system->priority->name }}
-                        </flux:badge>
+                        @php($priorityIcon = SeverityIndicator::systemPriorityIcon((int) $system->priority->sort))
+                        <span data-severity-icon="{{ $priorityIcon }}">
+                            <flux:badge
+                                :color="match ($system->priority->sort) { 1 => 'rose', 2 => 'amber', default => 'zinc' }"
+                                :icon="$priorityIcon"
+                            >
+                                {{ $system->priority->name }}
+                            </flux:badge>
+                        </span>
                     @endif
                     <flux:badge color="zinc">{{ $system->category->label() }}</flux:badge>
                 </div>

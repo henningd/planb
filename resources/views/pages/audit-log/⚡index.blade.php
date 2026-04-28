@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\AuditLogEntry;
+use App\Support\Accessibility\SeverityIndicator;
 use App\Support\AuditLogFilter;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
@@ -77,6 +78,9 @@ new #[Title('Aktivitäten')] class extends Component {
         $this->resetPage();
     }
 
+    /**
+     * @return array{is_assignment: bool, is_unassignment: bool, color: string, label: string, icon: string}
+     */
     public function actionBadge(AuditLogEntry $entry): array
     {
         $action = (string) $entry->action;
@@ -100,6 +104,7 @@ new #[Title('Aktivitäten')] class extends Component {
                 $isUnassignment => __('Entzogen'),
                 default => __('Geändert'),
             },
+            'icon' => SeverityIndicator::auditActionIcon($action),
         ];
     }
 }; ?>
@@ -172,9 +177,11 @@ new #[Title('Aktivitäten')] class extends Component {
                         <div class="flex-1 min-w-0">
                             @php($badge = $this->actionBadge($entry))
                             <div class="flex flex-wrap items-center gap-2">
-                                <flux:badge size="sm" :color="$badge['color']">
-                                    {{ $badge['label'] }}
-                                </flux:badge>
+                                <span data-severity-icon="{{ $badge['icon'] }}">
+                                    <flux:badge size="sm" :color="$badge['color']" :icon="$badge['icon']">
+                                        {{ $badge['label'] }}
+                                    </flux:badge>
+                                </span>
                                 <flux:badge color="zinc" size="sm">{{ $entry->entity_type }}</flux:badge>
                                 <span class="font-medium">{{ $entry->entity_label ?? $entry->entity_id }}</span>
                                 @if (($badge['is_assignment'] || $badge['is_unassignment']) && is_array($entry->changes) && ($entry->changes['related_label'] ?? null))
