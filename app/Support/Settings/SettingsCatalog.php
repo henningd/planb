@@ -103,6 +103,20 @@ class SettingsCatalog
                 'label' => 'SHA-256 im PDF-Footer',
                 'description' => 'Zeigt den PDF-Hash unten als Revisionsanker an.',
             ],
+            'slack_webhook_url' => [
+                'scope' => self::COMPANY,
+                'type' => 'string',
+                'default' => '',
+                'label' => 'Slack-Webhook-URL',
+                'description' => 'Incoming-Webhook-URL eines Slack-Channels. Vorlagen mit Kanal „Slack" werden hierhin gepostet.',
+            ],
+            'teams_webhook_url' => [
+                'scope' => self::COMPANY,
+                'type' => 'string',
+                'default' => '',
+                'label' => 'Microsoft-Teams-Webhook-URL',
+                'description' => 'Incoming-Webhook-URL eines Teams-Channels. Vorlagen mit Kanal „Teams" werden hierhin gepostet.',
+            ],
         ];
     }
 

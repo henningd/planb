@@ -10,6 +10,8 @@ enum CommunicationChannel: string
     case Messenger = 'messenger';
     case Notice = 'notice';
     case Intranet = 'intranet';
+    case Slack = 'slack';
+    case Teams = 'teams';
 
     public function label(): string
     {
@@ -20,6 +22,8 @@ enum CommunicationChannel: string
             self::Messenger => 'Messenger (WhatsApp/Signal)',
             self::Notice => 'Aushang',
             self::Intranet => 'Intranet',
+            self::Slack => 'Slack',
+            self::Teams => 'Microsoft Teams',
         };
     }
 
@@ -32,13 +36,15 @@ enum CommunicationChannel: string
             self::Messenger => 'chat-bubble-left-right',
             self::Notice => 'document-text',
             self::Intranet => 'globe-alt',
+            self::Slack => 'hashtag',
+            self::Teams => 'hashtag',
         };
     }
 
     public function hasSubject(): bool
     {
         return match ($this) {
-            self::Email, self::Intranet, self::Notice => true,
+            self::Email, self::Intranet, self::Notice, self::Slack, self::Teams => true,
             default => false,
         };
     }

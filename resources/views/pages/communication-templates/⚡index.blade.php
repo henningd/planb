@@ -8,8 +8,10 @@ use App\Models\CommunicationDispatchRecipient;
 use App\Models\CommunicationTemplate;
 use App\Models\Employee;
 use App\Models\Scenario;
+use App\Services\Chat\ChatWebhookSender;
 use App\Services\Sms\SmsGatewayContract;
 use App\Services\Sms\SmsResult;
+use App\Support\Settings\CompanySetting;
 use App\Support\TemplatePlaceholders;
 use Flux\Flux;
 use Illuminate\Database\Eloquent\Collection;
@@ -336,6 +338,72 @@ new #[Title('Kommunikations-Vorlagen')] class extends Component {
             ->get();
     }
 
+    public function sendChat(string $id, ChatWebhookSender $sender): void
+    {
+        $template = CommunicationTemplate::findOrFail($id);
+
+        if (! in_array($template->channel, [CommunicationChannel::Slack, CommunicationChannel::Teams], true)) {
+            Flux::toast(variant: 'warning', text: __('Diese Vorlage ist kein Slack-/Teams-Kanal.'));
+
+            return;
+        }
+
+        $company = Auth::user()->currentCompany();
+        if ($company === null) {
+            return;
+        }
+
+        $isSlack = $template->channel === CommunicationChannel::Slack;
+        $url = (string) CompanySetting::for($company)->get($isSlack ? 'slack_webhook_url' : 'teams_webhook_url', '');
+        if ($url === '') {
+            Flux::toast(
+                variant: 'warning',
+                text: __('Keine :provider-Webhook-URL hinterlegt. Bitte in den System-Settings ergänzen.', [
+                    'provider' => $isSlack ? 'Slack' : 'Teams',
+                ]),
+            );
+
+            return;
+        }
+
+        $resolvedSubject = TemplatePlaceholders::resolve((string) $template->subject, $company);
+        $resolvedBody = TemplatePlaceholders::resolve($template->body, $company);
+
+        $result = $isSlack
+            ? $sender->sendSlack($url, $resolvedSubject, $resolvedBody)
+            : $sender->sendTeams($url, $resolvedSubject, $resolvedBody);
+
+        $dispatch = CommunicationDispatch::create([
+            'communication_template_id' => $template->id,
+            'dispatched_by_user_id' => Auth::id(),
+            'channel' => $template->channel->value,
+            'subject' => $resolvedSubject,
+            'body' => $resolvedBody,
+            'recipient_count' => 1,
+            'success_count' => $result->success ? 1 : 0,
+            'failed_count' => $result->success ? 0 : 1,
+            'dispatched_at' => now(),
+        ]);
+
+        CommunicationDispatchRecipient::create([
+            'communication_dispatch_id' => $dispatch->id,
+            'employee_id' => null,
+            'email' => $isSlack ? 'slack:webhook' : 'teams:webhook',
+            'name' => $isSlack ? __('Slack-Channel') : __('Teams-Channel'),
+            'status' => $result->success ? 'sent' : 'failed',
+            'error_message' => $result->errorMessage,
+            'sent_at' => $result->success ? now() : null,
+            'failed_at' => $result->success ? null : now(),
+        ]);
+
+        Flux::toast(
+            variant: $result->success ? 'success' : 'danger',
+            text: $result->success
+                ? __('An :provider gesendet.', ['provider' => $isSlack ? 'Slack' : 'Teams'])
+                : __('Versand fehlgeschlagen: :err', ['err' => $result->errorMessage ?? '?']),
+        );
+    }
+
     public function openEmailSend(string $id): void
     {
         $this->emailTemplateId = $id;
@@ -621,6 +689,16 @@ new #[Title('Kommunikations-Vorlagen')] class extends Component {
                             @if ($template->channel === \App\Enums\CommunicationChannel::Email)
                                 <flux:button size="sm" variant="primary" icon="paper-airplane" wire:click="openEmailSend('{{ $template->id }}')">
                                     {{ __('E-Mail senden') }}
+                                </flux:button>
+                            @endif
+                            @if ($template->channel === \App\Enums\CommunicationChannel::Slack)
+                                <flux:button size="sm" variant="primary" icon="paper-airplane" wire:click="sendChat('{{ $template->id }}')" wire:confirm="{{ __('In den hinterlegten Slack-Channel posten?') }}">
+                                    {{ __('An Slack senden') }}
+                                </flux:button>
+                            @endif
+                            @if ($template->channel === \App\Enums\CommunicationChannel::Teams)
+                                <flux:button size="sm" variant="primary" icon="paper-airplane" wire:click="sendChat('{{ $template->id }}')" wire:confirm="{{ __('In den hinterlegten Teams-Channel posten?') }}">
+                                    {{ __('An Teams senden') }}
                                 </flux:button>
                             @endif
                             <flux:button size="sm" variant="filled" icon="eye" wire:click="openPreview('{{ $template->id }}')">

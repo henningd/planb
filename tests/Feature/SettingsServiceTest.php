@@ -79,5 +79,7 @@ test('catalog scope filtering returns the right keys', function () {
             'audit_retention_days',
             'pdf_paper_size',
             'pdf_footer_show_hash',
+            'slack_webhook_url',
+            'teams_webhook_url',
         ]);
 });
