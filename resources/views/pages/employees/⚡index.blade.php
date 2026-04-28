@@ -692,13 +692,31 @@ new #[Title('Mitarbeiter')] class extends Component {
                         {{ __('Es sind noch keine anderen Mitarbeiter erfasst.') }}
                     </flux:text>
                 @else
+                    {{-- Plain-HTML-Checkboxen statt <flux:checkbox> für die Array-Bindung:
+                         Flux' Web-Component <ui-checkbox> hatte bei wire:model="manager_ids"
+                         über mehrere Checkboxen falsche Checked-States gesetzt.
+
+                         wire:key ist hier zwingend: managerOptions filtert den aktuell
+                         bearbeiteten Mitarbeiter raus, also verschieben sich die
+                         Listenpositionen beim Wechsel zwischen Mitarbeitern. Ohne
+                         wire:key recycelt morphdom die <input>-Elemente positionsbasiert
+                         und alte checked-States kleben am neuen Kandidaten. --}}
                     <div class="max-h-48 space-y-1 overflow-y-auto rounded-lg border border-zinc-200 p-3 dark:border-zinc-700">
                         @foreach ($this->managerOptions as $candidate)
-                            <flux:checkbox
-                                wire:model="manager_ids"
-                                value="{{ $candidate->id }}"
-                                :label="$candidate->nameLastFirst().($candidate->position ? ' · '.$candidate->position : '')"
-                            />
+                            <label
+                                wire:key="manager-option-{{ $candidate->id }}"
+                                class="flex cursor-pointer items-center gap-2 rounded px-1 py-0.5 text-sm hover:bg-zinc-50 dark:hover:bg-zinc-800"
+                            >
+                                <input
+                                    type="checkbox"
+                                    wire:model="manager_ids"
+                                    value="{{ $candidate->id }}"
+                                    class="size-4 shrink-0 rounded border-zinc-300 text-indigo-600 focus:ring-indigo-500 dark:border-zinc-600 dark:bg-zinc-700"
+                                />
+                                <span class="text-zinc-700 dark:text-zinc-200">
+                                    {{ $candidate->nameLastFirst() }}@if ($candidate->position) <span class="text-zinc-500 dark:text-zinc-400">· {{ $candidate->position }}</span>@endif
+                                </span>
+                            </label>
                         @endforeach
                     </div>
                 @endif
