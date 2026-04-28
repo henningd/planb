@@ -4,6 +4,7 @@ use App\Enums\CrisisRole;
 use App\Models\Company;
 use App\Models\EmergencyLevel;
 use App\Models\Employee;
+use App\Support\Accessibility\SeverityIndicator;
 use App\Support\DashboardActions;
 use App\Support\Onboarding\OnboardingService;
 use Flux\Flux;
@@ -216,20 +217,20 @@ new #[Title('Dashboard')] class extends Component
                             'active' => __('Aktive Lage'),
                             default => '',
                         })
+                        @php($severityIcon = SeverityIndicator::dashboardSeverityIcon($severity))
                         <a
                             href="{{ route($item['route'], $item['route_params']) }}"
                             wire:navigate
                             class="flex items-start gap-3 px-5 py-3 text-zinc-900 no-underline hover:bg-zinc-50 dark:text-zinc-100 dark:hover:bg-zinc-800"
                         >
-                            <div class="mt-1 shrink-0">
+                            <div class="mt-1 flex shrink-0 items-center gap-2" data-severity-icon="{{ $severityIcon }}">
                                 @if ($severity === 'active')
-                                    <span class="relative flex h-2.5 w-2.5">
+                                    <span class="relative flex h-2.5 w-2.5" aria-hidden="true">
                                         <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-rose-400 opacity-75"></span>
                                         <span class="relative inline-flex h-2.5 w-2.5 rounded-full bg-rose-500"></span>
                                     </span>
-                                @else
-                                    <flux:badge :color="$badgeColor" size="sm">{{ $severityLabel }}</flux:badge>
                                 @endif
+                                <flux:badge :color="$badgeColor" size="sm" :icon="$severityIcon">{{ $severityLabel }}</flux:badge>
                             </div>
                             <div class="min-w-0 flex-1">
                                 <div class="truncate font-medium">{{ $item['label'] }}</div>
@@ -404,7 +405,9 @@ new #[Title('Dashboard')] class extends Component
                             </flux:text>
                         </div>
                     </div>
-                    <flux:badge color="red" size="sm">{{ $employee->crisis_role->label() }}</flux:badge>
+                    <span data-severity-icon="shield-exclamation">
+                        <flux:badge color="red" size="sm" icon="shield-exclamation">{{ $employee->crisis_role->label() }}</flux:badge>
+                    </span>
                 </div>
             @empty
                 <div class="px-5 py-12 text-center">
