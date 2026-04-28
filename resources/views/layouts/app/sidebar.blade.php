@@ -24,6 +24,11 @@
                             {{ __('Compliance') }}
                         </flux:sidebar.item>
                     @endif
+                    @if (config('features.risk_register') && auth()->user()->isCurrentTeamAdmin())
+                        <flux:sidebar.item icon="shield-exclamation" :href="route('risks.index')" :current="request()->routeIs('risks.*')" wire:navigate>
+                            {{ __('Risiken') }}
+                        </flux:sidebar.item>
+                    @endif
                 </flux:sidebar.group>
 
                 <flux:sidebar.group

@@ -71,6 +71,16 @@ Route::prefix('{current_team}')
                 ->name('lessons-learned.show');
         }
 
+        if (config('features.risk_register')) {
+            Route::middleware([EnsureTeamMembership::class.':admin'])->group(function () {
+                Route::livewire('risks', 'pages::risks.index')->name('risks.index');
+                Route::livewire('risks/create', 'pages::risks.create')->name('risks.create');
+                Route::livewire('risks/{risk}', 'pages::risks.show')
+                    ->where('risk', '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}')
+                    ->name('risks.show');
+            });
+        }
+
         Route::middleware([EnsureTeamMembership::class.':admin'])->group(function () {
             Route::livewire('insurance-policies', 'pages::insurance-policies.index')->name('insurance-policies.index');
             Route::livewire('communication-templates', 'pages::communication-templates.index')->name('communication-templates.index');
