@@ -11,6 +11,15 @@ Erreichbar über die Sidebar **„Notfallhandbuch → Recovery-Zeitplan"**.
 - **Balkenlänge**: das RTO des Systems (wie lange darf der Ausfall maximal dauern).
 - **Farbe + Symbol**: Notfall-Level wird sowohl über die Balken-Farbe (rot = kritisch, orange = hoch, blau = mittel, grün = niedrig) als auch über ein Heroicon links neben jeder Zeile signalisiert (Schild mit Ausrufezeichen / Warn-Dreieck / Schild mit Häkchen / Häkchen-Kreis). So bleibt die Stufe auch bei Rot-Grün-Schwäche oder im Graustufen-Druck eindeutig erkennbar.
 
+## Skalen-Modus: Logarithmisch oder Linear
+
+Oben rechts in der Zeitleiste gibt es einen Toggle-Schalter zwischen **Logarithmisch** (Standard) und **Linear**:
+
+- **Logarithmisch**: Kurze Wiederanlauf-Zeiten (z. B. 15 Minuten Stromversorgung) und lange (z. B. 72 Stunden GPS-Ortung) liegen optisch ähnlich weit auseinander. Damit sind auch die kritischsten Sofort-Recovery-Systeme klar erkennbar — sie würden auf einer linearen 72-h-Skala in einem winzigen Strich verschwinden. Die Tick-Beschriftungen sind die vertrauten Zeit-Sprünge: 15 min, 30 min, 1 h, 2 h, 4 h, 8 h, 24 h, 48 h, 72 h.
+- **Linear**: Die Balken-Längen sind exakt proportional zur Dauer — ein 8-h-System ist doppelt so breit wie ein 4-h-System. Wenn Sie genaue Längen-Vergleiche brauchen (z. B. „wie viel länger dauert Wiederanlauf X gegenüber Y?"), wechseln Sie hierhin.
+
+In beiden Modi haben Balken eine Mindest-Breite, sodass selbst sehr kurze Wiederanlauf-Zeiten klickbar bleiben.
+
 Systeme, die voneinander abhängen, werden so angeordnet, dass die Abhängigkeit zuerst läuft.
 
 ## Wozu das gut ist

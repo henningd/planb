@@ -188,6 +188,41 @@ test('Compliance-Trend zeigt Pfeil-Icon und Vorzeichen-Text bei steigender Tende
     expect($html)->toContain('data-testid="week-delta"');
 });
 
+test('RecoveryTimelineBuilder::position skaliert log und linear korrekt', function () {
+    $max = 4320; // 72 h
+
+    expect(RecoveryTimelineBuilder::position(0, $max, 'linear'))->toBe(0.0);
+    expect(RecoveryTimelineBuilder::position($max, $max, 'linear'))->toBe(100.0);
+    expect(RecoveryTimelineBuilder::position(0, $max, 'log'))->toBe(0.0);
+    expect(RecoveryTimelineBuilder::position($max, $max, 'log'))->toBe(100.0);
+
+    $shortLinear = RecoveryTimelineBuilder::position(15, $max, 'linear');
+    $shortLog = RecoveryTimelineBuilder::position(15, $max, 'log');
+
+    // Eine 15-min-Position muss im Log-Modus deutlich weiter rechts liegen
+    // als im Linear-Modus — das ist der ganze Sinn der Skalierung,
+    // damit schmale Bars sichtbar bleiben.
+    expect($shortLog)->toBeGreaterThan($shortLinear * 10);
+});
+
+test('Recovery-Gantt rendert Skalen-Toggle (Logarithmisch / Linear)', function () {
+    $user = User::factory()->create();
+    $company = Company::factory()->for($user->currentTeam)->create();
+    $level = EmergencyLevel::factory()->for($company)->create(['name' => 'Stufe 1', 'sort' => 1]);
+    System::factory()->for($company)->create([
+        'name' => 'Webshop', 'rto_minutes' => 30, 'emergency_level_id' => $level->id,
+    ]);
+
+    $response = $this->actingAs($user->fresh())
+        ->get(route('recovery-gantt.index', ['current_team' => $user->currentTeam->slug]));
+
+    $response->assertOk()
+        ->assertSeeText('Logarithmisch')
+        ->assertSeeText('Linear')
+        ->assertSee("wire:click=\"setScaleMode('log')\"", false)
+        ->assertSee("wire:click=\"setScaleMode('linear')\"", false);
+});
+
 test('Compliance-Trend zeigt Abwärts-Pfeil bei sinkender Tendenz', function () {
     $user = User::factory()->create();
     $company = Company::factory()->for($user->currentTeam)->create();

@@ -191,6 +191,71 @@ class RecoveryTimelineBuilder
     }
 
     /**
+     * Mappt einen Zeitpunkt (in Minuten) auf die X-Position (in Prozent) der
+     * Gantt-Zeitleiste — entweder linear oder logarithmisch.
+     *
+     * Logarithmische Skalierung sorgt dafür, dass kurze Wiederanlauf-Zeiten
+     * (z. B. 5 min Stromversorgung) nicht in einem 72-h-Gesamtfenster
+     * verschwinden. Formel: log(t+1) / log(max+1) — t=0 → 0 %, t=max → 100 %.
+     */
+    public static function position(int $minutes, int $scaleMax, string $mode = 'linear'): float
+    {
+        if ($scaleMax <= 0 || $minutes < 0) {
+            return 0.0;
+        }
+        if ($mode === 'log') {
+            return log($minutes + 1) / log($scaleMax + 1) * 100;
+        }
+
+        return $minutes / $scaleMax * 100;
+    }
+
+    /**
+     * Liefert sinnvolle Tick-Positionen für die Zeitachse abhängig vom
+     * Skalen-Modus. Im Linear-Modus äquidistante Ticks; im Log-Modus die
+     * vertrauten Zeit-Sprünge (15 min, 30 min, 1 h, 2 h, 4 h, 8 h, 24 h, 48 h, 72 h).
+     *
+     * @return list<int> Tick-Positionen in Minuten.
+     */
+    public static function tickPositions(int $scaleMax, string $mode = 'linear'): array
+    {
+        $scaleMax = max($scaleMax, 1);
+
+        if ($mode === 'log') {
+            $candidates = [0, 15, 30, 60, 120, 240, 480, 1440, 2880, 4320, 10080];
+            $ticks = array_values(array_filter($candidates, fn (int $t) => $t <= $scaleMax));
+            if (end($ticks) !== $scaleMax) {
+                $ticks[] = $scaleMax;
+            }
+
+            return $ticks;
+        }
+
+        // Linear: 10er-Schritte über den Bereich, gerundet auf volle Stunden.
+        if ($scaleMax <= 60) {
+            $step = 15;
+        } elseif ($scaleMax <= 180) {
+            $step = 30;
+        } elseif ($scaleMax <= 600) {
+            $step = 60;
+        } elseif ($scaleMax <= 1440) {
+            $step = 120;
+        } else {
+            $step = (int) (ceil($scaleMax / 10 / 60) * 60);
+        }
+
+        $ticks = [];
+        for ($t = 0; $t <= $scaleMax; $t += $step) {
+            $ticks[] = $t;
+        }
+        if (end($ticks) !== $scaleMax) {
+            $ticks[] = $scaleMax;
+        }
+
+        return $ticks;
+    }
+
+    /**
      * Liefert eine kompakte deutsche Dauer-Beschriftung wie „1 h 30 min".
      */
     public static function formatMinutes(int $minutes): string

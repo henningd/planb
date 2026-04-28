@@ -8,6 +8,13 @@ use Livewire\Attributes\Title;
 use Livewire\Component;
 
 new #[Title('Recovery-Zeitplan')] class extends Component {
+    public string $scaleMode = 'log';
+
+    public function setScaleMode(string $mode): void
+    {
+        $this->scaleMode = in_array($mode, ['log', 'linear'], true) ? $mode : 'log';
+    }
+
     #[Computed]
     public function company(): ?Company
     {
@@ -87,36 +94,36 @@ new #[Title('Recovery-Zeitplan')] class extends Component {
 
         @if ($hasEntries)
             @php
-                $tickStep = 60;
-                if ($totalMinutes <= 0) {
-                    $tickStep = 60;
-                } elseif ($totalMinutes <= 60) {
-                    $tickStep = 15;
-                } elseif ($totalMinutes <= 180) {
-                    $tickStep = 30;
-                } elseif ($totalMinutes <= 600) {
-                    $tickStep = 60;
-                } elseif ($totalMinutes <= 1440) {
-                    $tickStep = 120;
-                } else {
-                    $tickStep = (int) (ceil($totalMinutes / 10 / 60) * 60);
-                }
-                $scaleMax = max($totalMinutes, $tickStep);
-                $ticks = [];
-                for ($t = 0; $t <= $scaleMax; $t += $tickStep) {
-                    $ticks[] = $t;
-                }
-                if (end($ticks) !== $scaleMax) {
-                    $ticks[] = $scaleMax;
-                }
+                $scaleMax = max($totalMinutes, 60);
+                $ticks = \App\Support\Graph\RecoveryTimelineBuilder::tickPositions($scaleMax, $scaleMode);
             @endphp
 
             <div class="mt-4 rounded-xl border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-900">
-                <div class="border-b border-zinc-100 p-3 dark:border-zinc-800">
-                    <flux:heading size="base">{{ __('Wiederanlauf-Zeitleiste') }}</flux:heading>
-                    <p class="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">
-                        {{ __('Gesamt-Wiederanlaufzeit') }}: <strong class="text-zinc-700 dark:text-zinc-200">{{ \App\Support\Graph\RecoveryTimelineBuilder::formatMinutes($totalMinutes) }}</strong>
-                    </p>
+                <div class="flex flex-wrap items-start justify-between gap-3 border-b border-zinc-100 p-3 dark:border-zinc-800">
+                    <div>
+                        <flux:heading size="base">{{ __('Wiederanlauf-Zeitleiste') }}</flux:heading>
+                        <p class="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">
+                            {{ __('Gesamt-Wiederanlaufzeit') }}: <strong class="text-zinc-700 dark:text-zinc-200">{{ \App\Support\Graph\RecoveryTimelineBuilder::formatMinutes($totalMinutes) }}</strong>
+                        </p>
+                    </div>
+                    <div class="flex items-center gap-1 rounded-lg bg-zinc-100 p-1 dark:bg-zinc-800" role="tablist" aria-label="{{ __('Zeitachsen-Skalierung') }}">
+                        <button
+                            type="button"
+                            wire:click="setScaleMode('log')"
+                            role="tab"
+                            aria-selected="{{ $scaleMode === 'log' ? 'true' : 'false' }}"
+                            class="rounded-md px-3 py-1 text-xs font-medium transition {{ $scaleMode === 'log' ? 'bg-white text-zinc-900 shadow dark:bg-zinc-700 dark:text-zinc-50' : 'text-zinc-600 dark:text-zinc-300' }}"
+                            title="{{ __('Logarithmisch — kurze Wiederanlauf-Zeiten bekommen mehr Platz') }}"
+                        >{{ __('Logarithmisch') }}</button>
+                        <button
+                            type="button"
+                            wire:click="setScaleMode('linear')"
+                            role="tab"
+                            aria-selected="{{ $scaleMode === 'linear' ? 'true' : 'false' }}"
+                            class="rounded-md px-3 py-1 text-xs font-medium transition {{ $scaleMode === 'linear' ? 'bg-white text-zinc-900 shadow dark:bg-zinc-700 dark:text-zinc-50' : 'text-zinc-600 dark:text-zinc-300'}}"
+                            title="{{ __('Linear — Bar-Längen exakt proportional zur Dauer') }}"
+                        >{{ __('Linear') }}</button>
+                    </div>
                 </div>
 
                 <div class="p-3">
@@ -126,7 +133,7 @@ new #[Title('Recovery-Zeitplan')] class extends Component {
                         <div class="relative h-6 border-b border-zinc-200 dark:border-zinc-700">
                             @foreach ($ticks as $tick)
                                 @php
-                                    $left = $scaleMax > 0 ? ($tick / $scaleMax) * 100 : 0;
+                                    $left = \App\Support\Graph\RecoveryTimelineBuilder::position($tick, $scaleMax, $scaleMode);
                                 @endphp
                                 <div class="absolute top-0 flex h-full -translate-x-1/2 flex-col items-center" style="left: {{ $left }}%">
                                     <div class="h-2 w-px bg-zinc-300 dark:bg-zinc-600"></div>
@@ -145,8 +152,10 @@ new #[Title('Recovery-Zeitplan')] class extends Component {
                                 $end = (int) $entry['end'];
                                 $duration = (int) $entry['duration'];
                                 $level = $system->emergencyLevel;
-                                $marginLeft = $scaleMax > 0 ? ($start / $scaleMax) * 100 : 0;
-                                $width = $scaleMax > 0 ? ($duration / $scaleMax) * 100 : 0;
+                                $startPos = \App\Support\Graph\RecoveryTimelineBuilder::position($start, $scaleMax, $scaleMode);
+                                $endPos = \App\Support\Graph\RecoveryTimelineBuilder::position($end, $scaleMax, $scaleMode);
+                                $marginLeft = $startPos;
+                                $width = max($endPos - $startPos, 0);
                                 $tooltip = __('Start').': '.\App\Support\Graph\RecoveryTimelineBuilder::formatMinutes($start)
                                     .' | '.__('Ende').': '.\App\Support\Graph\RecoveryTimelineBuilder::formatMinutes($end)
                                     .' | '.__('RTO').': '.\App\Support\Graph\RecoveryTimelineBuilder::formatMinutes($duration);
@@ -181,8 +190,8 @@ new #[Title('Recovery-Zeitplan')] class extends Component {
                                 </div>
                                 <div class="relative h-7 rounded bg-zinc-50 dark:bg-zinc-800/60">
                                     <div
-                                        class="absolute top-0 flex h-full min-w-[2px] items-center gap-1 overflow-hidden rounded px-1.5 text-[10px] font-medium text-white shadow-sm"
-                                        style="margin-left: {{ $marginLeft }}%; width: {{ max($width, 0.5) }}%; background-color: {{ $entry['level_color'] }};"
+                                        class="absolute top-0 flex h-full min-w-[28px] items-center gap-1 overflow-hidden rounded px-1.5 text-[10px] font-medium text-white shadow-sm"
+                                        style="margin-left: {{ $marginLeft }}%; width: {{ $width }}%; background-color: {{ $entry['level_color'] }};"
                                         title="{{ $tooltip }} | {{ $entry['level_label'] }}"
                                     >
                                         @if ($entry['rto_missing'])
