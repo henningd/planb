@@ -8,9 +8,14 @@ return new class extends Migration
 {
     public function up(): void
     {
+        // Idempotenz: ein vorheriger Lauf hat ggf. die Tabelle erzeugt, ist
+        // dann am FK-Identifier (MySQL 64-Char-Limit) gescheitert. Tabelle
+        // ist in dem Fall leer und darf verworfen werden.
+        Schema::dropIfExists('communication_dispatch_recipients');
+
         Schema::create('communication_dispatch_recipients', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->foreignUuid('communication_dispatch_id')->constrained()->cascadeOnDelete();
+            $table->uuid('communication_dispatch_id');
             $table->foreignUuid('employee_id')->nullable()->constrained('employees')->nullOnDelete();
             $table->string('email');
             $table->string('name')->nullable();
@@ -20,7 +25,12 @@ return new class extends Migration
             $table->timestamp('failed_at')->nullable();
             $table->timestamps();
 
-            $table->index(['communication_dispatch_id', 'status']);
+            // Explizite Kurz-Namen — der Convention-Default überschreitet auf
+            // MySQL das 64-Char-Identifier-Limit.
+            $table->foreign('communication_dispatch_id', 'cdr_dispatch_fk')
+                ->references('id')->on('communication_dispatches')
+                ->cascadeOnDelete();
+            $table->index(['communication_dispatch_id', 'status'], 'cdr_dispatch_status_idx');
         });
     }
 
