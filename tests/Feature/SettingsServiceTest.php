@@ -81,6 +81,7 @@ test('catalog scope filtering returns the right keys', function () {
             'platform_av_contract',
             'platform_tom',
             'platform_subprocessors',
+            'platform_accessibility',
             'platform_security_contact',
         ]);
 
