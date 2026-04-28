@@ -548,7 +548,9 @@ new #[Title('System')] class extends Component {
                 <div class="flex items-center gap-2">
                     <flux:heading size="xl">{{ $system->name }}</flux:heading>
                     @if ($system->priority)
-                        @php($priorityIcon = SeverityIndicator::systemPriorityIcon((int) $system->priority->sort))
+                        @php
+                            $priorityIcon = SeverityIndicator::systemPriorityIcon((int) $system->priority->sort);
+                        @endphp
                         <span data-severity-icon="{{ $priorityIcon }}">
                             <flux:badge
                                 :color="match ($system->priority->sort) { 1 => 'rose', 2 => 'amber', default => 'zinc' }"

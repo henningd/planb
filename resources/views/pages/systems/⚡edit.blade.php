@@ -826,18 +826,20 @@ new #[Title('System bearbeiten')] class extends Component {
                 @endif
             </flux:field>
 
-            <flux:select wire:model="category" :label="__('Kategorie')" required>
-                @foreach (\App\Enums\SystemCategory::cases() as $case)
-                    <flux:select.option value="{{ $case->value }}">{{ $case->label() }}</flux:select.option>
-                @endforeach
-            </flux:select>
+            <div class="grid gap-4 sm:grid-cols-2">
+                <flux:select wire:model="category" :label="__('Kategorie')" required>
+                    @foreach (\App\Enums\SystemCategory::cases() as $case)
+                        <flux:select.option value="{{ $case->value }}">{{ $case->label() }}</flux:select.option>
+                    @endforeach
+                </flux:select>
 
-            <flux:select wire:model="system_type" :label="__('Systemtyp')">
-                <flux:select.option value="">{{ __('Nicht definiert') }}</flux:select.option>
-                @foreach (\App\Enums\SystemType::cases() as $case)
-                    <flux:select.option value="{{ $case->value }}">{{ $case->label() }}</flux:select.option>
-                @endforeach
-            </flux:select>
+                <flux:select wire:model="system_type" :label="__('Systemtyp')">
+                    <flux:select.option value="">{{ __('Nicht definiert') }}</flux:select.option>
+                    @foreach (\App\Enums\SystemType::cases() as $case)
+                        <flux:select.option value="{{ $case->value }}">{{ $case->label() }}</flux:select.option>
+                    @endforeach
+                </flux:select>
+            </div>
 
             <flux:field>
                 <flux:label>{{ __('Ausfallkosten pro Stunde') }}</flux:label>
