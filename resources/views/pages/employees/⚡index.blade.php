@@ -615,7 +615,7 @@ new #[Title('Mitarbeiter')] class extends Component {
                             <div class="flex items-start gap-2 text-sm">
                                 <flux:icon name="users" class="mt-0.5 h-4 w-4 shrink-0 text-zinc-400" />
                                 <div class="min-w-0 flex-1">
-                                    <div class="text-xs uppercase tracking-wide text-zinc-500 dark:text-zinc-400">{{ trans_choice('{1} Vorgesetzt für|[2,*] Vorgesetzt für (:count)', $employee->reports->count(), ['count' => $employee->reports->count()]) }}</div>
+                                    <div class="text-xs uppercase tracking-wide text-zinc-500 dark:text-zinc-400">{{ trans_choice('{1} Vorgesetzte:r|[2,*] Vorgesetzte:r (:count)', $employee->reports->count(), ['count' => $employee->reports->count()]) }}</div>
                                     <div class="mt-0.5 text-zinc-700 dark:text-zinc-200">
                                         {{ $employee->reports->map(fn ($r) => $r->nameLastFirst())->implode(' · ') }}
                                     </div>
