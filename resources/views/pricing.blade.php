@@ -117,8 +117,7 @@
         ],
         'Integration & Branding' => [
             ['API + Webhooks (Zabbix, Prometheus)', false, false, true],
-            ['White-Label (Logo + Farbe)', false, true, true],
-            ['White-Label mit eigener Domain', false, false, true],
+            ['White-Label (Logo, Farbe, eigene Domain)', false, false, true],
             ['Multi-Mandant für Berater / MSPs', false, false, true],
         ],
         'Backup & Support' => [
