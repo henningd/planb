@@ -24,6 +24,8 @@ new #[Title('Systeme')] class extends Component {
 
     public string $importJson = '';
 
+    public ?string $fallbackSystemId = null;
+
     public function mount(): void
     {
         $this->templateKey = IndustryTemplates::defaultFor(Auth::user()->currentCompany()?->industry) ?? '';
@@ -47,6 +49,7 @@ new #[Title('Systeme')] class extends Component {
             ->withCount([
                 'tasks',
                 'tasks as open_tasks_count' => fn ($q) => $q->whereNull('completed_at'),
+                'fallbackProcesses',
             ])
             ->get()
             ->sort(function (System $a, System $b) {
@@ -63,6 +66,40 @@ new #[Title('Systeme')] class extends Component {
         }
 
         return $grouped;
+    }
+
+    public function openFallback(string $systemId): void
+    {
+        $this->fallbackSystemId = $systemId;
+        unset($this->fallbackSystem);
+        Flux::modal('system-fallback')->show();
+    }
+
+    /**
+     * @return array{system: System, processes: \Illuminate\Support\Collection<int, \App\Models\FallbackProcess>}|null
+     */
+    #[Computed]
+    public function fallbackSystem(): ?array
+    {
+        if ($this->fallbackSystemId === null) {
+            return null;
+        }
+
+        $system = System::with([
+            'fallbackProcesses' => fn ($q) => $q->orderBy('priority')->orderBy('sort')->orderBy('title'),
+            'fallbackProcesses.responsibleRole',
+            'fallbackProcesses.responsibleEmployee',
+            'fallbackProcesses.systems',
+        ])->find($this->fallbackSystemId);
+
+        if ($system === null) {
+            return null;
+        }
+
+        return [
+            'system' => $system,
+            'processes' => $system->fallbackProcesses,
+        ];
     }
 
     public function confirmDelete(string $id): void
@@ -360,12 +397,28 @@ new #[Title('Systeme')] class extends Component {
                                     </div>
                                 @endif
 
-                                @if ($system->tasks_count > 0)
-                                    <div class="mt-3 flex items-center gap-1.5">
-                                        <flux:icon.clipboard-document-list class="h-3.5 w-3.5 text-zinc-400" />
-                                        <flux:badge color="zinc" size="sm">
-                                            {{ $system->tasks_count }} {{ $system->tasks_count === 1 ? __('Aufgabe definiert') : __('Aufgaben definiert') }}
-                                        </flux:badge>
+                                @if ($system->tasks_count > 0 || $system->fallback_processes_count > 0)
+                                    <div class="mt-3 flex flex-wrap items-center gap-2">
+                                        @if ($system->tasks_count > 0)
+                                            <div class="flex items-center gap-1.5">
+                                                <flux:icon.clipboard-document-list class="h-3.5 w-3.5 text-zinc-400" />
+                                                <flux:badge color="zinc" size="sm">
+                                                    {{ $system->tasks_count }} {{ $system->tasks_count === 1 ? __('Aufgabe definiert') : __('Aufgaben definiert') }}
+                                                </flux:badge>
+                                            </div>
+                                        @endif
+                                        @if ($system->fallback_processes_count > 0)
+                                            <button
+                                                type="button"
+                                                wire:click="openFallback('{{ $system->id }}')"
+                                                class="inline-flex items-center gap-1.5 rounded-md ring-1 ring-amber-200 bg-amber-50 px-2 py-1 text-xs font-medium text-amber-800 transition hover:bg-amber-100 hover:ring-amber-300 dark:ring-amber-800/60 dark:bg-amber-950/40 dark:text-amber-200 dark:hover:bg-amber-900/40"
+                                                :title="__('Notfallbetrieb anzeigen')"
+                                            >
+                                                <flux:icon.lifebuoy class="h-3.5 w-3.5" />
+                                                {{ $system->fallback_processes_count }}
+                                                {{ $system->fallback_processes_count === 1 ? __('Ersatzprozess') : __('Ersatzprozesse') }}
+                                            </button>
+                                        @endif
                                     </div>
                                 @endif
                             </div>
@@ -375,6 +428,107 @@ new #[Title('Systeme')] class extends Component {
             </div>
         @endforeach
     </div>
+
+    <flux:modal name="system-fallback" class="max-w-2xl">
+        @php($detail = $this->fallbackSystem)
+        @if ($detail)
+            <div class="space-y-5">
+                <div>
+                    <flux:heading size="lg">{{ __('Notfallbetrieb für') }} {{ $detail['system']->name }}</flux:heading>
+                    <flux:subheading>
+                        {{ __('Ersatzprozesse, die bei einem Ausfall dieses Systems aktiviert werden.') }}
+                    </flux:subheading>
+                </div>
+
+                @if ($detail['processes']->isEmpty())
+                    <flux:text class="text-sm text-zinc-500 dark:text-zinc-400">
+                        {{ __('Diesem System sind aktuell keine Ersatzprozesse zugeordnet.') }}
+                    </flux:text>
+                @else
+                    <div class="space-y-3 max-h-[60vh] overflow-y-auto">
+                        @foreach ($detail['processes'] as $fp)
+                            @php($priorityColor = match ($fp->priority) { 1 => 'rose', 3 => 'zinc', default => 'amber' })
+                            @php($priorityLabel = match ($fp->priority) { 1 => __('Hoch'), 3 => __('Niedrig'), default => __('Mittel') })
+                            <div class="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-900/40">
+                                <div class="flex items-start justify-between gap-3">
+                                    <div class="min-w-0 flex-1">
+                                        <flux:heading size="base">{{ $fp->title }}</flux:heading>
+                                        <div class="mt-1 flex flex-wrap items-center gap-1.5">
+                                            <flux:badge :color="$priorityColor" size="sm">{{ $priorityLabel }}</flux:badge>
+                                            @if ($fp->max_duration_hours !== null)
+                                                <flux:badge color="zinc" size="sm" icon="clock">
+                                                    {{ __('max.') }} {{ $fp->max_duration_hours }} h
+                                                </flux:badge>
+                                            @endif
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="mt-3 space-y-2 text-sm">
+                                    @if ($fp->description)
+                                        <flux:text class="whitespace-pre-line text-zinc-700 dark:text-zinc-300">{{ $fp->description }}</flux:text>
+                                    @endif
+                                    @if ($fp->trigger)
+                                        <div class="flex items-start gap-2">
+                                            <flux:icon.bolt class="mt-0.5 h-4 w-4 shrink-0 text-zinc-400" />
+                                            <div>
+                                                <flux:text class="text-xs uppercase text-zinc-500 dark:text-zinc-400">{{ __('Auslöser') }}</flux:text>
+                                                <flux:text>{{ $fp->trigger }}</flux:text>
+                                            </div>
+                                        </div>
+                                    @endif
+                                    @if ($fp->responsibleRole || $fp->responsibleEmployee)
+                                        <div class="flex items-start gap-2">
+                                            <flux:icon.user-circle class="mt-0.5 h-4 w-4 shrink-0 text-zinc-400" />
+                                            <div>
+                                                <flux:text class="text-xs uppercase text-zinc-500 dark:text-zinc-400">{{ __('Verantwortlich') }}</flux:text>
+                                                <flux:text>
+                                                    {{ $fp->responsibleRole?->name }}
+                                                    @if ($fp->responsibleRole && $fp->responsibleEmployee) · @endif
+                                                    @if ($fp->responsibleEmployee)
+                                                        {{ $fp->responsibleEmployee->first_name }} {{ $fp->responsibleEmployee->last_name }}
+                                                    @endif
+                                                </flux:text>
+                                            </div>
+                                        </div>
+                                    @endif
+                                    @if ($fp->systems->count() > 1)
+                                        <div class="flex items-start gap-2">
+                                            <flux:icon.server-stack class="mt-0.5 h-4 w-4 shrink-0 text-zinc-400" />
+                                            <div>
+                                                <flux:text class="text-xs uppercase text-zinc-500 dark:text-zinc-400">{{ __('Deckt auch ab') }}</flux:text>
+                                                <flux:text>
+                                                    {{ $fp->systems->reject(fn ($s) => $s->id === $detail['system']->id)->pluck('name')->implode(', ') }}
+                                                </flux:text>
+                                            </div>
+                                        </div>
+                                    @endif
+                                    @if ($fp->handover_notes)
+                                        <div class="flex items-start gap-2">
+                                            <flux:icon.arrow-path class="mt-0.5 h-4 w-4 shrink-0 text-zinc-400" />
+                                            <div>
+                                                <flux:text class="text-xs uppercase text-zinc-500 dark:text-zinc-400">{{ __('Übergabe an Wiederanlauf') }}</flux:text>
+                                                <flux:text class="whitespace-pre-line">{{ $fp->handover_notes }}</flux:text>
+                                            </div>
+                                        </div>
+                                    @endif
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                @endif
+
+                <div class="flex items-center justify-between gap-2 border-t border-zinc-100 pt-4 dark:border-zinc-800">
+                    <flux:button variant="ghost" size="sm" icon="pencil" :href="route('fallback-processes.index')" wire:navigate>
+                        {{ __('In Notfallbetrieb-Verwaltung öffnen') }}
+                    </flux:button>
+                    <flux:modal.close>
+                        <flux:button variant="filled">{{ __('Schließen') }}</flux:button>
+                    </flux:modal.close>
+                </div>
+            </div>
+        @endif
+    </flux:modal>
 
     <flux:modal name="system-delete" class="max-w-md">
         <div class="space-y-5">
