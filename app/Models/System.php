@@ -112,6 +112,19 @@ class System extends Model
     }
 
     /**
+     * @return BelongsToMany<FallbackProcess, $this>
+     */
+    public function fallbackProcesses(): BelongsToMany
+    {
+        return $this->belongsToMany(FallbackProcess::class)
+            ->withPivot(['note', 'sort'])
+            ->withTimestamps()
+            ->orderBy('fallback_processes.priority')
+            ->orderBy('fallback_processes.sort')
+            ->orderBy('fallback_processes.title');
+    }
+
+    /**
      * Systems this one depends on and that must come up first.
      *
      * @return BelongsToMany<System, $this>

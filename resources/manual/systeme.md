@@ -16,7 +16,7 @@ Empfohlen:
 
 - **Systemtyp** — Anwendung, Kommunikation, Server oder Infrastruktur. Optional, hilft bei der technischen Einordnung im Notfall.
 - **Beschreibung** — was macht das System konkret?
-- **Notfall-Workaround** (`fallback_process`) — was tun, wenn das System ausfällt? z. B. „Warenausgabe handschriftlich auf Lieferschein, später nachbuchen".
+- **Notfall-Workaround** (`fallback_process`) — Kurznotiz: was tun, wenn das System ausfällt? z. B. „Warenausgabe handschriftlich auf Lieferschein, später nachbuchen". Für ausführlichere, system­übergreifende Ersatzprozesse mit Auslöser, max. Dauer und Übergabe siehe [Notfallbetrieb](notfallbetrieb).
 - **Runbook-Verweis** — Link oder Hinweis auf die technische Wiederanlauf-Anleitung.
 - **RTO** (Recovery Time Objective) — wie lange darf der Ausfall maximal dauern?
 - **RPO** (Recovery Point Objective) — wie alt darf das Backup höchstens sein, das wir nutzen?

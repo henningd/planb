@@ -28,6 +28,10 @@ Das System errechnet daraus eine zyklenfreie Topologie und gibt die Liste in die
 
 Drucken Sie diese Liste aus und legen Sie sie auf den Tisch. Während des Tabletop arbeiten Sie sie ab — wer ruft wen an, wer macht was, wann ist das System wieder da. Die Lücken in der Liste (fehlende Hotlines, fehlende Verantwortliche) werden so sofort sichtbar.
 
+## Verhältnis zum Notfallbetrieb
+
+Der **Wiederanlauf** ist die *Rückkehr zum Normalbetrieb*. Solange die Wiederherstellung läuft, überbrückt der **[Notfallbetrieb](notfallbetrieb)** die Zeit mit Ersatzprozessen (z. B. „Aufträge auf Papier", „Telefonkette statt Mail"). Beide Spuren laufen parallel: die IT arbeitet am Wiederanlauf, der Betrieb hält sich mit den Ersatzprozessen am Leben — und übergibt zum Schluss zurück.
+
 ## Im Ernstfall
 
 Wenn ein Total-Ausfall passiert, ist diese Liste der **erste Anker**. Idealerweise liegt sie ausgedruckt am Schwarzen Brett im Server-Raum — dann brauchen Sie keine App, kein Internet, keinen Strom, um sie zu lesen.

@@ -231,6 +231,7 @@ Route::prefix('{current_team}')
             ->name('systems.edit');
         Route::livewire('service-providers', 'pages::service-providers.index')->name('service-providers.index');
         Route::livewire('emergency-resources', 'pages::emergency-resources.index')->name('emergency-resources.index');
+        Route::livewire('fallback-processes', 'pages::fallback-processes.index')->name('fallback-processes.index');
         if (config('features.dependencies')) {
             Route::livewire('dependencies', 'pages::dependencies.index')->name('dependencies.index');
         }

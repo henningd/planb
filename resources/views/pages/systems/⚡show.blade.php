@@ -67,6 +67,8 @@ new #[Title('System')] class extends Component {
             'roles.employees',
             'dependencies',
             'dependents',
+            'fallbackProcesses.responsibleRole',
+            'fallbackProcesses.responsibleEmployee',
         ]);
     }
 
@@ -569,10 +571,28 @@ new #[Title('System')] class extends Component {
                 @endif
                 @if ($system->fallback_process)
                     <div class="mt-3">
-                        <flux:text class="text-xs uppercase text-zinc-500 dark:text-zinc-400">{{ __('Notbetrieb / Ersatzprozess') }}</flux:text>
+                        <flux:text class="text-xs uppercase text-zinc-500 dark:text-zinc-400">{{ __('Notbetrieb / Ersatzprozess (Kurznotiz)') }}</flux:text>
                         <flux:text class="mt-1 whitespace-pre-line text-sm text-zinc-700 dark:text-zinc-300">
                             {{ $system->fallback_process }}
                         </flux:text>
+                    </div>
+                @endif
+                @if ($system->fallbackProcesses->isNotEmpty())
+                    <div class="mt-3">
+                        <flux:text class="text-xs uppercase text-zinc-500 dark:text-zinc-400">{{ __('Ersatzprozesse') }}</flux:text>
+                        <div class="mt-1 flex flex-wrap gap-1.5">
+                            @foreach ($system->fallbackProcesses as $fallback)
+                                <flux:badge
+                                    :color="match ($fallback->priority) { 1 => 'rose', 3 => 'zinc', default => 'amber' }"
+                                    size="sm"
+                                    icon="lifebuoy"
+                                    :href="route('fallback-processes.index')"
+                                    wire:navigate
+                                >
+                                    {{ $fallback->title }}
+                                </flux:badge>
+                            @endforeach
+                        </div>
                     </div>
                 @endif
                 @if ($system->runbook_reference)

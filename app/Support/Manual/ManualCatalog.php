@@ -36,6 +36,7 @@ class ManualCatalog
             ['category' => 'Stammdaten', 'slug' => 'recovery-zeitplan', 'title' => 'Recovery-Zeitplan', 'summary' => 'Wiederanlauf als Gantt-Diagramm — wer macht wann was.'],
             ['category' => 'Stammdaten', 'slug' => 'versicherungen', 'title' => 'Versicherungen', 'summary' => 'Cyberversicherung, Hotline, Police, Selbstbehalt, Vertragsende.'],
             ['category' => 'Stammdaten', 'slug' => 'sofortmittel', 'title' => 'Sofortmittel', 'summary' => 'Notfall-Ressourcen wie USV, Notebooks, Bargeld, Schlüssel.'],
+            ['category' => 'Stammdaten', 'slug' => 'notfallbetrieb', 'title' => 'Notfallbetrieb', 'summary' => 'Ersatzprozesse für den Ausfall kritischer Systeme — Auslöser, Dauer, Übergabe an den Wiederanlauf.'],
             ['category' => 'Stammdaten', 'slug' => 'notfall-level', 'title' => 'Notfall-Level', 'summary' => 'Klassifizierung der Systeme nach Kritikalität und maximaler Ausfallzeit.'],
 
             // Ernstfall

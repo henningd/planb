@@ -1121,9 +1121,55 @@
             </table>
         @endif
 
+        @if ($company->fallbackProcesses->isNotEmpty())
+            <h3>8.4 Notfallbetrieb / Ersatzprozesse</h3>
+            <p class="small">Wie das Unternehmen weiterarbeitet, solange ein Ausfall andauert — bevor der Wiederanlauf greift.</p>
+            <table class="role-table">
+                <thead>
+                    <tr>
+                        <th style="width: 24%;">Ersatzprozess</th>
+                        <th style="width: 18%;">Auslöser</th>
+                        <th style="width: 18%;">Verantwortlich</th>
+                        <th style="width: 12%;">Max. Dauer</th>
+                        <th>Übergabe an Wiederanlauf</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach ($company->fallbackProcesses as $fp)
+                        <tr>
+                            <td>
+                                <strong>{{ $fp->title }}</strong>
+                                @if ($fp->description)
+                                    <div class="small">{{ $fp->description }}</div>
+                                @endif
+                                @if ($fp->systems->isNotEmpty())
+                                    <div class="small contact-label-spaced"><em>Betroffene Systeme:</em>
+                                        {{ $fp->systems->pluck('name')->implode(', ') }}
+                                    </div>
+                                @endif
+                            </td>
+                            <td>{{ $fp->trigger ?: '—' }}</td>
+                            <td>
+                                @if ($fp->responsibleRole)
+                                    {{ $fp->responsibleRole->name }}
+                                @endif
+                                @if ($fp->responsibleRole && $fp->responsibleEmployee)<br>@endif
+                                @if ($fp->responsibleEmployee)
+                                    {{ $fp->responsibleEmployee->first_name }} {{ $fp->responsibleEmployee->last_name }}
+                                @endif
+                                @if (! $fp->responsibleRole && ! $fp->responsibleEmployee)—@endif
+                            </td>
+                            <td>{{ $fp->max_duration_hours !== null ? $fp->max_duration_hours.' h' : '—' }}</td>
+                            <td>{{ $fp->handover_notes ?: '—' }}</td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        @endif
+
         @php($directProviders = $providers->filter(fn ($p) => $p->direct_order_limit !== null))
         @if ($directProviders->isNotEmpty())
-            <h3>8.4 Direktbeauftragung externer Notfalldienstleister</h3>
+            <h3>8.5 Direktbeauftragung externer Notfalldienstleister</h3>
             <p>Folgende externe Dienstleister können ohne vorherige Ausschreibung im Notfall direkt beauftragt werden, bis zu der jeweils angegebenen Höhe.</p>
             <table>
                 <thead>

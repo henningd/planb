@@ -163,6 +163,17 @@ class Company extends Model
     }
 
     /**
+     * @return HasMany<FallbackProcess, $this>
+     */
+    public function fallbackProcesses(): HasMany
+    {
+        return $this->hasMany(FallbackProcess::class)
+            ->orderBy('priority')
+            ->orderBy('sort')
+            ->orderBy('title');
+    }
+
+    /**
      * @return HasMany<HandbookVersion, $this>
      */
     public function handbookVersions(): HasMany

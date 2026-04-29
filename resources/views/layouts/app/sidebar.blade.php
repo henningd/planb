@@ -81,6 +81,9 @@
                     <flux:sidebar.item icon="briefcase" :href="route('emergency-resources.index')" :current="request()->routeIs('emergency-resources.*')" wire:navigate>
                         {{ __('Sofortmittel') }}
                     </flux:sidebar.item>
+                    <flux:sidebar.item icon="lifebuoy" :href="route('fallback-processes.index')" :current="request()->routeIs('fallback-processes.*')" wire:navigate>
+                        {{ __('Notfallbetrieb') }}
+                    </flux:sidebar.item>
                     <flux:sidebar.item icon="shield-exclamation" :href="route('emergency-levels.index')" :current="request()->routeIs('emergency-levels.*')" wire:navigate>
                         {{ __('Notfall-Level') }}
                     </flux:sidebar.item>
