@@ -215,17 +215,52 @@ new #[Title('Mitarbeiter')] class extends Component {
         }
 
         $edges = [];
+
+        // Direkte Zuordnungen Mitarbeiter ↔ System (RACI-Pivot).
         foreach ($systems as $system) {
             foreach ($system->employees as $employee) {
                 $edges[] = [
                     'data' => [
-                        'id' => 'edge-emp-'.$employee->id.'-sys-'.$system->id,
+                        'id' => 'edge-direct-emp-'.$employee->id.'-sys-'.$system->id,
                         'source' => 'emp-'.$employee->id,
                         'target' => 'sys-'.$system->id,
+                        'kind' => 'direct',
                         'raci_role' => $employee->pivot->raci_role ?? null,
                         'is_deputy' => (bool) ($employee->pivot->is_deputy ?? false),
                     ],
                 ];
+            }
+        }
+
+        // Indirekte Zuordnungen über eine Rolle: Mitarbeiter → Rolle → System.
+        // Eine Rolle, die n Mitarbeiter und m Systeme bündelt, erzeugt n×m
+        // via-role-Kanten — pro Rolle separat, damit ein Mitarbeiter, der
+        // über mehrere Rollen am selben System hängt, alle Pfade sieht.
+        $roles = Role::query()
+            ->with([
+                'employees' => fn ($q) => $q->orderBy('last_name')->orderBy('first_name'),
+                'systems' => fn ($q) => $q->orderBy('systems.name'),
+            ])
+            ->get();
+
+        foreach ($roles as $role) {
+            if ($role->employees->isEmpty() || $role->systems->isEmpty()) {
+                continue;
+            }
+            foreach ($role->employees as $employee) {
+                foreach ($role->systems as $system) {
+                    $edges[] = [
+                        'data' => [
+                            'id' => 'edge-via-emp-'.$employee->id.'-role-'.$role->id.'-sys-'.$system->id,
+                            'source' => 'emp-'.$employee->id,
+                            'target' => 'sys-'.$system->id,
+                            'kind' => 'via-role',
+                            'via_role' => $role->name,
+                            'raci_role' => $system->pivot->raci_role ?? null,
+                            'is_deputy' => (bool) ($employee->pivot->is_deputy ?? false),
+                        ],
+                    ];
+                }
             }
         }
 
@@ -879,7 +914,9 @@ new #[Title('Mitarbeiter')] class extends Component {
                                 <li class="flex items-center gap-2"><span class="inline-block h-3 w-5 rounded border-2" style="background:#fef3c7;border-color:#d97706"></span>{{ __('Schlüsselperson') }}</li>
                                 <li class="flex items-center gap-2"><span class="inline-block h-3 w-5 rounded border-2" style="background:#eef2ff;border-color:#6366f1"></span>{{ __('Standard-Mitarbeiter') }}</li>
                                 <li class="flex items-center gap-2"><span class="inline-block h-3 w-5 rounded border-2" style="background:#f0fdf4;border-color:#16a34a"></span>{{ __('System') }}</li>
-                                <li class="flex items-center gap-2"><svg viewBox="0 0 24 12" class="h-3 w-6"><path d="M2 6h17" stroke="#a855f7" stroke-width="2" stroke-dasharray="3 2" fill="none"/><path d="M22 6l-4-3v6z" fill="#a855f7"/></svg>{{ __('Stellvertretung') }}</li>
+                                <li class="flex items-center gap-2"><svg viewBox="0 0 24 12" class="h-3 w-6"><path d="M2 6h17" stroke="#9ca3af" stroke-width="2" fill="none"/><path d="M22 6l-4-3v6z" fill="#9ca3af"/></svg>{{ __('Direkte Zuordnung (RACI)') }}</li>
+                                <li class="flex items-center gap-2"><svg viewBox="0 0 24 12" class="h-3 w-6"><path d="M2 6h17" stroke="#0d9488" stroke-width="2" stroke-dasharray="2 2" fill="none"/><path d="M22 6l-4-3v6z" fill="#0d9488"/></svg>{{ __('Über eine Rolle') }}</li>
+                                <li class="flex items-center gap-2"><svg viewBox="0 0 24 12" class="h-3 w-6"><path d="M2 6h17" stroke="#a855f7" stroke-width="2" stroke-dasharray="3 2" fill="none"/><path d="M22 6l-4-3v6z" fill="#a855f7"/></svg>{{ __('Stellvertretung (direkt)') }}</li>
                             </ul>
 
                             <div class="mt-4 border-t border-zinc-100 pt-3 dark:border-zinc-800">
@@ -935,7 +972,7 @@ new #[Title('Mitarbeiter')] class extends Component {
                                             {{ $employee->crisis_role->label() }}@if ($employee->is_crisis_deputy) ({{ __('Vertretung') }})@endif
                                         </flux:badge>
                                     @endif
-                                    @if ($employee->department)
+                                    @if (config('features.departments') && $employee->department)
                                         <flux:badge color="zinc" size="sm">{{ $employee->department->name }}</flux:badge>
                                     @endif
                                 </div>

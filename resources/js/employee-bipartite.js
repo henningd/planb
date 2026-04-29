@@ -108,15 +108,40 @@ export function initEmployeeBipartite(opts) {
                     'line-color': '#9ca3af',
                     'target-arrow-color': '#9ca3af',
                     'target-arrow-shape': 'triangle',
+                    // Bezier mit Multi-Edge-Stack, damit parallele Kanten
+                    // (direkt + über mehrere Rollen) sichtbar nebeneinander liegen.
                     'curve-style': 'bezier',
+                    'control-point-step-size': 22,
                     'arrow-scale': 1.1,
                     'transition-property': 'opacity, line-color, width',
                     'transition-duration': '180ms',
                 },
             },
-            // Stellvertretungs-Kante (gestrichelt, dünner)
+            // Indirekte Zuordnung über eine Rolle (Mitarbeiter → Rolle → System).
+            // Gepunktet, türkis, schmaler — visuell klar von der direkten
+            // RACI-Zuordnung unterscheidbar.
             {
-                selector: 'edge[?is_deputy]',
+                selector: 'edge[kind = "via-role"]',
+                style: {
+                    'line-style': 'dotted',
+                    'line-color': '#0d9488',
+                    'target-arrow-color': '#0d9488',
+                    width: 1.5,
+                    label: 'data(via_role)',
+                    'font-size': '10px',
+                    'font-weight': 500,
+                    color: '#0f766e',
+                    'text-background-color': '#ffffff',
+                    'text-background-opacity': 0.85,
+                    'text-background-padding': '2px',
+                    'text-rotation': 'autorotate',
+                },
+            },
+            // Stellvertretungs-Kante (gestrichelt, lila) — gilt für direkte
+            // Zuordnungen; via-role-Kanten markieren Stellvertretung über
+            // die Rollen-Vertretung im Rollen-Tab.
+            {
+                selector: 'edge[kind = "direct"][?is_deputy]',
                 style: {
                     'line-style': 'dashed',
                     'line-color': '#a855f7',
