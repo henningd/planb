@@ -175,7 +175,13 @@ new #[Title('Mitarbeiter')] class extends Component {
     }
 
     /**
-     * Bipartiter Graph Mitarbeiter ↔ Systeme.
+     * Tripartiter Graph Mitarbeiter → Rolle → System plus direkte
+     * Mitarbeiter → System-Zuordnungen.
+     *
+     * Rollen-Knoten erscheinen nur, wenn die Rolle mindestens einen
+     * Mitarbeiter und mindestens ein System verbindet (Brücken-Funktion);
+     * Rollen ohne diese Brücke bleiben hier unsichtbar — sie sind im
+     * dedizierten Rollen-Tab abgebildet.
      *
      * @return array{nodes: list<array<string, mixed>>, edges: list<array<string, mixed>>}
      */
@@ -187,8 +193,17 @@ new #[Title('Mitarbeiter')] class extends Component {
             ->with(['employees' => fn ($q) => $q->orderBy('last_name')->orderBy('first_name')])
             ->orderBy('name')
             ->get();
+        $roles = Role::query()
+            ->with([
+                'employees' => fn ($q) => $q->orderBy('last_name')->orderBy('first_name'),
+                'systems' => fn ($q) => $q->orderBy('systems.name'),
+            ])
+            ->orderBy('sort')
+            ->orderBy('name')
+            ->get();
 
         $nodes = [];
+
         foreach ($employees as $e) {
             $line2 = trim((string) ($e->position ?? ''));
             $label = $e->fullName().($line2 !== '' ? "\n{$line2}" : '');
@@ -200,6 +215,22 @@ new #[Title('Mitarbeiter')] class extends Component {
                     'is_key_personnel' => (bool) $e->is_key_personnel,
                     'has_crisis_role' => $e->crisis_role !== null,
                     'crisis_role' => $e->crisis_role?->label() ?? '',
+                ],
+            ];
+        }
+
+        // Rollen erscheinen nur, wenn sie tatsächlich Mitarbeiter UND
+        // Systeme verbinden — sonst bringen sie auf dieser Sicht nichts.
+        $bridgingRoles = $roles->filter(
+            fn ($role) => $role->employees->isNotEmpty() && $role->systems->isNotEmpty()
+        );
+        foreach ($bridgingRoles as $role) {
+            $nodes[] = [
+                'data' => [
+                    'id' => 'role-'.$role->id,
+                    'kind' => 'role',
+                    'label' => $role->name,
+                    'is_system' => $role->isSystem(),
                 ],
             ];
         }
@@ -216,7 +247,7 @@ new #[Title('Mitarbeiter')] class extends Component {
 
         $edges = [];
 
-        // Direkte Zuordnungen Mitarbeiter ↔ System (RACI-Pivot).
+        // 1. Direkte Zuordnungen Mitarbeiter → System (RACI-Pivot).
         foreach ($systems as $system) {
             foreach ($system->employees as $employee) {
                 $edges[] = [
@@ -232,35 +263,31 @@ new #[Title('Mitarbeiter')] class extends Component {
             }
         }
 
-        // Indirekte Zuordnungen über eine Rolle: Mitarbeiter → Rolle → System.
-        // Eine Rolle, die n Mitarbeiter und m Systeme bündelt, erzeugt n×m
-        // via-role-Kanten — pro Rolle separat, damit ein Mitarbeiter, der
-        // über mehrere Rollen am selben System hängt, alle Pfade sieht.
-        $roles = Role::query()
-            ->with([
-                'employees' => fn ($q) => $q->orderBy('last_name')->orderBy('first_name'),
-                'systems' => fn ($q) => $q->orderBy('systems.name'),
-            ])
-            ->get();
-
-        foreach ($roles as $role) {
-            if ($role->employees->isEmpty() || $role->systems->isEmpty()) {
-                continue;
-            }
+        // 2a. Mitarbeiter → Rolle (für Rollen, die als Brücke zu einem
+        //     System dienen).
+        // 2b. Rolle → System (für dieselben Rollen).
+        foreach ($bridgingRoles as $role) {
             foreach ($role->employees as $employee) {
-                foreach ($role->systems as $system) {
-                    $edges[] = [
-                        'data' => [
-                            'id' => 'edge-via-emp-'.$employee->id.'-role-'.$role->id.'-sys-'.$system->id,
-                            'source' => 'emp-'.$employee->id,
-                            'target' => 'sys-'.$system->id,
-                            'kind' => 'via-role',
-                            'via_role' => $role->name,
-                            'raci_role' => $system->pivot->raci_role ?? null,
-                            'is_deputy' => (bool) ($employee->pivot->is_deputy ?? false),
-                        ],
-                    ];
-                }
+                $edges[] = [
+                    'data' => [
+                        'id' => 'edge-emp-'.$employee->id.'-role-'.$role->id,
+                        'source' => 'emp-'.$employee->id,
+                        'target' => 'role-'.$role->id,
+                        'kind' => 'emp-role',
+                        'is_deputy' => (bool) ($employee->pivot->is_deputy ?? false),
+                    ],
+                ];
+            }
+            foreach ($role->systems as $system) {
+                $edges[] = [
+                    'data' => [
+                        'id' => 'edge-role-'.$role->id.'-sys-'.$system->id,
+                        'source' => 'role-'.$role->id,
+                        'target' => 'sys-'.$system->id,
+                        'kind' => 'role-sys',
+                        'raci_role' => $system->pivot->raci_role ?? null,
+                    ],
+                ];
             }
         }
 
@@ -913,10 +940,11 @@ new #[Title('Mitarbeiter')] class extends Component {
                                 <li class="flex items-center gap-2"><span class="inline-block h-3 w-5 rounded border-2" style="background:#fee2e2;border-color:#dc2626"></span>{{ __('Mitarbeiter mit Krisenrolle') }}</li>
                                 <li class="flex items-center gap-2"><span class="inline-block h-3 w-5 rounded border-2" style="background:#fef3c7;border-color:#d97706"></span>{{ __('Schlüsselperson') }}</li>
                                 <li class="flex items-center gap-2"><span class="inline-block h-3 w-5 rounded border-2" style="background:#eef2ff;border-color:#6366f1"></span>{{ __('Standard-Mitarbeiter') }}</li>
+                                <li class="flex items-center gap-2"><span class="inline-block h-3 w-5 rounded border-2" style="background:#ecfeff;border-color:#0891b2"></span>{{ __('Rolle (verknüpft Mitarbeiter mit Systemen)') }}</li>
                                 <li class="flex items-center gap-2"><span class="inline-block h-3 w-5 rounded border-2" style="background:#f0fdf4;border-color:#16a34a"></span>{{ __('System') }}</li>
-                                <li class="flex items-center gap-2"><svg viewBox="0 0 24 12" class="h-3 w-6"><path d="M2 6h17" stroke="#9ca3af" stroke-width="2" fill="none"/><path d="M22 6l-4-3v6z" fill="#9ca3af"/></svg>{{ __('Direkte Zuordnung (RACI)') }}</li>
-                                <li class="flex items-center gap-2"><svg viewBox="0 0 24 12" class="h-3 w-6"><path d="M2 6h17" stroke="#0d9488" stroke-width="2" stroke-dasharray="2 2" fill="none"/><path d="M22 6l-4-3v6z" fill="#0d9488"/></svg>{{ __('Über eine Rolle') }}</li>
-                                <li class="flex items-center gap-2"><svg viewBox="0 0 24 12" class="h-3 w-6"><path d="M2 6h17" stroke="#a855f7" stroke-width="2" stroke-dasharray="3 2" fill="none"/><path d="M22 6l-4-3v6z" fill="#a855f7"/></svg>{{ __('Stellvertretung (direkt)') }}</li>
+                                <li class="flex items-center gap-2"><svg viewBox="0 0 24 12" class="h-3 w-6"><path d="M2 6h17" stroke="#9ca3af" stroke-width="2" fill="none"/><path d="M22 6l-4-3v6z" fill="#9ca3af"/></svg>{{ __('Mitarbeiter → System direkt (RACI)') }}</li>
+                                <li class="flex items-center gap-2"><svg viewBox="0 0 24 12" class="h-3 w-6"><path d="M2 6h17" stroke="#0d9488" stroke-width="2" stroke-dasharray="2 2" fill="none"/><path d="M22 6l-4-3v6z" fill="#0d9488"/></svg>{{ __('Mitarbeiter → Rolle → System') }}</li>
+                                <li class="flex items-center gap-2"><svg viewBox="0 0 24 12" class="h-3 w-6"><path d="M2 6h17" stroke="#a855f7" stroke-width="2" stroke-dasharray="3 2" fill="none"/><path d="M22 6l-4-3v6z" fill="#a855f7"/></svg>{{ __('Stellvertretung') }}</li>
                             </ul>
 
                             <div class="mt-4 border-t border-zinc-100 pt-3 dark:border-zinc-800">

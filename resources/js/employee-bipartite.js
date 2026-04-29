@@ -117,29 +117,30 @@ export function initEmployeeBipartite(opts) {
                     'transition-duration': '180ms',
                 },
             },
-            // Indirekte Zuordnung über eine Rolle (Mitarbeiter → Rolle → System).
-            // Gepunktet, türkis, schmaler — visuell klar von der direkten
-            // RACI-Zuordnung unterscheidbar.
+            // Tripartite-Kanten Mitarbeiter → Rolle → System: gepunktet,
+            // türkis, schmaler — visuell als zusammenhängende Kette
+            // erkennbar, klar abgegrenzt von der direkten RACI-Kante.
             {
-                selector: 'edge[kind = "via-role"]',
+                selector: 'edge[kind = "emp-role"], edge[kind = "role-sys"]',
                 style: {
                     'line-style': 'dotted',
                     'line-color': '#0d9488',
                     'target-arrow-color': '#0d9488',
                     width: 1.5,
-                    label: 'data(via_role)',
-                    'font-size': '10px',
-                    'font-weight': 500,
-                    color: '#0f766e',
-                    'text-background-color': '#ffffff',
-                    'text-background-opacity': 0.85,
-                    'text-background-padding': '2px',
-                    'text-rotation': 'autorotate',
                 },
             },
-            // Stellvertretungs-Kante (gestrichelt, lila) — gilt für direkte
-            // Zuordnungen; via-role-Kanten markieren Stellvertretung über
-            // die Rollen-Vertretung im Rollen-Tab.
+            // Stellvertretungs-Kante in den bipartiten Rollen-Graphen
+            // (Mitarbeiter ↔ Rolle): gestrichelt lila.
+            {
+                selector: 'edge[?is_deputy]',
+                style: {
+                    'line-style': 'dashed',
+                    'line-color': '#a855f7',
+                    'target-arrow-color': '#a855f7',
+                },
+            },
+            // Direkte Stellvertretungs-Zuweisung (Mitarbeiter → System)
+            // bleibt durch das gleiche dashed/lila kenntlich.
             {
                 selector: 'edge[kind = "direct"][?is_deputy]',
                 style: {
