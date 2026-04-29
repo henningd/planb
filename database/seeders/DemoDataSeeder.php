@@ -32,6 +32,7 @@ use App\Models\ComplianceScoreSnapshot;
 use App\Models\Department;
 use App\Models\EmergencyResource;
 use App\Models\Employee;
+use App\Models\FallbackProcess;
 use App\Models\GlobalScenario;
 use App\Models\HandbookShare;
 use App\Models\HandbookTest;
@@ -144,6 +145,7 @@ class DemoDataSeeder extends Seeder
         $this->seedHandbookPdfs($company);
         $this->seedHandbookShares($company, $user);
         $this->seedEmergencyResources($company);
+        $this->seedFallbackProcesses($company);
         $this->seedHandbookTests($company);
         $this->seedRisks($company, $user);
         $this->seedLessonsLearned($company, $user);
@@ -1117,6 +1119,158 @@ class DemoDataSeeder extends Seeder
                 ['company_id' => $company->id, 'type' => $data['type']->value, 'name' => $data['name']],
                 array_merge(['company_id' => $company->id], $data),
             );
+        }
+    }
+
+    /**
+     * Notfallbetrieb / Ersatzprozesse: wie der Elektrobetrieb weiterarbeitet,
+     * solange ein System ausgefallen ist — bevor der Wiederanlauf greift.
+     */
+    private function seedFallbackProcesses(Company $company): void
+    {
+        $rolesByName = Role::withoutGlobalScope(CurrentCompanyScope::class)
+            ->where('company_id', $company->id)
+            ->pluck('id', 'name');
+
+        $employeesByEmail = Employee::withoutGlobalScope(CurrentCompanyScope::class)
+            ->where('company_id', $company->id)
+            ->pluck('id', 'email');
+
+        $systemsByKeyword = System::withoutGlobalScope(CurrentCompanyScope::class)
+            ->where('company_id', $company->id)
+            ->get();
+
+        $findSystems = function (array $keywords) use ($systemsByKeyword): array {
+            $ids = [];
+            foreach ($systemsByKeyword as $system) {
+                $name = mb_strtolower($system->name);
+                foreach ($keywords as $kw) {
+                    if (str_contains($name, mb_strtolower($kw))) {
+                        $ids[] = $system->id;
+                        break;
+                    }
+                }
+            }
+
+            return array_values(array_unique($ids));
+        };
+
+        $processes = [
+            [
+                'title' => 'Papierbasierte Auftrags- und Stundenerfassung',
+                'description' => "Aufträge auf Papier-Auftragsblock erfassen, Stundenzettel handschriftlich pro Geselle. Materialentnahme aus Werkstatt-Lager auf Lieferschein quittieren.\n\nKapazität: ca. 60 % des normalen Durchsatzes; nur Bestandskunden und vereinbarte Termine, keine Neuaufträge.",
+                'trigger' => 'Handwerkersoftware oder Büro-Server länger als 1 Stunde nicht erreichbar.',
+                'role' => 'Verwaltung & Empfang',
+                'email' => 'anna@mustermann.de',
+                'priority' => 1,
+                'max_duration_hours' => 24,
+                'handover_notes' => 'Papier-Aufträge in Handwerkersoftware nachbuchen (Reihenfolge: kassenrelevante zuerst). Stundenzettel von Werkstatt sammeln und ins ERP übertragen. Reklamationsmappe abarbeiten.',
+                'system_keywords' => ['Handwerkersoftware', 'Server', 'OneDrive', 'Cloud'],
+                'sort' => 0,
+            ],
+            [
+                'title' => 'Mobile-Office mit Notfall-SIM bei Internet-Ausfall',
+                'description' => "Notfall-SIM (Telekom Prepaid 50 GB) aus GF-Schreibtisch in LTE-Hotspot bzw. Smartphone einsetzen. Kritische Arbeitsplätze (Empfang, GF, Buchhaltung) bekommen den Hotspot priorisiert; restliche MA arbeiten mobil.\n\nKapazität: ~70 % bei drei Arbeitsplätzen am Hotspot; Cloud-Dienste laufen, lokale Server nicht.",
+                'trigger' => 'Internetzugang Hauptsitz länger als 30 Minuten ausgefallen.',
+                'role' => 'IT',
+                'email' => 'dieter.klein@mustermann.de',
+                'priority' => 2,
+                'max_duration_hours' => 8,
+                'handover_notes' => 'Geräte zurück ins LAN umziehen, Hotspot-SIM in den Tresor zurücklegen, verbrauchtes Datenvolumen prüfen und ggf. nachladen.',
+                'system_keywords' => ['Internet', 'Netzwerk', 'E-Mail', 'OneDrive', 'Cloud'],
+                'sort' => 1,
+            ],
+            [
+                'title' => 'Telefon-Abstimmung statt E-Mail',
+                'description' => 'Interne Abstimmung läuft per Telefon nach der Notfall-Telefonliste (ausgedruckt, im GF-Büro). Kunden-Mails werden über das persönliche Mobiltelefon der GF (M365-Webmail mobil) beantwortet; Statusmeldungen gehen per SMS-Vorlage.',
+                'trigger' => 'M365 / E-Mail länger als 2 Stunden nicht erreichbar.',
+                'role' => 'Verwaltung & Empfang',
+                'email' => 'anna@mustermann.de',
+                'priority' => 2,
+                'max_duration_hours' => 12,
+                'handover_notes' => 'Geführte Telefonate stichpunktartig notieren; nach Wiederanlauf an Kunden eine kurze E-Mail-Bestätigung schicken (z. B. „wie eben besprochen ...").',
+                'system_keywords' => ['E-Mail'],
+                'sort' => 2,
+            ],
+            [
+                'title' => 'Mobile Kunden-Hotline bei VoIP-Ausfall',
+                'description' => 'Mobil-Nummer der GF (0171 1234567) wird als Kunden-Hotline freigeschaltet und über Website-Banner sowie SMS-Vorlage kommuniziert. Eingehende Anrufe werden in ein Notiz-App-Telefonbuch eingetragen.',
+                'trigger' => 'Telefonanlage (VoIP) nicht erreichbar.',
+                'role' => 'Verwaltung & Empfang',
+                'email' => 'anna@mustermann.de',
+                'priority' => 2,
+                'max_duration_hours' => 24,
+                'handover_notes' => 'Anrufnotizen aus Notiz-App in CRM / Auftrags-Pipeline übertragen, Rückrufe abarbeiten.',
+                'system_keywords' => ['Telefon'],
+                'sort' => 3,
+            ],
+            [
+                'title' => 'Material-Notbetrieb auf Sicht und Papier',
+                'description' => "Materialentnahme aus Werkstatt-Lager handschriftlich auf Liste quittieren (Datum, Geselle, Auftrag, Stückzahl). Bestand per Sichtprüfung — keine Reservierungen. Nachbestellungen telefonisch beim Stamm-Lieferanten, Auftragsbestätigung per E-Mail / Fax.\n\nKapazität: nur Bestandsmaterial; Sonderbestellungen pausiert.",
+                'trigger' => 'Material- und Lagerverwaltung länger als 4 Stunden nicht erreichbar.',
+                'role' => 'Werkstatt',
+                'email' => 'bernd.schneider@mustermann.de',
+                'priority' => 3,
+                'max_duration_hours' => 48,
+                'handover_notes' => 'Materialentnahme-Listen ins WMS nachpflegen, Bestand abgleichen, Lieferanten-Bestellungen aus Telefonnotizen erfassen.',
+                'system_keywords' => ['Material', 'Lager'],
+                'sort' => 4,
+            ],
+            [
+                'title' => 'Mobile Zeiterfassung und Baustellen-Doku auf Papier',
+                'description' => 'Gesellen erfassen Arbeitszeit auf Papier-Stundenzetteln (Vordruck im Werkstatt-Ordner). Baustellen-Fotos aufs private Smartphone; abendliche Übergabe an Werkstattleitung per WhatsApp / SMS. Tagesabschluss handschriftlich im Bautagebuch.',
+                'trigger' => 'Zeiterfassung oder Baustellen- / Dispositions-App auf Mobilgeräten nicht nutzbar.',
+                'role' => 'Werkstatt',
+                'email' => 'bernd.schneider@mustermann.de',
+                'priority' => 3,
+                'max_duration_hours' => 48,
+                'handover_notes' => 'Stundenzettel sammeln und in Zeiterfassung nachtragen (für Lohnabrechnung kritisch); Baustellen-Fotos in OneDrive-Projektordner hochladen.',
+                'system_keywords' => ['Zeiterfassung', 'Baustelle', 'Disposition'],
+                'sort' => 5,
+            ],
+            [
+                'title' => 'Notfall-Telefonkette für interne Krisenkommunikation',
+                'description' => 'Wenn weder E-Mail noch Telefonanlage noch Internet zur Verfügung stehen, läuft die interne Lagebewertung über die ausgedruckte Telefonliste auf Mobilfunk. Reihenfolge: GF → Notfallbeauftragte/r → IT-Lead → Werkstattleitung → Verwaltung.',
+                'trigger' => 'Mehrfach-Ausfall (Internet + E-Mail + VoIP gleichzeitig) — z. B. Stromausfall im Hauptsitz.',
+                'role' => CrisisRole::EmergencyOfficer->value,
+                'email' => null,
+                'priority' => 1,
+                'max_duration_hours' => 6,
+                'handover_notes' => 'Stichpunkt-Protokoll der Lagebesprechungen ins Krisen-Cockpit übertragen, Erkenntnisse in Lessons Learned einspeisen.',
+                'system_keywords' => ['Strom', 'Internet', 'E-Mail', 'Telefon'],
+                'sort' => 6,
+            ],
+        ];
+
+        foreach ($processes as $data) {
+            $roleId = $rolesByName[$data['role']] ?? null;
+            if ($roleId === null) {
+                $roleId = Role::withoutGlobalScope(CurrentCompanyScope::class)
+                    ->where('company_id', $company->id)
+                    ->where('system_key', $data['role'])
+                    ->value('id');
+            }
+
+            $employeeId = $data['email'] !== null
+                ? ($employeesByEmail[$data['email']] ?? null)
+                : null;
+
+            $process = FallbackProcess::withoutGlobalScope(CurrentCompanyScope::class)->updateOrCreate(
+                ['company_id' => $company->id, 'title' => $data['title']],
+                [
+                    'company_id' => $company->id,
+                    'description' => $data['description'],
+                    'trigger' => $data['trigger'],
+                    'responsible_role_id' => $roleId,
+                    'responsible_employee_id' => $employeeId,
+                    'priority' => $data['priority'],
+                    'max_duration_hours' => $data['max_duration_hours'],
+                    'handover_notes' => $data['handover_notes'],
+                    'sort' => $data['sort'],
+                ],
+            );
+
+            $process->systems()->sync($findSystems($data['system_keywords']));
         }
     }
 
