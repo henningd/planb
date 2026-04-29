@@ -578,8 +578,9 @@ new #[Title('Mitarbeiter')] class extends Component {
             $graph = $this->hierarchyGraph;
             $hasNodes = count($graph['nodes']) > 0;
             $hasEdges = count($graph['edges']) > 0;
-            $rolesGraph = $this->rolesGraph;
-            $systemsGraph = $this->systemsGraph;
+            $graphTabsEnabled = config('features.employee_graph_tabs');
+            $rolesGraph = $graphTabsEnabled ? $this->rolesGraph : ['nodes' => [], 'edges' => []];
+            $systemsGraph = $graphTabsEnabled ? $this->systemsGraph : ['nodes' => [], 'edges' => []];
             $hasRolesEdges = count($rolesGraph['edges']) > 0;
             $hasSystemsEdges = count($systemsGraph['edges']) > 0;
         @endphp
@@ -700,28 +701,30 @@ new #[Title('Mitarbeiter')] class extends Component {
                         <flux:icon name="share" class="size-4" />
                         {{ __('Hierarchie') }}
                     </button>
-                    <button
-                        type="button"
-                        @click="viewMode = 'roles'"
-                        role="tab"
-                        :aria-selected="viewMode === 'roles' ? 'true' : 'false'"
-                        class="inline-flex items-center gap-1 rounded-md px-3 py-1 text-xs font-medium transition"
-                        :class="viewMode === 'roles' ? 'bg-white text-zinc-900 shadow dark:bg-zinc-700 dark:text-zinc-50' : 'text-zinc-600 dark:text-zinc-300'"
-                    >
-                        <flux:icon name="user-group" class="size-4" />
-                        {{ __('Rollen') }}
-                    </button>
-                    <button
-                        type="button"
-                        @click="viewMode = 'systems'"
-                        role="tab"
-                        :aria-selected="viewMode === 'systems' ? 'true' : 'false'"
-                        class="inline-flex items-center gap-1 rounded-md px-3 py-1 text-xs font-medium transition"
-                        :class="viewMode === 'systems' ? 'bg-white text-zinc-900 shadow dark:bg-zinc-700 dark:text-zinc-50' : 'text-zinc-600 dark:text-zinc-300'"
-                    >
-                        <flux:icon name="server-stack" class="size-4" />
-                        {{ __('Systeme') }}
-                    </button>
+                    @if ($graphTabsEnabled)
+                        <button
+                            type="button"
+                            @click="viewMode = 'roles'"
+                            role="tab"
+                            :aria-selected="viewMode === 'roles' ? 'true' : 'false'"
+                            class="inline-flex items-center gap-1 rounded-md px-3 py-1 text-xs font-medium transition"
+                            :class="viewMode === 'roles' ? 'bg-white text-zinc-900 shadow dark:bg-zinc-700 dark:text-zinc-50' : 'text-zinc-600 dark:text-zinc-300'"
+                        >
+                            <flux:icon name="user-group" class="size-4" />
+                            {{ __('Rollen') }}
+                        </button>
+                        <button
+                            type="button"
+                            @click="viewMode = 'systems'"
+                            role="tab"
+                            :aria-selected="viewMode === 'systems' ? 'true' : 'false'"
+                            class="inline-flex items-center gap-1 rounded-md px-3 py-1 text-xs font-medium transition"
+                            :class="viewMode === 'systems' ? 'bg-white text-zinc-900 shadow dark:bg-zinc-700 dark:text-zinc-50' : 'text-zinc-600 dark:text-zinc-300'"
+                        >
+                            <flux:icon name="server-stack" class="size-4" />
+                            {{ __('Systeme') }}
+                        </button>
+                    @endif
                 </div>
 
                 <flux:input x-show="viewMode === 'list'" x-cloak wire:model.live.debounce.300ms="search" type="search" icon="magnifying-glass" placeholder="{{ __('Suchen: Name, Rolle, E-Mail …') }}" class="max-w-sm" />
@@ -833,6 +836,7 @@ new #[Title('Mitarbeiter')] class extends Component {
                 @endif
             </div>
 
+            @if ($graphTabsEnabled)
             <div x-show="viewMode === 'roles'" x-cloak>
                 @if ($this->employees->isEmpty())
                     <div class="rounded-xl border border-zinc-200 bg-white px-5 py-12 text-center dark:border-zinc-700 dark:bg-zinc-900">
@@ -963,6 +967,7 @@ new #[Title('Mitarbeiter')] class extends Component {
                     </div>
                 @endif
             </div>
+            @endif
 
             <div x-show="viewMode === 'list'" x-cloak>
                 @if ($this->employees->isEmpty())
