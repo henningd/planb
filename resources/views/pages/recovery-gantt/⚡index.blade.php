@@ -204,7 +204,7 @@ new #[Title('Recovery-Zeitplan')] class extends Component {
                                          Icon und Zeit-Label durch overflow:hidden geclippt — der graue Layer 1
                                          füllt die Differenz bis 120 px, der i-Button bleibt rechts sichtbar. --}}
                                     <div
-                                        class="absolute top-0 h-full min-w-[40px] overflow-hidden rounded shadow-sm"
+                                        class="absolute top-0 h-full min-w-[60px] overflow-hidden rounded shadow-sm"
                                         style="margin-left: {{ $marginLeft }}%; width: {{ $width }}%; background-color: {{ $entry['level_color'] }};"
                                         title="{{ $tooltip }} | {{ $entry['level_label'] }}"
                                     >
