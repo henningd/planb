@@ -198,13 +198,12 @@ new #[Title('Recovery-Zeitplan')] class extends Component {
                                         aria-hidden="true"
                                     ></div>
 
-                                    {{-- Layer 2: farbiger Bar = proportionale Dauer mit Mindestbreite 120 px,
-                                         sodass Icon + Zeit + Abstand + i-Button immer nebeneinander sichtbar sind.
-                                         Äußeres Div trägt nur die Box-Maße + Hintergrund, das innere Flex-Div
-                                         enthält Icon und Label und wird durch overflow:hidden geclippt, wenn
-                                         der Bar zu schmal wird. --}}
+                                    {{-- Layer 2: farbiger Bar = exakte proportionale Dauer (kein min-width).
+                                         15 min ist sichtbar schmaler als 1 h. Reicht der Platz nicht, werden
+                                         Icon und Zeit-Label durch overflow:hidden geclippt — der graue Layer 1
+                                         füllt die Differenz bis 120 px, der i-Button bleibt rechts sichtbar. --}}
                                     <div
-                                        class="absolute top-0 h-full min-w-[120px] overflow-hidden rounded shadow-sm"
+                                        class="absolute top-0 h-full overflow-hidden rounded shadow-sm"
                                         style="margin-left: {{ $marginLeft }}%; width: {{ $width }}%; background-color: {{ $entry['level_color'] }};"
                                         title="{{ $tooltip }} | {{ $entry['level_label'] }}"
                                     >
