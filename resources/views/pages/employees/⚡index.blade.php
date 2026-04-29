@@ -271,7 +271,7 @@ new #[Title('Mitarbeiter')] class extends Component {
     public function employees()
     {
         return Employee::query()
-            ->with(['managers', 'reports', 'location', 'department'])
+            ->with(['managers', 'reports', 'location', 'department', 'roles'])
             ->when($this->search !== '', function ($q) {
                 $term = '%'.$this->search.'%';
                 $q->where(function ($q) use ($term) {
@@ -975,6 +975,11 @@ new #[Title('Mitarbeiter')] class extends Component {
                                     @if (config('features.departments') && $employee->department)
                                         <flux:badge color="zinc" size="sm">{{ $employee->department->name }}</flux:badge>
                                     @endif
+                                    @foreach ($employee->roles as $role)
+                                        <flux:badge :color="($role->pivot->is_deputy ?? false) ? 'purple' : 'sky'" size="sm" icon="user-group">
+                                            {{ $role->name }}@if ($role->pivot->is_deputy ?? false) ({{ __('Vertretung') }})@endif
+                                        </flux:badge>
+                                    @endforeach
                                 </div>
                             </div>
                         </div>
