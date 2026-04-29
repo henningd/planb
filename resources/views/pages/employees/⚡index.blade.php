@@ -436,7 +436,7 @@ new #[Title('Mitarbeiter')] class extends Component {
                 </div>
 
                 <flux:input x-show="viewMode === 'list'" x-cloak wire:model.live.debounce.300ms="search" type="search" icon="magnifying-glass" placeholder="{{ __('Suchen: Name, Rolle, E-Mail …') }}" class="max-w-sm" />
-                @if ($this->departments)
+                @if (config('features.departments') && $this->departments)
                     <flux:select x-show="viewMode === 'list'" x-cloak wire:model.live="filterDepartment" placeholder="{{ __('Alle Abteilungen') }}" class="max-w-xs">
                         <flux:select.option value="">{{ __('Alle Abteilungen') }}</flux:select.option>
                         @foreach ($this->departments as $dept)
@@ -481,7 +481,7 @@ new #[Title('Mitarbeiter')] class extends Component {
                                     placeholder="{{ __('Suchen…') }}"
                                     class="w-44"
                                 />
-                                @if (! empty($graph['departments']))
+                                @if (config('features.departments') && ! empty($graph['departments']))
                                     <select
                                         x-model="hDepartment"
                                         @change="applyHierarchyFilter()"
@@ -529,7 +529,9 @@ new #[Title('Mitarbeiter')] class extends Component {
                                 <template x-if="hSelected">
                                     <div class="mt-2 space-y-1 text-sm">
                                         <div class="font-semibold text-zinc-900 dark:text-zinc-100" x-text="hSelected.label.replace(/\n/g, ' — ')"></div>
-                                        <div class="text-xs text-zinc-500 dark:text-zinc-400" x-text="hSelected.department || '{{ __('Keine Abteilung') }}'"></div>
+                                        @if (config('features.departments'))
+                                            <div class="text-xs text-zinc-500 dark:text-zinc-400" x-text="hSelected.department || '{{ __('Keine Abteilung') }}'"></div>
+                                        @endif
                                         <div class="text-xs text-zinc-500 dark:text-zinc-400" x-show="hSelected.has_crisis_role" x-text="'{{ __('Krisenrolle:') }} ' + hSelected.crisis_role"></div>
                                     </div>
                                 </template>
@@ -678,18 +680,20 @@ new #[Title('Mitarbeiter')] class extends Component {
                 <flux:input wire:model="last_name" :label="__('Nachname')" required />
             </div>
 
-            <div class="grid gap-4 sm:grid-cols-2">
+            <div @class(['grid gap-4', 'sm:grid-cols-2' => config('features.departments')])>
                 <flux:input wire:model="position" :label="__('Position')" placeholder="z. B. Vertriebsleitung" />
-                <flux:select wire:model="department_id" :label="__('Abteilung')" :placeholder="__('Keine Abteilung')">
-                    <flux:select.option value="">{{ __('— Keine Abteilung —') }}</flux:select.option>
-                    @foreach ($this->departmentOptions as $dept)
-                        <flux:select.option value="{{ $dept->id }}">{{ $dept->name }}</flux:select.option>
-                    @endforeach
-                </flux:select>
-                @if ($this->departmentOptions->isEmpty())
-                    <flux:text class="-mt-2 text-xs text-zinc-500">
-                        {{ __('Noch keine Abteilung angelegt — pflegen Sie diese unter „Abteilungen" in der Sidebar.') }}
-                    </flux:text>
+                @if (config('features.departments'))
+                    <flux:select wire:model="department_id" :label="__('Abteilung')" :placeholder="__('Keine Abteilung')">
+                        <flux:select.option value="">{{ __('— Keine Abteilung —') }}</flux:select.option>
+                        @foreach ($this->departmentOptions as $dept)
+                            <flux:select.option value="{{ $dept->id }}">{{ $dept->name }}</flux:select.option>
+                        @endforeach
+                    </flux:select>
+                    @if ($this->departmentOptions->isEmpty())
+                        <flux:text class="-mt-2 text-xs text-zinc-500">
+                            {{ __('Noch keine Abteilung angelegt — pflegen Sie diese unter „Abteilungen" in der Sidebar.') }}
+                        </flux:text>
+                    @endif
                 @endif
             </div>
 

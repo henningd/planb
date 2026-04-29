@@ -47,9 +47,11 @@
                     <flux:sidebar.item icon="map-pin" :href="route('locations.index')" :current="request()->routeIs('locations.*')" wire:navigate>
                         {{ __('Standorte') }}
                     </flux:sidebar.item>
-                    <flux:sidebar.item icon="rectangle-stack" :href="route('departments.index')" :current="request()->routeIs('departments.*')" wire:navigate>
-                        {{ __('Abteilungen') }}
-                    </flux:sidebar.item>
+                    @if (config('features.departments') && \Illuminate\Support\Facades\Route::has('departments.index'))
+                        <flux:sidebar.item icon="rectangle-stack" :href="route('departments.index')" :current="request()->routeIs('departments.*')" wire:navigate>
+                            {{ __('Abteilungen') }}
+                        </flux:sidebar.item>
+                    @endif
                     <flux:sidebar.item icon="user-group" :href="route('employees.index')" :current="request()->routeIs('employees.*')" wire:navigate>
                         {{ __('Mitarbeiter') }}
                     </flux:sidebar.item>
