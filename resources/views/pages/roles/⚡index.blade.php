@@ -194,9 +194,19 @@ new #[Title('Rollen')] class extends Component {
             </flux:subheading>
         </div>
 
-        <flux:button variant="primary" icon="plus" wire:click="openCreate" :disabled="! $this->hasCompany">
-            {{ __('Neue Rolle') }}
-        </flux:button>
+        <div class="flex shrink-0 gap-2">
+            <flux:button
+                variant="filled"
+                icon="arrow-down-tray"
+                :href="$this->hasCompany ? route('roles.export') : null"
+                :disabled="! $this->hasCompany"
+            >
+                {{ __('JSON-Export') }}
+            </flux:button>
+            <flux:button variant="primary" icon="plus" wire:click="openCreate" :disabled="! $this->hasCompany">
+                {{ __('Neue Rolle') }}
+            </flux:button>
+        </div>
     </div>
 
     @unless ($this->hasCompany)

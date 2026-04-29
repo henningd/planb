@@ -9,6 +9,7 @@ use App\Http\Middleware\EnsureTeamMembership;
 use App\Http\Middleware\SetTeamUrlDefaults;
 use App\Models\Company;
 use App\Models\HandbookShare;
+use App\Models\Role;
 use App\Models\System;
 use App\Scopes\CurrentCompanyScope;
 use App\Support\CurrentCompany;
@@ -330,6 +331,63 @@ Route::prefix('{current_team}')
                 ['Content-Type' => 'application/json'],
             );
         })->name('systems.export');
+
+        Route::get('roles/export', function () {
+            $company = CurrentCompany::resolve();
+            abort_unless($company, 404);
+
+            $roles = Role::with([
+                'employees',
+                'systems' => fn ($q) => $q->orderBy('systems.name'),
+                'systemTasks' => fn ($q) => $q->orderBy('system_tasks.title'),
+            ])
+                ->orderBy('sort')
+                ->orderBy('name')
+                ->get()
+                ->map(fn (Role $role) => [
+                    'name' => $role->name,
+                    'description' => $role->description,
+                    'sort' => $role->sort,
+                    'system_key' => $role->system_key,
+                    'is_system_role' => $role->isSystem(),
+                    'employees' => $role->employees->map(fn ($e) => [
+                        'first_name' => $e->first_name,
+                        'last_name' => $e->last_name,
+                        'email' => $e->email,
+                        'is_deputy' => (bool) ($e->pivot->is_deputy ?? false),
+                        'assigned_at' => $e->pivot->assigned_at,
+                    ])->values()->all(),
+                    'systems' => $role->systems->map(fn ($s) => [
+                        'name' => $s->name,
+                        'raci_role' => $s->pivot->raci_role,
+                        'note' => $s->pivot->note,
+                        'sort' => $s->pivot->sort,
+                    ])->values()->all(),
+                    'system_tasks' => $role->systemTasks->map(fn ($t) => [
+                        'title' => $t->title,
+                        'system_id' => $t->system_id,
+                        'raci_role' => $t->pivot->raci_role,
+                        'sort' => $t->pivot->sort,
+                    ])->values()->all(),
+                ])
+                ->values()
+                ->all();
+
+            $payload = [
+                'version' => 1,
+                'exported_at' => now()->toIso8601String(),
+                'company' => $company->name,
+                'roles' => $roles,
+            ];
+
+            $filename = 'planb-rollen-'.$company->team->slug.'-'.now()->format('Y-m-d').'.json';
+
+            return response()->streamDownload(
+                fn () => print (json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR)),
+                $filename,
+                ['Content-Type' => 'application/json'],
+            );
+        })->name('roles.export');
 
         Route::get('handbook/print', function () {
             $company = CurrentCompany::resolve();
