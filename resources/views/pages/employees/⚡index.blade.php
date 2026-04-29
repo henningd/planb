@@ -2,8 +2,11 @@
 
 use App\Enums\CrisisRole;
 use App\Models\Department;
+use App\Models\Role;
+use App\Models\System;
 use App\Models\Employee;
 use App\Models\Location;
+use App\Support\AssignmentSync;
 use App\Support\Employees\EmployeeExporter;
 use Flux\Flux;
 use Illuminate\Support\Facades\Auth;
@@ -37,6 +40,14 @@ new #[Title('Mitarbeiter')] class extends Component {
 
     /** @var array<int, string> */
     public array $manager_ids = [];
+
+    /**
+     * Rollen-Zuordnungen: Schlüssel = role_id, Wert = 'main' | 'deputy'.
+     * Fehlende Schlüssel = nicht zugeordnet.
+     *
+     * @var array<string, string>
+     */
+    public array $roleAssignments = [];
 
     public bool $is_key_personnel = false;
 
@@ -104,6 +115,123 @@ new #[Title('Mitarbeiter')] class extends Component {
         ];
     }
 
+    /**
+     * Bipartiter Graph Mitarbeiter ↔ Rollen.
+     *
+     * @return array{nodes: list<array<string, mixed>>, edges: list<array<string, mixed>>}
+     */
+    #[Computed]
+    public function rolesGraph(): array
+    {
+        $employees = Employee::query()->orderBy('last_name')->orderBy('first_name')->get();
+        $roles = Role::query()
+            ->with(['employees' => fn ($q) => $q->orderBy('last_name')->orderBy('first_name')])
+            ->orderBy('sort')
+            ->orderBy('name')
+            ->get();
+
+        $nodes = [];
+        foreach ($employees as $e) {
+            $line2 = trim((string) ($e->position ?? ''));
+            $label = $e->fullName().($line2 !== '' ? "\n{$line2}" : '');
+            $nodes[] = [
+                'data' => [
+                    'id' => 'emp-'.$e->id,
+                    'kind' => 'employee',
+                    'label' => $label,
+                    'is_key_personnel' => (bool) $e->is_key_personnel,
+                    'has_crisis_role' => $e->crisis_role !== null,
+                    'crisis_role' => $e->crisis_role?->label() ?? '',
+                ],
+            ];
+        }
+
+        foreach ($roles as $role) {
+            $nodes[] = [
+                'data' => [
+                    'id' => 'role-'.$role->id,
+                    'kind' => 'role',
+                    'label' => $role->name,
+                    'is_system' => $role->isSystem(),
+                ],
+            ];
+        }
+
+        $edges = [];
+        foreach ($roles as $role) {
+            foreach ($role->employees as $employee) {
+                $edges[] = [
+                    'data' => [
+                        'id' => 'edge-emp-'.$employee->id.'-role-'.$role->id,
+                        'source' => 'emp-'.$employee->id,
+                        'target' => 'role-'.$role->id,
+                        'is_deputy' => (bool) ($employee->pivot->is_deputy ?? false),
+                    ],
+                ];
+            }
+        }
+
+        return ['nodes' => $nodes, 'edges' => $edges];
+    }
+
+    /**
+     * Bipartiter Graph Mitarbeiter ↔ Systeme.
+     *
+     * @return array{nodes: list<array<string, mixed>>, edges: list<array<string, mixed>>}
+     */
+    #[Computed]
+    public function systemsGraph(): array
+    {
+        $employees = Employee::query()->orderBy('last_name')->orderBy('first_name')->get();
+        $systems = System::query()
+            ->with(['employees' => fn ($q) => $q->orderBy('last_name')->orderBy('first_name')])
+            ->orderBy('name')
+            ->get();
+
+        $nodes = [];
+        foreach ($employees as $e) {
+            $line2 = trim((string) ($e->position ?? ''));
+            $label = $e->fullName().($line2 !== '' ? "\n{$line2}" : '');
+            $nodes[] = [
+                'data' => [
+                    'id' => 'emp-'.$e->id,
+                    'kind' => 'employee',
+                    'label' => $label,
+                    'is_key_personnel' => (bool) $e->is_key_personnel,
+                    'has_crisis_role' => $e->crisis_role !== null,
+                    'crisis_role' => $e->crisis_role?->label() ?? '',
+                ],
+            ];
+        }
+
+        foreach ($systems as $system) {
+            $nodes[] = [
+                'data' => [
+                    'id' => 'sys-'.$system->id,
+                    'kind' => 'system',
+                    'label' => $system->name,
+                ],
+            ];
+        }
+
+        $edges = [];
+        foreach ($systems as $system) {
+            foreach ($system->employees as $employee) {
+                $edges[] = [
+                    'data' => [
+                        'id' => 'edge-emp-'.$employee->id.'-sys-'.$system->id,
+                        'source' => 'emp-'.$employee->id,
+                        'target' => 'sys-'.$system->id,
+                        'raci_role' => $employee->pivot->raci_role ?? null,
+                        'is_deputy' => (bool) ($employee->pivot->is_deputy ?? false),
+                    ],
+                ];
+            }
+        }
+
+        return ['nodes' => $nodes, 'edges' => $edges];
+    }
+
     #[Computed]
     public function employees()
     {
@@ -148,6 +276,15 @@ new #[Title('Mitarbeiter')] class extends Component {
         return Department::query()->orderBy('sort')->orderBy('name')->get();
     }
 
+    /**
+     * @return \Illuminate\Database\Eloquent\Collection<int, Role>
+     */
+    #[Computed]
+    public function availableRoles(): \Illuminate\Database\Eloquent\Collection
+    {
+        return Role::query()->orderBy('sort')->orderBy('name')->get();
+    }
+
     #[Computed]
     public function hasCompany(): bool
     {
@@ -187,7 +324,7 @@ new #[Title('Mitarbeiter')] class extends Component {
 
     public function openEdit(string $id): void
     {
-        $e = Employee::findOrFail($id);
+        $e = Employee::with(['managers', 'roles'])->findOrFail($id);
 
         $this->editingId = $e->id;
         $this->first_name = $e->first_name;
@@ -201,6 +338,9 @@ new #[Title('Mitarbeiter')] class extends Component {
         $this->location_id = $e->location_id;
         $this->emergency_contact = (string) $e->emergency_contact;
         $this->manager_ids = $e->managers->pluck('id')->all();
+        $this->roleAssignments = $e->roles->mapWithKeys(
+            fn ($role) => [$role->id => ((bool) ($role->pivot->is_deputy ?? false)) ? 'deputy' : 'main']
+        )->all();
         $this->is_key_personnel = (bool) $e->is_key_personnel;
         $this->crisis_role = $e->crisis_role?->value ?? '';
         $this->is_crisis_deputy = (bool) $e->is_crisis_deputy;
@@ -230,6 +370,8 @@ new #[Title('Mitarbeiter')] class extends Component {
             'emergency_contact' => ['nullable', 'string', 'max:1000'],
             'manager_ids' => ['array'],
             'manager_ids.*' => ['uuid', 'exists:employees,id'],
+            'roleAssignments' => ['array'],
+            'roleAssignments.*' => ['nullable', 'string', Rule::in(['', 'main', 'deputy'])],
             'is_key_personnel' => ['boolean'],
             'crisis_role' => ['nullable', 'string', Rule::in(collect(CrisisRole::cases())->pluck('value'))],
             'is_crisis_deputy' => ['boolean'],
@@ -261,6 +403,16 @@ new #[Title('Mitarbeiter')] class extends Component {
             ->all();
         unset($validated['manager_ids']);
 
+        $assignments = collect($validated['roleAssignments'] ?? [])
+            ->filter(fn ($mode) => $mode === 'main' || $mode === 'deputy')
+            ->all();
+        $validRoleIds = Role::query()->whereIn('id', array_keys($assignments))->pluck('id')->all();
+        $desiredRoles = [];
+        foreach ($validRoleIds as $rid) {
+            $desiredRoles[$rid] = ['is_deputy' => ($assignments[$rid] ?? 'main') === 'deputy'];
+        }
+        unset($validated['roleAssignments']);
+
         if ($this->editingId) {
             $employee = Employee::findOrFail($this->editingId);
             $employee->update($validated);
@@ -268,10 +420,11 @@ new #[Title('Mitarbeiter')] class extends Component {
             $employee = Employee::create($validated);
         }
         $employee->managers()->sync($managerIds);
+        AssignmentSync::sync($employee, $employee->roles(), $desiredRoles);
 
         Flux::modal('employee-form')->close();
         $this->resetForm();
-        unset($this->employees, $this->departments, $this->departmentOptions, $this->managerOptions, $this->locationOptions);
+        unset($this->employees, $this->departments, $this->departmentOptions, $this->managerOptions, $this->locationOptions, $this->availableRoles, $this->rolesGraph, $this->systemsGraph, $this->hierarchyGraph);
 
         Flux::toast(variant: 'success', text: __('Mitarbeiter gespeichert.'));
     }
@@ -287,7 +440,7 @@ new #[Title('Mitarbeiter')] class extends Component {
         if ($this->deletingId) {
             Employee::findOrFail($this->deletingId)->delete();
             $this->deletingId = null;
-            unset($this->employees, $this->departments, $this->departmentOptions, $this->managerOptions, $this->locationOptions);
+            unset($this->employees, $this->departments, $this->departmentOptions, $this->managerOptions, $this->locationOptions, $this->availableRoles, $this->rolesGraph, $this->systemsGraph, $this->hierarchyGraph);
             Flux::modal('employee-delete')->close();
             Flux::toast(variant: 'success', text: __('Mitarbeiter gelöscht.'));
         }
@@ -298,7 +451,7 @@ new #[Title('Mitarbeiter')] class extends Component {
         $this->reset([
             'editingId', 'first_name', 'last_name', 'position', 'department_id',
             'work_phone', 'mobile_phone', 'private_phone', 'email', 'location_id',
-            'emergency_contact', 'manager_ids', 'is_key_personnel',
+            'emergency_contact', 'manager_ids', 'roleAssignments', 'is_key_personnel',
             'crisis_role', 'is_crisis_deputy', 'notes',
         ]);
     }
@@ -363,6 +516,10 @@ new #[Title('Mitarbeiter')] class extends Component {
             $graph = $this->hierarchyGraph;
             $hasNodes = count($graph['nodes']) > 0;
             $hasEdges = count($graph['edges']) > 0;
+            $rolesGraph = $this->rolesGraph;
+            $systemsGraph = $this->systemsGraph;
+            $hasRolesEdges = count($rolesGraph['edges']) > 0;
+            $hasSystemsEdges = count($systemsGraph['edges']) > 0;
         @endphp
 
         {{-- Wechsel zwischen Liste und Hierarchie ausschließlich Client-seitig per Alpine —
@@ -372,9 +529,15 @@ new #[Title('Mitarbeiter')] class extends Component {
             x-data="{
                 viewMode: @js($viewMode),
                 cy: null,
+                cyRoles: null,
+                cySystems: null,
                 hSearch: '',
                 hDepartment: '',
                 hSelected: null,
+                rSearch: '',
+                rSelected: null,
+                sSearch: '',
+                sSelected: null,
                 ensureCytoscape() {
                     if (this.cy) return;
                     const start = () => {
@@ -391,23 +554,65 @@ new #[Title('Mitarbeiter')] class extends Component {
                     };
                     this.$nextTick(start);
                 },
+                ensureBipartite(which) {
+                    const target = which === 'roles' ? 'cyRoles' : 'cySystems';
+                    if (this[target]) return;
+                    const start = () => {
+                        if (!window.PlanB || !window.PlanB.initEmployeeBipartite) {
+                            requestAnimationFrame(start);
+                            return;
+                        }
+                        this[target] = window.PlanB.initEmployeeBipartite({
+                            containerId: which === 'roles' ? 'employee-roles-canvas' : 'employee-systems-canvas',
+                            nodes: which === 'roles' ? @js($rolesGraph['nodes']) : @js($systemsGraph['nodes']),
+                            edges: which === 'roles' ? @js($rolesGraph['edges']) : @js($systemsGraph['edges']),
+                            onSelect: (data) => {
+                                if (which === 'roles') { this.rSelected = data; }
+                                else { this.sSelected = data; }
+                            },
+                        });
+                    };
+                    this.$nextTick(start);
+                },
                 onShowHierarchy() {
-                    if (!this.cy) {
-                        this.ensureCytoscape();
-                    } else {
-                        this.$nextTick(() => { this.cy.resize(); this.cy.fit(); });
-                    }
+                    if (!this.cy) { this.ensureCytoscape(); }
+                    else { this.$nextTick(() => { this.cy.resize(); this.cy.fit(); }); }
+                },
+                onShowRoles() {
+                    if (!this.cyRoles) { this.ensureBipartite('roles'); }
+                    else { this.$nextTick(() => { this.cyRoles.cy.resize(); this.cyRoles.fit(); }); }
+                },
+                onShowSystems() {
+                    if (!this.cySystems) { this.ensureBipartite('systems'); }
+                    else { this.$nextTick(() => { this.cySystems.cy.resize(); this.cySystems.fit(); }); }
                 },
                 applyHierarchyFilter() {
                     if (!this.cy) return;
                     this.cy.applyFilter({ search: this.hSearch, department: this.hDepartment });
                 },
-                fit() { this.cy && this.cy.fit(); },
-                zoomIn() { this.cy && this.cy.zoomBy(1.5); },
-                zoomOut() { this.cy && this.cy.zoomBy(1 / 1.5); },
-                resetZoom() { this.cy && this.cy.resetZoom(); },
+                applyRolesFilter() { this.cyRoles && this.cyRoles.applyFilter({ search: this.rSearch }); },
+                applySystemsFilter() { this.cySystems && this.cySystems.applyFilter({ search: this.sSearch }); },
+                activeView() {
+                    if (this.viewMode === 'hierarchy') return this.cy;
+                    if (this.viewMode === 'roles') return this.cyRoles;
+                    if (this.viewMode === 'systems') return this.cySystems;
+                    return null;
+                },
+                fit() { const v = this.activeView(); v && v.fit(); },
+                zoomIn() { const v = this.activeView(); v && v.zoomBy(1.5); },
+                zoomOut() { const v = this.activeView(); v && v.zoomBy(1 / 1.5); },
+                resetZoom() { const v = this.activeView(); v && v.resetZoom(); },
             }"
-            x-init="$watch('viewMode', (val) => { if (val === 'hierarchy') onShowHierarchy(); }); if (viewMode === 'hierarchy') onShowHierarchy();"
+            x-init="
+                $watch('viewMode', (val) => {
+                    if (val === 'hierarchy') onShowHierarchy();
+                    if (val === 'roles') onShowRoles();
+                    if (val === 'systems') onShowSystems();
+                });
+                if (viewMode === 'hierarchy') onShowHierarchy();
+                if (viewMode === 'roles') onShowRoles();
+                if (viewMode === 'systems') onShowSystems();
+            "
         >
             <div class="mb-4 flex flex-wrap items-center gap-3">
                 <div class="flex items-center gap-1 rounded-lg bg-zinc-100 p-1 dark:bg-zinc-800" role="tablist" aria-label="{{ __('Ansicht') }}">
@@ -432,6 +637,28 @@ new #[Title('Mitarbeiter')] class extends Component {
                     >
                         <flux:icon name="share" class="size-4" />
                         {{ __('Hierarchie') }}
+                    </button>
+                    <button
+                        type="button"
+                        @click="viewMode = 'roles'"
+                        role="tab"
+                        :aria-selected="viewMode === 'roles' ? 'true' : 'false'"
+                        class="inline-flex items-center gap-1 rounded-md px-3 py-1 text-xs font-medium transition"
+                        :class="viewMode === 'roles' ? 'bg-white text-zinc-900 shadow dark:bg-zinc-700 dark:text-zinc-50' : 'text-zinc-600 dark:text-zinc-300'"
+                    >
+                        <flux:icon name="user-group" class="size-4" />
+                        {{ __('Rollen') }}
+                    </button>
+                    <button
+                        type="button"
+                        @click="viewMode = 'systems'"
+                        role="tab"
+                        :aria-selected="viewMode === 'systems' ? 'true' : 'false'"
+                        class="inline-flex items-center gap-1 rounded-md px-3 py-1 text-xs font-medium transition"
+                        :class="viewMode === 'systems' ? 'bg-white text-zinc-900 shadow dark:bg-zinc-700 dark:text-zinc-50' : 'text-zinc-600 dark:text-zinc-300'"
+                    >
+                        <flux:icon name="server-stack" class="size-4" />
+                        {{ __('Systeme') }}
                     </button>
                 </div>
 
@@ -536,6 +763,134 @@ new #[Title('Mitarbeiter')] class extends Component {
                                     </div>
                                 </template>
                                 <template x-if="!hSelected">
+                                    <div class="mt-2 text-xs text-zinc-500 dark:text-zinc-400">{{ __('Klicken Sie einen Knoten an, um Details zu sehen.') }}</div>
+                                </template>
+                            </div>
+                        </aside>
+                    </div>
+                @endif
+            </div>
+
+            <div x-show="viewMode === 'roles'" x-cloak>
+                @if ($this->employees->isEmpty())
+                    <div class="rounded-xl border border-zinc-200 bg-white px-5 py-12 text-center dark:border-zinc-700 dark:bg-zinc-900">
+                        <flux:text class="text-zinc-500 dark:text-zinc-400">{{ __('Noch keine Mitarbeiter angelegt.') }}</flux:text>
+                    </div>
+                @else
+                    <div wire:ignore class="grid gap-4 lg:grid-cols-[1fr_20rem]">
+                        <div class="rounded-xl border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-900">
+                            <div class="flex flex-wrap items-center gap-2 border-b border-zinc-100 p-3 dark:border-zinc-800">
+                                <flux:input
+                                    x-model.debounce.250ms="rSearch"
+                                    @input="applyRolesFilter()"
+                                    size="sm"
+                                    icon="magnifying-glass"
+                                    placeholder="{{ __('Suchen: Mitarbeiter oder Rolle …') }}"
+                                    class="w-60"
+                                />
+                                <div class="ml-auto flex items-center gap-0.5 rounded-lg bg-zinc-100 p-0.5 dark:bg-zinc-800">
+                                    <button type="button" class="rounded-md px-2 py-1 text-zinc-700 hover:bg-white dark:text-zinc-200 dark:hover:bg-zinc-700" @click="zoomOut()" title="{{ __('Verkleinern') }}">
+                                        <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M5 9.75A.75.75 0 0 1 5.75 9h8.5a.75.75 0 0 1 0 1.5h-8.5A.75.75 0 0 1 5 9.75Z"/></svg>
+                                    </button>
+                                    <button type="button" class="rounded-md px-2 py-1 text-xs font-semibold text-zinc-700 hover:bg-white dark:text-zinc-200 dark:hover:bg-zinc-700" @click="resetZoom()" title="{{ __('Zoom zurücksetzen') }}">1:1</button>
+                                    <button type="button" class="rounded-md px-2 py-1 text-zinc-700 hover:bg-white dark:text-zinc-200 dark:hover:bg-zinc-700" @click="zoomIn()" title="{{ __('Vergrößern') }}">
+                                        <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M10.75 5.75a.75.75 0 0 0-1.5 0V9h-3.5a.75.75 0 0 0 0 1.5h3.5v3.25a.75.75 0 0 0 1.5 0V10.5h3.5a.75.75 0 0 0 0-1.5h-3.5V5.75Z"/></svg>
+                                    </button>
+                                </div>
+                                <flux:button size="sm" variant="ghost" icon="arrows-pointing-out" @click="fit()">{{ __('Einpassen') }}</flux:button>
+                            </div>
+                            <div id="employee-roles-canvas" class="h-[640px] w-full"></div>
+                            @if (! $hasRolesEdges)
+                                <div class="border-t border-zinc-100 px-4 py-3 text-xs text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
+                                    {{ __('Noch keine Rollen-Zuordnungen erfasst — pflegen Sie diese unter „Rollen" oder direkt am Mitarbeiter.') }}
+                                </div>
+                            @endif
+                        </div>
+
+                        <aside class="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-900">
+                            <flux:heading size="sm">{{ __('Legende') }}</flux:heading>
+                            <ul class="mt-3 space-y-2 text-xs text-zinc-600 dark:text-zinc-300">
+                                <li class="flex items-center gap-2"><span class="inline-block h-3 w-5 rounded border-2" style="background:#fee2e2;border-color:#dc2626"></span>{{ __('Mitarbeiter mit Krisenrolle') }}</li>
+                                <li class="flex items-center gap-2"><span class="inline-block h-3 w-5 rounded border-2" style="background:#fef3c7;border-color:#d97706"></span>{{ __('Schlüsselperson') }}</li>
+                                <li class="flex items-center gap-2"><span class="inline-block h-3 w-5 rounded border-2" style="background:#eef2ff;border-color:#6366f1"></span>{{ __('Standard-Mitarbeiter') }}</li>
+                                <li class="flex items-center gap-2"><span class="inline-block h-3 w-5 rounded border-2" style="background:#dbeafe;border-color:#1d4ed8"></span>{{ __('System-Rolle (Pflicht)') }}</li>
+                                <li class="flex items-center gap-2"><span class="inline-block h-3 w-5 rounded border-2" style="background:#ecfeff;border-color:#0891b2"></span>{{ __('Eigene Rolle') }}</li>
+                                <li class="flex items-center gap-2"><svg viewBox="0 0 24 12" class="h-3 w-6"><path d="M2 6h17" stroke="#a855f7" stroke-width="2" stroke-dasharray="3 2" fill="none"/><path d="M22 6l-4-3v6z" fill="#a855f7"/></svg>{{ __('Stellvertretung') }}</li>
+                            </ul>
+
+                            <div class="mt-4 border-t border-zinc-100 pt-3 dark:border-zinc-800">
+                                <flux:heading size="sm">{{ __('Auswahl') }}</flux:heading>
+                                <template x-if="rSelected">
+                                    <div class="mt-2 space-y-1 text-sm">
+                                        <div class="font-semibold text-zinc-900 dark:text-zinc-100" x-text="rSelected.label.replace(/\n/g, ' — ')"></div>
+                                        <div class="text-xs text-zinc-500 dark:text-zinc-400" x-show="rSelected.kind === 'employee' && rSelected.has_crisis_role" x-text="'{{ __('Krisenrolle:') }} ' + rSelected.crisis_role"></div>
+                                        <div class="text-xs text-zinc-500 dark:text-zinc-400" x-show="rSelected.kind === 'role' && rSelected.is_system">{{ __('Pflichtrolle (System)') }}</div>
+                                    </div>
+                                </template>
+                                <template x-if="!rSelected">
+                                    <div class="mt-2 text-xs text-zinc-500 dark:text-zinc-400">{{ __('Klicken Sie einen Knoten an, um Details zu sehen.') }}</div>
+                                </template>
+                            </div>
+                        </aside>
+                    </div>
+                @endif
+            </div>
+
+            <div x-show="viewMode === 'systems'" x-cloak>
+                @if ($this->employees->isEmpty())
+                    <div class="rounded-xl border border-zinc-200 bg-white px-5 py-12 text-center dark:border-zinc-700 dark:bg-zinc-900">
+                        <flux:text class="text-zinc-500 dark:text-zinc-400">{{ __('Noch keine Mitarbeiter angelegt.') }}</flux:text>
+                    </div>
+                @else
+                    <div wire:ignore class="grid gap-4 lg:grid-cols-[1fr_20rem]">
+                        <div class="rounded-xl border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-900">
+                            <div class="flex flex-wrap items-center gap-2 border-b border-zinc-100 p-3 dark:border-zinc-800">
+                                <flux:input
+                                    x-model.debounce.250ms="sSearch"
+                                    @input="applySystemsFilter()"
+                                    size="sm"
+                                    icon="magnifying-glass"
+                                    placeholder="{{ __('Suchen: Mitarbeiter oder System …') }}"
+                                    class="w-60"
+                                />
+                                <div class="ml-auto flex items-center gap-0.5 rounded-lg bg-zinc-100 p-0.5 dark:bg-zinc-800">
+                                    <button type="button" class="rounded-md px-2 py-1 text-zinc-700 hover:bg-white dark:text-zinc-200 dark:hover:bg-zinc-700" @click="zoomOut()" title="{{ __('Verkleinern') }}">
+                                        <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M5 9.75A.75.75 0 0 1 5.75 9h8.5a.75.75 0 0 1 0 1.5h-8.5A.75.75 0 0 1 5 9.75Z"/></svg>
+                                    </button>
+                                    <button type="button" class="rounded-md px-2 py-1 text-xs font-semibold text-zinc-700 hover:bg-white dark:text-zinc-200 dark:hover:bg-zinc-700" @click="resetZoom()" title="{{ __('Zoom zurücksetzen') }}">1:1</button>
+                                    <button type="button" class="rounded-md px-2 py-1 text-zinc-700 hover:bg-white dark:text-zinc-200 dark:hover:bg-zinc-700" @click="zoomIn()" title="{{ __('Vergrößern') }}">
+                                        <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M10.75 5.75a.75.75 0 0 0-1.5 0V9h-3.5a.75.75 0 0 0 0 1.5h3.5v3.25a.75.75 0 0 0 1.5 0V10.5h3.5a.75.75 0 0 0 0-1.5h-3.5V5.75Z"/></svg>
+                                    </button>
+                                </div>
+                                <flux:button size="sm" variant="ghost" icon="arrows-pointing-out" @click="fit()">{{ __('Einpassen') }}</flux:button>
+                            </div>
+                            <div id="employee-systems-canvas" class="h-[640px] w-full"></div>
+                            @if (! $hasSystemsEdges)
+                                <div class="border-t border-zinc-100 px-4 py-3 text-xs text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
+                                    {{ __('Noch keine System-Zuordnungen erfasst — pflegen Sie diese unter „Systeme" am jeweiligen System.') }}
+                                </div>
+                            @endif
+                        </div>
+
+                        <aside class="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-900">
+                            <flux:heading size="sm">{{ __('Legende') }}</flux:heading>
+                            <ul class="mt-3 space-y-2 text-xs text-zinc-600 dark:text-zinc-300">
+                                <li class="flex items-center gap-2"><span class="inline-block h-3 w-5 rounded border-2" style="background:#fee2e2;border-color:#dc2626"></span>{{ __('Mitarbeiter mit Krisenrolle') }}</li>
+                                <li class="flex items-center gap-2"><span class="inline-block h-3 w-5 rounded border-2" style="background:#fef3c7;border-color:#d97706"></span>{{ __('Schlüsselperson') }}</li>
+                                <li class="flex items-center gap-2"><span class="inline-block h-3 w-5 rounded border-2" style="background:#eef2ff;border-color:#6366f1"></span>{{ __('Standard-Mitarbeiter') }}</li>
+                                <li class="flex items-center gap-2"><span class="inline-block h-3 w-5 rounded border-2" style="background:#f0fdf4;border-color:#16a34a"></span>{{ __('System') }}</li>
+                                <li class="flex items-center gap-2"><svg viewBox="0 0 24 12" class="h-3 w-6"><path d="M2 6h17" stroke="#a855f7" stroke-width="2" stroke-dasharray="3 2" fill="none"/><path d="M22 6l-4-3v6z" fill="#a855f7"/></svg>{{ __('Stellvertretung') }}</li>
+                            </ul>
+
+                            <div class="mt-4 border-t border-zinc-100 pt-3 dark:border-zinc-800">
+                                <flux:heading size="sm">{{ __('Auswahl') }}</flux:heading>
+                                <template x-if="sSelected">
+                                    <div class="mt-2 space-y-1 text-sm">
+                                        <div class="font-semibold text-zinc-900 dark:text-zinc-100" x-text="sSelected.label.replace(/\n/g, ' — ')"></div>
+                                        <div class="text-xs text-zinc-500 dark:text-zinc-400" x-show="sSelected.kind === 'employee' && sSelected.has_crisis_role" x-text="'{{ __('Krisenrolle:') }} ' + sSelected.crisis_role"></div>
+                                    </div>
+                                </template>
+                                <template x-if="!sSelected">
                                     <div class="mt-2 text-xs text-zinc-500 dark:text-zinc-400">{{ __('Klicken Sie einen Knoten an, um Details zu sehen.') }}</div>
                                 </template>
                             </div>
@@ -755,6 +1110,42 @@ new #[Title('Mitarbeiter')] class extends Component {
                                     {{ $candidate->nameLastFirst() }}@if ($candidate->position) <span class="text-zinc-500 dark:text-zinc-400">· {{ $candidate->position }}</span>@endif
                                 </span>
                             </label>
+                        @endforeach
+                    </div>
+                @endif
+            </flux:field>
+
+            <flux:field>
+                <flux:label>{{ __('Rollen') }}</flux:label>
+                <flux:description>
+                    {{ __('Mehrere Rollen möglich. Markieren Sie pro Rolle, ob die Person Hauptverantwortliche/r oder Stellvertretung ist.') }}
+                </flux:description>
+                @if ($this->availableRoles->isEmpty())
+                    <flux:text class="text-sm text-zinc-500">
+                        {{ __('Noch keine Rollen angelegt — pflegen Sie diese unter „Rollen" in der Sidebar.') }}
+                    </flux:text>
+                @else
+                    <div class="max-h-56 space-y-1 overflow-y-auto rounded-lg border border-zinc-200 p-3 dark:border-zinc-700">
+                        @foreach ($this->availableRoles as $role)
+                            <div
+                                wire:key="role-option-{{ $role->id }}"
+                                class="flex items-center justify-between gap-3 rounded px-1 py-0.5 text-sm hover:bg-zinc-50 dark:hover:bg-zinc-800"
+                            >
+                                <span class="flex items-center gap-2 text-zinc-700 dark:text-zinc-200">
+                                    {{ $role->name }}
+                                    @if ($role->isSystem())
+                                        <flux:badge color="blue" size="sm">{{ __('Pflichtrolle') }}</flux:badge>
+                                    @endif
+                                </span>
+                                <select
+                                    wire:model.live="roleAssignments.{{ $role->id }}"
+                                    class="rounded-md border border-zinc-200 bg-white px-2 py-1 text-xs dark:border-zinc-700 dark:bg-zinc-900"
+                                >
+                                    <option value="">{{ __('— nicht zugeordnet —') }}</option>
+                                    <option value="main">{{ __('Hauptperson') }}</option>
+                                    <option value="deputy">{{ __('Stellvertretung') }}</option>
+                                </select>
+                            </div>
                         @endforeach
                     </div>
                 @endif

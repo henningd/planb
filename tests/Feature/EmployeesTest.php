@@ -3,11 +3,70 @@
 use App\Models\Company;
 use App\Models\Employee;
 use App\Models\Location;
+use App\Models\Role;
 use App\Models\User;
 use App\Scopes\CurrentCompanyScope;
+use App\Support\AssignmentSync;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
+
+test('saving an employee syncs role assignments with deputy flag', function () {
+    $user = User::factory()->create();
+    $company = Company::factory()->for($user->currentTeam)->create();
+
+    $employee = Employee::factory()->for($company)->create();
+    $roleA = Role::withoutGlobalScope(CurrentCompanyScope::class)->create([
+        'company_id' => $company->id,
+        'name' => 'Werkstatt',
+        'sort' => 0,
+    ]);
+    $roleB = Role::withoutGlobalScope(CurrentCompanyScope::class)->create([
+        'company_id' => $company->id,
+        'name' => 'IT',
+        'sort' => 1,
+    ]);
+
+    Livewire\Livewire::actingAs($user->fresh())
+        ->test('pages::employees.index')
+        ->call('openEdit', $employee->id)
+        ->set("roleAssignments.{$roleA->id}", 'main')
+        ->set("roleAssignments.{$roleB->id}", 'deputy')
+        ->call('save')
+        ->assertHasNoErrors();
+
+    $employee->refresh()->load('roles');
+    expect($employee->roles)->toHaveCount(2);
+
+    $main = $employee->roles->firstWhere('id', $roleA->id);
+    $deputy = $employee->roles->firstWhere('id', $roleB->id);
+    expect((bool) $main->pivot->is_deputy)->toBeFalse()
+        ->and((bool) $deputy->pivot->is_deputy)->toBeTrue();
+});
+
+test('clearing a role assignment removes the link', function () {
+    $user = User::factory()->create();
+    $company = Company::factory()->for($user->currentTeam)->create();
+
+    $employee = Employee::factory()->for($company)->create();
+    $role = Role::withoutGlobalScope(CurrentCompanyScope::class)->create([
+        'company_id' => $company->id,
+        'name' => 'Werkstatt',
+        'sort' => 0,
+    ]);
+
+    AssignmentSync::attach($employee, $employee->roles(), $role->id, ['is_deputy' => false]);
+    expect($employee->fresh()->roles)->toHaveCount(1);
+
+    Livewire\Livewire::actingAs($user->fresh())
+        ->test('pages::employees.index')
+        ->call('openEdit', $employee->id)
+        ->set("roleAssignments.{$role->id}", '')
+        ->call('save')
+        ->assertHasNoErrors();
+
+    expect($employee->fresh()->roles)->toHaveCount(0);
+});
 
 test('employees are tenant-scoped', function () {
     $user = User::factory()->create();
