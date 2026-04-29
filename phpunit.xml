@@ -32,5 +32,15 @@
         <env name="PULSE_ENABLED" value="false"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>
+        <!-- Feature-Flags: alle Module für die Test-Suite zwingend aktiv,
+             damit Tests unabhängig von der lokalen .env durchlaufen. -->
+        <env name="FEATURE_COMPLIANCE_ENABLED" value="true" force="true"/>
+        <env name="FEATURE_DEPARTMENTS_ENABLED" value="true" force="true"/>
+        <env name="FEATURE_DEPENDENCIES_ENABLED" value="true" force="true"/>
+        <env name="FEATURE_EMPLOYEE_GRAPH_TABS_ENABLED" value="true" force="true"/>
+        <env name="FEATURE_INCIDENT_MODE_ENABLED" value="true" force="true"/>
+        <env name="FEATURE_LESSONS_LEARNED_ENABLED" value="true" force="true"/>
+        <env name="FEATURE_RISK_REGISTER_ENABLED" value="true" force="true"/>
+        <env name="FEATURE_MONITORING_API_ENABLED" value="true" force="true"/>
     </php>
 </phpunit>
