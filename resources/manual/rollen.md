@@ -2,7 +2,7 @@
 
 Eine Rolle ist eine Funktion, kein Mensch. „IT-Leitung" ist eine Rolle — sie kann von Frau Meier besetzt sein und morgen von Herrn Schmidt, ohne dass Verträge oder Pläne neu geschrieben werden. Genau das macht Rollen so mächtig in Krisensituationen.
 
-Erreichbar über die Sidebar **„Notfallhandbuch → Rollen"**.
+Erreichbar über die Sidebar **„Notfallhandbuch → Abteilungen / Rollen"**.
 
 ## Die fünf Pflichtrollen
 

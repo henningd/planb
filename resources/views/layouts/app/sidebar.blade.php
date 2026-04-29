@@ -54,7 +54,7 @@
                         {{ __('Mitarbeiter') }}
                     </flux:sidebar.item>
                     <flux:sidebar.item icon="identification" :href="route('roles.index')" :current="request()->routeIs('roles.*')" wire:navigate>
-                        {{ __('Rollen') }}
+                        {{ __('Abteilungen / Rollen') }}
                     </flux:sidebar.item>
                     <flux:sidebar.item icon="wrench-screwdriver" :href="route('service-providers.index')" :current="request()->routeIs('service-providers.*')" wire:navigate>
                         {{ __('Dienstleister') }}
