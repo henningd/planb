@@ -189,22 +189,22 @@ new #[Title('Recovery-Zeitplan')] class extends Component {
                                     >{{ $system->name }}</a>
                                 </div>
                                 <div class="relative h-7 rounded bg-zinc-50 dark:bg-zinc-800/60">
-                                    {{-- Layer 1: graue „Sichtbarkeits-Verlängerung" — sorgt für Mindest-Breite 28 px,
-                                         damit selbst sehr kurze Wiederanlauf-Zeiten klick- und sichtbar bleiben.
+                                    {{-- Layer 1: graue „Sichtbarkeits-Verlängerung" — sorgt für Mindest-Breite 120 px,
+                                         damit Symbol, Zeit und i-Button bei jeder Bar-Länge nebeneinander Platz haben.
                                          Diagonale Schraffur signalisiert: „dies ist Fülle, nicht echte Dauer". --}}
                                     <div
-                                        class="absolute top-0 h-full min-w-[28px] rounded"
+                                        class="absolute top-0 h-full min-w-[120px] rounded"
                                         style="margin-left: {{ $marginLeft }}%; width: {{ $width }}%; background-image: repeating-linear-gradient(45deg, rgb(161 161 170 / 0.55), rgb(161 161 170 / 0.55) 4px, rgb(212 212 216 / 0.55) 4px, rgb(212 212 216 / 0.55) 8px);"
                                         aria-hidden="true"
                                     ></div>
 
-                                    {{-- Layer 2: farbiger Bar = exakte proportionale Dauer (kein min-width).
+                                    {{-- Layer 2: farbiger Bar = proportionale Dauer mit Mindestbreite 120 px,
+                                         sodass Icon + Zeit + Abstand + i-Button immer nebeneinander sichtbar sind.
                                          Äußeres Div trägt nur die Box-Maße + Hintergrund, das innere Flex-Div
                                          enthält Icon und Label und wird durch overflow:hidden geclippt, wenn
-                                         der Bar zu schmal wird. Padding/Flex am äußeren Div würde sonst die
-                                         expliziten Width-% durch Inhalts-Breite überschreiben. --}}
+                                         der Bar zu schmal wird. --}}
                                     <div
-                                        class="absolute top-0 h-full overflow-hidden rounded shadow-sm"
+                                        class="absolute top-0 h-full min-w-[120px] overflow-hidden rounded shadow-sm"
                                         style="margin-left: {{ $marginLeft }}%; width: {{ $width }}%; background-color: {{ $entry['level_color'] }};"
                                         title="{{ $tooltip }} | {{ $entry['level_label'] }}"
                                     >
@@ -224,7 +224,7 @@ new #[Title('Recovery-Zeitplan')] class extends Component {
 
                                     {{-- Layer 3: Info-Button am rechten Bar-Ende. Hover = Details, Klick = Details bleiben sichtbar. --}}
                                     <div
-                                        class="pointer-events-none absolute top-0 h-full min-w-[28px]"
+                                        class="pointer-events-none absolute top-0 h-full min-w-[120px]"
                                         style="margin-left: {{ $marginLeft }}%; width: {{ $width }}%;"
                                     >
                                         <div
