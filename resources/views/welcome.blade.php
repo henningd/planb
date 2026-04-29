@@ -198,8 +198,8 @@
                 <a href="#loesung" class="hover:text-slate-900 transition">Lösung</a>
                 <a href="#features" class="hover:text-slate-900 transition">Funktionen</a>
                 <a href="#compliance" class="hover:text-slate-900 transition">Compliance</a>
+                <a href="{{ route('pricing.show') }}" class="hover:text-slate-900 transition">Preise</a>
                 <a href="#zielgruppen" class="hover:text-slate-900 transition">Zielgruppen</a>
-                <a href="#ablauf" class="hover:text-slate-900 transition">Ablauf</a>
             </nav>
 
             <div class="flex items-center gap-3">
@@ -876,6 +876,7 @@
                     <div class="text-sm font-semibold text-slate-900">Produkt</div>
                     <ul class="mt-4 space-y-3 text-sm text-slate-600">
                         <li><a href="#features" class="hover:text-slate-900 transition">Funktionen</a></li>
+                        <li><a href="{{ route('pricing.show') }}" class="hover:text-slate-900 transition">Preise</a></li>
                         <li><a href="#zielgruppen" class="hover:text-slate-900 transition">Zielgruppen</a></li>
                         <li><a href="#ablauf" class="hover:text-slate-900 transition">So funktioniert es</a></li>
                         <li><a href="#kontakt" class="hover:text-slate-900 transition">Demo anfragen</a></li>

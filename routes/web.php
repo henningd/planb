@@ -167,6 +167,14 @@ Route::get('/status', function () {
     ]);
 })->name('legal.status');
 
+Route::get('/preise', function () {
+    return view('pricing', [
+        'productName' => SystemSetting::get('platform_name') ?: config('app.name', 'PlanB'),
+        'canRegister' => Features::enabled(Features::registration())
+            && SystemSetting::get('registration_enabled', true),
+    ]);
+})->name('pricing.show');
+
 Route::get('/funktionen/{slug}', function (string $slug) {
     $feature = FeatureCatalog::find($slug);
     abort_unless($feature !== null, 404);
