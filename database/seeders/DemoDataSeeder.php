@@ -363,6 +363,16 @@ class DemoDataSeeder extends Seeder
             ],
         ];
 
+        // Aus dem Seed-Datensatz die Pflichtrollen-Information extrahieren
+        // (`crisis_role` + `is_crisis_deputy`) und nach dem Anlegen des
+        // Employees als employee_role-Pivot zur passenden System-Rolle
+        // ablegen. Die System-Rollen werden vom CompanyObserver via
+        // SystemRoleProvisioner pro Firma bereitgestellt.
+        $systemRoleByKey = Role::withoutGlobalScope(CurrentCompanyScope::class)
+            ->where('company_id', $company->id)
+            ->whereNotNull('system_key')
+            ->pluck('id', 'system_key');
+
         foreach ($employees as $data) {
             $locationName = $data['location_name'] ?? null;
             unset($data['location_name']);
@@ -372,13 +382,26 @@ class DemoDataSeeder extends Seeder
             unset($data['department']);
             $data['department_id'] = $deptName !== null ? ($departmentIdByName[$deptName] ?? null) : null;
 
-            Employee::withoutGlobalScope(CurrentCompanyScope::class)->updateOrCreate(
+            $crisisRole = $data['crisis_role'] ?? null;
+            $isDeputy = (bool) ($data['is_crisis_deputy'] ?? false);
+            unset($data['crisis_role'], $data['is_crisis_deputy']);
+
+            $employee = Employee::withoutGlobalScope(CurrentCompanyScope::class)->updateOrCreate(
                 [
                     'company_id' => $company->id,
                     'email' => $data['email'],
                 ],
                 array_merge(['company_id' => $company->id], $data),
             );
+
+            if ($crisisRole instanceof CrisisRole && isset($systemRoleByKey[$crisisRole->value])) {
+                AssignmentSync::attach(
+                    $employee,
+                    $employee->roles(),
+                    $systemRoleByKey[$crisisRole->value],
+                    ['is_deputy' => $isDeputy],
+                );
+            }
         }
 
         // Vorgesetzten-Hierarchie für die Hierarchie-Visualisierung.

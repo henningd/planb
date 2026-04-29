@@ -71,9 +71,9 @@ class EmployeeExporter
             'email' => $e->email,
             'emergency_contact' => $e->emergency_contact,
             'is_key_personnel' => (bool) $e->is_key_personnel,
-            'crisis_role' => $e->crisis_role?->value,
-            'crisis_role_label' => $e->crisis_role?->label(),
-            'is_crisis_deputy' => (bool) $e->is_crisis_deputy,
+            'crisis_role' => $e->crisisRole()?->value,
+            'crisis_role_label' => $e->crisisRole()?->label(),
+            'is_crisis_deputy' => $e->isCrisisDeputy(),
             'notes' => $e->notes,
             'managers' => $e->managers
                 ->map(fn (Employee $m) => ['id' => $m->id, 'name' => $m->nameLastFirst()])

@@ -13,16 +13,32 @@
         $aktenzeichen = sprintf('Az.: NHB-%s-%s-%s', $companyInitials !== '' ? $companyInitials : 'X', now()->format('Y'), $versionString);
         $hq = $company->locations->firstWhere('is_headquarters', true) ?? $company->locations->first();
         $approver = $currentVersion?->approvedBy?->fullName() ?? $currentVersion?->approved_by_name;
-        $crisisHolders = $company->employees
-            ->filter(fn ($e) => $e->crisis_role !== null)
-            ->sortBy(fn ($e) => sprintf('%d-%d', match ($e->crisis_role->value) {
-                'management' => 1,
-                'emergency_officer' => 2,
-                'it_lead' => 3,
-                'dpo' => 4,
-                'communications_lead' => 5,
-                default => 9,
-            }, $e->is_crisis_deputy ? 1 : 0));
+        // Pflichtrollen-Inhaber: aus den employee_role-Pivot-Zuweisungen
+        // zu System-Rollen (role.system_key !== null) abgeleitet. Ein
+        // Mitarbeiter mit mehreren System-Rollen erscheint mehrfach,
+        // sortiert nach Rolle und Hauptperson-vor-Vertretung.
+        $crisisHolders = collect();
+        foreach ($company->employees as $emp) {
+            foreach ($emp->crisisRoleAssignments() as $sysRole) {
+                $enum = \App\Enums\CrisisRole::tryFrom($sysRole->system_key);
+                if ($enum === null) {
+                    continue;
+                }
+                $crisisHolders->push([
+                    'employee' => $emp,
+                    'role' => $enum,
+                    'is_deputy' => (bool) ($sysRole->pivot->is_deputy ?? false),
+                ]);
+            }
+        }
+        $crisisHolders = $crisisHolders->sortBy(fn ($h) => sprintf('%d-%d', match ($h['role']->value) {
+            'management' => 1,
+            'emergency_officer' => 2,
+            'it_lead' => 3,
+            'dpo' => 4,
+            'communications_lead' => 5,
+            default => 9,
+        }, $h['is_deputy'] ? 1 : 0))->values();
         $authorities = $providers->filter(fn ($p) => $p->type?->isAuthority() ?? false);
         $externalProviders = $providers->reject(fn ($p) => $p->type?->isAuthority() ?? false);
         $emblemPathPublic = public_path('wappen.png');
@@ -742,11 +758,12 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach ($crisisHolders as $employee)
+                    @foreach ($crisisHolders as $holder)
+                        @php($employee = $holder['employee'])
                         <tr>
                             <td>
-                                <strong>{{ $employee->crisis_role->label() }}</strong>
-                                <div class="role-function">{{ $employee->is_crisis_deputy ? 'Vertretung' : 'Hauptperson' }}</div>
+                                <strong>{{ $holder['role']->label() }}</strong>
+                                <div class="role-function">{{ $holder['is_deputy'] ? 'Vertretung' : 'Hauptperson' }}</div>
                             </td>
                             <td>
                                 {{ $employee->fullName() }}
@@ -809,7 +826,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach ($company->employees->where('is_key_personnel', true)->merge($company->employees->whereNotNull('crisis_role'))->unique('id') as $emp)
+                    @foreach ($company->employees->where('is_key_personnel', true)->merge($company->employees->filter(fn ($e) => $e->crisisRoleAssignments()->isNotEmpty()))->unique('id') as $emp)
                         <tr>
                             <td><strong>{{ $emp->fullName() }}</strong></td>
                             <td>{{ $emp->position ?? '—' }}</td>
@@ -1458,7 +1475,8 @@
         <p>Gemäß <em>Art. 33 DSGVO</em> ist eine Meldung an die zuständige Aufsichtsbehörde innerhalb von 72 Stunden ab Kenntnis vorzunehmen, sofern ein Risiko für die Rechte und Freiheiten Betroffener besteht. Bei hohem Risiko sind zusätzlich die Betroffenen ohne unangemessene Verzögerung zu informieren <em>(Art. 34 DSGVO)</em>.</p>
         <table class="meta-table">
             <tr><th>Zuständige Aufsichtsbehörde</th><td>{{ $company->data_protection_authority_name ?? '—' }}@if ($company->data_protection_authority_phone) &middot; Tel.: {{ $company->data_protection_authority_phone }}@endif@if ($company->data_protection_authority_website)<br>{{ $company->data_protection_authority_website }}@endif</td></tr>
-            @php($dpo = $crisisHolders->firstWhere('crisis_role.value', 'dpo'))
+            @php($dpoHolder = $crisisHolders->first(fn ($h) => $h['role']->value === 'dpo' && ! $h['is_deputy']) ?? $crisisHolders->first(fn ($h) => $h['role']->value === 'dpo'))
+            @php($dpo = $dpoHolder['employee'] ?? null)
             <tr><th>Datenschutzbeauftragte/r</th><td>{{ $dpo?->fullName() ?? '—' }}@if ($dpo) &middot; {{ $dpo->mobile_phone }} &middot; {{ $dpo->email }}@endif</td></tr>
         </table>
 

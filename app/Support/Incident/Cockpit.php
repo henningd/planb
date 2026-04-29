@@ -8,6 +8,7 @@ use App\Models\Company;
 use App\Models\Employee;
 use App\Models\IncidentReport;
 use App\Models\IncidentReportObligation;
+use App\Models\Role;
 use App\Models\ScenarioRun;
 use App\Models\System;
 use App\Models\SystemTask;
@@ -71,25 +72,25 @@ class Cockpit
      */
     private static function crisisStaff(Company $company): array
     {
-        $employees = Employee::query()
+        // Lädt die fünf System-Rollen der Firma (eine pro CrisisRole)
+        // mit ihren aktiven Mitarbeiter-Zuweisungen inkl. is_deputy-Flag.
+        $systemRoles = Role::query()
             ->where('company_id', $company->id)
-            ->whereNotNull('crisis_role')
-            ->orderBy('last_name')
-            ->orderBy('first_name')
-            ->get();
-
-        $byRole = $employees->groupBy(fn (Employee $employee) => $employee->crisis_role?->value);
+            ->whereNotNull('system_key')
+            ->with(['employees' => fn ($q) => $q->orderBy('last_name')->orderBy('first_name')])
+            ->get()
+            ->keyBy('system_key');
 
         $result = [];
         foreach (CrisisRole::cases() as $role) {
-            /** @var Collection<int, Employee> $forRole */
-            $forRole = $byRole->get($role->value, collect());
+            $systemRole = $systemRoles->get($role->value);
+            $assignments = $systemRole?->employees ?? collect();
 
             $result[] = [
                 'role' => $role,
                 'role_label' => $role->label(),
-                'main' => $forRole->firstWhere('is_crisis_deputy', false),
-                'deputies' => $forRole->where('is_crisis_deputy', true)->values(),
+                'main' => $assignments->firstWhere(fn (Employee $e) => ! ($e->pivot->is_deputy ?? false)),
+                'deputies' => $assignments->filter(fn (Employee $e) => (bool) ($e->pivot->is_deputy ?? false))->values(),
             ];
         }
 

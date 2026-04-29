@@ -71,15 +71,30 @@ new #[Title('Dashboard')] class extends Component
             CrisisRole::CommunicationsLead->value => 5,
         ];
 
-        return Employee::query()
-            ->whereNotNull('crisis_role')
-            ->get()
-            ->sortBy(fn (Employee $e) => sprintf(
-                '%d-%d',
-                $order[$e->crisis_role->value] ?? 99,
-                $e->is_crisis_deputy ? 1 : 0,
-            ))
-            ->values();
+        // Liefert eine Liste von {employee, role, is_deputy}-Einträgen,
+        // sortiert nach Rolle und Hauptperson-vor-Vertretung. Ein
+        // Mitarbeiter mit mehreren System-Rollen erscheint mehrfach.
+        $holders = collect();
+        $employees = Employee::query()->with('roles')->get();
+        foreach ($employees as $emp) {
+            foreach ($emp->crisisRoleAssignments() as $sysRole) {
+                $enum = CrisisRole::tryFrom($sysRole->system_key);
+                if ($enum === null) {
+                    continue;
+                }
+                $holders->push([
+                    'employee' => $emp,
+                    'role' => $enum,
+                    'is_deputy' => (bool) ($sysRole->pivot->is_deputy ?? false),
+                ]);
+            }
+        }
+
+        return $holders->sortBy(fn (array $h) => sprintf(
+            '%d-%d',
+            $order[$h['role']->value] ?? 99,
+            $h['is_deputy'] ? 1 : 0,
+        ))->values();
     }
 
     /**
@@ -389,14 +404,15 @@ new #[Title('Dashboard')] class extends Component
                     {{ __('Alle Mitarbeiter') }}
                 </flux:link>
             </div>
-            @forelse ($this->crisisRoleHolders as $employee)
+            @forelse ($this->crisisRoleHolders as $holder)
+                @php($employee = $holder['employee'])
                 <div class="flex items-center justify-between gap-4 border-b border-zinc-100 px-5 py-4 last:border-b-0 dark:border-zinc-800">
                     <div class="flex items-center gap-3">
                         <flux:avatar :name="$employee->fullName()" size="sm" />
                         <div>
                             <div class="flex items-center gap-2">
                                 <span class="font-medium">{{ $employee->fullName() }}</span>
-                                @if ($employee->is_crisis_deputy)
+                                @if ($holder['is_deputy'])
                                     <flux:badge color="zinc" size="sm">{{ __('Vertretung') }}</flux:badge>
                                 @endif
                             </div>
@@ -406,7 +422,7 @@ new #[Title('Dashboard')] class extends Component
                         </div>
                     </div>
                     <span data-severity-icon="shield-exclamation">
-                        <flux:badge color="red" size="sm" icon="shield-exclamation">{{ $employee->crisis_role->label() }}</flux:badge>
+                        <flux:badge color="red" size="sm" icon="shield-exclamation">{{ $holder['role']->label() }}</flux:badge>
                     </span>
                 </div>
             @empty

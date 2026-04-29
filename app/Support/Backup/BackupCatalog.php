@@ -107,6 +107,11 @@ class BackupCatalog
                 'mode' => 'replace',
                 'order' => 20, // nach locations
                 'id_remap' => ['location_id' => 'locations'],
+                // Pflichtrollen liegen seit dem Refactoring im
+                // employee_role-Pivot zur passenden System-Rolle. Alte
+                // Industry-Template-Payloads enthalten die Felder noch und
+                // müssen beim Import einfach ignoriert werden.
+                'strip_on_insert' => ['crisis_role', 'is_crisis_deputy'],
                 // Hinweis: Manager-Beziehungen (employee_manager-Pivot) werden
                 // im Backup-Export aktuell nicht mit transportiert. Wenn das
                 // benötigt wird, muss der Exporter/Importer um Pivot-Support

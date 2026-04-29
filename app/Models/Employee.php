@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Support\Collection;
 
 #[Fillable([
     'company_id',
@@ -26,14 +27,64 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
     'location_id',
     'emergency_contact',
     'is_key_personnel',
-    'crisis_role',
-    'is_crisis_deputy',
     'notes',
 ])]
 class Employee extends Model
 {
     /** @use HasFactory<EmployeeFactory> */
     use BelongsToCurrentCompany, HasFactory, HasUuids, LogsAudit;
+
+    /**
+     * Pflichtrolle aus den Rollen-Zuordnungen ableiten — die erste
+     * zugeordnete System-Rolle (mit gesetztem `system_key`) gilt als
+     * primäre Krisenrolle. Mehrfachzuweisungen sind möglich; UI-
+     * Konsumenten, die alle anzeigen wollen, iterieren über
+     * {@see crisisRoleAssignments()}.
+     */
+    public function crisisRole(): ?CrisisRole
+    {
+        $role = $this->resolveSystemRole();
+        if ($role === null || $role->system_key === null) {
+            return null;
+        }
+
+        return CrisisRole::tryFrom($role->system_key);
+    }
+
+    /**
+     * Ist die Person Vertretung in der primären System-Rolle?
+     */
+    public function isCrisisDeputy(): bool
+    {
+        $role = $this->resolveSystemRole();
+
+        return (bool) ($role?->pivot?->is_deputy ?? false);
+    }
+
+    /**
+     * Alle System-Rollen, denen die Person aktuell zugeordnet ist —
+     * inklusive Pivot mit is_deputy. Beibehält die Reihenfolge der
+     * `roles`-Relation (sort, name).
+     *
+     * @return Collection<int, Role>
+     */
+    public function crisisRoleAssignments(): Collection
+    {
+        if (! $this->relationLoaded('roles')) {
+            $this->load('roles');
+        }
+
+        return $this->roles->filter(fn (Role $r) => $r->system_key !== null)->values();
+    }
+
+    /**
+     * Erste System-Rolle (sortiert nach sort/name) — Helper für die
+     * Backward-kompatiblen single-value Accessoren.
+     */
+    private function resolveSystemRole(): ?Role
+    {
+        return $this->crisisRoleAssignments()->first();
+    }
 
     public function fullName(): string
     {
@@ -151,8 +202,6 @@ class Employee extends Model
     {
         return [
             'is_key_personnel' => 'boolean',
-            'is_crisis_deputy' => 'boolean',
-            'crisis_role' => CrisisRole::class,
         ];
     }
 }

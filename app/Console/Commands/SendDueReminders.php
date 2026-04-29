@@ -91,8 +91,11 @@ class SendDueReminders extends Command
 
         $officer = Employee::withoutGlobalScope(CurrentCompanyScope::class)
             ->where('company_id', $company->id)
-            ->where('crisis_role', CrisisRole::EmergencyOfficer->value)
-            ->where('is_crisis_deputy', false)
+            ->whereHas('roles', function ($q) {
+                $q->where('roles.system_key', CrisisRole::EmergencyOfficer->value)
+                    ->where('employee_role.is_deputy', false)
+                    ->whereNull('employee_role.removed_at');
+            })
             ->first();
 
         if (! $officer || ! $officer->email) {

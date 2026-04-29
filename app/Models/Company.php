@@ -198,27 +198,32 @@ class Company extends Model
             ->first();
     }
 
+    /**
+     * Liefert den Mitarbeiter, der die System-Rolle (Pflichtrolle) gemäß
+     * `system_key` aktuell besetzt — Hauptperson oder Vertretung,
+     * gesteuert über $deputy.
+     */
     public function crisisRoleHolder(CrisisRole $role, bool $deputy = false): ?Employee
     {
         return Employee::query()
             ->where('company_id', $this->id)
-            ->where('crisis_role', $role->value)
-            ->where('is_crisis_deputy', $deputy)
+            ->whereHas('roles', function ($q) use ($role, $deputy) {
+                $q->where('roles.system_key', $role->value)
+                    ->where('employee_role.is_deputy', $deputy)
+                    ->whereNull('employee_role.removed_at');
+            })
             ->first();
     }
 
     /**
-     * Hauptansprechperson der Firma: Mitarbeiter mit Krisenrolle „Geschäftsführung"
-     * (Hauptperson, nicht Vertretung). Fällt zurück auf irgendeinen Geschäftsführungs-
-     * Mitarbeiter, wenn keine Hauptperson markiert ist.
+     * Hauptansprechperson der Firma: Mitarbeiter mit Pflichtrolle
+     * „Geschäftsführung" (Hauptperson). Fällt zurück auf die Vertretung,
+     * wenn keine Hauptperson zugewiesen ist.
      */
     public function primaryContact(): ?Employee
     {
         return $this->crisisRoleHolder(CrisisRole::Management)
-            ?? Employee::query()
-                ->where('company_id', $this->id)
-                ->where('crisis_role', CrisisRole::Management->value)
-                ->first();
+            ?? $this->crisisRoleHolder(CrisisRole::Management, true);
     }
 
     public function hasPrimaryContact(): bool

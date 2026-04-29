@@ -1,6 +1,5 @@
 <?php
 
-use App\Enums\CrisisRole;
 use App\Models\Department;
 use App\Models\Role;
 use App\Models\System;
@@ -51,10 +50,6 @@ new #[Title('Mitarbeiter')] class extends Component {
 
     public bool $is_key_personnel = false;
 
-    public string $crisis_role = '';
-
-    public bool $is_crisis_deputy = false;
-
     public string $notes = '';
 
     public ?string $deletingId = null;
@@ -89,8 +84,8 @@ new #[Title('Mitarbeiter')] class extends Component {
                     'label' => $label,
                     'department' => (string) ($e->department?->name ?? ''),
                     'is_key_personnel' => (bool) $e->is_key_personnel,
-                    'has_crisis_role' => $e->crisis_role !== null,
-                    'crisis_role' => $e->crisis_role?->label() ?? '',
+                    'has_crisis_role' => $e->crisisRole() !== null,
+                    'crisis_role' => $e->crisisRole()?->label() ?? '',
                 ],
             ];
         })->all();
@@ -140,8 +135,8 @@ new #[Title('Mitarbeiter')] class extends Component {
                     'kind' => 'employee',
                     'label' => $label,
                     'is_key_personnel' => (bool) $e->is_key_personnel,
-                    'has_crisis_role' => $e->crisis_role !== null,
-                    'crisis_role' => $e->crisis_role?->label() ?? '',
+                    'has_crisis_role' => $e->crisisRole() !== null,
+                    'crisis_role' => $e->crisisRole()?->label() ?? '',
                 ],
             ];
         }
@@ -213,8 +208,8 @@ new #[Title('Mitarbeiter')] class extends Component {
                     'kind' => 'employee',
                     'label' => $label,
                     'is_key_personnel' => (bool) $e->is_key_personnel,
-                    'has_crisis_role' => $e->crisis_role !== null,
-                    'crisis_role' => $e->crisis_role?->label() ?? '',
+                    'has_crisis_role' => $e->crisisRole() !== null,
+                    'crisis_role' => $e->crisisRole()?->label() ?? '',
                 ],
             ];
         }
@@ -404,8 +399,6 @@ new #[Title('Mitarbeiter')] class extends Component {
             fn ($role) => [$role->id => ((bool) ($role->pivot->is_deputy ?? false)) ? 'deputy' : 'main']
         )->all();
         $this->is_key_personnel = (bool) $e->is_key_personnel;
-        $this->crisis_role = $e->crisis_role?->value ?? '';
-        $this->is_crisis_deputy = (bool) $e->is_crisis_deputy;
         $this->notes = (string) $e->notes;
 
         Flux::modal('employee-form')->show();
@@ -435,27 +428,8 @@ new #[Title('Mitarbeiter')] class extends Component {
             'roleAssignments' => ['array'],
             'roleAssignments.*' => ['nullable', 'string', Rule::in(['', 'main', 'deputy'])],
             'is_key_personnel' => ['boolean'],
-            'crisis_role' => ['nullable', 'string', Rule::in(collect(CrisisRole::cases())->pluck('value'))],
-            'is_crisis_deputy' => ['boolean'],
             'notes' => ['nullable', 'string', 'max:2000'],
         ]);
-
-        if (! empty($validated['crisis_role'])) {
-            $conflict = Employee::query()
-                ->where('crisis_role', $validated['crisis_role'])
-                ->where('is_crisis_deputy', $validated['is_crisis_deputy'] ?? false)
-                ->when($this->editingId, fn ($q) => $q->where('id', '!=', $this->editingId))
-                ->exists();
-
-            if ($conflict) {
-                $this->addError('crisis_role', __('Diese Krisenrolle ist bereits vergeben. Lösen Sie zuerst die andere Zuordnung oder markieren Sie diese Person als Vertretung.'));
-
-                return;
-            }
-        } else {
-            $validated['crisis_role'] = null;
-            $validated['is_crisis_deputy'] = false;
-        }
 
         $managerIds = collect($validated['manager_ids'] ?? [])
             ->filter(fn ($id) => $id !== null && $id !== '')
@@ -514,16 +488,8 @@ new #[Title('Mitarbeiter')] class extends Component {
             'editingId', 'first_name', 'last_name', 'position', 'department_id',
             'work_phone', 'mobile_phone', 'private_phone', 'email', 'location_id',
             'emergency_contact', 'manager_ids', 'roleAssignments', 'is_key_personnel',
-            'crisis_role', 'is_crisis_deputy', 'notes',
+            'notes',
         ]);
-    }
-
-    /**
-     * @return array<int, array{value: string, label: string}>
-     */
-    public function crisisRoleOptions(): array
-    {
-        return CrisisRole::options();
     }
 
     public function exportJson(): \Symfony\Component\HttpFoundation\StreamedResponse
@@ -1000,17 +966,18 @@ new #[Title('Mitarbeiter')] class extends Component {
                                     @if ($employee->is_key_personnel)
                                         <flux:badge color="amber" size="sm">{{ __('Schlüsselmitarbeiter') }}</flux:badge>
                                     @endif
-                                    @if ($employee->crisis_role)
-                                        <flux:badge color="red" size="sm">
-                                            {{ $employee->crisis_role->label() }}@if ($employee->is_crisis_deputy) ({{ __('Vertretung') }})@endif
-                                        </flux:badge>
-                                    @endif
                                     @if (config('features.departments') && $employee->department)
                                         <flux:badge color="zinc" size="sm">{{ $employee->department->name }}</flux:badge>
                                     @endif
                                     @foreach ($employee->roles as $role)
-                                        <flux:badge :color="($role->pivot->is_deputy ?? false) ? 'purple' : 'sky'" size="sm" icon="user-group">
-                                            {{ $role->name }}@if ($role->pivot->is_deputy ?? false) ({{ __('Vertretung') }})@endif
+                                        @php
+                                            $isSystem = $role->system_key !== null;
+                                            $isDeputy = (bool) ($role->pivot->is_deputy ?? false);
+                                            $badgeColor = $isSystem ? 'red' : ($isDeputy ? 'purple' : 'sky');
+                                            $badgeIcon = $isSystem ? 'shield-exclamation' : 'user-group';
+                                        @endphp
+                                        <flux:badge :color="$badgeColor" size="sm" :icon="$badgeIcon">
+                                            {{ $role->name }}@if ($isDeputy) ({{ __('Vertretung') }})@endif
                                         </flux:badge>
                                     @endforeach
                                 </div>
