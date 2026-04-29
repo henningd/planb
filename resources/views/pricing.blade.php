@@ -5,7 +5,7 @@
     // Preis-Definitionen — eine Quelle für Karten und Vergleichstabelle.
     $monthlyPrices = [
         'starter' => 49,
-        'advanced' => 249,
+        'advanced' => 389,
         'enterprise' => null, // individuell
     ];
     // Jahrespreis = 10 × Monatspreis (= "2 Monate gratis", entspricht ~17 % Rabatt).
