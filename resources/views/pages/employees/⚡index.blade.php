@@ -599,7 +599,7 @@ new #[Title('Mitarbeiter')] class extends Component {
                     </div>
 
                     @if ($employee->mobile_phone || $employee->work_phone || $employee->email || $employee->location_id)
-                        <div class="mt-4 space-y-2 text-sm">
+                        <div class="mt-4 space-y-2 pl-11 text-sm">
                             @if ($employee->mobile_phone)
                                 <div class="flex items-center gap-2">
                                     <flux:icon.device-phone-mobile class="h-4 w-4 shrink-0 text-zinc-400" />
@@ -629,7 +629,7 @@ new #[Title('Mitarbeiter')] class extends Component {
 
                     @if ($employee->managers->isNotEmpty())
                         <div class="mt-3 border-t border-zinc-100 pt-3 dark:border-zinc-800">
-                            <div class="flex items-start gap-2 text-sm">
+                            <div class="flex items-start gap-2 pl-11 text-sm">
                                 <flux:icon name="user-circle" class="mt-0.5 h-4 w-4 shrink-0 text-zinc-400" />
                                 <div class="min-w-0 flex-1">
                                     <div class="text-xs uppercase tracking-wide text-zinc-500 dark:text-zinc-400">{{ __('Unterstellt') }}</div>
@@ -643,7 +643,7 @@ new #[Title('Mitarbeiter')] class extends Component {
 
                     @if ($employee->reports->isNotEmpty())
                         <div class="mt-2 border-t border-zinc-100 pt-2 dark:border-zinc-800">
-                            <div class="flex items-start gap-2 text-sm">
+                            <div class="flex items-start gap-2 pl-11 text-sm">
                                 <flux:icon name="users" class="mt-0.5 h-4 w-4 shrink-0 text-zinc-400" />
                                 <div class="min-w-0 flex-1">
                                     <div class="text-xs uppercase tracking-wide text-zinc-500 dark:text-zinc-400">{{ trans_choice('{1} Vorgesetzte:r|[2,*] Vorgesetzte:r (:count)', $employee->reports->count(), ['count' => $employee->reports->count()]) }}</div>
