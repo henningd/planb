@@ -22,12 +22,12 @@
                     <flux:sidebar.item icon="rocket-launch" :href="route('onboarding.index')" :current="request()->routeIs('onboarding.*')" wire:navigate>
                         {{ __('Einrichtung') }}
                     </flux:sidebar.item>
-                    @if (config('features.compliance') && auth()->user()->isCurrentTeamAdmin())
+                    @if (config('features.compliance') && \Illuminate\Support\Facades\Route::has('compliance.index') && auth()->user()->isCurrentTeamAdmin())
                         <flux:sidebar.item icon="chart-bar" :href="route('compliance.index')" :current="request()->routeIs('compliance.*')" wire:navigate>
                             {{ __('Compliance') }}
                         </flux:sidebar.item>
                     @endif
-                    @if (config('features.risk_register') && auth()->user()->isCurrentTeamAdmin())
+                    @if (config('features.risk_register') && \Illuminate\Support\Facades\Route::has('risks.index') && auth()->user()->isCurrentTeamAdmin())
                         <flux:sidebar.item icon="shield-exclamation" :href="route('risks.index')" :current="request()->routeIs('risks.*')" wire:navigate>
                             {{ __('Risiken') }}
                         </flux:sidebar.item>
@@ -62,7 +62,7 @@
                     <flux:sidebar.item icon="server-stack" :href="route('systems.index')" :current="request()->routeIs('systems.index') || request()->routeIs('systems.create') || request()->routeIs('systems.show') || request()->routeIs('systems.edit') || request()->routeIs('systems.export')" wire:navigate>
                         {{ __('Systeme') }}
                     </flux:sidebar.item>
-                    @if (config('features.dependencies'))
+                    @if (config('features.dependencies') && \Illuminate\Support\Facades\Route::has('dependencies.index'))
                         <flux:sidebar.item icon="share" :href="route('dependencies.index')" :current="request()->routeIs('dependencies.*')" wire:navigate>
                             {{ __('Abhängigkeiten') }}
                         </flux:sidebar.item>
@@ -93,7 +93,7 @@
                     data-sidebar-key="emergency"
                     class="grid"
                 >
-                    @if (config('features.incident_mode'))
+                    @if (config('features.incident_mode') && \Illuminate\Support\Facades\Route::has('incident-mode.index'))
                         <flux:sidebar.item icon="exclamation-triangle" :href="route('incident-mode.index')" :current="request()->routeIs('incident-mode.*')" wire:navigate>
                             {{ __('Krisen-Cockpit') }}
                         </flux:sidebar.item>
@@ -110,7 +110,7 @@
                     <flux:sidebar.item icon="clipboard-document-check" :href="route('scenario-runs.index')" :current="request()->routeIs('scenario-runs.*')" wire:navigate>
                         {{ __('Protokolle & Übungen') }}
                     </flux:sidebar.item>
-                    @if (config('features.lessons_learned'))
+                    @if (config('features.lessons_learned') && \Illuminate\Support\Facades\Route::has('lessons-learned.index'))
                         <flux:sidebar.item icon="academic-cap" :href="route('lessons-learned.index')" :current="request()->routeIs('lessons-learned.*')" wire:navigate>
                             {{ __('Lessons Learned') }}
                         </flux:sidebar.item>
@@ -167,7 +167,7 @@
                         <flux:sidebar.item icon="paint-brush" :href="route('branding.index')" :current="request()->routeIs('branding.*')" wire:navigate>
                             {{ __('Branding') }}
                         </flux:sidebar.item>
-                        @if (config('features.monitoring_api'))
+                        @if (config('features.monitoring_api') && \Illuminate\Support\Facades\Route::has('api-tokens.index'))
                             <flux:sidebar.item icon="bolt-slash" :href="route('api-tokens.index')" :current="request()->routeIs('api-tokens.*')" wire:navigate>
                                 {{ __('API & Webhooks') }}
                             </flux:sidebar.item>
