@@ -52,6 +52,24 @@
 
             {{-- ============ SIDEBAR ============ --}}
             <aside class="lg:sticky lg:top-20 lg:self-start lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto">
+                <form method="GET" action="{{ route('manual.index') }}" class="mb-4" role="search">
+                    <label for="manual-sidebar-search" class="sr-only">Im Handbuch suchen</label>
+                    <div class="relative">
+                        <svg class="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <circle cx="11" cy="11" r="7"/>
+                            <path d="m21 21-4.3-4.3"/>
+                        </svg>
+                        <input
+                            id="manual-sidebar-search"
+                            type="search"
+                            name="q"
+                            value="{{ $searchQuery ?? '' }}"
+                            placeholder="Suchen…"
+                            autocomplete="off"
+                            class="block w-full rounded-md border border-slate-300 bg-white py-1.5 pl-8 pr-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                        >
+                    </div>
+                </form>
                 <a href="{{ route('manual.index') }}" class="block text-sm font-semibold text-slate-900 hover:text-indigo-600 transition mb-4">
                     Inhaltsverzeichnis
                 </a>

@@ -139,4 +139,92 @@ class ManualCatalog
 
         return trim($text, '-');
     }
+
+    /**
+     * Volltext-Suche über alle Kapitel. Treffer im Titel werden höher
+     * gerankt als Treffer in Zusammenfassung oder Inhalt. Liefert eine
+     * sortierte Liste mit Snippet (rund um die erste Fundstelle).
+     *
+     * @return list<array{entry: array{category: string, slug: string, title: string, summary: string}, rank: int, snippet: string}>
+     */
+    public static function search(string $query): array
+    {
+        $query = trim($query);
+        if (mb_strlen($query) < 2) {
+            return [];
+        }
+
+        $needle = mb_strtolower($query);
+        $hits = [];
+
+        foreach (self::all() as $entry) {
+            $title = mb_strtolower($entry['title']);
+            $summary = mb_strtolower($entry['summary']);
+            $content = (string) (self::content($entry['slug']) ?? '');
+            $plain = self::plainText($content);
+            $plainLower = mb_strtolower($plain);
+
+            $titleHit = str_contains($title, $needle);
+            $summaryHit = str_contains($summary, $needle);
+            $contentHit = str_contains($plainLower, $needle);
+
+            if (! $titleHit && ! $summaryHit && ! $contentHit) {
+                continue;
+            }
+
+            $rank = ($titleHit ? 100 : 0) + ($summaryHit ? 10 : 0) + ($contentHit ? 1 : 0);
+
+            $hits[] = [
+                'entry' => $entry,
+                'rank' => $rank,
+                'snippet' => self::buildSnippet($plain, $needle, $entry['summary']),
+            ];
+        }
+
+        usort($hits, fn (array $a, array $b) => $b['rank'] <=> $a['rank']);
+
+        return $hits;
+    }
+
+    /**
+     * Reduziert Markdown auf Klartext für Snippet-Bildung und Suche.
+     */
+    private static function plainText(string $markdown): string
+    {
+        $text = preg_replace('/```.*?```/su', ' ', $markdown) ?? $markdown;
+        $text = preg_replace('/`[^`]*`/u', ' ', $text) ?? $text;
+        $text = preg_replace('/^#{1,6}\s+/m', '', $text) ?? $text;
+        $text = preg_replace('/^>\s*/m', '', $text) ?? $text;
+        $text = preg_replace('/\[([^\]]+)\]\([^)]+\)/u', '$1', $text) ?? $text;
+        $text = preg_replace('/[*_]+/u', '', $text) ?? $text;
+        $text = preg_replace('/^[\|\s\-:]+$/m', '', $text) ?? $text;
+        $text = str_replace('|', ' ', $text);
+        $text = preg_replace('/\s+/u', ' ', $text) ?? $text;
+
+        return trim($text);
+    }
+
+    private static function buildSnippet(string $plain, string $needle, string $fallback): string
+    {
+        if ($plain === '') {
+            return $fallback;
+        }
+
+        $lower = mb_strtolower($plain);
+        $pos = mb_strpos($lower, $needle);
+        if ($pos === false) {
+            return mb_substr($plain, 0, 200);
+        }
+
+        $start = max(0, $pos - 80);
+        $excerpt = mb_substr($plain, $start, 240);
+        if ($start > 0) {
+            $excerpt = '… '.$excerpt;
+        }
+        if (mb_strlen($plain) > $start + 240) {
+            $excerpt .= ' …';
+        }
+
+        return $excerpt;
+    }
 }

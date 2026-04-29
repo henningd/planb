@@ -179,9 +179,13 @@ Route::get('/funktionen/{slug}', function (string $slug) {
 })->where('slug', '[a-z0-9-]+')->name('feature.show');
 
 Route::get('/handbuch', function () {
+    $query = trim((string) request()->query('q', ''));
+
     return view('manual.index', [
         'productName' => SystemSetting::get('platform_name') ?: config('app.name', 'PlanB'),
         'grouped' => ManualCatalog::grouped(),
+        'searchQuery' => $query,
+        'searchResults' => $query !== '' ? ManualCatalog::search($query) : null,
     ]);
 })->name('manual.index');
 
