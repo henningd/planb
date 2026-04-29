@@ -198,12 +198,13 @@ new #[Title('Recovery-Zeitplan')] class extends Component {
                                         aria-hidden="true"
                                     ></div>
 
-                                    {{-- Layer 2: farbiger Bar = exakte proportionale Dauer (kein min-width).
-                                         15 min ist sichtbar schmaler als 1 h. Reicht der Platz nicht, werden
+                                    {{-- Layer 2: farbiger Bar = proportionale Dauer mit kleiner Mindestbreite,
+                                         damit auch 15-min-Einträge einen erkennbaren Farb-Anteil haben.
+                                         15 min bleibt sichtbar schmaler als 1 h. Reicht der Platz nicht, werden
                                          Icon und Zeit-Label durch overflow:hidden geclippt — der graue Layer 1
                                          füllt die Differenz bis 120 px, der i-Button bleibt rechts sichtbar. --}}
                                     <div
-                                        class="absolute top-0 h-full overflow-hidden rounded shadow-sm"
+                                        class="absolute top-0 h-full min-w-[40px] overflow-hidden rounded shadow-sm"
                                         style="margin-left: {{ $marginLeft }}%; width: {{ $width }}%; background-color: {{ $entry['level_color'] }};"
                                         title="{{ $tooltip }} | {{ $entry['level_label'] }}"
                                     >
