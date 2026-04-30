@@ -58,6 +58,7 @@ class Catalog
             weight: 10,
             evaluator: function (Company $company): Result {
                 $missing = [];
+                $missingRoleIds = [];
                 foreach (CrisisRole::cases() as $crisis) {
                     $role = Role::query()
                         ->where('company_id', $company->id)
@@ -73,11 +74,18 @@ class Catalog
                         ->exists();
                     if (! $hasMain) {
                         $missing[] = $crisis->label();
+                        $missingRoleIds[] = $role->id;
                     }
                 }
                 $total = count(CrisisRole::cases());
                 $covered = $total - count($missing);
-                $action = ['label' => 'Rollen verwalten', 'route' => 'roles.index'];
+                $action = [
+                    'label' => 'Rollen verwalten',
+                    'route' => 'roles.index',
+                    'params' => $missingRoleIds !== []
+                        ? ['focus' => implode(',', $missingRoleIds), 'reason' => 'missing_main']
+                        : [],
+                ];
 
                 if ($covered === $total) {
                     return Result::pass('Alle fünf Pflichtrollen sind mit einer Hauptperson besetzt.', action: $action);
@@ -106,6 +114,7 @@ class Catalog
             weight: 6,
             evaluator: function (Company $company): Result {
                 $missing = [];
+                $missingRoleIds = [];
                 foreach (CrisisRole::cases() as $crisis) {
                     $role = Role::query()
                         ->where('company_id', $company->id)
@@ -119,11 +128,18 @@ class Catalog
                         ->exists();
                     if (! $hasDeputy) {
                         $missing[] = $crisis->label();
+                        $missingRoleIds[] = $role->id;
                     }
                 }
                 $total = count(CrisisRole::cases());
                 $covered = $total - count($missing);
-                $action = ['label' => 'Vertretungen pflegen', 'route' => 'roles.index'];
+                $action = [
+                    'label' => 'Vertretungen pflegen',
+                    'route' => 'roles.index',
+                    'params' => $missingRoleIds !== []
+                        ? ['focus' => implode(',', $missingRoleIds), 'reason' => 'missing_deputy']
+                        : [],
+                ];
 
                 if ($covered === $total) {
                     return Result::pass('Alle Pflichtrollen haben eine Vertretung.', action: $action);

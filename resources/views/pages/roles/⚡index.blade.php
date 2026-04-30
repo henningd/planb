@@ -32,6 +32,44 @@ new #[Title('Rollen')] class extends Component {
 
     public ?string $deletingId = null;
 
+    /**
+     * Rollen, die aus der Compliance-Auswertung heraus hervorgehoben werden
+     * sollen. Wird beim Page-Load aus dem ?focus=uuid1,uuid2-Query-Param
+     * gefüllt und nur in dieser Sitzung gehalten.
+     *
+     * @var array<int, string>
+     */
+    public array $focusedRoleIds = [];
+
+    /**
+     * Optionaler Grund, warum die Rollen markiert sind — bestimmt den
+     * Banner-Text. Aktuelle Werte: 'missing_main' | 'missing_deputy' | ''.
+     */
+    public string $focusReason = '';
+
+    public function mount(): void
+    {
+        $focus = (string) request()->query('focus', '');
+        if ($focus !== '') {
+            $this->focusedRoleIds = collect(explode(',', $focus))
+                ->map(fn ($id) => trim($id))
+                ->filter(fn ($id) => $id !== '')
+                ->values()
+                ->all();
+        }
+
+        $reason = (string) request()->query('reason', '');
+        if (in_array($reason, ['missing_main', 'missing_deputy'], true)) {
+            $this->focusReason = $reason;
+        }
+    }
+
+    public function clearFocus(): void
+    {
+        $this->focusedRoleIds = [];
+        $this->focusReason = '';
+    }
+
     #[Computed]
     public function hasCompany(): bool
     {
@@ -215,9 +253,56 @@ new #[Title('Rollen')] class extends Component {
         </div>
     @endunless
 
+    @if ($focusedRoleIds !== [])
+        @php
+            $focusedNames = $this->roles->whereIn('id', $focusedRoleIds)->pluck('name');
+            $bannerHeading = match ($focusReason) {
+                'missing_main' => __('Compliance-Hinweis: Hauptperson fehlt'),
+                'missing_deputy' => __('Compliance-Hinweis: Vertretung fehlt'),
+                default => __('Aus der Compliance-Auswertung verlinkt'),
+            };
+            $bannerText = match ($focusReason) {
+                'missing_main' => __('Für die folgenden Pflichtrollen ist noch keine Hauptperson hinterlegt:'),
+                'missing_deputy' => __('Für die folgenden Pflichtrollen ist noch keine Vertretung hinterlegt:'),
+                default => __('Folgende Rollen sind hervorgehoben:'),
+            };
+        @endphp
+        <div
+            x-data
+            x-init="$nextTick(() => { const el = document.getElementById('role-{{ $focusedRoleIds[0] }}'); if (el) el.scrollIntoView({behavior: 'smooth', block: 'center'}); })"
+            class="mb-6 flex flex-wrap items-start justify-between gap-3 rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-100"
+        >
+            <div class="min-w-0 flex-1">
+                <div class="flex items-center gap-2 font-semibold">
+                    <flux:icon name="exclamation-triangle" class="h-4 w-4" />
+                    {{ $bannerHeading }}
+                </div>
+                <div class="mt-1">{{ $bannerText }}</div>
+                @if ($focusedNames->isNotEmpty())
+                    <ul class="mt-1 list-inside list-disc space-y-0.5">
+                        @foreach ($focusedNames as $name)
+                            <li>{{ $name }}</li>
+                        @endforeach
+                    </ul>
+                @endif
+            </div>
+            <flux:button size="sm" variant="ghost" wire:click="clearFocus">
+                {{ __('Markierung entfernen') }}
+            </flux:button>
+        </div>
+    @endif
+
     <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         @forelse ($this->roles as $role)
-            <div id="role-{{ $role->id }}" class="flex flex-col scroll-mt-24 rounded-xl border border-zinc-200 bg-white p-5 transition-shadow target:ring-2 target:ring-indigo-500 dark:border-zinc-700 dark:bg-zinc-900">
+            @php $isFocused = in_array($role->id, $focusedRoleIds, true); @endphp
+            <div
+                id="role-{{ $role->id }}"
+                @class([
+                    'flex flex-col scroll-mt-24 rounded-xl border bg-white p-5 transition-shadow dark:bg-zinc-900',
+                    'border-zinc-200 target:ring-2 target:ring-indigo-500 dark:border-zinc-700' => ! $isFocused,
+                    'border-amber-400 ring-2 ring-amber-400 dark:border-amber-500 dark:ring-amber-500' => $isFocused,
+                ])
+            >
                 <div class="flex items-start justify-between gap-2">
                     <div class="min-w-0 flex-1">
                         <flux:heading size="base">
