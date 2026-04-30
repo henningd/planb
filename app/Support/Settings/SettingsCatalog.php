@@ -1102,6 +1102,13 @@ class SettingsCatalog
                 'label' => 'Microsoft-Teams-Webhook-URL',
                 'description' => 'Incoming-Webhook-URL eines Teams-Channels. Vorlagen mit Kanal „Teams" werden hierhin gepostet.',
             ],
+            'portal_link_enabled' => [
+                'scope' => self::COMPANY,
+                'type' => 'bool',
+                'default' => false,
+                'label' => 'planb-portal verknüpfen (Opt-in)',
+                'description' => 'Erlaubt dem Schwesterprodukt planb-portal lesenden Zugriff auf ein Profil-Stub (Branche, Pflichtrollen-Status). Kein Zugriff auf Mitarbeiterdaten oder Notfall-Pläne. Token wird beim Aktivieren generiert und einmalig angezeigt.',
+            ],
         ];
     }
 

@@ -48,6 +48,13 @@ new #[Title('Systemeinstellungen')] class extends Component {
      */
     public ?array $importSummary = null;
 
+    /**
+     * Klartext-Token nach Generierung — wird nur EINMAL nach Klick auf
+     * „Token erzeugen" angezeigt und beim nächsten Render verworfen, damit
+     * er nirgendwo persistent vorgehalten wird.
+     */
+    public ?string $portalApiTokenPlain = null;
+
     public function mount(): void
     {
         $company = Auth::user()->currentCompany();
@@ -88,6 +95,45 @@ new #[Title('Systemeinstellungen')] class extends Component {
         }
 
         Flux::toast(variant: 'success', text: __('Mandanten-Einstellungen gespeichert.'));
+    }
+
+    public function regeneratePortalToken(): void
+    {
+        $company = Auth::user()?->currentCompany();
+        if ($company === null) {
+            Flux::toast(variant: 'warning', text: __('Kein Mandant aktiv.'));
+
+            return;
+        }
+
+        $plain = bin2hex(random_bytes(32));
+        $company->forceFill([
+            'portal_api_token_hash' => hash('sha256', $plain),
+            'portal_link_generated_at' => now(),
+            'portal_link_last_used_at' => null,
+        ])->save();
+
+        $this->portalApiTokenPlain = $plain;
+
+        Flux::toast(variant: 'success', text: __('Neues Portal-Token erzeugt. Bitte sofort kopieren — es wird nur einmal angezeigt.'));
+    }
+
+    public function revokePortalToken(): void
+    {
+        $company = Auth::user()?->currentCompany();
+        if ($company === null) {
+            return;
+        }
+
+        $company->forceFill([
+            'portal_api_token_hash' => null,
+            'portal_link_generated_at' => null,
+            'portal_link_last_used_at' => null,
+        ])->save();
+
+        $this->portalApiTokenPlain = null;
+
+        Flux::toast(variant: 'success', text: __('Portal-Token widerrufen.'));
     }
 
     /**
@@ -275,6 +321,59 @@ new #[Title('Systemeinstellungen')] class extends Component {
             <flux:button variant="primary" type="submit" icon="check">{{ __('Speichern') }}</flux:button>
         </div>
     </form>
+
+    @php $company = auth()->user()?->currentCompany(); @endphp
+    @if ($company)
+        <div class="mt-8 rounded-xl border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-900">
+            <div class="border-b border-zinc-100 px-5 py-4 dark:border-zinc-800">
+                <flux:heading size="base">{{ __('planb-portal — API-Token') }}</flux:heading>
+                <flux:subheading>
+                    {{ __('Stub für die zukünftige Verknüpfung mit dem Schwesterprodukt planb-portal. Erst aktivieren, wenn Sie das Portal tatsächlich nutzen — und das Opt-in oben einschalten.') }}
+                </flux:subheading>
+            </div>
+            <div class="space-y-4 p-5 text-sm">
+                @if ($portalApiTokenPlain)
+                    <div class="rounded-lg border border-amber-300 bg-amber-50 p-4 dark:border-amber-700 dark:bg-amber-950">
+                        <div class="font-medium text-amber-900 dark:text-amber-100">
+                            {{ __('Neues Token — bitte JETZT kopieren') }}
+                        </div>
+                        <div class="mt-2 break-all rounded bg-white p-2 font-mono text-xs text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100">
+                            {{ $portalApiTokenPlain }}
+                        </div>
+                        <div class="mt-2 text-xs text-amber-800 dark:text-amber-200">
+                            {{ __('Beim nächsten Seitenwechsel wird dieser Token nicht mehr angezeigt — nur der Hash bleibt gespeichert.') }}
+                        </div>
+                    </div>
+                @endif
+
+                @if ($company->portal_api_token_hash)
+                    <dl class="space-y-1 text-xs text-zinc-600 dark:text-zinc-300">
+                        <div>{{ __('Status') }}: <span class="font-medium text-emerald-700 dark:text-emerald-400">{{ __('Token aktiv') }}</span></div>
+                        @if ($company->portal_link_generated_at)
+                            <div>{{ __('Erzeugt am') }}: {{ $company->portal_link_generated_at->isoFormat('LLL') }}</div>
+                        @endif
+                        @if ($company->portal_link_last_used_at)
+                            <div>{{ __('Zuletzt benutzt') }}: {{ $company->portal_link_last_used_at->isoFormat('LLL') }}</div>
+                        @else
+                            <div>{{ __('Zuletzt benutzt') }}: <span class="text-zinc-400">{{ __('noch nie') }}</span></div>
+                        @endif
+                    </dl>
+                @else
+                    <flux:text class="text-sm text-zinc-500">{{ __('Kein Token erzeugt.') }}</flux:text>
+                @endif
+            </div>
+            <div class="flex flex-wrap items-center justify-end gap-2 border-t border-zinc-100 px-5 py-4 dark:border-zinc-800">
+                @if ($company->portal_api_token_hash)
+                    <flux:button variant="danger" icon="trash" wire:click="revokePortalToken" wire:confirm="{{ __('Token widerrufen? Das Portal verliert sofort den Zugang.') }}">
+                        {{ __('Token widerrufen') }}
+                    </flux:button>
+                @endif
+                <flux:button variant="primary" icon="key" wire:click="regeneratePortalToken">
+                    {{ $company->portal_api_token_hash ? __('Neues Token erzeugen') : __('Token erzeugen') }}
+                </flux:button>
+            </div>
+        </div>
+    @endif
 
     <div class="mt-12 grid gap-6 lg:grid-cols-2">
         {{-- Export --}}
