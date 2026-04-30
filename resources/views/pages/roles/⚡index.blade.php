@@ -220,7 +220,11 @@ new #[Title('Rollen')] class extends Component {
             <div id="role-{{ $role->id }}" class="flex flex-col scroll-mt-24 rounded-xl border border-zinc-200 bg-white p-5 transition-shadow target:ring-2 target:ring-indigo-500 dark:border-zinc-700 dark:bg-zinc-900">
                 <div class="flex items-start justify-between gap-2">
                     <div class="min-w-0 flex-1">
-                        <flux:heading size="base">{{ $role->name }}</flux:heading>
+                        <flux:heading size="base">
+                            <a href="{{ route('roles.show', $role) }}" wire:navigate class="hover:underline">
+                                {{ $role->name }}
+                            </a>
+                        </flux:heading>
                         @if ($role->isSystem())
                             <div class="mt-1">
                                 <flux:badge color="indigo" size="sm" icon="shield-check">{{ __('System') }}</flux:badge>
@@ -240,6 +244,9 @@ new #[Title('Rollen')] class extends Component {
                     <flux:dropdown align="end">
                         <flux:button size="sm" variant="ghost" icon="ellipsis-vertical" />
                         <flux:menu>
+                            <flux:menu.item icon="eye" :href="route('roles.show', $role)" wire:navigate>
+                                {{ __('Details') }}
+                            </flux:menu.item>
                             <flux:menu.item icon="pencil" wire:click="openEdit('{{ $role->id }}')">
                                 {{ __('Bearbeiten') }}
                             </flux:menu.item>

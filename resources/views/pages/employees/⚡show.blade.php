@@ -334,7 +334,7 @@ new #[Title('Mitarbeiter')] class extends Component {
                         @php $isDeputy = (bool) ($role->pivot->is_deputy ?? false); @endphp
                         <li class="flex items-center justify-between gap-3 py-2">
                             <span class="flex items-center gap-2">
-                                <flux:link :href="route('roles.index').'#role-'.$role->id" wire:navigate class="text-zinc-900 dark:text-zinc-100">
+                                <flux:link :href="route('roles.show', $role)" wire:navigate class="text-zinc-900 dark:text-zinc-100">
                                     {{ $role->name }}
                                 </flux:link>
                                 @if ($role->isSystem())

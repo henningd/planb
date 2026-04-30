@@ -35,7 +35,7 @@ class ServiceProvider extends Model
     public function systems(): BelongsToMany
     {
         return $this->belongsToMany(System::class)
-            ->withPivot(['id', 'raci_role', 'sort', 'note', 'assigned_at', 'assigned_by_user_id', 'removed_at', 'removed_by_user_id'])
+            ->withPivot(['id', 'raci_role', 'ownership_kind', 'is_deputy', 'sort', 'note', 'assigned_at', 'assigned_by_user_id', 'removed_at', 'removed_by_user_id'])
             ->withTimestamps()
             ->wherePivotNull('removed_at');
     }
@@ -46,8 +46,22 @@ class ServiceProvider extends Model
     public function systemsHistory(): BelongsToMany
     {
         return $this->belongsToMany(System::class)
-            ->withPivot(['id', 'raci_role', 'sort', 'note', 'assigned_at', 'assigned_by_user_id', 'removed_at', 'removed_by_user_id'])
+            ->withPivot(['id', 'raci_role', 'ownership_kind', 'is_deputy', 'sort', 'note', 'assigned_at', 'assigned_by_user_id', 'removed_at', 'removed_by_user_id'])
             ->withTimestamps();
+    }
+
+    /**
+     * Aufgaben (über alle Systeme), denen dieser Dienstleister zugeordnet ist —
+     * ohne entfernte Zuordnungen.
+     *
+     * @return BelongsToMany<SystemTask, $this>
+     */
+    public function tasks(): BelongsToMany
+    {
+        return $this->belongsToMany(SystemTask::class, 'service_provider_system_task')
+            ->withPivot(['id', 'raci_role', 'is_deputy', 'assigned_at', 'assigned_by_user_id', 'removed_at', 'removed_by_user_id'])
+            ->withTimestamps()
+            ->wherePivotNull('removed_at');
     }
 
     /**

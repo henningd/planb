@@ -180,7 +180,11 @@ new #[Title('Dienstleister')] class extends Component {
             <div class="rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
                 <div class="flex items-start justify-between gap-3">
                     <div class="flex-1">
-                        <flux:heading size="base">{{ $provider->name }}</flux:heading>
+                        <flux:heading size="base">
+                            <a href="{{ route('service-providers.show', $provider) }}" wire:navigate class="hover:underline">
+                                {{ $provider->name }}
+                            </a>
+                        </flux:heading>
                         @if ($provider->contact_name)
                             <flux:text class="text-sm text-zinc-500 dark:text-zinc-400">
                                 {{ $provider->contact_name }}
@@ -197,6 +201,9 @@ new #[Title('Dienstleister')] class extends Component {
                     <flux:dropdown align="end">
                         <flux:button size="sm" variant="ghost" icon="ellipsis-vertical" />
                         <flux:menu>
+                            <flux:menu.item icon="eye" :href="route('service-providers.show', $provider)" wire:navigate>
+                                {{ __('Details') }}
+                            </flux:menu.item>
                             <flux:menu.item icon="pencil" wire:click="openEdit('{{ $provider->id }}')">
                                 {{ __('Bearbeiten') }}
                             </flux:menu.item>

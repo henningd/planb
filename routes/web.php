@@ -241,6 +241,9 @@ Route::prefix('{current_team}')
             ->where('system', '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}')
             ->name('systems.edit');
         Route::livewire('service-providers', 'pages::service-providers.index')->name('service-providers.index');
+        Route::livewire('service-providers/{provider}', 'pages::service-providers.show')
+            ->where('provider', '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}')
+            ->name('service-providers.show');
         Route::livewire('emergency-resources', 'pages::emergency-resources.index')->name('emergency-resources.index');
         Route::livewire('fallback-processes', 'pages::fallback-processes.index')->name('fallback-processes.index');
         if (config('features.dependencies')) {
@@ -260,6 +263,9 @@ Route::prefix('{current_team}')
             ->where('employee', '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}')
             ->name('employees.edit');
         Route::livewire('roles', 'pages::roles.index')->name('roles.index');
+        Route::livewire('roles/{role}', 'pages::roles.show')
+            ->where('role', '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}')
+            ->name('roles.show');
 
         Route::livewire('scenarios', 'pages::scenarios.index')->name('scenarios.index');
         Route::livewire('scenarios/{scenario}', 'pages::scenarios.show')->name('scenarios.show');
@@ -289,6 +295,9 @@ Route::prefix('{current_team}')
 
         Route::middleware([EnsureTeamMembership::class.':admin'])->group(function () {
             Route::livewire('insurance-policies', 'pages::insurance-policies.index')->name('insurance-policies.index');
+            Route::livewire('insurance-policies/{policy}', 'pages::insurance-policies.show')
+                ->where('policy', '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}')
+                ->name('insurance-policies.show');
             Route::livewire('communication-templates', 'pages::communication-templates.index')->name('communication-templates.index');
             Route::livewire('audit-log', 'pages::audit-log.index')->name('audit-log.index');
             Route::get('handbook-export/audit-log.csv', [AuditLogExportController::class, 'csv'])
