@@ -41,6 +41,17 @@ class SettingsCatalog
         Inhaltlich verantwortlich gemäß § 18 Abs. 2 MStV
         Daniel Henninger, Anschrift wie oben
 
+        Weitere Plattformen desselben Anbieters
+        Unter derselben Firmierung betreiben wir das Schwesterprodukt
+        „planb-portal" — einen öffentlichen Marktplatz für Notfall- und
+        Business-Continuity-Dienstleistungen (Versicherungen,
+        Versicherungsvertreter:innen, externe Berater:innen, Dienstleister
+        und Kunden). Anbieter, Sitz, Vertretung und Kontaktdaten sind
+        identisch mit den oben genannten Angaben. Eine Verknüpfung
+        zwischen Konten dieser Plattform und planb-portal ist optional
+        und erfolgt nur mit ausdrücklicher Einwilligung des Mandanten
+        (Opt-in in den Systemeinstellungen).
+
         Online-Streitbeilegung
         Die Europäische Kommission stellt eine Plattform zur Online-Streitbeilegung
         (OS) bereit, erreichbar unter https://ec.europa.eu/consumers/odr/.
@@ -88,6 +99,14 @@ class SettingsCatalog
         Deutschland
         E-Mail: info@arento.ai
         Vertretungsberechtigter Geschäftsführer: Daniel Henninger
+
+        Derselbe Verantwortliche betreibt zusätzlich die öffentliche
+        Schwesterplattform „planb-portal" (Marktplatz für Notfall- und
+        Business-Continuity-Dienstleistungen). Beide Plattformen werden
+        getrennt betrieben (eigene Datenbanken, eigene Konten); eine
+        Datenübermittlung zwischen ihnen findet ausschließlich auf
+        Grundlage einer ausdrücklichen Einwilligung des Mandanten
+        statt — siehe Abschnitt „Optionale Verknüpfung mit planb-portal".
 
         Einen Datenschutzbeauftragten haben wir derzeit nicht bestellt, da die
         gesetzlichen Voraussetzungen (Art. 37 DSGVO, § 38 BDSG) nicht erfüllt
@@ -211,6 +230,41 @@ class SettingsCatalog
         Erstellung verarbeitet. Die Quelle der Alarme liegt in der Sphäre
         des Mandanten.
 
+        6a. OPTIONALE VERKNÜPFUNG MIT PLANB-PORTAL
+
+        Auf ausdrücklichen Wunsch des Mandanten (Opt-in in den System-
+        einstellungen) kann ein Mandanten-Konto dieser Plattform mit
+        einem Konto auf der Schwesterplattform planb-portal verknüpft
+        werden. Beide Plattformen werden vom selben Verantwortlichen
+        betrieben (siehe Abschnitt 1).
+
+        Im aktivierten Zustand übermitteln wir an planb-portal aus-
+        schließlich folgende kuratierten Aggregat-Daten:
+        — Mandanten-Stammdaten (Firmenname, Branche, Beschäftigtenzahl,
+          Anzahl Standorte)
+        — Status der fünf Pflichtrollen (für jede Rolle: ist Hauptperson
+          besetzt? ist Vertretung besetzt?), ohne Personennamen
+        — Liste der erfassten Versicherungstypen (z. B. „Cyber",
+          „Betriebsunterbrechung"), ohne Police-Nummern oder Anbieter
+        — Aggregat-Zähler offener und überfälliger Wartungs-Aufgaben
+
+        Niemals übermittelt werden:
+        — Mitarbeiter-Stammdaten (Namen, Telefonnummern, E-Mail, Notfall-
+          Kontakte)
+        — Notfall-Pläne, Szenarien, Runbooks, Lessons Learned
+        — Audit-Log-Einträge
+        — Police-Nummern, Vertragsnummern, Selbstbehalte
+        — Konkrete Aufgaben-Inhalte oder Verantwortliche
+
+        Rechtsgrundlage: Art. 6 Abs. 1 lit. a DSGVO (Einwilligung).
+        Die Einwilligung kann jederzeit über die Systemeinstellungen
+        widerrufen werden; ab Widerruf erfolgt keine weitere Über-
+        mittlung. Bereits bei planb-portal vorgehaltene Aggregat-Daten
+        werden dort gemäß deren Datenschutzerklärung gelöscht.
+
+        Speicherdauer: solange das Opt-in aktiv ist; bei Widerruf
+        Sofort-Beendigung der Übermittlung.
+
         7. DRITTLANDÜBERMITTLUNG
 
         Die Anwendungsplattform selbst (Stammdaten, Notfallhandbuch, Audit-
@@ -326,6 +380,15 @@ class SettingsCatalog
 
         (3) Eine Verschaffung der Software in Eigentum oder zur dauerhaften
         Nutzung außerhalb der Plattform ist nicht geschuldet.
+
+        (4) Der Anbieter betreibt unter derselben Firmierung zusätzlich
+        die öffentliche Schwesterplattform „planb-portal" (Marktplatz
+        für Notfall- und Business-Continuity-Dienstleistungen). Die
+        Nutzung von planb-portal erfolgt auf Basis separater Bedingungen,
+        die dort einsehbar sind. Eine Verknüpfung zwischen einem Konto
+        auf dieser Plattform und einem Konto auf planb-portal ist
+        optional und setzt eine ausdrückliche Einwilligung des Kunden
+        voraus (Opt-in in den Systemeinstellungen).
 
         § 3 VERTRAGSSCHLUSS, TESTPHASE
 
