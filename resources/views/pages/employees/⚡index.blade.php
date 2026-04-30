@@ -1,57 +1,17 @@
 <?php
 
 use App\Models\Department;
+use App\Models\Employee;
 use App\Models\Role;
 use App\Models\System;
-use App\Models\Employee;
-use App\Models\Location;
-use App\Support\AssignmentSync;
 use App\Support\Employees\EmployeeExporter;
 use Flux\Flux;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Validation\Rule;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 
 new #[Title('Mitarbeiter')] class extends Component {
-    public ?string $editingId = null;
-
-    public string $first_name = '';
-
-    public string $last_name = '';
-
-    public string $position = '';
-
-    public ?string $department_id = null;
-
-    public string $work_phone = '';
-
-    public string $mobile_phone = '';
-
-    public string $private_phone = '';
-
-    public string $email = '';
-
-    public ?string $location_id = null;
-
-    public string $emergency_contact = '';
-
-    /** @var array<int, string> */
-    public array $manager_ids = [];
-
-    /**
-     * Rollen-Zuordnungen: Schlüssel = role_id, Wert = 'main' | 'deputy'.
-     * Fehlende Schlüssel = nicht zugeordnet.
-     *
-     * @var array<string, string>
-     */
-    public array $roleAssignments = [];
-
-    public bool $is_key_personnel = false;
-
-    public string $notes = '';
-
     public ?string $deletingId = null;
 
     public string $search = '';
@@ -293,7 +253,7 @@ new #[Title('Mitarbeiter')] class extends Component {
     public function employees()
     {
         return Employee::query()
-            ->with(['managers', 'reports', 'location', 'department', 'roles'])
+            ->with(['managers', 'reports', 'location', 'department', 'roles', 'systems'])
             ->when($this->search !== '', function ($q) {
                 $term = '%'.$this->search.'%';
                 $q->where(function ($q) use ($term) {
@@ -324,145 +284,10 @@ new #[Title('Mitarbeiter')] class extends Component {
             ->all();
     }
 
-    /**
-     * @return \Illuminate\Database\Eloquent\Collection<int, Department>
-     */
-    #[Computed]
-    public function departmentOptions(): \Illuminate\Database\Eloquent\Collection
-    {
-        return Department::query()->orderBy('sort')->orderBy('name')->get();
-    }
-
-    /**
-     * @return \Illuminate\Database\Eloquent\Collection<int, Role>
-     */
-    #[Computed]
-    public function availableRoles(): \Illuminate\Database\Eloquent\Collection
-    {
-        return Role::query()->orderBy('sort')->orderBy('name')->get();
-    }
-
     #[Computed]
     public function hasCompany(): bool
     {
         return Auth::user()->currentCompany() !== null;
-    }
-
-    /**
-     * @return \Illuminate\Database\Eloquent\Collection<int, Employee>
-     */
-    #[Computed]
-    public function managerOptions(): \Illuminate\Database\Eloquent\Collection
-    {
-        return Employee::query()
-            ->when($this->editingId, fn ($q) => $q->where('id', '!=', $this->editingId))
-            ->orderBy('last_name')
-            ->orderBy('first_name')
-            ->get();
-    }
-
-    /**
-     * @return \Illuminate\Database\Eloquent\Collection<int, Location>
-     */
-    #[Computed]
-    public function locationOptions(): \Illuminate\Database\Eloquent\Collection
-    {
-        return Location::query()
-            ->orderBy('sort')
-            ->orderBy('name')
-            ->get();
-    }
-
-    public function openCreate(): void
-    {
-        $this->resetForm();
-        Flux::modal('employee-form')->show();
-    }
-
-    public function openEdit(string $id): void
-    {
-        $e = Employee::with(['managers', 'roles'])->findOrFail($id);
-
-        $this->editingId = $e->id;
-        $this->first_name = $e->first_name;
-        $this->last_name = $e->last_name;
-        $this->position = (string) $e->position;
-        $this->department_id = $e->department_id;
-        $this->work_phone = (string) $e->work_phone;
-        $this->mobile_phone = (string) $e->mobile_phone;
-        $this->private_phone = (string) $e->private_phone;
-        $this->email = (string) $e->email;
-        $this->location_id = $e->location_id;
-        $this->emergency_contact = (string) $e->emergency_contact;
-        $this->manager_ids = $e->managers->pluck('id')->all();
-        $this->roleAssignments = $e->roles->mapWithKeys(
-            fn ($role) => [$role->id => ((bool) ($role->pivot->is_deputy ?? false)) ? 'deputy' : 'main']
-        )->all();
-        $this->is_key_personnel = (bool) $e->is_key_personnel;
-        $this->notes = (string) $e->notes;
-
-        Flux::modal('employee-form')->show();
-    }
-
-    public function save(): void
-    {
-        if (! $this->hasCompany) {
-            Flux::toast(variant: 'warning', text: __('Bitte legen Sie zuerst ein Firmenprofil an.'));
-
-            return;
-        }
-
-        $validated = $this->validate([
-            'first_name' => ['required', 'string', 'max:255'],
-            'last_name' => ['required', 'string', 'max:255'],
-            'position' => ['nullable', 'string', 'max:255'],
-            'department_id' => ['nullable', 'uuid', 'exists:departments,id'],
-            'work_phone' => ['nullable', 'string', 'max:50'],
-            'mobile_phone' => ['nullable', 'string', 'max:50'],
-            'private_phone' => ['nullable', 'string', 'max:50'],
-            'email' => ['nullable', 'email', 'max:255'],
-            'location_id' => ['nullable', 'uuid', 'exists:locations,id'],
-            'emergency_contact' => ['nullable', 'string', 'max:1000'],
-            'manager_ids' => ['array'],
-            'manager_ids.*' => ['uuid', 'exists:employees,id'],
-            'roleAssignments' => ['array'],
-            'roleAssignments.*' => ['nullable', 'string', Rule::in(['', 'main', 'deputy'])],
-            'is_key_personnel' => ['boolean'],
-            'notes' => ['nullable', 'string', 'max:2000'],
-        ]);
-
-        $managerIds = collect($validated['manager_ids'] ?? [])
-            ->filter(fn ($id) => $id !== null && $id !== '')
-            ->filter(fn ($id) => $id !== $this->editingId) // niemand ist sein eigener Vorgesetzter
-            ->unique()
-            ->values()
-            ->all();
-        unset($validated['manager_ids']);
-
-        $assignments = collect($validated['roleAssignments'] ?? [])
-            ->filter(fn ($mode) => $mode === 'main' || $mode === 'deputy')
-            ->all();
-        $validRoleIds = Role::query()->whereIn('id', array_keys($assignments))->pluck('id')->all();
-        $desiredRoles = [];
-        foreach ($validRoleIds as $rid) {
-            $desiredRoles[$rid] = ['is_deputy' => ($assignments[$rid] ?? 'main') === 'deputy'];
-        }
-        unset($validated['roleAssignments']);
-
-        if ($this->editingId) {
-            $employee = Employee::findOrFail($this->editingId);
-            $employee->update($validated);
-        } else {
-            $employee = Employee::create($validated);
-        }
-        $employee->managers()->sync($managerIds);
-        AssignmentSync::sync($employee, $employee->roles(), $desiredRoles);
-
-        Flux::modal('employee-form')->close();
-        $this->resetForm();
-        unset($this->employees, $this->departments, $this->departmentOptions, $this->managerOptions, $this->locationOptions, $this->availableRoles, $this->rolesGraph, $this->systemsGraph, $this->hierarchyGraph);
-
-        Flux::toast(variant: 'success', text: __('Mitarbeiter gespeichert.'));
     }
 
     public function confirmDelete(string $id): void
@@ -476,20 +301,10 @@ new #[Title('Mitarbeiter')] class extends Component {
         if ($this->deletingId) {
             Employee::findOrFail($this->deletingId)->delete();
             $this->deletingId = null;
-            unset($this->employees, $this->departments, $this->departmentOptions, $this->managerOptions, $this->locationOptions, $this->availableRoles, $this->rolesGraph, $this->systemsGraph, $this->hierarchyGraph);
+            unset($this->employees, $this->departments, $this->rolesGraph, $this->systemsGraph, $this->hierarchyGraph);
             Flux::modal('employee-delete')->close();
             Flux::toast(variant: 'success', text: __('Mitarbeiter gelöscht.'));
         }
-    }
-
-    protected function resetForm(): void
-    {
-        $this->reset([
-            'editingId', 'first_name', 'last_name', 'position', 'department_id',
-            'work_phone', 'mobile_phone', 'private_phone', 'email', 'location_id',
-            'emergency_contact', 'manager_ids', 'roleAssignments', 'is_key_personnel',
-            'notes',
-        ]);
     }
 
     public function exportJson(): \Symfony\Component\HttpFoundation\StreamedResponse
@@ -527,7 +342,13 @@ new #[Title('Mitarbeiter')] class extends Component {
             >
                 {{ __('JSON-Export') }}
             </flux:button>
-            <flux:button variant="primary" icon="plus" wire:click="openCreate" :disabled="! $this->hasCompany">
+            <flux:button
+                variant="primary"
+                icon="plus"
+                :href="$this->hasCompany ? route('employees.create') : null"
+                wire:navigate
+                :disabled="! $this->hasCompany"
+            >
                 {{ __('Neuer Mitarbeiter') }}
             </flux:button>
         </div>
@@ -958,7 +779,11 @@ new #[Title('Mitarbeiter')] class extends Component {
                         <div class="flex min-w-0 flex-1 items-start gap-3">
                             <flux:avatar :name="$employee->fullName()" size="sm" class="mt-0.5 shrink-0" />
                             <div class="min-w-0 flex-1">
-                                <flux:heading size="base">{{ $employee->nameLastFirst() }}</flux:heading>
+                                <flux:heading size="base">
+                                    <a href="{{ route('employees.show', $employee) }}" wire:navigate class="hover:underline">
+                                        {{ $employee->nameLastFirst() }}
+                                    </a>
+                                </flux:heading>
                                 @if ($employee->position)
                                     <flux:text class="text-sm text-zinc-500 dark:text-zinc-400">{{ $employee->position }}</flux:text>
                                 @endif
@@ -969,16 +794,8 @@ new #[Title('Mitarbeiter')] class extends Component {
                                     @if (config('features.departments') && $employee->department)
                                         <flux:badge color="zinc" size="sm">{{ $employee->department->name }}</flux:badge>
                                     @endif
-                                    @foreach ($employee->roles as $role)
-                                        @php
-                                            $isSystem = $role->system_key !== null;
-                                            $isDeputy = (bool) ($role->pivot->is_deputy ?? false);
-                                            $badgeColor = $isSystem ? 'red' : ($isDeputy ? 'purple' : 'sky');
-                                            $badgeIcon = $isSystem ? 'shield-exclamation' : 'user-group';
-                                        @endphp
-                                        <flux:badge :color="$badgeColor" size="sm" :icon="$badgeIcon">
-                                            {{ $role->name }}@if ($isDeputy) ({{ __('Vertretung') }})@endif
-                                        </flux:badge>
+                                    @foreach ($employee->systems->sortBy('name') as $system)
+                                        <flux:badge color="zinc" size="sm" icon="server-stack">{{ $system->name }}</flux:badge>
                                     @endforeach
                                 </div>
                             </div>
@@ -986,7 +803,10 @@ new #[Title('Mitarbeiter')] class extends Component {
                         <flux:dropdown align="end">
                             <flux:button size="sm" variant="ghost" icon="ellipsis-vertical" />
                             <flux:menu>
-                                <flux:menu.item icon="pencil" wire:click="openEdit('{{ $employee->id }}')">
+                                <flux:menu.item icon="eye" :href="route('employees.show', $employee)" wire:navigate>
+                                    {{ __('Details') }}
+                                </flux:menu.item>
+                                <flux:menu.item icon="pencil" :href="route('employees.edit', $employee)" wire:navigate>
                                     {{ __('Bearbeiten') }}
                                 </flux:menu.item>
                                 <flux:menu.separator />
@@ -1060,153 +880,6 @@ new #[Title('Mitarbeiter')] class extends Component {
             </div>
         </div>
     @endif
-
-    <flux:modal name="employee-form" class="max-w-2xl">
-        <form wire:submit="save" class="space-y-5">
-            <div>
-                <flux:heading size="lg">
-                    {{ $editingId ? __('Mitarbeiter bearbeiten') : __('Neuen Mitarbeiter anlegen') }}
-                </flux:heading>
-                <flux:subheading>
-                    {{ __('Alle Felder außer Vor- und Nachnamen sind optional. Private Nummer und Notfallkontakt sind für echte Ernstfälle Gold wert, wenn E-Mail und Arbeitstelefon nicht funktionieren.') }}
-                </flux:subheading>
-            </div>
-
-            <div class="grid gap-4 sm:grid-cols-2">
-                <flux:input wire:model="first_name" :label="__('Vorname')" required />
-                <flux:input wire:model="last_name" :label="__('Nachname')" required />
-            </div>
-
-            <div @class(['grid gap-4', 'sm:grid-cols-2' => config('features.departments')])>
-                <flux:input wire:model="position" :label="__('Position')" placeholder="z. B. Vertriebsleitung" />
-                @if (config('features.departments'))
-                    <flux:select wire:model="department_id" :label="__('Abteilung')" :placeholder="__('Keine Abteilung')">
-                        <flux:select.option value="">{{ __('— Keine Abteilung —') }}</flux:select.option>
-                        @foreach ($this->departmentOptions as $dept)
-                            <flux:select.option value="{{ $dept->id }}">{{ $dept->name }}</flux:select.option>
-                        @endforeach
-                    </flux:select>
-                    @if ($this->departmentOptions->isEmpty())
-                        <flux:text class="-mt-2 text-xs text-zinc-500">
-                            {{ __('Noch keine Abteilung angelegt — pflegen Sie diese unter „Abteilungen" in der Sidebar.') }}
-                        </flux:text>
-                    @endif
-                @endif
-            </div>
-
-            <div class="grid gap-4 sm:grid-cols-2">
-                <flux:input wire:model="email" :label="__('E-Mail')" type="email" />
-                <flux:select wire:model="location_id" :label="__('Standort')">
-                    <flux:select.option value="">{{ __('— kein Standort —') }}</flux:select.option>
-                    @foreach ($this->locationOptions as $loc)
-                        <flux:select.option value="{{ $loc->id }}">{{ $loc->name }}</flux:select.option>
-                    @endforeach
-                </flux:select>
-            </div>
-
-            <div class="grid gap-4 sm:grid-cols-3">
-                <flux:input wire:model="work_phone" :label="__('Tel. (Büro)')" />
-                <flux:input wire:model="mobile_phone" :label="__('Mobil (dienstlich)')" />
-                <flux:input wire:model="private_phone" :label="__('Privat')" />
-            </div>
-
-            <flux:textarea
-                wire:model="emergency_contact"
-                :label="__('Notfallkontakt')"
-                rows="2"
-                placeholder="z. B. Angehöriger: Max Mustermann (Ehemann), 0171 …"
-            />
-
-            <flux:field>
-                <flux:label>{{ __('Vorgesetzt von') }}</flux:label>
-                <flux:description>
-                    {{ __('Mehrere Vorgesetzte möglich (z. B. fachlich + disziplinarisch). Wenn niemand ausgewählt: keine Vorgesetzten.') }}
-                </flux:description>
-                @if ($this->managerOptions->isEmpty())
-                    <flux:text class="text-sm text-zinc-500">
-                        {{ __('Es sind noch keine anderen Mitarbeiter erfasst.') }}
-                    </flux:text>
-                @else
-                    {{-- Plain-HTML-Checkboxen statt <flux:checkbox> für die Array-Bindung:
-                         Flux' Web-Component <ui-checkbox> hatte bei wire:model="manager_ids"
-                         über mehrere Checkboxen falsche Checked-States gesetzt.
-
-                         wire:key ist hier zwingend: managerOptions filtert den aktuell
-                         bearbeiteten Mitarbeiter raus, also verschieben sich die
-                         Listenpositionen beim Wechsel zwischen Mitarbeitern. Ohne
-                         wire:key recycelt morphdom die <input>-Elemente positionsbasiert
-                         und alte checked-States kleben am neuen Kandidaten. --}}
-                    <div class="max-h-48 space-y-1 overflow-y-auto rounded-lg border border-zinc-200 p-3 dark:border-zinc-700">
-                        @foreach ($this->managerOptions as $candidate)
-                            <label
-                                wire:key="manager-option-{{ $candidate->id }}"
-                                class="flex cursor-pointer items-center gap-2 rounded px-1 py-0.5 text-sm hover:bg-zinc-50 dark:hover:bg-zinc-800"
-                            >
-                                <input
-                                    type="checkbox"
-                                    wire:model="manager_ids"
-                                    value="{{ $candidate->id }}"
-                                    class="size-4 shrink-0 rounded border-zinc-300 text-indigo-600 focus:ring-indigo-500 dark:border-zinc-600 dark:bg-zinc-700"
-                                />
-                                <span class="text-zinc-700 dark:text-zinc-200">
-                                    {{ $candidate->nameLastFirst() }}@if ($candidate->position) <span class="text-zinc-500 dark:text-zinc-400">· {{ $candidate->position }}</span>@endif
-                                </span>
-                            </label>
-                        @endforeach
-                    </div>
-                @endif
-            </flux:field>
-
-            <flux:field>
-                <flux:label>{{ __('Rollen') }}</flux:label>
-                <flux:description>
-                    {{ __('Mehrere Rollen möglich. Markieren Sie pro Rolle, ob die Person Hauptverantwortliche/r oder Stellvertretung ist.') }}
-                </flux:description>
-                @if ($this->availableRoles->isEmpty())
-                    <flux:text class="text-sm text-zinc-500">
-                        {{ __('Noch keine Rollen angelegt — pflegen Sie diese unter „Rollen" in der Sidebar.') }}
-                    </flux:text>
-                @else
-                    <div class="max-h-56 space-y-1 overflow-y-auto rounded-lg border border-zinc-200 p-3 dark:border-zinc-700">
-                        @foreach ($this->availableRoles as $role)
-                            <div
-                                wire:key="role-option-{{ $role->id }}"
-                                class="flex items-center justify-between gap-3 rounded px-1 py-0.5 text-sm hover:bg-zinc-50 dark:hover:bg-zinc-800"
-                            >
-                                <span class="flex items-center gap-2 text-zinc-700 dark:text-zinc-200">
-                                    {{ $role->name }}
-                                    @if ($role->isSystem())
-                                        <flux:badge color="blue" size="sm">{{ __('Pflichtrolle') }}</flux:badge>
-                                    @endif
-                                </span>
-                                <select
-                                    wire:model.live="roleAssignments.{{ $role->id }}"
-                                    class="rounded-md border border-zinc-200 bg-white px-2 py-1 text-xs dark:border-zinc-700 dark:bg-zinc-900"
-                                >
-                                    <option value="">{{ __('— nicht zugeordnet —') }}</option>
-                                    <option value="main">{{ __('Hauptperson') }}</option>
-                                    <option value="deputy">{{ __('Stellvertretung') }}</option>
-                                </select>
-                            </div>
-                        @endforeach
-                    </div>
-                @endif
-            </flux:field>
-
-            <flux:switch wire:model="is_key_personnel" :label="__('Schlüsselmitarbeiter – besonders wichtig für den Betrieb')" />
-
-            <flux:textarea wire:model="notes" :label="__('Notizen')" rows="2" />
-
-            <div class="flex items-center justify-end gap-2 border-t border-zinc-100 pt-4 dark:border-zinc-800">
-                <flux:modal.close>
-                    <flux:button variant="filled">{{ __('Abbrechen') }}</flux:button>
-                </flux:modal.close>
-                <flux:button variant="primary" type="submit">
-                    {{ $editingId ? __('Speichern') : __('Anlegen') }}
-                </flux:button>
-            </div>
-        </form>
-    </flux:modal>
 
     <flux:modal name="employee-delete" class="max-w-md">
         <div class="space-y-5">

@@ -66,8 +66,7 @@ test('roleAssignments via employee form persist as system-role pivot', function 
     $employee = Employee::factory()->for($company)->create();
 
     Livewire\Livewire::actingAs($user->fresh())
-        ->test('pages::employees.index')
-        ->call('openEdit', $employee->id)
+        ->test('pages::employees.edit', ['employee' => $employee])
         ->set("roleAssignments.{$itLeadRole->id}", 'main')
         ->call('save')
         ->assertHasNoErrors();

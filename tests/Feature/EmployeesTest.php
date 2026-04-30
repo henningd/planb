@@ -28,8 +28,7 @@ test('saving an employee syncs role assignments with deputy flag', function () {
     ]);
 
     Livewire\Livewire::actingAs($user->fresh())
-        ->test('pages::employees.index')
-        ->call('openEdit', $employee->id)
+        ->test('pages::employees.edit', ['employee' => $employee])
         ->set("roleAssignments.{$roleA->id}", 'main')
         ->set("roleAssignments.{$roleB->id}", 'deputy')
         ->call('save')
@@ -59,8 +58,7 @@ test('clearing a role assignment removes the link', function () {
     expect($employee->fresh()->roles)->toHaveCount(1);
 
     Livewire\Livewire::actingAs($user->fresh())
-        ->test('pages::employees.index')
-        ->call('openEdit', $employee->id)
+        ->test('pages::employees.edit', ['employee' => $employee])
         ->set("roleAssignments.{$role->id}", '')
         ->call('save')
         ->assertHasNoErrors();
@@ -231,8 +229,7 @@ test('employees form saves multiple managers via the multi-select', function () 
     ]);
 
     Livewire\Livewire::actingAs($user->fresh())
-        ->test('pages::employees.index')
-        ->call('openCreate')
+        ->test('pages::employees.edit')
         ->set('first_name', 'Anna')
         ->set('last_name', 'Beispiel')
         ->set('manager_ids', [$chef1->id, $chef2->id])
@@ -254,7 +251,7 @@ test('employee can be assigned a location and the form persists it', function ()
     ]);
 
     Livewire\Livewire::actingAs($user->fresh())
-        ->test('pages::employees.index')
+        ->test('pages::employees.edit')
         ->set('first_name', 'Eva')
         ->set('last_name', 'Beispiel')
         ->set('location_id', $hq->id)
@@ -304,7 +301,7 @@ test('location selector shows only locations of current tenant', function () {
     ]);
 
     Livewire\Livewire::actingAs($user->fresh())
-        ->test('pages::employees.index')
+        ->test('pages::employees.edit')
         ->assertSee('Hauptsitz Eigen')
         ->assertDontSee('Fremder Standort');
 });

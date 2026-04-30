@@ -43,42 +43,19 @@ it('loads only the actual managers into manager_ids, never an unrelated employee
     ]);
 
     $component = Livewire::actingAs($user->fresh())
-        ->test('pages::employees.index')
-        ->call('openEdit', $lehmann->id);
+        ->test('pages::employees.edit', ['employee' => $lehmann]);
 
     expect($component->get('manager_ids'))
         ->toHaveCount(9)
         ->not->toContain($roth->id);
 });
 
-it('does not leak manager_ids between successive openEdit calls', function () {
-    $user = User::factory()->create();
-    $company = Company::factory()->for($user->currentTeam)->create();
-
-    $a = mkEmp($company, 'Anna', 'A');
-    $b = mkEmp($company, 'Bernd', 'B');
-    $c = mkEmp($company, 'Carla', 'C');
-
-    $a->managers()->attach($c->id);
-
-    $component = Livewire::actingAs($user->fresh())
-        ->test('pages::employees.index')
-        ->call('openEdit', $a->id);
-
-    expect($component->get('manager_ids'))->toBe([$c->id]);
-
-    $component->call('openEdit', $b->id);
-
-    expect($component->get('manager_ids'))->toBe([]);
-});
-
 it('renders each manager-candidate checkbox with a stable wire:key', function () {
     // Ohne wire:key recycelt morphdom die <input>-Elemente positionsbasiert.
     // managerOptions filtert die aktuell bearbeitete Person raus, also
-    // verschieben sich die Listenpositionen beim Wechsel zwischen Mitarbeitern
-    // — und alte checked-States kleben am DOM-Element, das jetzt einen
-    // anderen Kandidaten repräsentiert. wire:key auf jedem Wrapper-<label>
-    // verhindert das.
+    // verschieben sich die Listenpositionen — ohne wire:key auf jedem
+    // Wrapper-<label> würden Checked-States am DOM-Element kleben, das
+    // jetzt einen anderen Kandidaten repräsentiert.
     $user = User::factory()->create();
     $company = Company::factory()->for($user->currentTeam)->create();
 
@@ -86,8 +63,7 @@ it('renders each manager-candidate checkbox with a stable wire:key', function ()
     $roth = mkEmp($company, 'Martin', 'Roth');
 
     $component = Livewire::actingAs($user->fresh())
-        ->test('pages::employees.index')
-        ->call('openEdit', $bernd->id);
+        ->test('pages::employees.edit', ['employee' => $bernd]);
 
     $html = $component->html();
 

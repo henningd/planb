@@ -252,6 +252,13 @@ Route::prefix('{current_team}')
             Route::livewire('incident-mode', 'pages::incident-mode.index')->name('incident-mode.index');
         }
         Route::livewire('employees', 'pages::employees.index')->name('employees.index');
+        Route::livewire('employees/create', 'pages::employees.edit')->name('employees.create');
+        Route::livewire('employees/{employee}', 'pages::employees.show')
+            ->where('employee', '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}')
+            ->name('employees.show');
+        Route::livewire('employees/{employee}/edit', 'pages::employees.edit')
+            ->where('employee', '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}')
+            ->name('employees.edit');
         Route::livewire('roles', 'pages::roles.index')->name('roles.index');
 
         Route::livewire('scenarios', 'pages::scenarios.index')->name('scenarios.index');

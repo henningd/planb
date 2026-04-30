@@ -8,7 +8,7 @@ Erreichbar über die Sidebar **„Notfallhandbuch → Mitarbeiter"**.
 
 ## Einen Mitarbeiter anlegen
 
-Knopf **„Neuer Mitarbeiter"**. Pflichtangaben:
+Knopf **„Neuer Mitarbeiter"** öffnet eine eigene Bearbeitungsseite (kein Popup) — bei vielen Rollen oder Vorgesetzten haben Sie hier den Platz, den Sie brauchen. Bestehende Mitarbeiter bearbeiten Sie über das Drei-Punkte-Menü auf der Karte → **„Bearbeiten"** (öffnet dieselbe Seite, mit den Werten der Person vorbelegt). Pflichtangaben:
 
 - **Vor- und Nachname**.
 
@@ -54,6 +54,10 @@ Oben rechts neben „Neuer Mitarbeiter" sitzt der Button **„JSON-Export"**. Kl
 Die Datei ist mit Klar-Namen aufgelöst — also auch ohne die Plattform inspizierbar (z. B. in einem Texteditor) oder weiterverarbeitbar (in Excel via JSON-Import, in einer eigenen Notfall-Datenbank, oder als Beleg an einen Auditor).
 
 Hinweis: Für einen vollständigen, re-importierbaren Mandanten-Export gibt es zusätzlich das **Mandanten-Archiv** unter den Einstellungen.
+
+## Detail-Seite
+
+Klick auf den Namen einer Karte (oder im Drei-Punkte-Menü auf **„Details"**) öffnet die Detail-Seite einer Person. Sie zeigt — ohne Bearbeiten-Modus — alle erfassten Stammdaten, Kontaktwege, Vorgesetzten- und Unterstellungs-Beziehungen, Rollen-Zuordnungen mit Haupt/Vertretung und alle System-Zuweisungen mit Eigentumsrolle. Vorgesetzte und Unterstellte sind direkt verlinkt — Sie können sich so durch die Hierarchie klicken. Oben rechts sitzen die Aktionen **Bearbeiten** (führt auf die Bearbeitungsseite) und **Löschen** (mit Sicherheitsabfrage).
 
 ## Beziehungen auf einen Blick
 
