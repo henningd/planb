@@ -61,6 +61,11 @@
                     <flux:sidebar.item icon="wrench-screwdriver" :href="route('service-providers.index')" :current="request()->routeIs('service-providers.*')" wire:navigate>
                         {{ __('Dienstleister') }}
                     </flux:sidebar.item>
+                    @if (auth()->user()->isCurrentTeamAdmin())
+                        <flux:sidebar.item icon="shield-check" :href="route('insurance-policies.index')" :current="request()->routeIs('insurance-policies.*')" wire:navigate>
+                            {{ __('Versicherungen') }}
+                        </flux:sidebar.item>
+                    @endif
                     <flux:sidebar.item icon="server-stack" :href="route('systems.index')" :current="request()->routeIs('systems.index') || request()->routeIs('systems.create') || request()->routeIs('systems.show') || request()->routeIs('systems.edit') || request()->routeIs('systems.export')" wire:navigate>
                         {{ __('Systeme') }}
                     </flux:sidebar.item>
@@ -75,11 +80,6 @@
                     <flux:sidebar.item icon="chart-bar-square" :href="route('recovery-gantt.index')" :current="request()->routeIs('recovery-gantt.*')" wire:navigate>
                         {{ __('Recovery-Zeitplan') }}
                     </flux:sidebar.item>
-                    @if (auth()->user()->isCurrentTeamAdmin())
-                        <flux:sidebar.item icon="shield-check" :href="route('insurance-policies.index')" :current="request()->routeIs('insurance-policies.*')" wire:navigate>
-                            {{ __('Versicherungen') }}
-                        </flux:sidebar.item>
-                    @endif
                     <flux:sidebar.item icon="briefcase" :href="route('emergency-resources.index')" :current="request()->routeIs('emergency-resources.*')" wire:navigate>
                         {{ __('Sofortmittel') }}
                     </flux:sidebar.item>
