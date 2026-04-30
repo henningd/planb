@@ -42,5 +42,6 @@
         <env name="FEATURE_LESSONS_LEARNED_ENABLED" value="true" force="true"/>
         <env name="FEATURE_RISK_REGISTER_ENABLED" value="true" force="true"/>
         <env name="FEATURE_MONITORING_API_ENABLED" value="true" force="true"/>
+        <env name="FEATURE_BIBLE_VERSES_ENABLED" value="true" force="true"/>
     </php>
 </phpunit>

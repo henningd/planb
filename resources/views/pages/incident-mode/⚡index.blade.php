@@ -3,6 +3,7 @@
 use App\Enums\CommunicationChannel;
 use App\Models\Company;
 use App\Models\ScenarioRunStep;
+use App\Support\BibleVerses;
 use App\Support\Incident\Cockpit;
 use App\Support\Incident\CockpitData;
 use Flux\Flux;
@@ -13,6 +14,27 @@ use Livewire\Component;
 
 new #[Title('Krisen-Cockpit')] class extends Component {
     public ?string $previewTemplateId = null;
+
+    /**
+     * Beim Page-Load gewählter Bibel-Vers für „kein Notfall". Bleibt für die
+     * Lebenszeit der Component stabil — wechselt nicht bei wire-Aktionen.
+     *
+     * @var array{text: string, reference: string}|null
+     */
+    public ?array $peaceVerse = null;
+
+    /**
+     * Beim Page-Load gewählter Bibel-Vers für „aktiver Notfall".
+     *
+     * @var array{text: string, reference: string}|null
+     */
+    public ?array $crisisVerse = null;
+
+    public function mount(): void
+    {
+        $this->peaceVerse = BibleVerses::random('peace');
+        $this->crisisVerse = BibleVerses::random('crisis');
+    }
 
     #[Computed]
     public function company(): ?Company
@@ -182,6 +204,18 @@ new #[Title('Krisen-Cockpit')] class extends Component {
                         </div>
                     </div>
                 </div>
+
+                @if ($peaceVerse)
+                    <figure class="rounded-xl border border-zinc-200 bg-white p-6 dark:border-zinc-700 dark:bg-zinc-900">
+                        <flux:icon name="book-open" class="h-5 w-5 text-zinc-400" />
+                        <blockquote class="mt-3 text-base italic leading-relaxed text-zinc-700 dark:text-zinc-200">
+                            „{{ $peaceVerse['text'] }}"
+                        </blockquote>
+                        <figcaption class="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
+                            — {{ $peaceVerse['reference'] }}
+                        </figcaption>
+                    </figure>
+                @endif
             </div>
         @else
             @php
@@ -736,6 +770,18 @@ new #[Title('Krisen-Cockpit')] class extends Component {
                     </div>
                 @endif
             </flux:modal>
+
+            @if ($crisisVerse)
+                <figure class="mt-6 rounded-xl border border-rose-200 bg-rose-50/60 p-6 dark:border-rose-900 dark:bg-rose-950/20">
+                    <flux:icon name="book-open" class="h-5 w-5 text-rose-500 dark:text-rose-400" />
+                    <blockquote class="mt-3 text-base italic leading-relaxed text-rose-900 dark:text-rose-100">
+                        „{{ $crisisVerse['text'] }}"
+                    </blockquote>
+                    <figcaption class="mt-2 text-sm text-rose-700 dark:text-rose-300">
+                        — {{ $crisisVerse['reference'] }}
+                    </figcaption>
+                </figure>
+            @endif
         @endif
     @endif
 </section>
