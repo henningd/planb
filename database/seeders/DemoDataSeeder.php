@@ -1409,22 +1409,97 @@ class DemoDataSeeder extends Seeder
      */
     private function seedSystemTasks(Company $company): void
     {
+        // Sinnvolle Mitarbeiter-Zuordnungen für die Basisbetrieb-Systeme:
+        // Dieter Klein (intern. IT-Beauftragter) ist Hauptperson für IT-Wartung,
+        // Marc Vogel (Junior IT-Support) ist seine Vertretung. Bernd Schneider
+        // (Werkstattleitung) wird für den Generator-Probelauf eingebunden, weil
+        // Generator/USV physisch in der Werkstatt stehen. Anna Beispiel
+        // (Büroleitung) ist Vertretung für die SIM-Karten-Pflege.
+        $itLead = 'dieter.klein@mustermann.de';
+        $itBackup = 'marc.vogel@mustermann.de';
+        $office = 'anna@mustermann.de';
+        $workshop = 'bernd.schneider@mustermann.de';
+
         $taskTemplates = [
             'Strom' => [
-                ['title' => 'USV-Akku-Test', 'description' => 'Last für 30 Min. simulieren, Laufzeit-Abweichung dokumentieren.', 'due_in_days' => 30, 'completed_days_ago' => null],
-                ['title' => 'Generator-Probelauf', 'description' => 'Generator unter Last starten, Treibstoff-Stand und Übergabe testen.', 'due_in_days' => 90, 'completed_days_ago' => 45],
+                [
+                    'title' => 'USV-Akku-Test',
+                    'description' => 'Last für 30 Min. simulieren, Laufzeit-Abweichung dokumentieren.',
+                    'due_in_days' => 30, 'completed_days_ago' => null,
+                    'assignees' => [
+                        ['email' => $itLead, 'is_deputy' => false],
+                        ['email' => $itBackup, 'is_deputy' => true],
+                    ],
+                ],
+                [
+                    'title' => 'Generator-Probelauf',
+                    'description' => 'Generator unter Last starten, Treibstoff-Stand und Übergabe testen.',
+                    'due_in_days' => 90, 'completed_days_ago' => 45,
+                    'assignees' => [
+                        ['email' => $itLead, 'is_deputy' => false],
+                        ['email' => $workshop, 'is_deputy' => true],
+                    ],
+                ],
             ],
             'Internet' => [
-                ['title' => 'Failover auf Mobil-Hotspot prüfen', 'description' => 'Kabel ziehen, Failover-Zeit auf LTE messen, kritische Apps prüfen.', 'due_in_days' => 60, 'completed_days_ago' => null],
-                ['title' => 'Notfall-SIM-Guthaben checken', 'description' => 'Prepaid-Karte aufladen falls < 10 €.', 'due_in_days' => 14, 'completed_days_ago' => null],
+                [
+                    'title' => 'Failover auf Mobil-Hotspot prüfen',
+                    'description' => 'Kabel ziehen, Failover-Zeit auf LTE messen, kritische Apps prüfen.',
+                    'due_in_days' => 60, 'completed_days_ago' => null,
+                    'assignees' => [
+                        ['email' => $itLead, 'is_deputy' => false],
+                        ['email' => $itBackup, 'is_deputy' => true],
+                    ],
+                ],
+                [
+                    'title' => 'Notfall-SIM-Guthaben checken',
+                    'description' => 'Prepaid-Karte aufladen falls < 10 €.',
+                    'due_in_days' => 14, 'completed_days_ago' => null,
+                    'assignees' => [
+                        ['email' => $itBackup, 'is_deputy' => false],
+                        ['email' => $office, 'is_deputy' => true],
+                    ],
+                ],
             ],
             'Server' => [
-                ['title' => 'Restore-Test Offline-Backup', 'description' => 'Voll-Restore auf Test-Server, Datenvollständigkeit prüfen.', 'due_in_days' => 180, 'completed_days_ago' => 30],
-                ['title' => 'Sicherheits-Updates einspielen', 'description' => 'OS- und Anwendungs-Patches installieren, Reboot-Fenster mit GF abstimmen.', 'due_in_days' => -3, 'completed_days_ago' => null],
-                ['title' => 'Festplatten-SMART-Status', 'description' => 'SMART-Werte aller Datenträger prüfen, Auffälligkeiten dokumentieren.', 'due_in_days' => 30, 'completed_days_ago' => null],
+                [
+                    'title' => 'Restore-Test Offline-Backup',
+                    'description' => 'Voll-Restore auf Test-Server, Datenvollständigkeit prüfen.',
+                    'due_in_days' => 180, 'completed_days_ago' => 30,
+                    'assignees' => [
+                        ['email' => $itLead, 'is_deputy' => false],
+                        ['email' => $itBackup, 'is_deputy' => true],
+                    ],
+                ],
+                [
+                    'title' => 'Sicherheits-Updates einspielen',
+                    'description' => 'OS- und Anwendungs-Patches installieren, Reboot-Fenster mit GF abstimmen.',
+                    'due_in_days' => -3, 'completed_days_ago' => null,
+                    'assignees' => [
+                        ['email' => $itLead, 'is_deputy' => false],
+                        ['email' => $itBackup, 'is_deputy' => true],
+                    ],
+                ],
+                [
+                    'title' => 'Festplatten-SMART-Status',
+                    'description' => 'SMART-Werte aller Datenträger prüfen, Auffälligkeiten dokumentieren.',
+                    'due_in_days' => 30, 'completed_days_ago' => null,
+                    'assignees' => [
+                        ['email' => $itBackup, 'is_deputy' => false],
+                        ['email' => $itLead, 'is_deputy' => true],
+                    ],
+                ],
             ],
             'Telefon' => [
-                ['title' => 'Konfigurations-Backup TK-Anlage', 'description' => 'Aktuelle Config exportieren und im IT-Schrank ablegen.', 'due_in_days' => 90, 'completed_days_ago' => 60],
+                [
+                    'title' => 'Konfigurations-Backup TK-Anlage',
+                    'description' => 'Aktuelle Config exportieren und im IT-Schrank ablegen.',
+                    'due_in_days' => 90, 'completed_days_ago' => 60,
+                    'assignees' => [
+                        ['email' => $itLead, 'is_deputy' => false],
+                        ['email' => $itBackup, 'is_deputy' => true],
+                    ],
+                ],
             ],
             'E-Mail' => [
                 ['title' => 'M365-Admin-Account: 2FA-Backup-Codes', 'description' => 'Recovery-Codes neu erzeugen, im Tresor ablegen.', 'due_in_days' => 365, 'completed_days_ago' => 200],
@@ -1456,6 +1531,11 @@ class DemoDataSeeder extends Seeder
             ->where('company_id', $company->id)
             ->get();
 
+        $employeeIdByEmail = Employee::withoutGlobalScope(CurrentCompanyScope::class)
+            ->where('company_id', $company->id)
+            ->whereNotNull('email')
+            ->pluck('id', 'email');
+
         foreach ($systems as $system) {
             foreach ($taskTemplates as $keyword => $tasks) {
                 if (! str_contains(mb_strtolower($system->name), mb_strtolower($keyword))) {
@@ -1463,7 +1543,7 @@ class DemoDataSeeder extends Seeder
                 }
 
                 foreach ($tasks as $sort => $task) {
-                    SystemTask::withoutGlobalScope(CurrentCompanyScope::class)->updateOrCreate(
+                    $systemTask = SystemTask::withoutGlobalScope(CurrentCompanyScope::class)->updateOrCreate(
                         [
                             'company_id' => $company->id,
                             'system_id' => $system->id,
@@ -1478,6 +1558,19 @@ class DemoDataSeeder extends Seeder
                             'sort' => $sort,
                         ],
                     );
+
+                    foreach ($task['assignees'] ?? [] as $assignee) {
+                        $employeeId = $employeeIdByEmail[$assignee['email']] ?? null;
+                        if ($employeeId === null) {
+                            continue;
+                        }
+                        AssignmentSync::attach(
+                            $systemTask,
+                            $systemTask->assignees(),
+                            $employeeId,
+                            ['raci_role' => 'R', 'is_deputy' => (bool) $assignee['is_deputy']],
+                        );
+                    }
                 }
             }
         }

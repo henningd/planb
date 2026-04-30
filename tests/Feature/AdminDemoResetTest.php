@@ -1,9 +1,11 @@
 <?php
 
+use App\Enums\SystemCategory;
 use App\Models\Company;
 use App\Models\Employee;
 use App\Models\HandbookShare;
 use App\Models\HandbookVersion;
+use App\Models\System;
 use App\Models\SystemTask;
 use App\Models\Team;
 use App\Models\User;
@@ -86,6 +88,51 @@ test('seed populates system_tasks across multiple systems', function () {
     // Mindestens ein paar Tasks sollten erledigt, ein paar offen sein.
     expect($tasks->whereNotNull('completed_at')->count())->toBeGreaterThan(0);
     expect($tasks->whereNull('completed_at')->count())->toBeGreaterThan(0);
+});
+
+test('seed assigns employees to every basisbetrieb system task', function () {
+    $admin = User::factory()->create(['is_super_admin' => true]);
+
+    Livewire\Livewire::actingAs($admin->fresh())
+        ->test('pages::admin.demo.index')
+        ->call('seed')
+        ->assertHasNoErrors();
+
+    $company = Company::withoutGlobalScope(CurrentCompanyScope::class)
+        ->where('name', 'Musterfirma GmbH')
+        ->first();
+
+    $basisSystemIds = System::withoutGlobalScope(CurrentCompanyScope::class)
+        ->where('company_id', $company->id)
+        ->where('category', SystemCategory::Basisbetrieb)
+        ->pluck('id');
+
+    $basisTasks = SystemTask::withoutGlobalScope(CurrentCompanyScope::class)
+        ->where('company_id', $company->id)
+        ->whereIn('system_id', $basisSystemIds)
+        ->with('assignees')
+        ->get();
+
+    expect($basisTasks)->not->toBeEmpty('Demo seedet keine Aufgaben für Basisbetrieb-Systeme');
+
+    foreach ($basisTasks as $task) {
+        expect($task->assignees)->not->toBeEmpty(
+            "Aufgabe „{$task->title}“ hat keine Mitarbeiter zugeordnet."
+        );
+
+        $hasMain = $task->assignees->contains(fn ($e) => ! (bool) ($e->pivot->is_deputy ?? false));
+        $hasDeputy = $task->assignees->contains(fn ($e) => (bool) ($e->pivot->is_deputy ?? false));
+        expect($hasMain)->toBeTrue("Aufgabe „{$task->title}“ hat keine Hauptperson.");
+        expect($hasDeputy)->toBeTrue("Aufgabe „{$task->title}“ hat keine Vertretung.");
+    }
+
+    // Beispielhaft: USV-Akku-Test → Dieter Klein (Hauptperson), Marc Vogel (Vertretung).
+    $usvTask = $basisTasks->firstWhere('title', 'USV-Akku-Test');
+    expect($usvTask)->not->toBeNull();
+    $main = $usvTask->assignees->firstWhere('email', 'dieter.klein@mustermann.de');
+    $deputy = $usvTask->assignees->firstWhere('email', 'marc.vogel@mustermann.de');
+    expect($main)->not->toBeNull()->and((bool) $main->pivot->is_deputy)->toBeFalse();
+    expect($deputy)->not->toBeNull()->and((bool) $deputy->pivot->is_deputy)->toBeTrue();
 });
 
 test('seed creates revision-safe pdfs for approved handbook versions and shares', function () {
