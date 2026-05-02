@@ -445,6 +445,10 @@ Route::prefix('admin')
         Route::livewire('scenarios/{globalScenario}', 'pages::admin.scenarios.show')->name('scenarios.show');
         Route::livewire('demo', 'pages::admin.demo.index')->name('demo.index');
         Route::livewire('industry-templates', 'pages::admin.industry-templates.index')->name('industry-templates.index');
+        Route::livewire('data-protection-authorities', 'pages::admin.data-protection-authorities.index')->name('data-protection-authorities.index');
+        Route::livewire('data-protection-authorities/{authority}', 'pages::admin.data-protection-authorities.show')
+            ->where('authority', '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}')
+            ->name('data-protection-authorities.show');
         Route::livewire('settings/system', 'pages::admin.settings.system.index')->name('settings.system.index');
     });
 
