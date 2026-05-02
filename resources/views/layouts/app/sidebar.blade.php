@@ -80,6 +80,9 @@
                     <flux:sidebar.item icon="chart-bar-square" :href="route('recovery-gantt.index')" :current="request()->routeIs('recovery-gantt.*')" wire:navigate>
                         {{ __('Recovery-Zeitplan') }}
                     </flux:sidebar.item>
+                    <flux:sidebar.item icon="calculator" :href="route('systems.cost-calculator')" :current="request()->routeIs('systems.cost-calculator')" wire:navigate>
+                        {{ __('Ausfallrechner') }}
+                    </flux:sidebar.item>
                     <flux:sidebar.item icon="briefcase" :href="route('emergency-resources.index')" :current="request()->routeIs('emergency-resources.*')" wire:navigate>
                         {{ __('Sofortmittel') }}
                     </flux:sidebar.item>

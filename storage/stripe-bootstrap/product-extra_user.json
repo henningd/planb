@@ -1,0 +1,23 @@
+{
+  "id": "prod_UQsNPRGKMm3EMj",
+  "object": "product",
+  "active": true,
+  "attributes": [],
+  "created": 1777578720,
+  "default_price": null,
+  "description": "Pro App-User über das Plan-Limit hinaus.",
+  "images": [],
+  "livemode": false,
+  "marketing_features": [],
+  "metadata": {},
+  "name": "PlanB Zusatz-User",
+  "package_dimensions": null,
+  "shippable": null,
+  "statement_descriptor": null,
+  "tax_code": null,
+  "tax_details": null,
+  "type": "service",
+  "unit_label": null,
+  "updated": 1777578720,
+  "url": null
+}

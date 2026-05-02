@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\BillingInvoiceController;
 use App\Http\Middleware\EnsureTeamMembership;
 use App\Models\User;
 use App\Support\Privacy\AccountDataExporter;
@@ -54,4 +55,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::middleware(EnsureTeamMembership::class)->group(function () {
         Route::livewire('settings/teams/{team}', 'pages::teams.edit')->name('teams.edit');
     });
+
+    Route::livewire('settings/billing', 'pages::settings.billing')->name('billing.edit');
+    Route::get('settings/billing/invoice/{invoice}', BillingInvoiceController::class)
+        ->name('billing.invoice');
 });

@@ -5,6 +5,7 @@ namespace App\Actions\Fortify;
 use App\Actions\Teams\CreateTeam;
 use App\Concerns\PasswordValidationRules;
 use App\Concerns\ProfileValidationRules;
+use App\Models\Team;
 use App\Models\TeamInvitation;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -48,10 +49,36 @@ class CreateNewUser implements CreatesNewUsers
                 return $user;
             }
 
-            $this->createTeam->handle($user, $user->name."'s Team", isPersonal: true);
+            $team = $this->createTeam->handle($user, $user->name."'s Team", isPersonal: true);
+
+            $this->maybeStartTrial($team);
 
             return $user;
         });
+    }
+
+    /**
+     * Trial-Zeitraum auf dem Team setzen, wenn der User sich für den
+     * Trial-Plan entschieden hat. Ohne Stripe-Abo (Generic Trial), damit
+     * keine Kreditkarte beim Registrieren nötig ist.
+     */
+    private function maybeStartTrial(Team $team): void
+    {
+        if (! config('features.billing')) {
+            return;
+        }
+
+        $intended = session('intended_plan');
+
+        if ($intended !== config('billing.trial_plan')) {
+            return;
+        }
+
+        $team->forceFill([
+            'trial_ends_at' => now()->addDays((int) config('billing.trial_days', 14)),
+        ])->save();
+
+        session()->forget('intended_plan');
     }
 
     /**

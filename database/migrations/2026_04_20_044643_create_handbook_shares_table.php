@@ -11,7 +11,7 @@ return new class extends Migration
         Schema::create('handbook_shares', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->foreignUuid('company_id')->constrained()->cascadeOnDelete();
-            $table->foreignUuid('created_by_user_id')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('created_by_user_id')->nullable()->constrained('users')->nullOnDelete();
             $table->string('token', 64)->unique();
             $table->string('label');
             $table->timestamp('expires_at');

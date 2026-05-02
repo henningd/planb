@@ -10,6 +10,9 @@
             <flux:navlist.item :href="route('profile.edit')" wire:navigate>{{ __('Profile') }}</flux:navlist.item>
             <flux:navlist.item :href="route('security.edit')" wire:navigate>{{ __('Security') }}</flux:navlist.item>
             <flux:navlist.item :href="route('teams.index')" :current="request()->routeIs('teams.*')" wire:navigate>{{ __('Teams') }}</flux:navlist.item>
+            @if (config('features.billing'))
+                <flux:navlist.item :href="route('billing.edit')" :current="request()->routeIs('billing.*')" wire:navigate>{{ __('Abrechnung') }}</flux:navlist.item>
+            @endif
             <flux:navlist.item :href="route('settings.data-privacy')" wire:navigate>{{ __('Daten & Datenschutz') }}</flux:navlist.item>
             <flux:navlist.item :href="route('appearance.edit')" wire:navigate>{{ __('Appearance') }}</flux:navlist.item>
         </flux:navlist>

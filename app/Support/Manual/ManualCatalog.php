@@ -34,6 +34,7 @@ class ManualCatalog
             ['category' => 'Stammdaten', 'slug' => 'abhaengigkeiten', 'title' => 'Abhängigkeiten', 'summary' => 'Wer hängt von wem ab? Visualisierung als Netzwerk-Graph.'],
             ['category' => 'Stammdaten', 'slug' => 'aufgaben-inbox', 'title' => 'Aufgaben-Inbox', 'summary' => 'Zentrale Sicht auf alle System-Aufgaben mit Fälligkeit und RACI.'],
             ['category' => 'Stammdaten', 'slug' => 'recovery-zeitplan', 'title' => 'Recovery-Zeitplan', 'summary' => 'Wiederanlauf als Gantt-Diagramm — wer macht wann was.'],
+            ['category' => 'Stammdaten', 'slug' => 'ausfallrechner', 'title' => 'Ausfallrechner', 'summary' => 'Schadens-Schätzung bei Ausfall einzelner oder mehrerer Systeme — Stundenkosten × angenommene Dauer.'],
             ['category' => 'Stammdaten', 'slug' => 'versicherungen', 'title' => 'Versicherungen', 'summary' => 'Cyberversicherung, Hotline, Police, Selbstbehalt, Vertragsende.'],
             ['category' => 'Stammdaten', 'slug' => 'sofortmittel', 'title' => 'Sofortmittel', 'summary' => 'Notfall-Ressourcen wie USV, Notebooks, Bargeld, Schlüssel.'],
             ['category' => 'Stammdaten', 'slug' => 'notfallbetrieb', 'title' => 'Notfallbetrieb', 'summary' => 'Ersatzprozesse für den Ausfall kritischer Systeme — Auslöser, Dauer, Übergabe an den Wiederanlauf.'],
@@ -69,6 +70,7 @@ class ManualCatalog
             ['category' => 'Einstellungen', 'slug' => 'system-settings', 'title' => 'System-Einstellungen', 'summary' => 'Mandanten-Defaults, Backup, Auto-PDF, Aufbewahrung.'],
             ['category' => 'Einstellungen', 'slug' => 'branding', 'title' => 'Branding', 'summary' => 'Eigenes Logo, Anzeigename, Primärfarbe pro Mandant.'],
             ['category' => 'Einstellungen', 'slug' => 'api-webhooks', 'title' => 'API & Webhooks', 'summary' => 'Tokens, Zabbix, Prometheus-Anbindung, automatische Incidents.'],
+            ['category' => 'Einstellungen', 'slug' => 'abrechnung', 'title' => 'Abrechnung', 'summary' => 'Tarife, Test-Zeitraum, Zusatzleistungen, Rechnungen, Reverse-Charge.'],
 
             // Anhang
             ['category' => 'Anhang', 'slug' => 'compliance-dokumente', 'title' => 'Compliance-Dokumente', 'summary' => 'Impressum, Datenschutz, AGB, AVV, TOM, Subprocessors, security.txt — die öffentlichen Pflicht-Seiten der Plattform.'],

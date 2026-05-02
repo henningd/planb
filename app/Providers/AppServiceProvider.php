@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Models\Team;
 use App\Services\Sms\NullSmsGateway;
 use App\Services\Sms\SevenIoGateway;
 use App\Services\Sms\SmsGatewayContract;
@@ -12,6 +13,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
+use Laravel\Cashier\Cashier;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -42,6 +44,8 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->configureDefaults();
         $this->applyPlatformOverrides();
+
+        Cashier::useCustomerModel(Team::class);
     }
 
     /**

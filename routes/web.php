@@ -4,6 +4,7 @@ use App\Http\Controllers\AuditLogExportController;
 use App\Http\Controllers\BackupController;
 use App\Http\Controllers\HandbookVersionPdfController;
 use App\Http\Controllers\PreferenceController;
+use App\Http\Middleware\EnforceBillingState;
 use App\Http\Middleware\EnsureSuperAdmin;
 use App\Http\Middleware\EnsureTeamMembership;
 use App\Http\Middleware\SetTeamUrlDefaults;
@@ -220,7 +221,7 @@ Route::get('/handbuch/{slug}', function (string $slug) {
 })->where('slug', '[a-z0-9-]+')->name('manual.show');
 
 Route::prefix('{current_team}')
-    ->middleware(['auth', 'verified', EnsureTeamMembership::class])
+    ->middleware(['auth', 'verified', EnsureTeamMembership::class, EnforceBillingState::class])
     ->group(function () {
         Route::livewire('dashboard', 'pages::dashboard')->name('dashboard');
         Route::livewire('onboarding', 'pages::onboarding.index')->name('onboarding.index');
@@ -234,6 +235,7 @@ Route::prefix('{current_team}')
         Route::livewire('systems', 'pages::systems.index')->name('systems.index');
         Route::livewire('systems/create', 'pages::systems.edit')->name('systems.create');
         Route::livewire('systems/recovery', 'pages::systems.recovery')->name('systems.recovery');
+        Route::livewire('systems/cost-calculator', 'pages::systems.cost-calculator')->name('systems.cost-calculator');
         Route::livewire('systems/{system}', 'pages::systems.show')
             ->where('system', '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}')
             ->name('systems.show');

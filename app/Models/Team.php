@@ -12,12 +12,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Laravel\Cashier\Billable;
 
 #[Fillable(['name', 'slug', 'is_personal'])]
 class Team extends Model
 {
     /** @use HasFactory<TeamFactory> */
-    use GeneratesUniqueTeamSlugs, HasFactory, SoftDeletes;
+    use Billable, GeneratesUniqueTeamSlugs, HasFactory, SoftDeletes;
 
     /**
      * Bootstrap the model and its traits.
@@ -101,6 +102,7 @@ class Team extends Model
     {
         return [
             'is_personal' => 'boolean',
+            'trial_ends_at' => 'datetime',
         ];
     }
 
@@ -110,5 +112,87 @@ class Team extends Model
     public function getRouteKeyName(): string
     {
         return 'slug';
+    }
+
+    /**
+     * E-Mail-Adresse, die Stripe als Kunden-Kontakt nutzt — wir nehmen den
+     * Team-Owner.
+     */
+    public function stripeEmail(): ?string
+    {
+        return $this->owner()?->email;
+    }
+
+    /**
+     * Anzeigename des Stripe-Kunden — Mandanten-Name.
+     */
+    public function stripeName(): ?string
+    {
+        return $this->name;
+    }
+
+    /**
+     * Liefert den aktiven Plan-Schlüssel (starter/advanced/enterprise) oder
+     * null, wenn kein Abo aktiv ist (auch nicht im Trial).
+     */
+    public function activePlanKey(): ?string
+    {
+        $subscription = $this->subscription('default');
+
+        if ($subscription && $subscription->valid()) {
+            $priceId = $subscription->stripe_price;
+
+            foreach (config('billing.plans') as $key => $plan) {
+                if ($plan['monthly_price_id'] === $priceId || $plan['yearly_price_id'] === $priceId) {
+                    return $key;
+                }
+            }
+        }
+
+        // Ohne Stripe-Abo: Generic-Trial (Trial ohne Kreditkarte) zählt als
+        // Trial-Plan, damit Feature-Gates (`onPlan('advanced')`) während
+        // des Test-Zeitraums durchlassen.
+        if ($this->onGenericTrial()) {
+            return config('billing.trial_plan');
+        }
+
+        return null;
+    }
+
+    /**
+     * Prüft, ob der Mandant mindestens den angegebenen Plan-Tier hat
+     * (Starter < Advanced < Enterprise). Nützlich für Feature-Gates.
+     */
+    public function onPlan(string $minimum): bool
+    {
+        $tiers = ['starter' => 1, 'advanced' => 2, 'enterprise' => 3];
+        $current = $this->activePlanKey();
+
+        if ($current === null) {
+            return false;
+        }
+
+        return ($tiers[$current] ?? 0) >= ($tiers[$minimum] ?? 0);
+    }
+
+    /**
+     * Mandant ist eingefroren — Trial abgelaufen, kein gültiges Abo.
+     */
+    public function isFrozen(): bool
+    {
+        if (! config('billing.freeze_after_trial')) {
+            return false;
+        }
+
+        if ($this->subscribed('default')) {
+            return false;
+        }
+
+        // Kein Abo, kein Trial → eingefroren, sobald jemals ein Trial lief.
+        if ($this->trial_ends_at !== null && $this->trial_ends_at->isPast()) {
+            return true;
+        }
+
+        return false;
     }
 }

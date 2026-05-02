@@ -34,4 +34,9 @@ return [
     // Default aus, weil es eine spirituelle Ergänzung ist, die nicht jeder
     // Mandant haben möchte.
     'bible_verses' => filter_var(env('FEATURE_BIBLE_VERSES_ENABLED', false), FILTER_VALIDATE_BOOLEAN),
+
+    // Mandanten-Abrechnung über Stripe / Cashier. Default aus, damit das
+    // Modul nur sichtbar wird, wenn Stripe-Keys hinterlegt sind und der
+    // Betreiber die Abrechnung wirklich nutzen will.
+    'billing' => filter_var(env('FEATURE_BILLING_ENABLED', false), FILTER_VALIDATE_BOOLEAN),
 ];

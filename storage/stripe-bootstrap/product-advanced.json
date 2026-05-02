@@ -1,0 +1,23 @@
+{
+  "id": "prod_UQsN3Zt8I95EoC",
+  "object": "product",
+  "active": true,
+  "attributes": [],
+  "created": 1777578718,
+  "default_price": null,
+  "description": "BCM/NIS2-Compliance für Mittelständler 25–250 MA, bis 5 Standorte.",
+  "images": [],
+  "livemode": false,
+  "marketing_features": [],
+  "metadata": {},
+  "name": "PlanB Advanced",
+  "package_dimensions": null,
+  "shippable": null,
+  "statement_descriptor": null,
+  "tax_code": null,
+  "tax_details": null,
+  "type": "service",
+  "unit_label": null,
+  "updated": 1777578718,
+  "url": null
+}

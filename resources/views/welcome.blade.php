@@ -58,6 +58,11 @@
             'icon'  => 'refresh',
         ],
         [
+            'title' => 'Ausfallrechner',
+            'text'  => 'Berechnen Sie auf Knopfdruck den geschätzten Schaden, wenn ein oder mehrere Systeme für eine bestimmte Dauer ausfallen — als Grundlage für Investitions-Entscheidungen und Versicherungs-Gespräche.',
+            'icon'  => 'calculator',
+        ],
+        [
             'title' => 'System- & Zugangsübersicht',
             'text'  => 'Alle relevanten Systeme, Zugänge und Abhängigkeiten an einem Ort – strukturiert, nachvollziehbar und jederzeit aktuell.',
             'icon'  => 'server',
@@ -505,6 +510,9 @@
                                     @break
                                 @case('refresh')
                                     <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                                    @break
+                                @case('calculator')
+                                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="11" x2="8.01" y2="11"/><line x1="12" y1="11" x2="12.01" y2="11"/><line x1="16" y1="11" x2="16.01" y2="11"/><line x1="8" y1="15" x2="8.01" y2="15"/><line x1="12" y1="15" x2="12.01" y2="15"/><line x1="16" y1="15" x2="16.01" y2="15"/><line x1="8" y1="19" x2="16" y2="19"/></svg>
                                     @break
                                 @case('server')
                                     <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>

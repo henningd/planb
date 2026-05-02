@@ -1,0 +1,23 @@
+{
+  "id": "prod_UQsN88kLZFqz0q",
+  "object": "product",
+  "active": true,
+  "attributes": [],
+  "created": 1777578718,
+  "default_price": null,
+  "description": "Notfallhandbuch für KMU bis 25 Mitarbeitende, ein Standort.",
+  "images": [],
+  "livemode": false,
+  "marketing_features": [],
+  "metadata": {},
+  "name": "PlanB Starter",
+  "package_dimensions": null,
+  "shippable": null,
+  "statement_descriptor": null,
+  "tax_code": null,
+  "tax_details": null,
+  "type": "service",
+  "unit_label": null,
+  "updated": 1777578718,
+  "url": null
+}
