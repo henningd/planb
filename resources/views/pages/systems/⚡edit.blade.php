@@ -888,7 +888,7 @@ new #[Title('System bearbeiten')] class extends Component {
                     <flux:label>{{ __('Max. Datenverlust') }}</flux:label>
                     <flux:description>
                         {{ __('Wieviel Datenverlust ist im Notfall verkraftbar?') }}
-                        <span class="text-zinc-400">· {{ __('Fachbegriff: RPO') }}</span>
+                        <div class="text-zinc-400">{{ __('Fachbegriff: RPO') }}</div>
                     </flux:description>
                     <flux:select wire:model="rpo_minutes">
                         <flux:select.option value="">{{ __('Nicht definiert') }}</flux:select.option>
