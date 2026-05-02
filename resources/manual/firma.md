@@ -12,9 +12,11 @@ Das Firmenprofil ist die Basis für fast alles andere — Anrede in PDFs, Standa
 
 ## Optional, aber sehr empfehlenswert
 
-- **Aufsichtsbehörde Datenschutz** — Name, Telefon, Website der zuständigen Landesdatenschutzbeauftragten. Wird in Krisen-Vorlagen für DSGVO-Meldungen automatisch eingesetzt. Beispiel für NRW: „Landesbeauftragte für Datenschutz und Informationsfreiheit Nordrhein-Westfalen".
-  - **Auto-Vorschlag anhand PLZ**: Sobald ein Hauptstandort mit PLZ angelegt ist, schlägt die Plattform die richtige Behörde vor (alle 16 Landes-DPAs hinterlegt). Per Klick auf **„Übernehmen"** werden Name, Telefon und Website ausgefüllt. Nach Übernahme bleibt jedes Feld manuell editierbar — falls die PLZ in einem Grenz-Bereich liegt oder Sie eine abweichende Ansprechperson nutzen wollen.
-  - **Edge-Cases**: An Bundesland-Grenzen (z. B. zwischen Hessen und Bayern bei PLZ 63xxx, oder zwischen NRW und RLP bei PLZ 53xxx) kann die Zuordnung knapp daneben liegen. In diesem Fall einfach den Wert manuell überschreiben.
+- **Aufsichtsbehörde Datenschutz** — Wählen Sie die zuständige Behörde aus den hinterlegten Karten oder erfassen Sie eine eigene Eingabe. Wird in Krisen-Vorlagen für DSGVO-Meldungen automatisch eingesetzt.
+  - **Auswahl per Karte**: Alle 16 Landes-DPAs + BfDI sind als Karten gelistet (Kurzname, Bundesland, Sitz, Telefon). Ein Klick auf eine Karte übernimmt Name, Telefon und Website automatisch. Nach Auswahl erscheinen darunter zusätzlich die hinterlegten E-Mail-, Datenpannen-Meldeformular- und Hinweis-Felder als Vorschau.
+  - **Auto-Vorschlag anhand PLZ**: Sobald ein Hauptstandort mit PLZ angelegt ist, kennzeichnet die Plattform die zuständige Behörde mit einem **„Vorschlag"**-Badge. Über den Banner darüber lässt sich der Vorschlag mit einem Klick übernehmen.
+  - **Benutzerdefiniert**: Letzte Karte mit gestricheltem Rand. Aktiviert Freitext-Felder für Name, Telefon und Website — sinnvoll z. B. für Mandanten im EU-Ausland oder wenn eine eigene Ansprechperson statt der Behörden-Hauptnummer gepflegt werden soll.
+  - **Edge-Cases**: An Bundesland-Grenzen (z. B. zwischen Hessen und Bayern bei PLZ 63xxx, oder zwischen NRW und RLP bei PLZ 53xxx) kann der PLZ-Vorschlag knapp daneben liegen. Einfach die richtige Karte stattdessen anklicken.
 - **NIS2-Klassifizierung** — Wesentlich (ab 50 MA), Wichtig (ab 50 MA in regulierten Sektoren), Nicht betroffen, Unklar.
 - **KRITIS-Relevanz** — Ja/Nein/Unklar. Falls Ja, gelten zusätzliche Pflichten.
 - **Cyber-Versicherung Selbstbehalt** — relevant für Eskalations-Entscheidungen.

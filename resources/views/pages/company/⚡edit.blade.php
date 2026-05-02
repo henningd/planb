@@ -46,6 +46,12 @@ new #[Title('Firma')] class extends Component {
 
     public string $data_protection_authority_website = '';
 
+    /** Auswahl-Modus für die Behörde: 'list' = aus Liste gewählt, 'custom' = Freitext. */
+    public string $authority_mode = 'list';
+
+    /** ID der gewählten Behörde (nur relevant wenn $authority_mode === 'list'). */
+    public ?string $selected_authority_id = null;
+
     public bool $exists = false;
 
     public function mount(): void
@@ -69,6 +75,24 @@ new #[Title('Firma')] class extends Component {
             $this->data_protection_authority_name = (string) $company->data_protection_authority_name;
             $this->data_protection_authority_phone = (string) $company->data_protection_authority_phone;
             $this->data_protection_authority_website = (string) $company->data_protection_authority_website;
+
+            // Erkennen, ob der bestehende Name auf eine seedseitig hinterlegte Behörde
+            // matcht — dann „list"-Modus mit Vorauswahl, sonst „custom".
+            $matched = trim($this->data_protection_authority_name) !== ''
+                ? DataProtectionAuthority::query()
+                    ->where('name', $this->data_protection_authority_name)
+                    ->first()
+                : null;
+
+            if ($matched) {
+                $this->authority_mode = 'list';
+                $this->selected_authority_id = $matched->id;
+            } elseif (trim($this->data_protection_authority_name) !== '') {
+                $this->authority_mode = 'custom';
+            } else {
+                $this->authority_mode = 'list';
+                $this->selected_authority_id = null;
+            }
 
             return;
         }
@@ -130,6 +154,48 @@ new #[Title('Firma')] class extends Component {
     }
 
     /**
+     * Alle plattformweit gepflegten Behörden (sortiert für die Auswahl-Cards).
+     *
+     * @return \Illuminate\Database\Eloquent\Collection<int, DataProtectionAuthority>
+     */
+    #[Computed]
+    public function authorities(): \Illuminate\Database\Eloquent\Collection
+    {
+        return DataProtectionAuthority::query()
+            ->orderBy('sort')
+            ->orderBy('name')
+            ->get();
+    }
+
+    /**
+     * Wechselt auf eine Behörde aus der Liste und füllt Name/Telefon/Website
+     * aus deren Stammdaten.
+     */
+    public function selectAuthority(string $id): void
+    {
+        $authority = DataProtectionAuthority::find($id);
+        if ($authority === null) {
+            return;
+        }
+
+        $this->authority_mode = 'list';
+        $this->selected_authority_id = $authority->id;
+        $this->data_protection_authority_name = $authority->name;
+        $this->data_protection_authority_phone = (string) $authority->phone;
+        $this->data_protection_authority_website = (string) $authority->website;
+    }
+
+    /**
+     * Wechselt in den Freitext-Modus für eine eigene, nicht in der Liste
+     * geführte Aufsichtsbehörde.
+     */
+    public function selectCustom(): void
+    {
+        $this->authority_mode = 'custom';
+        $this->selected_authority_id = null;
+    }
+
+    /**
      * Hauptstandort des Mandanten (HQ) oder erster Standort als Fallback.
      */
     #[Computed]
@@ -166,9 +232,7 @@ new #[Title('Firma')] class extends Component {
             return;
         }
 
-        $this->data_protection_authority_name = $authority->name;
-        $this->data_protection_authority_phone = (string) $authority->phone;
-        $this->data_protection_authority_website = (string) $authority->website;
+        $this->selectAuthority($authority->id);
 
         Flux::toast(variant: 'success', text: __(':name übernommen.', ['name' => $authority->short_name ?? $authority->name]));
     }
@@ -303,11 +367,145 @@ new #[Title('Firma')] class extends Component {
                 </div>
             @endif
 
-            <div class="grid gap-6 sm:grid-cols-3">
-                <flux:input wire:model="data_protection_authority_name" :label="__('Datenschutz-Aufsichtsbehörde')" type="text" placeholder="z. B. LfDI Baden-Württemberg" />
-                <flux:input wire:model="data_protection_authority_phone" :label="__('Telefon')" type="text" />
-                <flux:input wire:model="data_protection_authority_website" :label="__('Website')" type="text" placeholder="www…" />
-            </div>
+            <flux:field>
+                <flux:label>{{ __('Zuständige Aufsichtsbehörde') }}</flux:label>
+                <flux:description>
+                    {{ __('Karte anklicken zum Auswählen. Falls keine passt, „Benutzerdefiniert" wählen und manuell eintragen.') }}
+                </flux:description>
+
+                @if ($this->authorities->isEmpty())
+                    <div class="rounded-lg border border-dashed border-zinc-300 p-4 text-sm text-zinc-500 dark:border-zinc-700 dark:text-zinc-400">
+                        {{ __('Noch keine Behörden hinterlegt — der Superadmin kann sie unter Admin → Datenschutz-Aufsichtsbehörden pflegen.') }}
+                    </div>
+                @else
+                    <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                        @foreach ($this->authorities as $authority)
+                            @php
+                                $isSelected = $authority_mode === 'list' && $selected_authority_id === $authority->id;
+                                $isSuggested = $suggestion && $suggestion->id === $authority->id;
+                            @endphp
+                            <button
+                                type="button"
+                                wire:click="selectAuthority('{{ $authority->id }}')"
+                                wire:key="dpa-card-{{ $authority->id }}"
+                                class="group relative flex cursor-pointer flex-col gap-1 rounded-lg border p-4 text-left transition
+                                    {{ $isSelected
+                                        ? 'border-teal-500 bg-teal-50 ring-2 ring-teal-500 dark:border-teal-500 dark:bg-teal-950/40'
+                                        : 'border-zinc-200 bg-white hover:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-900 dark:hover:border-zinc-500' }}"
+                            >
+                                <div class="flex items-start justify-between gap-2">
+                                    <div class="min-w-0 flex-1">
+                                        <div class="font-medium text-zinc-900 dark:text-white">
+                                            {{ $authority->short_name ?? $authority->name }}
+                                        </div>
+                                        @if ($authority->state)
+                                            <div class="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">{{ $authority->state }}</div>
+                                        @endif
+                                    </div>
+                                    <div class="flex shrink-0 items-center gap-1.5">
+                                        @if ($isSuggested)
+                                            <flux:badge color="sky" size="sm">{{ __('Vorschlag') }}</flux:badge>
+                                        @endif
+                                        @if ($isSelected)
+                                            <flux:icon.check-circle class="h-5 w-5 text-teal-600 dark:text-teal-400" />
+                                        @endif
+                                    </div>
+                                </div>
+
+                                @if ($authority->short_name && $authority->short_name !== $authority->name)
+                                    <div class="line-clamp-2 text-xs text-zinc-600 dark:text-zinc-400">{{ $authority->name }}</div>
+                                @endif
+
+                                <div class="mt-1 space-y-0.5 text-xs text-zinc-500 dark:text-zinc-400">
+                                    @if ($authority->city)
+                                        <div class="flex items-center gap-1">
+                                            <flux:icon.map-pin class="h-3.5 w-3.5" />
+                                            {{ $authority->city }}
+                                        </div>
+                                    @endif
+                                    @if ($authority->phone)
+                                        <div class="flex items-center gap-1">
+                                            <flux:icon.phone class="h-3.5 w-3.5" />
+                                            {{ $authority->phone }}
+                                        </div>
+                                    @endif
+                                </div>
+                            </button>
+                        @endforeach
+
+                        @php($isCustom = $authority_mode === 'custom')
+                        <button
+                            type="button"
+                            wire:click="selectCustom"
+                            class="group relative flex cursor-pointer flex-col items-start justify-center gap-1 rounded-lg border border-dashed p-4 text-left transition
+                                {{ $isCustom
+                                    ? 'border-zinc-500 bg-zinc-50 ring-2 ring-zinc-400 dark:border-zinc-400 dark:bg-zinc-950/40'
+                                    : 'border-zinc-300 bg-white hover:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-900 dark:hover:border-zinc-500' }}"
+                        >
+                            <div class="flex w-full items-start justify-between gap-2">
+                                <div>
+                                    <div class="font-medium text-zinc-900 dark:text-white">
+                                        {{ __('Benutzerdefiniert') }}
+                                    </div>
+                                    <div class="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">
+                                        {{ __('Eigene Behörde manuell eintragen') }}
+                                    </div>
+                                </div>
+                                @if ($isCustom)
+                                    <flux:icon.check-circle class="h-5 w-5 text-zinc-500 dark:text-zinc-400" />
+                                @else
+                                    <flux:icon.pencil-square class="h-5 w-5 text-zinc-400 dark:text-zinc-500" />
+                                @endif
+                            </div>
+                        </button>
+                    </div>
+                @endif
+            </flux:field>
+
+            @if ($authority_mode === 'custom')
+                <div class="grid gap-6 sm:grid-cols-3">
+                    <flux:input wire:model="data_protection_authority_name" :label="__('Behörde / Name')" type="text" placeholder="z. B. LfDI Baden-Württemberg" />
+                    <flux:input wire:model="data_protection_authority_phone" :label="__('Telefon')" type="text" />
+                    <flux:input wire:model="data_protection_authority_website" :label="__('Website')" type="text" placeholder="https://…" />
+                </div>
+            @elseif ($selected_authority_id)
+                @php($selectedAuthority = $this->authorities->firstWhere('id', $selected_authority_id))
+                @if ($selectedAuthority)
+                    <div class="rounded-lg border border-zinc-200 bg-zinc-50 p-4 text-xs dark:border-zinc-700 dark:bg-zinc-900/50">
+                        <div class="grid gap-3 sm:grid-cols-3">
+                            <div>
+                                <div class="font-semibold uppercase text-zinc-500 dark:text-zinc-400">{{ __('Telefon') }}</div>
+                                <div class="mt-1 text-zinc-800 dark:text-zinc-200">{{ $selectedAuthority->phone ?: '—' }}</div>
+                            </div>
+                            <div>
+                                <div class="font-semibold uppercase text-zinc-500 dark:text-zinc-400">{{ __('E-Mail') }}</div>
+                                <div class="mt-1 break-all text-zinc-800 dark:text-zinc-200">{{ $selectedAuthority->email ?: '—' }}</div>
+                            </div>
+                            <div>
+                                <div class="font-semibold uppercase text-zinc-500 dark:text-zinc-400">{{ __('Website') }}</div>
+                                <div class="mt-1 break-all text-zinc-800 dark:text-zinc-200">
+                                    @if ($selectedAuthority->website)
+                                        <a href="{{ $selectedAuthority->website }}" target="_blank" rel="noopener" class="text-sky-600 hover:underline dark:text-sky-400">{{ $selectedAuthority->website }}</a>
+                                    @else
+                                        —
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+                        @if ($selectedAuthority->breach_notification_url)
+                            <div class="mt-3 border-t border-zinc-200 pt-2 dark:border-zinc-700">
+                                <span class="font-semibold uppercase text-zinc-500 dark:text-zinc-400">{{ __('Datenpannen-Meldeformular') }}:</span>
+                                <a href="{{ $selectedAuthority->breach_notification_url }}" target="_blank" rel="noopener" class="ml-1 break-all text-sky-600 hover:underline dark:text-sky-400">{{ $selectedAuthority->breach_notification_url }}</a>
+                            </div>
+                        @endif
+                        @if ($selectedAuthority->notes)
+                            <div class="mt-3 border-t border-zinc-200 pt-2 text-zinc-600 dark:border-zinc-700 dark:text-zinc-400">
+                                {{ $selectedAuthority->notes }}
+                            </div>
+                        @endif
+                    </div>
+                @endif
+            @endif
         </div>
 
         <div class="space-y-6 rounded-xl border border-zinc-200 bg-white p-6 dark:border-zinc-700 dark:bg-zinc-900">

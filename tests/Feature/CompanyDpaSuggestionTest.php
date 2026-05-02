@@ -81,6 +81,61 @@ test('keine Zuordnung wenn gar kein Standort hinterlegt ist', function () {
         ->assertDontSeeHtml('data-test="dpa-suggestion"');
 });
 
+test('Card-Klick wählt Behörde aus und füllt Name/Telefon/Website', function () {
+    $user = User::factory()->create();
+    Company::factory()->for($user->currentTeam)->create();
+
+    $authority = App\Models\DataProtectionAuthority::where('key', 'lfdi-bw')->first();
+
+    Livewire::actingAs($user->fresh())
+        ->test('pages::company.edit')
+        ->call('selectAuthority', $authority->id)
+        ->assertSet('authority_mode', 'list')
+        ->assertSet('selected_authority_id', $authority->id)
+        ->assertSet('data_protection_authority_name', 'LfDI Baden-Württemberg')
+        ->assertSet('data_protection_authority_phone', '+49 711 615541-0');
+});
+
+test('Klick auf Benutzerdefiniert-Card wechselt in Custom-Modus', function () {
+    $user = User::factory()->create();
+    Company::factory()->for($user->currentTeam)->create([
+        'data_protection_authority_name' => 'LfDI Baden-Württemberg',
+    ]);
+
+    Livewire::actingAs($user->fresh())
+        ->test('pages::company.edit')
+        ->assertSet('authority_mode', 'list')
+        ->call('selectCustom')
+        ->assertSet('authority_mode', 'custom')
+        ->assertSet('selected_authority_id', null);
+});
+
+test('Mount erkennt bestehenden Custom-Eintrag', function () {
+    $user = User::factory()->create();
+    Company::factory()->for($user->currentTeam)->create([
+        'data_protection_authority_name' => 'Spezial-Behörde nicht in Liste',
+    ]);
+
+    Livewire::actingAs($user->fresh())
+        ->test('pages::company.edit')
+        ->assertSet('authority_mode', 'custom')
+        ->assertSet('selected_authority_id', null);
+});
+
+test('Mount erkennt bestehende Listen-Auswahl per Name-Match', function () {
+    $user = User::factory()->create();
+    Company::factory()->for($user->currentTeam)->create([
+        'data_protection_authority_name' => 'Berliner Beauftragte für Datenschutz und Informationsfreiheit',
+    ]);
+
+    $expectedId = App\Models\DataProtectionAuthority::where('key', 'blnbdi')->value('id');
+
+    Livewire::actingAs($user->fresh())
+        ->test('pages::company.edit')
+        ->assertSet('authority_mode', 'list')
+        ->assertSet('selected_authority_id', $expectedId);
+});
+
 test('manueller Wert bleibt erhalten — Vorschlag überschreibt nicht automatisch', function () {
     $user = User::factory()->create();
     $company = Company::factory()->for($user->currentTeam)->create([
