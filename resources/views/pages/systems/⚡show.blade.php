@@ -715,24 +715,48 @@ new #[Title('System')] class extends Component {
             </div>
         @endif
 
-        @if ($system->rto_minutes || $system->rpo_minutes || $system->downtime_cost_per_hour)
-            <div class="grid gap-4 border-b border-zinc-100 p-6 sm:grid-cols-3 dark:border-zinc-800">
-                @if ($system->rto_minutes)
-                    <div>
-                        <flux:text class="text-xs uppercase text-zinc-500 dark:text-zinc-400">{{ __('Max. Ausfall (RTO)') }}</flux:text>
-                        <div class="mt-1 text-lg font-medium">{{ Duration::format($system->rto_minutes) }}</div>
+        @php
+            $monitoringKeys = is_array($system->monitoring_keys) ? array_values($system->monitoring_keys) : [];
+            $hasMonitoring = config('features.monitoring_api') && count($monitoringKeys) > 0;
+        @endphp
+
+        @if ($system->rto_minutes || $system->rpo_minutes || $system->downtime_cost_per_hour || $hasMonitoring)
+            <div class="space-y-4 border-b border-zinc-100 p-6 dark:border-zinc-800">
+                @if ($system->rto_minutes || $system->rpo_minutes)
+                    <div class="grid gap-4 sm:grid-cols-2">
+                        @if ($system->rto_minutes)
+                            <div>
+                                <flux:text class="text-xs uppercase text-zinc-500 dark:text-zinc-400">{{ __('Max. Ausfall (RTO)') }}</flux:text>
+                                <div class="mt-1 text-lg font-medium">{{ Duration::format($system->rto_minutes) }}</div>
+                            </div>
+                        @endif
+                        @if ($system->rpo_minutes)
+                            <div>
+                                <flux:text class="text-xs uppercase text-zinc-500 dark:text-zinc-400">{{ __('Max. Datenverlust (RPO)') }}</flux:text>
+                                <div class="mt-1 text-lg font-medium">{{ Duration::format($system->rpo_minutes) }}</div>
+                            </div>
+                        @endif
                     </div>
                 @endif
-                @if ($system->rpo_minutes)
-                    <div>
-                        <flux:text class="text-xs uppercase text-zinc-500 dark:text-zinc-400">{{ __('Max. Datenverlust (RPO)') }}</flux:text>
-                        <div class="mt-1 text-lg font-medium">{{ Duration::format($system->rpo_minutes) }}</div>
-                    </div>
-                @endif
-                @if ($system->downtime_cost_per_hour)
-                    <div>
-                        <flux:text class="text-xs uppercase text-zinc-500 dark:text-zinc-400">{{ __('Ausfallkosten') }}</flux:text>
-                        <div class="mt-1 text-lg font-medium">{{ number_format($system->downtime_cost_per_hour, 0, ',', '.') }} € / h</div>
+
+                @if ($system->downtime_cost_per_hour || $hasMonitoring)
+                    <div class="grid gap-4 sm:grid-cols-2">
+                        @if ($system->downtime_cost_per_hour)
+                            <div>
+                                <flux:text class="text-xs uppercase text-zinc-500 dark:text-zinc-400">{{ __('Ausfallkosten') }}</flux:text>
+                                <div class="mt-1 text-lg font-medium">{{ number_format($system->downtime_cost_per_hour, 0, ',', '.') }} € / h</div>
+                            </div>
+                        @endif
+                        @if ($hasMonitoring)
+                            <div>
+                                <flux:text class="text-xs uppercase text-zinc-500 dark:text-zinc-400">{{ __('Monitoring-Hostnamen') }}</flux:text>
+                                <div class="mt-1 flex flex-wrap gap-1.5">
+                                    @foreach ($monitoringKeys as $key)
+                                        <flux:badge color="zinc" size="sm">{{ $key }}</flux:badge>
+                                    @endforeach
+                                </div>
+                            </div>
+                        @endif
                     </div>
                 @endif
             </div>
