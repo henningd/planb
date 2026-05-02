@@ -79,11 +79,11 @@ test('admin can delete an authority', function () {
 });
 
 test('reseed restores the seeded defaults', function () {
-    DataProtectionAuthority::create([
-        'key' => 'lfdi-bw',
+    // Migration seedet bereits — manuelle Überschreibung simulieren.
+    DataProtectionAuthority::where('key', 'lfdi-bw')->update([
         'name' => 'Manuell überschrieben',
-        'sort' => 999,
     ]);
+    DataProtectionAuthority::where('key', 'lfdi-bw')->first()->postalCodeRanges()->delete();
 
     Livewire::actingAs(dpaAdmin())
         ->test('pages::admin.data-protection-authorities.index')

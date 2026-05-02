@@ -1,5 +1,6 @@
 <?php
 
+use Database\Seeders\DataProtectionAuthoritiesSeeder;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -42,6 +43,11 @@ return new class extends Migration
                 $table->index(['plz_from', 'plz_to'], 'dpa_plz_range_idx');
             });
         }
+
+        // Reference data der 16 Landes-DPAs + BfDI direkt mit dem Schema-Aufbau einspielen,
+        // damit das Auto-Vorschlags-Feature ohne separaten `db:seed`-Schritt produktionsreif ist.
+        // Der Seeder ist idempotent (updateOrCreate per `key`), kann jederzeit erneut laufen.
+        (new DataProtectionAuthoritiesSeeder)->run();
     }
 
     public function down(): void
