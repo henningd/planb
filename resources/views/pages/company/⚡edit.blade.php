@@ -5,9 +5,13 @@ use App\Enums\KritisRelevance;
 use App\Enums\LegalForm;
 use App\Enums\Nis2Classification;
 use App\Models\Company;
+use App\Models\DataProtectionAuthority;
+use App\Models\Location;
+use App\Support\DataProtectionAuthorities;
 use Flux\Flux;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
+use Livewire\Attributes\Computed;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 
@@ -126,6 +130,50 @@ new #[Title('Firma')] class extends Component {
     }
 
     /**
+     * Hauptstandort des Mandanten (HQ) oder erster Standort als Fallback.
+     */
+    #[Computed]
+    public function headquartersLocation(): ?Location
+    {
+        return Location::query()
+            ->orderByDesc('is_headquarters')
+            ->orderBy('sort')
+            ->orderBy('name')
+            ->first();
+    }
+
+    /**
+     * Anhand der HQ-PLZ vorgeschlagene Aufsichtsbehörde, oder `null`.
+     */
+    #[Computed]
+    public function suggestedAuthority(): ?DataProtectionAuthority
+    {
+        $plz = $this->headquartersLocation?->postal_code;
+
+        return DataProtectionAuthorities::resolveByPostalCode($plz);
+    }
+
+    /**
+     * Übernimmt Name, Telefon und Website der vorgeschlagenen Behörde
+     * in die Eingabefelder. Manuelle Korrektur danach jederzeit möglich.
+     */
+    public function applySuggestedAuthority(): void
+    {
+        $authority = $this->suggestedAuthority;
+        if ($authority === null) {
+            Flux::toast(variant: 'warning', text: __('Kein Vorschlag verfügbar — bitte PLZ am Hauptstandort prüfen.'));
+
+            return;
+        }
+
+        $this->data_protection_authority_name = $authority->name;
+        $this->data_protection_authority_phone = (string) $authority->phone;
+        $this->data_protection_authority_website = (string) $authority->website;
+
+        Flux::toast(variant: 'success', text: __(':name übernommen.', ['name' => $authority->short_name ?? $authority->name]));
+    }
+
+    /**
      * @return array<int, array{value: string, label: string}>
      */
     public function kritisOptions(): array
@@ -202,6 +250,58 @@ new #[Title('Firma')] class extends Component {
                     @endforeach
                 </flux:select>
             </div>
+
+            @php
+                $hq = $this->headquartersLocation;
+                $hqPlz = $hq?->postal_code;
+                $suggestion = $this->suggestedAuthority;
+                $currentName = trim((string) $data_protection_authority_name);
+                $matchesSuggestion = $suggestion && $currentName !== '' && mb_strtolower($currentName) === mb_strtolower($suggestion->name);
+            @endphp
+
+            @if ($suggestion && ! $matchesSuggestion)
+                <div class="rounded-lg border border-sky-200 bg-sky-50 p-4 text-sm dark:border-sky-800 dark:bg-sky-950" data-test="dpa-suggestion">
+                    <div class="flex items-start gap-3">
+                        <flux:icon.information-circle class="mt-0.5 h-5 w-5 shrink-0 text-sky-600 dark:text-sky-400" />
+                        <div class="flex-1">
+                            <div class="font-medium text-sky-900 dark:text-sky-100">
+                                {{ __('Vorschlag für PLZ :plz: :name', ['plz' => $hqPlz, 'name' => $suggestion->short_name ?? $suggestion->name]) }}
+                            </div>
+                            <div class="mt-1 text-xs text-sky-800 dark:text-sky-200">
+                                {{ $suggestion->name }}
+                                @if ($suggestion->city)· {{ $suggestion->city }}@endif
+                                @if ($suggestion->phone)· {{ $suggestion->phone }}@endif
+                            </div>
+                            @if ($suggestion->notes)
+                                <div class="mt-1 text-xs text-sky-700 dark:text-sky-300">
+                                    {{ $suggestion->notes }}
+                                </div>
+                            @endif
+                        </div>
+                        <flux:button size="xs" variant="primary" wire:click="applySuggestedAuthority" type="button" icon="arrow-down-tray">
+                            {{ __('Übernehmen') }}
+                        </flux:button>
+                    </div>
+                </div>
+            @elseif ($suggestion && $matchesSuggestion)
+                <div class="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-200" data-test="dpa-suggestion-match">
+                    <div class="flex items-center gap-2">
+                        <flux:icon.check-circle class="h-4 w-4" />
+                        {{ __('Zuordnung passt zur PLZ :plz des Hauptstandorts.', ['plz' => $hqPlz]) }}
+                    </div>
+                </div>
+            @elseif ($hqPlz)
+                <div class="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200">
+                    <div class="flex items-center gap-2">
+                        <flux:icon.exclamation-triangle class="h-4 w-4" />
+                        {{ __('Für PLZ :plz konnte keine Aufsichtsbehörde automatisch zugeordnet werden — bitte manuell pflegen.', ['plz' => $hqPlz]) }}
+                    </div>
+                </div>
+            @elseif ($hq && ! $hqPlz)
+                <div class="rounded-lg border border-zinc-200 bg-zinc-50 p-3 text-xs text-zinc-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-400">
+                    {{ __('Hinterlegen Sie die PLZ am Hauptstandort, dann schlagen wir die zuständige Aufsichtsbehörde automatisch vor.') }}
+                </div>
+            @endif
 
             <div class="grid gap-6 sm:grid-cols-3">
                 <flux:input wire:model="data_protection_authority_name" :label="__('Datenschutz-Aufsichtsbehörde')" type="text" placeholder="z. B. LfDI Baden-Württemberg" />

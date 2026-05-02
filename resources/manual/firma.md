@@ -13,6 +13,8 @@ Das Firmenprofil ist die Basis für fast alles andere — Anrede in PDFs, Standa
 ## Optional, aber sehr empfehlenswert
 
 - **Aufsichtsbehörde Datenschutz** — Name, Telefon, Website der zuständigen Landesdatenschutzbeauftragten. Wird in Krisen-Vorlagen für DSGVO-Meldungen automatisch eingesetzt. Beispiel für NRW: „Landesbeauftragte für Datenschutz und Informationsfreiheit Nordrhein-Westfalen".
+  - **Auto-Vorschlag anhand PLZ**: Sobald ein Hauptstandort mit PLZ angelegt ist, schlägt die Plattform die richtige Behörde vor (alle 16 Landes-DPAs hinterlegt). Per Klick auf **„Übernehmen"** werden Name, Telefon und Website ausgefüllt. Nach Übernahme bleibt jedes Feld manuell editierbar — falls die PLZ in einem Grenz-Bereich liegt oder Sie eine abweichende Ansprechperson nutzen wollen.
+  - **Edge-Cases**: An Bundesland-Grenzen (z. B. zwischen Hessen und Bayern bei PLZ 63xxx, oder zwischen NRW und RLP bei PLZ 53xxx) kann die Zuordnung knapp daneben liegen. In diesem Fall einfach den Wert manuell überschreiben.
 - **NIS2-Klassifizierung** — Wesentlich (ab 50 MA), Wichtig (ab 50 MA in regulierten Sektoren), Nicht betroffen, Unklar.
 - **KRITIS-Relevanz** — Ja/Nein/Unklar. Falls Ja, gelten zusätzliche Pflichten.
 - **Cyber-Versicherung Selbstbehalt** — relevant für Eskalations-Entscheidungen.
