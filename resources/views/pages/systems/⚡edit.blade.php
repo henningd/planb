@@ -734,7 +734,7 @@ new #[Title('System bearbeiten')] class extends Component {
 
             <flux:textarea
                 wire:model="fallback_process"
-                :label="__('Notbetrieb / Ersatzprozess')"
+                :label="__('Notbetrieb / Ersatzprozess (Kurznotiz)')"
                 rows="3"
                 placeholder="Wie läuft der Betrieb weiter, wenn dieses System ausfällt?"
             />
