@@ -9,6 +9,7 @@ enum CommunicationAudience: string
     case Press = 'press';
     case Authorities = 'authorities';
     case ServiceProviders = 'service_providers';
+    case SocialMedia = 'social_media';
     case Other = 'other';
 
     public function label(): string
@@ -19,6 +20,7 @@ enum CommunicationAudience: string
             self::Press => 'Presse',
             self::Authorities => 'Behörden',
             self::ServiceProviders => 'Dienstleister',
+            self::SocialMedia => 'Social Media',
             self::Other => 'Sonstige',
         };
     }
