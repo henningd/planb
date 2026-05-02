@@ -842,7 +842,7 @@ new #[Title('System bearbeiten')] class extends Component {
             </div>
 
             @if (config('features.monitoring_api'))
-                <div class="grid gap-4 sm:grid-cols-2">
+                <div class="grid grid-cols-2 gap-4">
                     <flux:field>
                         <flux:label>{{ __('Ausfallkosten pro Stunde') }}</flux:label>
                         <flux:description>
