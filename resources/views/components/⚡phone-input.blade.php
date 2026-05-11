@@ -13,7 +13,9 @@ new class extends Component {
 
     public string $country = 'DE';
 
-    public string $national = '';
+    public string $areaCode = '';
+
+    public string $subscriber = '';
 
     public string $label = '';
 
@@ -48,29 +50,25 @@ new class extends Component {
         $this->recompose();
     }
 
-    public function updatedNational(): void
+    public function updatedAreaCode(): void
+    {
+        $this->recompose();
+    }
+
+    public function updatedSubscriber(): void
     {
         $this->recompose();
     }
 
     /**
      * Wird der Wert von außen gesetzt (z. B. nach Auswahl einer
-     * Aufsichtsbehörde-Karte), Country/National-State neu aus dem Wert
-     * ableiten — aber nur wenn der externe Wert nicht zu unseren aktuellen
-     * Eingaben passt (vermeidet Endlosschleifen mit recompose()).
+     * Aufsichtsbehörde-Karte), Country/Area-/Subscriber-State neu aus dem
+     * Wert ableiten — aber nur wenn der externe Wert nicht zu unseren
+     * aktuellen Eingaben passt (vermeidet Endlosschleifen mit recompose()).
      */
     public function updatedValue(): void
     {
-        try {
-            $util = PhoneNumberUtil::getInstance();
-            $reconstructed = blank($this->national)
-                ? null
-                : $util->format($util->parse($this->national, $this->country), PhoneNumberFormat::E164);
-        } catch (NumberParseException) {
-            $reconstructed = $this->national ?: null;
-        }
-
-        if ($reconstructed !== $this->value) {
+        if ($this->composeE164() !== $this->value) {
             $this->parseValue();
         }
     }
@@ -110,10 +108,16 @@ new class extends Component {
         ];
     }
 
+    /**
+     * Existierenden E.164-Wert auf Land, Vorwahl (Ortsvorwahl / NDC) und
+     * Teilnehmernummer aufteilen. Nicht parsebare Werte landen ungeparst
+     * im Subscriber-Feld.
+     */
     protected function parseValue(): void
     {
         if (blank($this->value)) {
-            $this->national = '';
+            $this->areaCode = '';
+            $this->subscriber = '';
 
             return;
         }
@@ -127,26 +131,49 @@ new class extends Component {
                 $this->country = $region;
             }
 
-            $this->national = $util->format($parsed, PhoneNumberFormat::NATIONAL);
+            $national = $util->format($parsed, PhoneNumberFormat::NATIONAL);
+
+            // National-Format ist typischerweise "030 12345678" (Festnetz)
+            // oder "0171 1234567" (Mobil). Wir splitten am ersten
+            // Leerzeichen, sodass der Anwender Vorwahl und Anschluss
+            // getrennt sieht/bearbeiten kann.
+            $parts = preg_split('/\s+/', $national, 2);
+            if (count($parts) === 2) {
+                [$this->areaCode, $this->subscriber] = $parts;
+            } else {
+                $this->areaCode = '';
+                $this->subscriber = $national;
+            }
         } catch (NumberParseException) {
-            $this->national = (string) $this->value;
+            $this->areaCode = '';
+            $this->subscriber = (string) $this->value;
         }
     }
 
+    /**
+     * Vorwahl + Teilnehmernummer wieder zu einer normalisierten
+     * E.164-Nummer zusammensetzen.
+     */
     protected function recompose(): void
     {
-        if (blank($this->national)) {
-            $this->value = null;
+        $this->value = $this->composeE164();
+    }
 
-            return;
+    protected function composeE164(): ?string
+    {
+        $national = trim($this->areaCode.' '.$this->subscriber);
+
+        if ($national === '') {
+            return null;
         }
 
         try {
             $util = PhoneNumberUtil::getInstance();
-            $parsed = $util->parse($this->national, $this->country);
-            $this->value = $util->format($parsed, PhoneNumberFormat::E164);
+            $parsed = $util->parse($national, $this->country);
+
+            return $util->format($parsed, PhoneNumberFormat::E164);
         } catch (NumberParseException) {
-            $this->value = $this->national;
+            return $national;
         }
     }
 }; ?>
@@ -183,12 +210,21 @@ new class extends Component {
         </flux:dropdown>
 
         <flux:input
-            wire:model.live.debounce.400ms="national"
+            wire:model.live.debounce.400ms="areaCode"
+            type="tel"
+            class="!w-24 shrink-0"
+            inputmode="tel"
+            autocomplete="tel-area-code"
+            :placeholder="__('Vorwahl')"
+        />
+
+        <flux:input
+            wire:model.live.debounce.400ms="subscriber"
             type="tel"
             class="flex-1"
             inputmode="tel"
-            autocomplete="tel-national"
-            :placeholder="$placeholder !== '' ? $placeholder : __('z. B. 30 1234567')"
+            autocomplete="tel-local"
+            :placeholder="$placeholder !== '' ? $placeholder : __('Rufnummer')"
         />
     </div>
 
