@@ -842,25 +842,27 @@ new #[Title('System bearbeiten')] class extends Component {
             </div>
 
             @if (config('features.monitoring_api'))
-                {{-- Label oben bündig, Eingabe unten bündig: beide Spalten füllen
-                     die gleiche Höhe; das jeweilige Control wird per mt-auto
-                     an den unteren Rand geschoben. So liegen Ausfallkosten-
-                     Input und Monitoring-Textarea auf gleicher Linie. --}}
-                <div class="grid gap-4 sm:grid-cols-2">
-                    <flux:field class="flex h-full flex-col">
+                {{-- CSS-Subgrid: Parent definiert drei Zeilen (Label / Beschreibung /
+                     Control). Beide Felder spannen über alle drei Zeilen und teilen
+                     sich diese, sodass Label-Reihe, Beschreibungs-Reihe und Control-
+                     Reihe jeweils die gleiche Höhe haben. Folge: Input (links) und
+                     Textarea (rechts) beginnen oben auf der exakt gleichen Y-Linie,
+                     auch wenn die rechte Beschreibung mehr Zeilen umbricht. --}}
+                <div class="grid gap-x-4 gap-y-2 sm:grid-cols-2 sm:grid-rows-[auto_auto_auto]">
+                    <flux:field class="sm:grid sm:grid-rows-subgrid sm:row-span-3">
                         <flux:label>{{ __('Ausfallkosten pro Stunde') }}</flux:label>
                         <flux:description>
                             {{ __('Geschätzter Umsatz- oder Produktivitätsverlust, wenn dieses System eine Stunde lang ausfällt. In Euro, nur ganze Zahlen.') }}
                         </flux:description>
-                        <flux:input wire:model="downtime_cost_per_hour" type="number" min="0" step="1" placeholder="z. B. 250" class="mt-auto" />
+                        <flux:input wire:model="downtime_cost_per_hour" type="number" min="0" step="1" placeholder="z. B. 250" />
                     </flux:field>
 
-                    <flux:field class="flex h-full flex-col">
+                    <flux:field class="sm:grid sm:grid-rows-subgrid sm:row-span-3">
                         <flux:label>{{ __('Monitoring-Hostnamen / Labels') }}</flux:label>
                         <flux:description>
                             {{ __('Eine Bezeichnung pro Zeile (oder kommasepariert). Wenn ein Zabbix-/Prometheus-Alarm einen dieser Begriffe in Host oder Subject trägt, wird er automatisch diesem System zugeordnet. Beispiel: srv-prod-01, warenwirtschaft.local') }}
                         </flux:description>
-                        <flux:textarea wire:model="monitoring_keys_text" rows="3" placeholder="srv-prod-01&#10;warenwirtschaft.local" class="mt-auto" />
+                        <flux:textarea wire:model="monitoring_keys_text" rows="3" placeholder="srv-prod-01&#10;warenwirtschaft.local" />
                     </flux:field>
                 </div>
             @else
