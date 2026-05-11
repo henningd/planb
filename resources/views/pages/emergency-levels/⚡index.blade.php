@@ -2,8 +2,10 @@
 
 use App\Models\EmergencyLevel;
 use App\Support\Accessibility\SeverityIndicator;
+use App\Support\CurrentCompany;
 use Flux\Flux;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -65,7 +67,16 @@ new #[Title('Notfall-Level')] class extends Component {
             'name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:2000'],
             'reaction' => ['nullable', 'string', 'max:2000'],
-            'sort' => ['integer', 'min:0', 'max:1000'],
+            'sort' => [
+                'integer',
+                'min:0',
+                'max:1000',
+                Rule::unique('emergency_levels', 'sort')
+                    ->where('company_id', CurrentCompany::id())
+                    ->ignore($this->editingId),
+            ],
+        ], [
+            'sort.unique' => __('Diese Reihenfolge-Nummer ist bereits vergeben.'),
         ]);
 
         if ($this->editingId) {
