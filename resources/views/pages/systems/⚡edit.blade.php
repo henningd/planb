@@ -842,21 +842,25 @@ new #[Title('System bearbeiten')] class extends Component {
             </div>
 
             @if (config('features.monitoring_api'))
-                <div class="grid grid-cols-2 gap-4">
-                    <flux:field>
+                {{-- Label oben bündig, Eingabe unten bündig: beide Spalten füllen
+                     die gleiche Höhe; das jeweilige Control wird per mt-auto
+                     an den unteren Rand geschoben. So liegen Ausfallkosten-
+                     Input und Monitoring-Textarea auf gleicher Linie. --}}
+                <div class="grid gap-4 sm:grid-cols-2">
+                    <flux:field class="flex h-full flex-col">
                         <flux:label>{{ __('Ausfallkosten pro Stunde') }}</flux:label>
                         <flux:description>
                             {{ __('Geschätzter Umsatz- oder Produktivitätsverlust, wenn dieses System eine Stunde lang ausfällt. In Euro, nur ganze Zahlen.') }}
                         </flux:description>
-                        <flux:input wire:model="downtime_cost_per_hour" type="number" min="0" step="1" placeholder="z. B. 250" />
+                        <flux:input wire:model="downtime_cost_per_hour" type="number" min="0" step="1" placeholder="z. B. 250" class="mt-auto" />
                     </flux:field>
 
-                    <flux:field>
+                    <flux:field class="flex h-full flex-col">
                         <flux:label>{{ __('Monitoring-Hostnamen / Labels') }}</flux:label>
                         <flux:description>
                             {{ __('Eine Bezeichnung pro Zeile (oder kommasepariert). Wenn ein Zabbix-/Prometheus-Alarm einen dieser Begriffe in Host oder Subject trägt, wird er automatisch diesem System zugeordnet. Beispiel: srv-prod-01, warenwirtschaft.local') }}
                         </flux:description>
-                        <flux:textarea wire:model="monitoring_keys_text" rows="3" placeholder="srv-prod-01&#10;warenwirtschaft.local" />
+                        <flux:textarea wire:model="monitoring_keys_text" rows="3" placeholder="srv-prod-01&#10;warenwirtschaft.local" class="mt-auto" />
                     </flux:field>
                 </div>
             @else
