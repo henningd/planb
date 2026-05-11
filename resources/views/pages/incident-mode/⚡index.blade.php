@@ -318,13 +318,13 @@ new #[Title('Krisen-Cockpit')] class extends Component {
                                             <div class="mt-2 flex flex-wrap gap-1.5">
                                                 @if ($main->mobile_phone)
                                                     <flux:button size="xs" variant="filled" icon="device-phone-mobile"
-                                                        href="tel:{{ $main->mobile_phone }}">
+                                                        href="tel:{{ \App\Support\PhoneFormat::tel($main->mobile_phone) }}">
                                                         {{ __('Mobil') }}
                                                     </flux:button>
                                                 @endif
                                                 @if ($main->work_phone)
                                                     <flux:button size="xs" variant="filled" icon="phone"
-                                                        href="tel:{{ $main->work_phone }}">
+                                                        href="tel:{{ \App\Support\PhoneFormat::tel($main->work_phone) }}">
                                                         {{ __('Festnetz') }}
                                                     </flux:button>
                                                 @endif
@@ -356,13 +356,13 @@ new #[Title('Krisen-Cockpit')] class extends Component {
                                                         <div class="mt-1 flex flex-wrap gap-1">
                                                             @if ($deputy->mobile_phone)
                                                                 <flux:button size="xs" variant="ghost" icon="device-phone-mobile"
-                                                                    href="tel:{{ $deputy->mobile_phone }}">
+                                                                    href="tel:{{ \App\Support\PhoneFormat::tel($deputy->mobile_phone) }}">
                                                                     {{ __('Mobil') }}
                                                                 </flux:button>
                                                             @endif
                                                             @if ($deputy->work_phone)
                                                                 <flux:button size="xs" variant="ghost" icon="phone"
-                                                                    href="tel:{{ $deputy->work_phone }}">
+                                                                    href="tel:{{ \App\Support\PhoneFormat::tel($deputy->work_phone) }}">
                                                                     {{ __('Tel.') }}
                                                                 </flux:button>
                                                             @endif

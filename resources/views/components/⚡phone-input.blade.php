@@ -34,6 +34,15 @@ new class extends Component {
         $this->parseValue();
     }
 
+    public function setCountry(string $code): void
+    {
+        if (! array_key_exists($code, $this->countries)) {
+            return;
+        }
+
+        $this->country = $code;
+    }
+
     public function updatedCountry(): void
     {
         $this->recompose();
@@ -67,37 +76,37 @@ new class extends Component {
     }
 
     /**
-     * Liste der unterstützten Länder mit Flagge, Vorwahl und Anzeigename.
+     * Liste der unterstützten Länder mit ISO-Code, Anzeigename und Vorwahl.
      * Reihenfolge: DACH zuerst, dann häufige EU-Nachbarn, dann weitere Länder.
      *
-     * @return array<string, array{name: string, flag: string, dial: string}>
+     * @return array<string, array{name: string, dial: string}>
      */
     #[Computed]
     public function countries(): array
     {
         return [
-            'DE' => ['name' => 'Deutschland', 'flag' => '🇩🇪', 'dial' => '+49'],
-            'AT' => ['name' => 'Österreich', 'flag' => '🇦🇹', 'dial' => '+43'],
-            'CH' => ['name' => 'Schweiz', 'flag' => '🇨🇭', 'dial' => '+41'],
-            'FR' => ['name' => 'Frankreich', 'flag' => '🇫🇷', 'dial' => '+33'],
-            'NL' => ['name' => 'Niederlande', 'flag' => '🇳🇱', 'dial' => '+31'],
-            'BE' => ['name' => 'Belgien', 'flag' => '🇧🇪', 'dial' => '+32'],
-            'LU' => ['name' => 'Luxemburg', 'flag' => '🇱🇺', 'dial' => '+352'],
-            'IT' => ['name' => 'Italien', 'flag' => '🇮🇹', 'dial' => '+39'],
-            'ES' => ['name' => 'Spanien', 'flag' => '🇪🇸', 'dial' => '+34'],
-            'PT' => ['name' => 'Portugal', 'flag' => '🇵🇹', 'dial' => '+351'],
-            'DK' => ['name' => 'Dänemark', 'flag' => '🇩🇰', 'dial' => '+45'],
-            'SE' => ['name' => 'Schweden', 'flag' => '🇸🇪', 'dial' => '+46'],
-            'NO' => ['name' => 'Norwegen', 'flag' => '🇳🇴', 'dial' => '+47'],
-            'FI' => ['name' => 'Finnland', 'flag' => '🇫🇮', 'dial' => '+358'],
-            'PL' => ['name' => 'Polen', 'flag' => '🇵🇱', 'dial' => '+48'],
-            'CZ' => ['name' => 'Tschechien', 'flag' => '🇨🇿', 'dial' => '+420'],
-            'SK' => ['name' => 'Slowakei', 'flag' => '🇸🇰', 'dial' => '+421'],
-            'HU' => ['name' => 'Ungarn', 'flag' => '🇭🇺', 'dial' => '+36'],
-            'GB' => ['name' => 'Vereinigtes Königreich', 'flag' => '🇬🇧', 'dial' => '+44'],
-            'IE' => ['name' => 'Irland', 'flag' => '🇮🇪', 'dial' => '+353'],
-            'US' => ['name' => 'USA / Kanada', 'flag' => '🇺🇸', 'dial' => '+1'],
-            'TR' => ['name' => 'Türkei', 'flag' => '🇹🇷', 'dial' => '+90'],
+            'DE' => ['name' => 'Deutschland', 'dial' => '+49'],
+            'AT' => ['name' => 'Österreich', 'dial' => '+43'],
+            'CH' => ['name' => 'Schweiz', 'dial' => '+41'],
+            'FR' => ['name' => 'Frankreich', 'dial' => '+33'],
+            'NL' => ['name' => 'Niederlande', 'dial' => '+31'],
+            'BE' => ['name' => 'Belgien', 'dial' => '+32'],
+            'LU' => ['name' => 'Luxemburg', 'dial' => '+352'],
+            'IT' => ['name' => 'Italien', 'dial' => '+39'],
+            'ES' => ['name' => 'Spanien', 'dial' => '+34'],
+            'PT' => ['name' => 'Portugal', 'dial' => '+351'],
+            'DK' => ['name' => 'Dänemark', 'dial' => '+45'],
+            'SE' => ['name' => 'Schweden', 'dial' => '+46'],
+            'NO' => ['name' => 'Norwegen', 'dial' => '+47'],
+            'FI' => ['name' => 'Finnland', 'dial' => '+358'],
+            'PL' => ['name' => 'Polen', 'dial' => '+48'],
+            'CZ' => ['name' => 'Tschechien', 'dial' => '+420'],
+            'SK' => ['name' => 'Slowakei', 'dial' => '+421'],
+            'HU' => ['name' => 'Ungarn', 'dial' => '+36'],
+            'GB' => ['name' => 'Vereinigtes Königreich', 'dial' => '+44'],
+            'IE' => ['name' => 'Irland', 'dial' => '+353'],
+            'US' => ['name' => 'USA / Kanada', 'dial' => '+1'],
+            'TR' => ['name' => 'Türkei', 'dial' => '+90'],
         ];
     }
 
@@ -148,11 +157,30 @@ new class extends Component {
     @endif
 
     <div class="flex gap-2">
-        <flux:select wire:model.live="country" class="w-44 shrink-0">
-            @foreach ($this->countries as $code => $info)
-                <flux:select.option value="{{ $code }}">{{ $info['flag'] }} {{ $info['dial'] }}</flux:select.option>
-            @endforeach
-        </flux:select>
+        <flux:dropdown>
+            <flux:button type="button" variant="filled" class="!w-28 shrink-0 justify-between">
+                <span class="flex items-center gap-2 truncate">
+                    <span class="fi fi-{{ strtolower($country) }} shrink-0 rounded-sm shadow-sm" style="width: 1.25rem; height: 0.9375rem; background-size: cover; background-position: center;"></span>
+                    <span class="truncate text-sm">{{ $this->countries[$country]['dial'] ?? '' }}</span>
+                </span>
+                <flux:icon.chevron-down class="-mr-1 size-4 shrink-0 text-zinc-400" />
+            </flux:button>
+
+            <flux:menu class="max-h-80 overflow-y-auto">
+                @foreach ($this->countries as $code => $info)
+                    <flux:menu.item
+                        wire:click="setCountry('{{ $code }}')"
+                        wire:key="phone-country-{{ $code }}"
+                    >
+                        <span class="flex items-center gap-3">
+                            <span class="fi fi-{{ strtolower($code) }} shrink-0 rounded-sm shadow-sm" style="width: 1.25rem; height: 0.9375rem; background-size: cover; background-position: center;"></span>
+                            <span class="flex-1">{{ $info['name'] }}</span>
+                            <span class="text-zinc-500">{{ $info['dial'] }}</span>
+                        </span>
+                    </flux:menu.item>
+                @endforeach
+            </flux:menu>
+        </flux:dropdown>
 
         <flux:input
             wire:model.live.debounce.400ms="national"

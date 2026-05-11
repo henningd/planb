@@ -876,7 +876,7 @@ new #[Title('Kommunikations-Vorlagen')] class extends Component {
                             >
                             <div>
                                 <div class="text-sm font-medium">{{ $candidate->fullName() }}</div>
-                                <div class="text-xs text-zinc-500 dark:text-zinc-400">{{ $candidate->mobile_phone }}</div>
+                                <div class="text-xs text-zinc-500 dark:text-zinc-400">{{ \App\Support\PhoneFormat::display($candidate->mobile_phone) }}</div>
                             </div>
                         </div>
                         @if ($candidate->is_key_personnel)
