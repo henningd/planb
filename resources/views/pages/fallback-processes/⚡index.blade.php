@@ -355,9 +355,9 @@ new #[Title('Notfallbetrieb')] class extends Component {
 
             <flux:input wire:model="title" :label="__('Titel')" type="text" placeholder="z. B. Papierbasierter Auftragsdurchlauf" required />
 
-            <flux:textarea wire:model="description" :label="__('Beschreibung')" rows="4" placeholder="Schritt-für-Schritt: was ist zu tun, mit welcher Kapazität (z. B. ‚30 % Durchsatz mit Papier statt ERP‘)?" />
+            <flux:textarea wire:model="description" :label="__('Beschreibung')" rows="4" placeholder='Schritt-für-Schritt: was ist zu tun, mit welcher Kapazität (z. B. "30 % Durchsatz mit Papier statt ERP")?' />
 
-            <flux:textarea wire:model="trigger" :label="__('Auslöser')" rows="2" placeholder="Wann aktivieren? z. B. ‚ERP-System länger als 2 Stunden nicht erreichbar‘" />
+            <flux:textarea wire:model="trigger" :label="__('Auslöser')" rows="2" placeholder='Wann aktivieren? z. B. "ERP-System länger als 2 Stunden nicht erreichbar"' />
 
             <div class="grid gap-4 sm:grid-cols-2">
                 <flux:select wire:model="responsible_role_id" :label="__('Verantwortliche Rolle')" placeholder="—">
@@ -396,7 +396,7 @@ new #[Title('Notfallbetrieb')] class extends Component {
                 wire:model="handover_notes"
                 :label="__('Übergabe an Wiederanlauf')"
                 rows="3"
-                placeholder="Was muss nachgeholt werden, sobald das System wieder läuft? z. B. ‚Papierbelege ins ERP nachbuchen‘"
+                placeholder='Was muss nachgeholt werden, sobald das System wieder läuft? z. B. "Papierbelege ins ERP nachbuchen"'
             />
 
             <div>
