@@ -2,7 +2,7 @@
     $productName = \App\Support\Settings\SystemSetting::get('platform_name') ?: config('app.name', 'Notfallplan');
     $contactEmail = (string) \App\Support\Settings\SystemSetting::get('platform_contact_email');
     $contactPhone = (string) \App\Support\Settings\SystemSetting::get('platform_contact_phone');
-    $companyName = 'Arento AI GmbH i. G.';
+    $companyName = 'Arento AI GmbH';
 
     $problems = [
         [

@@ -1,6 +1,6 @@
 @php
     $contactEmail = (string) \App\Support\Settings\SystemSetting::get('platform_contact_email');
-    $companyName = 'Arento AI GmbH i. G.';
+    $companyName = 'Arento AI GmbH';
 
     // Preis-Definitionen — eine Quelle für Karten und Vergleichstabelle.
     $monthlyPrices = [

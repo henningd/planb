@@ -110,7 +110,7 @@
 
     <footer class="border-t border-slate-200 bg-slate-50">
         <div class="max-w-7xl mx-auto px-6 lg:px-8 py-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-sm text-slate-500">
-            <div>&copy; {{ date('Y') }} Arento AI GmbH i. G.</div>
+            <div>&copy; {{ date('Y') }} Arento AI GmbH</div>
             <div class="flex flex-wrap items-center gap-4">
                 <a href="{{ route('home') }}" class="hover:text-slate-900 transition">Startseite</a>
                 <a href="{{ route('legal.imprint') }}" class="hover:text-slate-900 transition">Impressum</a>

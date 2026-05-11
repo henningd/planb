@@ -20,7 +20,7 @@ class SettingsCatalog
         Angaben gemäß § 5 Telemediengesetz (TMG)
 
         Anbieter
-        Arento AI GmbH i. G.
+        Arento AI GmbH
         Wiesenstr. 28
         53773 Hennef
         Deutschland
@@ -31,12 +31,15 @@ class SettingsCatalog
         Vertretungsberechtigter Geschäftsführer
         Daniel Henninger
 
-        Hinweis zur Vorgesellschaft
-        Die Gesellschaft befindet sich in Gründung (i. G.). Bis zur Eintragung in
-        das Handelsregister bestehen die Vorschriften der Vor-GmbH. Registereintrag,
-        Registergericht, Handelsregisternummer und ggf. Umsatzsteuer-Identifikations-
-        nummer (§ 27 a UStG) werden nach erfolgter Eintragung an dieser Stelle
-        ergänzt.
+        Registereintrag
+        Eintragung im Handelsregister.
+        Registergericht: Amtsgericht Siegburg
+        Registernummer: HRB 19514
+        EUID: DER3208.HRB19514
+
+        Umsatzsteuer-ID
+        Umsatzsteuer-Identifikationsnummer gemäß § 27 a Umsatzsteuergesetz:
+        folgt.
 
         Inhaltlich verantwortlich gemäß § 18 Abs. 2 MStV
         Daniel Henninger, Anschrift wie oben
@@ -93,7 +96,7 @@ class SettingsCatalog
 
         Verantwortlich für die Datenverarbeitung im Sinne der DSGVO ist:
 
-        Arento AI GmbH i. G.
+        Arento AI GmbH
         Wiesenstr. 28
         53773 Hennef
         Deutschland
@@ -354,7 +357,7 @@ class SettingsCatalog
         § 1 GELTUNGSBEREICH
 
         (1) Diese Allgemeinen Geschäftsbedingungen (nachfolgend „AGB") gelten
-        für alle Verträge zwischen der Arento AI GmbH i. G., Wiesenstr. 28,
+        für alle Verträge zwischen der Arento AI GmbH, Wiesenstr. 28,
         53773 Hennef (nachfolgend „Anbieter") und ihren Kunden über die
         Bereitstellung der unter dieser Domain erreichbaren Plattform
         (nachfolgend „Plattform") sowie damit verbundene Leistungen.
@@ -598,7 +601,7 @@ class SettingsCatalog
         zwischen
 
         — dem Verantwortlichen (Kunde, im Folgenden „Auftraggeber") und
-        — der Arento AI GmbH i. G., Wiesenstr. 28, 53773 Hennef
+        — der Arento AI GmbH, Wiesenstr. 28, 53773 Hennef
           (im Folgenden „Auftragnehmer" oder „Auftragsverarbeiter").
 
         § 1 GEGENSTAND UND DAUER
@@ -705,7 +708,7 @@ class SettingsCatalog
         Stand: April 2026
 
         Verantwortlich
-        Arento AI GmbH i. G., Wiesenstr. 28, 53773 Hennef
+        Arento AI GmbH, Wiesenstr. 28, 53773 Hennef
         E-Mail: info@arento.ai
 
         Diese TOM-Liste beschreibt die zum Schutz personenbezogener Daten
@@ -905,7 +908,7 @@ class SettingsCatalog
         (z. B. Notfallhandbuch in einer alternativen Form)? Bitte
         wenden Sie sich an:
 
-        Arento AI GmbH i. G.
+        Arento AI GmbH
         Wiesenstr. 28
         53773 Hennef
         E-Mail: barrierefreiheit@arento.ai

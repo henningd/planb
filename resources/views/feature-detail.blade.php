@@ -1,6 +1,6 @@
 @php
     $contactEmail = (string) \App\Support\Settings\SystemSetting::get('platform_contact_email');
-    $companyName = 'Arento AI GmbH i. G.';
+    $companyName = 'Arento AI GmbH';
     $colorMap = [
         'indigo' => ['bg' => 'bg-indigo-50', 'text' => 'text-indigo-600', 'ring' => 'ring-indigo-100'],
         'rose' => ['bg' => 'bg-rose-50', 'text' => 'text-rose-600', 'ring' => 'ring-rose-100'],

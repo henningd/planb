@@ -145,7 +145,7 @@ it('shows register and login CTAs when self-service registration is enabled', fu
 it('shows the company name in the footer unobtrusively', function () {
     $this->get('/')
         ->assertOk()
-        ->assertSeeText('Arento AI GmbH i. G.')
+        ->assertSeeText('Arento AI GmbH')
         ->assertSeeText('Ein Produkt der');
 });
 
