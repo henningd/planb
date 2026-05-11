@@ -193,7 +193,7 @@ new #[Title('Admin · Behörde bearbeiten')] class extends Component {
                 </div>
 
                 <div class="grid gap-4 sm:grid-cols-2">
-                    <flux:input wire:model="phone" :label="__('Telefon')" />
+                    <livewire:phone-input wire:model="phone" :label="__('Telefon')" wire:key="dpa-admin-phone-{{ $authority->id }}" />
                     <flux:input wire:model="email" :label="__('E-Mail')" type="email" />
                 </div>
 

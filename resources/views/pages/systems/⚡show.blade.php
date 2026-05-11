@@ -897,7 +897,7 @@ new #[Title('System')] class extends Component {
                                                 <flux:icon.device-phone-mobile class="mt-0.5 h-4 w-4 text-zinc-400" />
                                                 <div>
                                                     <div class="text-xs uppercase text-zinc-500 dark:text-zinc-400">{{ __('Mobil') }}</div>
-                                                    <a href="tel:{{ $e->mobile_phone }}" class="font-medium hover:underline">{{ $e->mobile_phone }}</a>
+                                                    <a href="tel:{{ \App\Support\PhoneFormat::tel($e->mobile_phone) }}" class="font-medium hover:underline">{{ \App\Support\PhoneFormat::display($e->mobile_phone) }}</a>
                                                 </div>
                                             </div>
                                         @endif
@@ -906,7 +906,7 @@ new #[Title('System')] class extends Component {
                                                 <flux:icon.phone class="mt-0.5 h-4 w-4 text-zinc-400" />
                                                 <div>
                                                     <div class="text-xs uppercase text-zinc-500 dark:text-zinc-400">{{ __('Festnetz') }}</div>
-                                                    <a href="tel:{{ $e->work_phone }}" class="hover:underline">{{ $e->work_phone }}</a>
+                                                    <a href="tel:{{ \App\Support\PhoneFormat::tel($e->work_phone) }}" class="hover:underline">{{ \App\Support\PhoneFormat::display($e->work_phone) }}</a>
                                                 </div>
                                             </div>
                                         @endif

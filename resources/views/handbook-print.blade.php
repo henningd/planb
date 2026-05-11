@@ -687,7 +687,7 @@
                 <th>Datenschutz-Aufsichtsbehörde</th>
                 <td>
                     {{ $company->data_protection_authority_name ?? '—' }}
-                    @if ($company->data_protection_authority_phone)<br>Telefon: {{ $company->data_protection_authority_phone }}@endif
+                    @if ($company->data_protection_authority_phone)<br>Telefon: {{ \App\Support\PhoneFormat::display($company->data_protection_authority_phone) }}@endif
                     @if ($company->data_protection_authority_website)<br>Website: {{ $company->data_protection_authority_website }}@endif
                 </td>
             </tr>
@@ -774,7 +774,7 @@
                             <td>
                                 @if ($employee->mobile_phone)
                                     <div class="contact-label">Mobil</div>
-                                    <div class="contact-value">{{ $employee->mobile_phone }}</div>
+                                    <div class="contact-value">{{ \App\Support\PhoneFormat::display($employee->mobile_phone) }}</div>
                                 @endif
                                 @if ($employee->email)
                                     <div class="contact-label contact-label-spaced">E-Mail</div>
@@ -833,11 +833,11 @@
                             <td>
                                 @if ($emp->mobile_phone)
                                     <div class="contact-label">Mobil</div>
-                                    <div class="contact-value">{{ $emp->mobile_phone }}</div>
+                                    <div class="contact-value">{{ \App\Support\PhoneFormat::display($emp->mobile_phone) }}</div>
                                 @endif
                                 @if ($emp->private_phone)
                                     <div class="contact-label contact-label-spaced">Privat</div>
-                                    <div class="contact-value">{{ $emp->private_phone }}</div>
+                                    <div class="contact-value">{{ \App\Support\PhoneFormat::display($emp->private_phone) }}</div>
                                 @endif
                                 @if ($emp->email)
                                     <div class="contact-label contact-label-spaced">E-Mail</div>
@@ -1474,10 +1474,10 @@
         <h3>12.1 DSGVO &mdash; Meldepflicht bei Datenpannen</h3>
         <p>Gemäß <em>Art. 33 DSGVO</em> ist eine Meldung an die zuständige Aufsichtsbehörde innerhalb von 72 Stunden ab Kenntnis vorzunehmen, sofern ein Risiko für die Rechte und Freiheiten Betroffener besteht. Bei hohem Risiko sind zusätzlich die Betroffenen ohne unangemessene Verzögerung zu informieren <em>(Art. 34 DSGVO)</em>.</p>
         <table class="meta-table">
-            <tr><th>Zuständige Aufsichtsbehörde</th><td>{{ $company->data_protection_authority_name ?? '—' }}@if ($company->data_protection_authority_phone) &middot; Tel.: {{ $company->data_protection_authority_phone }}@endif@if ($company->data_protection_authority_website)<br>{{ $company->data_protection_authority_website }}@endif</td></tr>
+            <tr><th>Zuständige Aufsichtsbehörde</th><td>{{ $company->data_protection_authority_name ?? '—' }}@if ($company->data_protection_authority_phone) &middot; Tel.: {{ \App\Support\PhoneFormat::display($company->data_protection_authority_phone) }}@endif@if ($company->data_protection_authority_website)<br>{{ $company->data_protection_authority_website }}@endif</td></tr>
             @php($dpoHolder = $crisisHolders->first(fn ($h) => $h['role']->value === 'dpo' && ! $h['is_deputy']) ?? $crisisHolders->first(fn ($h) => $h['role']->value === 'dpo'))
             @php($dpo = $dpoHolder['employee'] ?? null)
-            <tr><th>Datenschutzbeauftragte/r</th><td>{{ $dpo?->fullName() ?? '—' }}@if ($dpo) &middot; {{ $dpo->mobile_phone }} &middot; {{ $dpo->email }}@endif</td></tr>
+            <tr><th>Datenschutzbeauftragte/r</th><td>{{ $dpo?->fullName() ?? '—' }}@if ($dpo) &middot; {{ \App\Support\PhoneFormat::display($dpo->mobile_phone) }} &middot; {{ $dpo->email }}@endif</td></tr>
         </table>
 
         <h3>12.2 BSI / NIS2-Meldepflichten</h3>

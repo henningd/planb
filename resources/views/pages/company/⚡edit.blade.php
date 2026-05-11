@@ -8,6 +8,7 @@ use App\Models\Company;
 use App\Models\DataProtectionAuthority;
 use App\Models\Location;
 use App\Support\DataProtectionAuthorities;
+use App\Support\PhoneFormat;
 use Flux\Flux;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
@@ -334,7 +335,7 @@ new #[Title('Firma')] class extends Component {
                             <div class="mt-1 text-xs text-sky-800 dark:text-sky-200">
                                 {{ $suggestion->name }}
                                 @if ($suggestion->city)· {{ $suggestion->city }}@endif
-                                @if ($suggestion->phone)· {{ $suggestion->phone }}@endif
+                                @if ($suggestion->phone)· {{ PhoneFormat::display($suggestion->phone) }}@endif
                             </div>
                             @if ($suggestion->notes)
                                 <div class="mt-1 text-xs text-sky-700 dark:text-sky-300">
@@ -426,7 +427,7 @@ new #[Title('Firma')] class extends Component {
                                     @if ($authority->phone)
                                         <div class="flex items-center gap-1">
                                             <flux:icon.phone class="h-3.5 w-3.5" />
-                                            {{ $authority->phone }}
+                                            {{ PhoneFormat::display($authority->phone) }}
                                         </div>
                                     @endif
                                 </div>
@@ -465,7 +466,7 @@ new #[Title('Firma')] class extends Component {
             @if ($authority_mode === 'custom')
                 <div class="grid gap-6 sm:grid-cols-3">
                     <flux:input wire:model="data_protection_authority_name" :label="__('Behörde / Name')" type="text" placeholder="z. B. LfDI Baden-Württemberg" />
-                    <flux:input wire:model="data_protection_authority_phone" :label="__('Telefon')" type="text" />
+                    <livewire:phone-input wire:model="data_protection_authority_phone" :label="__('Telefon')" wire:key="dpa-custom-phone" />
                     <flux:input wire:model="data_protection_authority_website" :label="__('Website')" type="text" placeholder="https://…" />
                 </div>
             @elseif ($selected_authority_id)
@@ -475,7 +476,7 @@ new #[Title('Firma')] class extends Component {
                         <div class="grid gap-3 sm:grid-cols-3">
                             <div>
                                 <div class="font-semibold uppercase text-zinc-500 dark:text-zinc-400">{{ __('Telefon') }}</div>
-                                <div class="mt-1 text-zinc-800 dark:text-zinc-200">{{ $selectedAuthority->phone ?: '—' }}</div>
+                                <div class="mt-1 text-zinc-800 dark:text-zinc-200">{{ $selectedAuthority->phone ? PhoneFormat::display($selectedAuthority->phone) : '—' }}</div>
                             </div>
                             <div>
                                 <div class="font-semibold uppercase text-zinc-500 dark:text-zinc-400">{{ __('E-Mail') }}</div>

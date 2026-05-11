@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Location;
+use App\Support\PhoneFormat;
 use Flux\Flux;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Auth;
@@ -191,7 +192,7 @@ new #[Title('Standorte')] class extends Component {
                     @if ($location->phone)
                         <div class="flex items-start gap-2">
                             <flux:icon.phone class="mt-0.5 h-4 w-4 shrink-0 text-zinc-400" />
-                            <a href="tel:{{ $location->phone }}" class="hover:underline">{{ $location->phone }}</a>
+                            <a href="tel:{{ PhoneFormat::tel($location->phone) }}" class="hover:underline">{{ PhoneFormat::display($location->phone) }}</a>
                         </div>
                     @endif
                 </div>
@@ -230,7 +231,7 @@ new #[Title('Standorte')] class extends Component {
 
             <div class="grid gap-4 sm:grid-cols-2">
                 <flux:input wire:model="country" :label="__('Land (ISO-2)')" type="text" required maxlength="2" />
-                <flux:input wire:model="phone" :label="__('Telefon')" type="text" />
+                <livewire:phone-input wire:model="phone" :label="__('Telefon')" wire:key="location-phone-{{ $editingId ?? 'new' }}" />
             </div>
 
             <flux:input wire:model="sort" :label="__('Sortierung')" type="number" min="0" />

@@ -227,9 +227,9 @@ new #[Title('Mitarbeiter bearbeiten')] class extends Component {
             </div>
 
             <div class="grid gap-4 sm:grid-cols-3">
-                <flux:input wire:model="work_phone" :label="__('Tel. (Büro)')" />
-                <flux:input wire:model="mobile_phone" :label="__('Mobil (dienstlich)')" />
-                <flux:input wire:model="private_phone" :label="__('Privat')" />
+                <livewire:phone-input wire:model="work_phone" :label="__('Tel. (Büro)')" wire:key="phone-work-{{ $employee?->id ?? 'new' }}" />
+                <livewire:phone-input wire:model="mobile_phone" :label="__('Mobil (dienstlich)')" wire:key="phone-mobile-{{ $employee?->id ?? 'new' }}" />
+                <livewire:phone-input wire:model="private_phone" :label="__('Privat')" wire:key="phone-private-{{ $employee?->id ?? 'new' }}" />
             </div>
 
             <flux:textarea

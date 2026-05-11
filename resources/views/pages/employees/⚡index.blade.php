@@ -5,6 +5,7 @@ use App\Models\Employee;
 use App\Models\Role;
 use App\Models\System;
 use App\Support\Employees\EmployeeExporter;
+use App\Support\PhoneFormat;
 use Flux\Flux;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Computed;
@@ -822,13 +823,13 @@ new #[Title('Mitarbeiter')] class extends Component {
                             @if ($employee->mobile_phone)
                                 <div class="flex items-center gap-2">
                                     <flux:icon.device-phone-mobile class="h-4 w-4 shrink-0 text-zinc-400" />
-                                    <a href="tel:{{ $employee->mobile_phone }}" class="hover:underline">{{ $employee->mobile_phone }}</a>
+                                    <a href="tel:{{ PhoneFormat::tel($employee->mobile_phone) }}" class="hover:underline">{{ PhoneFormat::display($employee->mobile_phone) }}</a>
                                 </div>
                             @endif
                             @if ($employee->work_phone)
                                 <div class="flex items-center gap-2">
                                     <flux:icon.phone class="h-4 w-4 shrink-0 text-zinc-400" />
-                                    <a href="tel:{{ $employee->work_phone }}" class="hover:underline">{{ $employee->work_phone }}</a>
+                                    <a href="tel:{{ PhoneFormat::tel($employee->work_phone) }}" class="hover:underline">{{ PhoneFormat::display($employee->work_phone) }}</a>
                                 </div>
                             @endif
                             @if ($employee->email)

@@ -3,6 +3,7 @@
 use App\Enums\RaciRole;
 use App\Enums\SystemOwnership;
 use App\Models\Employee;
+use App\Support\PhoneFormat;
 use Flux\Flux;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Title;
@@ -93,7 +94,7 @@ new #[Title('Mitarbeiter')] class extends Component {
                         <flux:icon.device-phone-mobile class="mt-0.5 h-4 w-4 shrink-0 text-zinc-400" />
                         <div class="min-w-0">
                             <dt class="text-xs uppercase tracking-wide text-zinc-500 dark:text-zinc-400">{{ __('Mobil (dienstlich)') }}</dt>
-                            <dd class="text-zinc-900 dark:text-zinc-100"><a href="tel:{{ $employee->mobile_phone }}" class="hover:underline">{{ $employee->mobile_phone }}</a></dd>
+                            <dd class="text-zinc-900 dark:text-zinc-100"><a href="tel:{{ PhoneFormat::tel($employee->mobile_phone) }}" class="hover:underline">{{ PhoneFormat::display($employee->mobile_phone) }}</a></dd>
                         </div>
                     </div>
                 @endif
@@ -102,7 +103,7 @@ new #[Title('Mitarbeiter')] class extends Component {
                         <flux:icon.phone class="mt-0.5 h-4 w-4 shrink-0 text-zinc-400" />
                         <div class="min-w-0">
                             <dt class="text-xs uppercase tracking-wide text-zinc-500 dark:text-zinc-400">{{ __('Tel. (Büro)') }}</dt>
-                            <dd class="text-zinc-900 dark:text-zinc-100"><a href="tel:{{ $employee->work_phone }}" class="hover:underline">{{ $employee->work_phone }}</a></dd>
+                            <dd class="text-zinc-900 dark:text-zinc-100"><a href="tel:{{ PhoneFormat::tel($employee->work_phone) }}" class="hover:underline">{{ PhoneFormat::display($employee->work_phone) }}</a></dd>
                         </div>
                     </div>
                 @endif
@@ -111,7 +112,7 @@ new #[Title('Mitarbeiter')] class extends Component {
                         <flux:icon.phone class="mt-0.5 h-4 w-4 shrink-0 text-zinc-400" />
                         <div class="min-w-0">
                             <dt class="text-xs uppercase tracking-wide text-zinc-500 dark:text-zinc-400">{{ __('Privat') }}</dt>
-                            <dd class="text-zinc-900 dark:text-zinc-100"><a href="tel:{{ $employee->private_phone }}" class="hover:underline">{{ $employee->private_phone }}</a></dd>
+                            <dd class="text-zinc-900 dark:text-zinc-100"><a href="tel:{{ PhoneFormat::tel($employee->private_phone) }}" class="hover:underline">{{ PhoneFormat::display($employee->private_phone) }}</a></dd>
                         </div>
                     </div>
                 @endif
