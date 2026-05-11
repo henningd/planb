@@ -1102,8 +1102,9 @@
             <table class="role-table">
                 <thead>
                     <tr>
-                        <th style="width: 28%;">Bezeichnung</th>
-                        <th style="width: 22%;">Typ</th>
+                        <th style="width: 26%;">Bezeichnung</th>
+                        <th style="width: 18%;">Typ</th>
+                        <th style="width: 14%;">Sofort verfügbares Budget</th>
                         <th>Aufbewahrung und Zugriff</th>
                     </tr>
                 </thead>
@@ -1115,6 +1116,13 @@
                                 @if ($r->description)<div class="small">{{ $r->description }}</div>@endif
                             </td>
                             <td>{{ $r->type->label() }}</td>
+                            <td>
+                                @if ($r->available_budget !== null)
+                                    {{ number_format($r->available_budget, 0, ',', '.') }} €
+                                @else
+                                    —
+                                @endif
+                            </td>
                             <td>
                                 @if ($r->location)
                                     <div class="contact-label">Aufbewahrungsort</div>

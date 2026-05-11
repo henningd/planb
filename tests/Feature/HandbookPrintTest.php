@@ -1,7 +1,9 @@
 <?php
 
 use App\Enums\CrisisRole;
+use App\Enums\EmergencyResourceType;
 use App\Models\Company;
+use App\Models\EmergencyResource;
 use App\Models\Employee;
 use App\Models\ServiceProvider;
 use App\Models\System;
@@ -89,4 +91,31 @@ test('handbook print redirects with 404 when no company exists', function () {
     $this->actingAs($user)
         ->get(route('handbook.print'))
         ->assertNotFound();
+});
+
+test('handbook 8.3 emergency resources table shows the configured budget', function () {
+    $user = User::factory()->create();
+    $company = Company::factory()->for($user->currentTeam)->create();
+
+    EmergencyResource::withoutGlobalScope(CurrentCompanyScope::class)->create([
+        'company_id' => $company->id,
+        'type' => EmergencyResourceType::EmergencyCash,
+        'name' => 'Notfallkasse',
+        'available_budget' => 5000,
+    ]);
+
+    EmergencyResource::withoutGlobalScope(CurrentCompanyScope::class)->create([
+        'company_id' => $company->id,
+        'type' => EmergencyResourceType::Other,
+        'name' => 'Reserve-Notebook',
+        'available_budget' => null,
+    ]);
+
+    $this->actingAs($user->fresh())
+        ->get(route('handbook.print'))
+        ->assertOk()
+        ->assertSee('8.3 Verfügbare Sofortmittel und Ressourcen')
+        ->assertSee('Sofort verfügbares Budget')
+        ->assertSee('5.000 €')
+        ->assertSee('Reserve-Notebook');
 });
