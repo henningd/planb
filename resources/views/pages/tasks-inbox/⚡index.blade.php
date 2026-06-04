@@ -2,8 +2,10 @@
 
 use App\Models\EmergencyResource;
 use App\Models\HandbookTest;
+use App\Models\Risk;
 use Flux\Flux;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -16,8 +18,18 @@ new #[Title('Aufgaben-Inbox')] class extends Component {
     public string $search = '';
 
     /**
+     * Risiko-Reviews nur einbeziehen, wenn das Risikoregister aktiv ist und
+     * der/die Nutzer:in es verwalten darf (Admin) — passend zur Sichtbarkeit
+     * der Risiko-Seiten.
+     */
+    public function includeRisks(): bool
+    {
+        return (bool) config('features.risk_register') && (bool) Auth::user()?->isCurrentTeamAdmin();
+    }
+
+    /**
      * Vereinheitlichte, gefilterte und sortierte Fälligkeitsliste aus
-     * Sofortmittel-Prüfungen und Testplan-Fälligkeiten.
+     * Sofortmittel-Prüfungen, Testplan-Fälligkeiten und Risiko-Reviews.
      *
      * @return Collection<int, array<string, mixed>>
      */
@@ -26,7 +38,7 @@ new #[Title('Aufgaben-Inbox')] class extends Component {
     {
         $items = collect();
 
-        if ($this->typeFilter !== 'tests') {
+        if (in_array($this->typeFilter, ['all', 'resources'], true)) {
             foreach (EmergencyResource::query()->whereNotNull('next_check_at')->get() as $resource) {
                 $items->push([
                     'type' => 'resource',
@@ -45,7 +57,7 @@ new #[Title('Aufgaben-Inbox')] class extends Component {
             }
         }
 
-        if ($this->typeFilter !== 'resources') {
+        if (in_array($this->typeFilter, ['all', 'tests'], true)) {
             foreach (HandbookTest::query()->whereNotNull('next_due_at')->with(['responsible', 'responsibleRole'])->get() as $test) {
                 $responsible = $test->responsible?->fullName() ?? $test->responsibleRole?->name;
 
@@ -62,6 +74,23 @@ new #[Title('Aufgaben-Inbox')] class extends Component {
                     'source_color' => 'indigo',
                     'source_icon' => 'clipboard-document-check',
                     'link' => route('handbook-tests.index').'#test-'.$test->id,
+                ]);
+            }
+        }
+
+        if ($this->includeRisks() && in_array($this->typeFilter, ['all', 'risks'], true)) {
+            foreach (Risk::query()->whereNotNull('review_due_at')->where('status', '!=', 'closed')->get() as $risk) {
+                $items->push([
+                    'type' => 'risk',
+                    'id' => $risk->id,
+                    'title' => __('Review: :name', ['name' => $risk->title]),
+                    'detail' => __(':category · :severity', ['category' => $risk->category->label(), 'severity' => $risk->severityLabel()]),
+                    'due' => $risk->review_due_at,
+                    'last_done' => null,
+                    'source_label' => __('Risiko'),
+                    'source_color' => 'rose',
+                    'source_icon' => 'shield-exclamation',
+                    'link' => route('risks.show', ['risk' => $risk->id]),
                 ]);
             }
         }
@@ -109,8 +138,14 @@ new #[Title('Aufgaben-Inbox')] class extends Component {
     #[Computed]
     public function openCount(): int
     {
-        return EmergencyResource::whereNotNull('next_check_at')->count()
+        $count = EmergencyResource::whereNotNull('next_check_at')->count()
             + HandbookTest::whereNotNull('next_due_at')->count();
+
+        if ($this->includeRisks()) {
+            $count += Risk::whereNotNull('review_due_at')->where('status', '!=', 'closed')->count();
+        }
+
+        return $count;
     }
 
     #[Computed]
@@ -118,8 +153,14 @@ new #[Title('Aufgaben-Inbox')] class extends Component {
     {
         $today = now()->toDateString();
 
-        return EmergencyResource::whereNotNull('next_check_at')->whereDate('next_check_at', '<', $today)->count()
+        $count = EmergencyResource::whereNotNull('next_check_at')->whereDate('next_check_at', '<', $today)->count()
             + HandbookTest::whereNotNull('next_due_at')->whereDate('next_due_at', '<', $today)->count();
+
+        if ($this->includeRisks()) {
+            $count += Risk::whereNotNull('review_due_at')->where('status', '!=', 'closed')->whereDate('review_due_at', '<', $today)->count();
+        }
+
+        return $count;
     }
 
     #[Computed]
@@ -207,7 +248,7 @@ new #[Title('Aufgaben-Inbox')] class extends Component {
 <section class="w-full">
     <div class="mb-6">
         <flux:heading size="xl">{{ __('Aufgaben-Inbox') }}</flux:heading>
-        <flux:subheading>{{ __('Fällige Sofortmittel-Prüfungen und Testplan-Termine auf einen Blick.') }}</flux:subheading>
+        <flux:subheading>{{ __('Fällige Sofortmittel-Prüfungen, Testplan-Termine und Risiko-Reviews auf einen Blick.') }}</flux:subheading>
     </div>
 
     <div class="mb-6 flex flex-wrap items-center gap-3 rounded-lg border border-zinc-200 bg-white p-3 dark:border-zinc-700 dark:bg-zinc-900">
@@ -228,6 +269,9 @@ new #[Title('Aufgaben-Inbox')] class extends Component {
             <flux:select.option value="all">{{ __('Alle') }}</flux:select.option>
             <flux:select.option value="resources">{{ __('Sofortmittel') }}</flux:select.option>
             <flux:select.option value="tests">{{ __('Testplan') }}</flux:select.option>
+            @if ($this->includeRisks())
+                <flux:select.option value="risks">{{ __('Risiko-Reviews') }}</flux:select.option>
+            @endif
         </flux:select>
 
         <flux:input wire:model.live.debounce.300ms="search" :label="__('Suche')" type="search" :placeholder="__('Titel oder Detail…')" class="min-w-56" />
@@ -265,7 +309,7 @@ new #[Title('Aufgaben-Inbox')] class extends Component {
                         <flux:button size="sm" variant="primary" icon="check" wire:click="markResourceChecked('{{ $item['id'] }}')" type="button">
                             {{ __('Geprüft') }}
                         </flux:button>
-                    @else
+                    @elseif ($item['type'] === 'test')
                         <flux:button size="sm" variant="primary" icon="check" wire:click="markTestExecuted('{{ $item['id'] }}')" type="button">
                             {{ __('Durchgeführt') }}
                         </flux:button>

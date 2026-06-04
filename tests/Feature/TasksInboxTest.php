@@ -3,6 +3,7 @@
 use App\Models\Company;
 use App\Models\EmergencyResource;
 use App\Models\HandbookTest;
+use App\Models\Risk;
 use App\Models\System;
 use App\Models\SystemTask;
 use App\Models\User;
@@ -114,6 +115,39 @@ test('marking a test executed advances the next due date', function () {
     $fresh = $test->fresh();
     expect($fresh->last_executed_at->isToday())->toBeTrue()
         ->and($fresh->next_due_at->toDateString())->toBe(now()->addMonth()->toDateString());
+});
+
+test('due risk reviews appear in the inbox for admins', function () {
+    $user = bootInboxUser();
+    Risk::create([
+        'title' => 'Datenverlust',
+        'category' => 'technical',
+        'probability' => 3,
+        'impact' => 4,
+        'status' => 'identified',
+        'review_due_at' => now()->subDay()->toDateString(),
+    ]);
+
+    Livewire\Livewire::actingAs($user)
+        ->test('pages::tasks-inbox.index')
+        ->assertSeeText('Review: Datenverlust')
+        ->assertSeeText('Risiko');
+});
+
+test('closed risks do not appear as reviews', function () {
+    $user = bootInboxUser();
+    Risk::create([
+        'title' => 'Abgeschlossenes Risiko',
+        'category' => 'technical',
+        'probability' => 2,
+        'impact' => 2,
+        'status' => 'closed',
+        'review_due_at' => now()->subDay()->toDateString(),
+    ]);
+
+    Livewire\Livewire::actingAs($user)
+        ->test('pages::tasks-inbox.index')
+        ->assertDontSeeText('Abgeschlossenes Risiko');
 });
 
 test('counters reflect open, overdue and done today', function () {
