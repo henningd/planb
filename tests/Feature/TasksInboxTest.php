@@ -35,6 +35,17 @@ test('inbox lists due resources and tests but not system tasks', function () {
         ->assertDontSeeText('System-Aufgabe');
 });
 
+test('inbox items deep-link to the specific entry', function () {
+    $user = bootInboxUser();
+    $resource = EmergencyResource::create(['type' => 'offline_backup', 'name' => 'Backup', 'next_check_at' => now()->addDays(3)->toDateString()]);
+    $test = HandbookTest::create(['type' => 'backup_restore', 'interval' => 'monthly', 'name' => 'Restore', 'next_due_at' => now()->addDays(3)->toDateString()]);
+
+    Livewire\Livewire::actingAs($user)
+        ->test('pages::tasks-inbox.index')
+        ->assertSee('#resource-'.$resource->id)
+        ->assertSee('#test-'.$test->id);
+});
+
 test('inbox is scoped to the current company', function () {
     $user = bootInboxUser();
     EmergencyResource::create(['type' => 'offline_backup', 'name' => 'Mein Sofortmittel', 'next_check_at' => now()->addDays(2)->toDateString()]);

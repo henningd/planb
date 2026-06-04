@@ -40,7 +40,7 @@ new #[Title('Aufgaben-Inbox')] class extends Component {
                     'source_label' => __('Sofortmittel'),
                     'source_color' => 'teal',
                     'source_icon' => 'lifebuoy',
-                    'link' => route('emergency-resources.index'),
+                    'link' => route('emergency-resources.index').'#resource-'.$resource->id,
                 ]);
             }
         }
@@ -61,7 +61,7 @@ new #[Title('Aufgaben-Inbox')] class extends Component {
                     'source_label' => __('Testplan'),
                     'source_color' => 'indigo',
                     'source_icon' => 'clipboard-document-check',
-                    'link' => route('handbook-tests.index'),
+                    'link' => route('handbook-tests.index').'#test-'.$test->id,
                 ]);
             }
         }
@@ -258,7 +258,7 @@ new #[Title('Aufgaben-Inbox')] class extends Component {
                 </div>
 
                 <div class="flex shrink-0 items-center gap-2">
-                    <flux:button size="sm" variant="ghost" icon="arrow-top-right-on-square" :href="$item['link']" wire:navigate type="button">
+                    <flux:button size="sm" variant="ghost" icon="arrow-top-right-on-square" :href="$item['link']" type="button">
                         {{ __('Öffnen') }}
                     </flux:button>
                     @if ($item['type'] === 'resource')

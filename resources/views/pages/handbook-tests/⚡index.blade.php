@@ -222,7 +222,7 @@ new #[Title('Testplan')] class extends Component {
 
     <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         @forelse ($this->tests as $test)
-            <div class="flex flex-col rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
+            <div id="test-{{ $test->id }}" wire:key="test-{{ $test->id }}" class="flex flex-col rounded-xl border border-zinc-200 bg-white p-5 scroll-mt-24 [&:target]:ring-2 [&:target]:ring-sky-400 dark:border-zinc-700 dark:bg-zinc-900">
                 <div class="flex items-start justify-between gap-2">
                     <div class="min-w-0 flex-1">
                         <flux:heading size="base">{{ $test->name ?: $test->type->label() }}</flux:heading>
