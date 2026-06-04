@@ -144,9 +144,10 @@ test('cleanup command deletes old audit entries based on per-tenant retention', 
     expect(DB::table('audit_log_entries')->where('entity_type', 'fresh')->exists())->toBeTrue();
 });
 
-test('cleanup command leaves audit entries untouched when retention is 0', function () {
+test('cleanup command falls back to the default retention when 0 instead of keeping forever', function () {
     $user = User::factory()->create();
     $company = Company::factory()->for($user->currentTeam)->create();
+    // 0 no longer means "keep forever" — it falls back to the 30 day default.
     CompanySetting::for($company)->set('audit_retention_days', 0);
 
     DB::table('audit_log_entries')->insert([
@@ -162,7 +163,7 @@ test('cleanup command leaves audit entries untouched when retention is 0', funct
 
     $this->artisan('app:cleanup-audit-log')->assertSuccessful();
 
-    expect(DB::table('audit_log_entries')->where('entity_type', 'ancient')->exists())->toBeTrue();
+    expect(DB::table('audit_log_entries')->where('entity_type', 'ancient')->exists())->toBeFalse();
 });
 
 // === enforce_2fa_admins ===

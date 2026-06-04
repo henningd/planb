@@ -302,6 +302,7 @@ Route::prefix('{current_team}')
                 ->name('insurance-policies.show');
             Route::livewire('communication-templates', 'pages::communication-templates.index')->name('communication-templates.index');
             Route::livewire('audit-log', 'pages::audit-log.index')->name('audit-log.index');
+            Route::livewire('login-activity', 'pages::login-activity.index')->name('login-activity.index');
             Route::get('handbook-export/audit-log.csv', [AuditLogExportController::class, 'csv'])
                 ->name('audit-log.export.csv');
             Route::get('handbook-export/audit-log.pdf', [AuditLogExportController::class, 'pdf'])

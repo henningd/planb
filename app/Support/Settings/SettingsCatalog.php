@@ -1133,11 +1133,11 @@ class SettingsCatalog
             'audit_retention_days' => [
                 'scope' => self::COMPANY,
                 'type' => 'int',
-                'default' => 0,
-                'min' => 0,
-                'max' => 3650,
-                'label' => 'Audit-Log Aufbewahrung (Tage)',
-                'description' => '0 = unbegrenzt aufbewahren. Sonst tägliche Bereinigung älterer Einträge.',
+                'default' => 30,
+                'min' => 1,
+                'max' => 360,
+                'label' => 'Log-Aufbewahrung (Tage)',
+                'description' => 'Aufbewahrung von Aktivitäts- und Anmelde-Protokoll. Ältere Einträge werden täglich pro Mandant gelöscht. Maximal 360 Tage.',
             ],
             'pdf_paper_size' => [
                 'scope' => self::COMPANY,

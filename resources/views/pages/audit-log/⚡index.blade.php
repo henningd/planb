@@ -117,6 +117,15 @@ new #[Title('Aktivitäten')] class extends Component {
         </flux:subheading>
     </div>
 
+    <div class="mb-4 flex gap-1 border-b border-zinc-200 dark:border-zinc-700">
+        <flux:button size="sm" variant="ghost" :href="route('audit-log.index')" class="!text-zinc-900 dark:!text-white" wire:navigate>
+            {{ __('Änderungen') }}
+        </flux:button>
+        <flux:button size="sm" variant="ghost" :href="route('login-activity.index')" wire:navigate>
+            {{ __('Anmeldungen') }}
+        </flux:button>
+    </div>
+
     @unless ($this->hasCompany)
         <div class="mb-6 rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-100">
             {{ __('Bitte legen Sie zuerst ein Firmenprofil an.') }}

@@ -155,6 +155,9 @@
                         <flux:sidebar.item icon="clock" :href="route('audit-log.index')" :current="request()->routeIs('audit-log.*')" wire:navigate>
                             {{ __('Aktivitäten') }}
                         </flux:sidebar.item>
+                        <flux:sidebar.item icon="finger-print" :href="route('login-activity.index')" :current="request()->routeIs('login-activity.*')" wire:navigate>
+                            {{ __('Anmeldungen') }}
+                        </flux:sidebar.item>
                         <flux:sidebar.item icon="document-text" :href="route('handbook-versions.index')" :current="request()->routeIs('handbook-versions.*')" wire:navigate>
                             {{ __('Versionshistorie') }}
                         </flux:sidebar.item>
