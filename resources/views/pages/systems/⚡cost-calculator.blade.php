@@ -102,7 +102,7 @@ new #[Title('Ausfallrechner')] class extends Component {
 
     /**
      * @return array{
-     *     systems: list<array{id:string, name:string, hourly:int, partial:int, carrier:bool, derived:int, implicit:bool}>,
+     *     systems: list<array{id:string, name:string, hourly:int, partial:int, aggregates:bool, counts_own:bool, derived:int, implicit:bool}>,
      *     hourly_total: int,
      *     duration: float,
      *     total: int,
@@ -141,10 +141,11 @@ new #[Title('Ausfallrechner')] class extends Component {
                 continue;
             }
 
-            $carrier = $downtimeCost->isCarrier($id);
+            $aggregates = $downtimeCost->aggregatesDependents($id);
+            $countsOwn = $downtimeCost->modeOf($id)->countsOwn();
             $hourly = $downtimeCost->effectiveOwnHourly($id);
 
-            if (! $carrier && $hourly <= 0) {
+            if ($countsOwn && $hourly <= 0 && ! $aggregates) {
                 $missing++;
             }
 
@@ -153,8 +154,9 @@ new #[Title('Ausfallrechner')] class extends Component {
                 'name' => $downtimeCost->name($id),
                 'hourly' => $hourly,
                 'partial' => (int) round($hourly * $duration),
-                'carrier' => $carrier,
-                'derived' => $carrier ? $downtimeCost->derivedHourly($id) : 0,
+                'aggregates' => $aggregates,
+                'counts_own' => $countsOwn,
+                'derived' => $aggregates ? $downtimeCost->derivedHourly($id) : 0,
                 'implicit' => ! isset($selectedLookup[$id]),
             ];
         }
@@ -358,8 +360,10 @@ new #[Title('Ausfallrechner')] class extends Component {
                                 <div class="flex items-center justify-between gap-3 px-4 py-2 text-sm" wire:key="sum-{{ $row['id'] }}">
                                     <div class="min-w-0 flex-1">
                                         <div class="truncate text-zinc-800 dark:text-zinc-200">{{ $row['name'] }}</div>
-                                        @if ($row['carrier'])
+                                        @if ($row['aggregates'] && ! $row['counts_own'])
                                             <div class="text-xs text-zinc-400 dark:text-zinc-500">{{ __('Träger – eigene Kosten deaktiviert, über abhängige Systeme erfasst (abgeleitet :v €/h)', ['v' => $fmt((int) $row['derived'])]) }}</div>
+                                        @elseif ($row['aggregates'] && $row['counts_own'])
+                                            <div class="text-xs text-zinc-400 dark:text-zinc-500">{{ __('eigene Kosten + abhängige Systeme (abgeleitet :v €/h)', ['v' => $fmt((int) $row['derived'])]) }}</div>
                                         @elseif ($row['implicit'])
                                             <div class="text-xs text-zinc-400 dark:text-zinc-500">{{ __('automatisch einbezogen (abhängig von einem ausgewählten Träger)') }}</div>
                                         @endif

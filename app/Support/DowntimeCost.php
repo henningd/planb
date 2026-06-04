@@ -2,6 +2,7 @@
 
 namespace App\Support;
 
+use App\Enums\DowntimeCostMode;
 use App\Models\Company;
 use App\Models\System;
 use App\Scopes\CurrentCompanyScope;
@@ -9,22 +10,18 @@ use Illuminate\Support\Facades\DB;
 
 /**
  * Berechnet Ausfallkosten je Stunde für einen Mandanten und vermeidet dabei
- * Doppelzählung: Ein als „Träger" markiertes System
- * ({@see System::$downtime_cost_from_dependents}) — z. B. die Stromversorgung —
- * zählt mit seinen eigenen Kosten nicht mehr, weil sein Schaden bereits über
- * die (transitiv) abhängigen Systeme abgebildet wird.
- *
- * Begriffe:
- *  - „abhängige Systeme" (dependents) eines Trägers C = alle Systeme, die direkt
- *    oder indirekt von C abhängen (Kante system_id → depends_on_system_id).
- *  - „effektive Eigenkosten" eines Systems = 0, wenn es ein Träger ist, sonst
- *    seine hinterlegten downtime_cost_per_hour.
+ * Doppelzählung. Pro System steuert {@see DowntimeCostMode}, wie die Kosten
+ * einfließen:
+ *  - Own                → nur eigene Kosten.
+ *  - FromDependents     → eigene Kosten deaktiviert, Schaden aus den (transitiv)
+ *                         abhängigen Systemen (z. B. Stromversorgung).
+ *  - OwnPlusDependents  → eigene Kosten plus die der abhängigen Systeme.
  */
 class DowntimeCost
 {
     /**
-     * @param  array<string, array{name: string, hourly: int, carrier: bool}>  $systems
-     * @param  array<string, list<string>>  $dependents  carrierId => [direkte Abhängige]
+     * @param  array<string, array{name: string, hourly: int, mode: DowntimeCostMode}>  $systems
+     * @param  array<string, list<string>>  $dependents  systemId => [direkte Abhängige]
      */
     private function __construct(
         private readonly array $systems,
@@ -35,14 +32,14 @@ class DowntimeCost
     {
         $systems = System::withoutGlobalScope(CurrentCompanyScope::class)
             ->where('company_id', $company->id)
-            ->get(['id', 'name', 'downtime_cost_per_hour', 'downtime_cost_from_dependents']);
+            ->get(['id', 'name', 'downtime_cost_per_hour', 'downtime_cost_mode']);
 
         $byId = [];
         foreach ($systems as $system) {
             $byId[$system->id] = [
                 'name' => (string) $system->name,
                 'hourly' => (int) ($system->downtime_cost_per_hour ?? 0),
-                'carrier' => (bool) $system->downtime_cost_from_dependents,
+                'mode' => $system->downtime_cost_mode ?? DowntimeCostMode::Own,
             ];
         }
 
@@ -59,13 +56,24 @@ class DowntimeCost
         return new self($byId, $dependents);
     }
 
+    public function modeOf(string $systemId): DowntimeCostMode
+    {
+        return $this->systems[$systemId]['mode'] ?? DowntimeCostMode::Own;
+    }
+
+    public function aggregatesDependents(string $systemId): bool
+    {
+        return $this->modeOf($systemId)->aggregatesDependents();
+    }
+
     /**
-     * Effektive Eigenkosten je Stunde: 0 bei Trägern, sonst hinterlegte Kosten.
+     * Effektive Eigenkosten je Stunde: 0, wenn der Modus die eigenen Kosten
+     * nicht mitzählt (FromDependents), sonst die hinterlegten Kosten.
      */
     public function effectiveOwnHourly(string $systemId): int
     {
         $system = $this->systems[$systemId] ?? null;
-        if ($system === null || $system['carrier']) {
+        if ($system === null || ! $system['mode']->countsOwn()) {
             return 0;
         }
 
@@ -99,8 +107,8 @@ class DowntimeCost
     }
 
     /**
-     * Aus den abhängigen Systemen abgeleitete Stundenkosten eines Trägers
-     * (Summe der effektiven Eigenkosten aller transitiv Abhängigen).
+     * Aus den abhängigen Systemen abgeleitete Stundenkosten (Summe der
+     * effektiven Eigenkosten aller transitiv Abhängigen).
      */
     public function derivedHourly(string $systemId): int
     {
@@ -112,9 +120,16 @@ class DowntimeCost
         return $sum;
     }
 
-    public function isCarrier(string $systemId): bool
+    /**
+     * Der für DIESES System anzuzeigende Stundenwert je nach Modus:
+     *  - Own                → eigene Kosten.
+     *  - FromDependents     → abgeleitet aus Abhängigen.
+     *  - OwnPlusDependents  → eigene Kosten + abgeleitet.
+     */
+    public function displayHourly(string $systemId): int
     {
-        return (bool) ($this->systems[$systemId]['carrier'] ?? false);
+        return $this->effectiveOwnHourly($systemId)
+            + ($this->aggregatesDependents($systemId) ? $this->derivedHourly($systemId) : 0);
     }
 
     public function name(string $systemId): string
@@ -129,7 +144,8 @@ class DowntimeCost
 
     /**
      * Erweitert eine Auswahl um die transitiv abhängigen Systeme jedes
-     * enthaltenen Trägers — die Menge, über die summiert wird.
+     * enthaltenen Systems, das Abhängige einbezieht — die Menge, über die
+     * summiert wird.
      *
      * @param  list<string>  $selectedIds
      * @return list<string>
@@ -139,7 +155,7 @@ class DowntimeCost
         $union = [];
         foreach ($selectedIds as $id) {
             $union[$id] = true;
-            if ($this->isCarrier($id)) {
+            if ($this->aggregatesDependents($id)) {
                 foreach ($this->transitiveDependentIds($id) as $dependentId) {
                     $union[$dependentId] = true;
                 }

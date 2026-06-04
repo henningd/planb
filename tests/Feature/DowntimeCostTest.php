@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\DowntimeCostMode;
 use App\Models\Company;
 use App\Models\System;
 use App\Models\User;
@@ -21,7 +22,7 @@ function powerScenario(): array
     $company = Company::factory()->for($user->currentTeam)->create();
     test()->actingAs($user->fresh());
 
-    $power = System::create(['name' => 'Stromversorgung', 'category' => 'basisbetrieb', 'downtime_cost_per_hour' => 200, 'downtime_cost_from_dependents' => true]);
+    $power = System::create(['name' => 'Stromversorgung', 'category' => 'basisbetrieb', 'downtime_cost_per_hour' => 200, 'downtime_cost_mode' => 'from_dependents']);
     $computer = System::create(['name' => 'Computer', 'category' => 'basisbetrieb', 'downtime_cost_per_hour' => 100]);
     $phone = System::create(['name' => 'Telefonanlage', 'category' => 'basisbetrieb', 'downtime_cost_per_hour' => 50]);
     $server = System::create(['name' => 'Server', 'category' => 'basisbetrieb', 'downtime_cost_per_hour' => 300]);
@@ -49,7 +50,7 @@ test('carrier derived cost is the transitive sum of dependents', function () {
     $dc = DowntimeCost::forCompany($company);
 
     expect($dc->effectiveOwnHourly($power->id))->toBe(0)
-        ->and($dc->isCarrier($power->id))->toBeTrue()
+        ->and($dc->aggregatesDependents($power->id))->toBeTrue()
         ->and($dc->derivedHourly($power->id))->toBe(450)
         ->and(count($dc->transitiveDependentIds($power->id)))->toBe(3);
 });
@@ -80,7 +81,7 @@ test('a cycle in dependencies does not cause infinite recursion', function () {
     $company = Company::factory()->for($user->currentTeam)->create();
     test()->actingAs($user->fresh());
 
-    $a = System::create(['name' => 'A', 'category' => 'basisbetrieb', 'downtime_cost_per_hour' => 10, 'downtime_cost_from_dependents' => true]);
+    $a = System::create(['name' => 'A', 'category' => 'basisbetrieb', 'downtime_cost_per_hour' => 10, 'downtime_cost_mode' => 'from_dependents']);
     $b = System::create(['name' => 'B', 'category' => 'basisbetrieb', 'downtime_cost_per_hour' => 20]);
     $a->dependencies()->attach($b->id, ['sort' => 0]);
     $b->dependencies()->attach($a->id, ['sort' => 0]);
@@ -118,13 +119,30 @@ test('adding a costed dependency target prompts to deactivate its costs', functi
         ->test('pages::systems.edit', ['system' => $computer])
         ->call('addDependencyById', $power->id)
         ->assertSet('pendingCarrierId', $power->id)
-        ->call('confirmDeactivateCarrier')
+        ->call('setCarrierMode', 'from_dependents')
         ->assertSet('pendingCarrierId', null)
         ->call('save')
         ->assertHasNoErrors();
 
-    expect($power->fresh()->downtime_cost_from_dependents)->toBeTrue()
+    expect($power->fresh()->downtime_cost_mode)->toBe(DowntimeCostMode::FromDependents)
         ->and($computer->fresh()->dependencies()->whereKey($power->id)->exists())->toBeTrue();
+});
+
+test('own plus dependents mode counts own cost and dependents', function () {
+    $user = User::factory()->create();
+    $company = Company::factory()->for($user->currentTeam)->create();
+    $this->actingAs($user->fresh());
+
+    $power = System::create(['name' => 'Stromversorgung', 'category' => 'basisbetrieb', 'downtime_cost_per_hour' => 200, 'downtime_cost_mode' => 'own_plus_dependents']);
+    $computer = System::create(['name' => 'Computer', 'category' => 'basisbetrieb', 'downtime_cost_per_hour' => 100]);
+    $computer->dependencies()->attach($power->id, ['sort' => 0]);
+
+    $dc = DowntimeCost::forCompany($company);
+
+    expect($dc->effectiveOwnHourly($power->id))->toBe(200)
+        ->and($dc->displayHourly($power->id))->toBe(300)   // 200 eigen + 100 abhängig
+        ->and($dc->totalHourly())->toBe(300)               // 200 (Strom) + 100 (Computer), keine Doppelzählung
+        ->and($dc->totalHourly([$power->id]))->toBe(300);  // nur Strom gewählt → Computer wird einbezogen
 });
 
 test('no prompt when the dependency target has no downtime cost', function () {

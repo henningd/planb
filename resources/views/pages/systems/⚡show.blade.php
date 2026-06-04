@@ -1148,14 +1148,13 @@ new #[Title('System')] class extends Component {
                                                 <flux:heading size="base" class="group-hover:underline">{{ $dep->name }}</flux:heading>
                                                 <flux:badge color="zinc" size="sm">{{ $dep->category->label() }}</flux:badge>
                                                 @php
-                                                    $depHourly = $downtimeCost->isCarrier($dep->id)
-                                                        ? $downtimeCost->derivedHourly($dep->id)
-                                                        : (int) ($dep->downtime_cost_per_hour ?? 0);
+                                                    $depHourly = $downtimeCost->displayHourly($dep->id);
+                                                    $depAggregates = $downtimeCost->aggregatesDependents($dep->id);
+                                                    $depCountsOwn = $downtimeCost->modeOf($dep->id)->countsOwn();
+                                                    $depSuffix = $depAggregates ? ($depCountsOwn ? __('inkl. Abhängige') : __('abgeleitet')) : '';
                                                 @endphp
-                                                @if ($downtimeCost->isCarrier($dep->id))
-                                                    <flux:badge color="amber" size="sm" icon="banknotes">{{ number_format($depHourly, 0, ',', '.') }} €/h · {{ __('abgeleitet') }}</flux:badge>
-                                                @elseif ($depHourly > 0)
-                                                    <flux:badge color="zinc" size="sm" icon="banknotes">{{ number_format($depHourly, 0, ',', '.') }} €/h</flux:badge>
+                                                @if ($depHourly > 0)
+                                                    <flux:badge color="{{ $depAggregates ? 'amber' : 'zinc' }}" size="sm" icon="banknotes">{{ number_format($depHourly, 0, ',', '.') }} €/h{{ $depSuffix !== '' ? ' · '.$depSuffix : '' }}</flux:badge>
                                                 @endif
                                             </div>
                                             @if ($dep->description)
@@ -1197,14 +1196,13 @@ new #[Title('System')] class extends Component {
                                                 <flux:heading size="base" class="group-hover:underline">{{ $dep->name }}</flux:heading>
                                                 <flux:badge color="violet" size="sm">{{ $dep->category->label() }}</flux:badge>
                                                 @php
-                                                    $depHourly = $downtimeCost->isCarrier($dep->id)
-                                                        ? $downtimeCost->derivedHourly($dep->id)
-                                                        : (int) ($dep->downtime_cost_per_hour ?? 0);
+                                                    $depHourly = $downtimeCost->displayHourly($dep->id);
+                                                    $depAggregates = $downtimeCost->aggregatesDependents($dep->id);
+                                                    $depCountsOwn = $downtimeCost->modeOf($dep->id)->countsOwn();
+                                                    $depSuffix = $depAggregates ? ($depCountsOwn ? __('inkl. Abhängige') : __('abgeleitet')) : '';
                                                 @endphp
-                                                @if ($downtimeCost->isCarrier($dep->id))
-                                                    <flux:badge color="amber" size="sm" icon="banknotes">{{ number_format($depHourly, 0, ',', '.') }} €/h · {{ __('abgeleitet') }}</flux:badge>
-                                                @elseif ($depHourly > 0)
-                                                    <flux:badge color="zinc" size="sm" icon="banknotes">{{ number_format($depHourly, 0, ',', '.') }} €/h</flux:badge>
+                                                @if ($depHourly > 0)
+                                                    <flux:badge color="{{ $depAggregates ? 'amber' : 'zinc' }}" size="sm" icon="banknotes">{{ number_format($depHourly, 0, ',', '.') }} €/h{{ $depSuffix !== '' ? ' · '.$depSuffix : '' }}</flux:badge>
                                                 @endif
                                             </div>
                                             @if ($dep->description)
