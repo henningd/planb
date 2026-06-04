@@ -1,12 +1,9 @@
 <?php
 
-use App\Enums\RaciRole;
-use App\Models\Employee;
-use App\Models\System;
-use App\Models\SystemTask;
+use App\Models\EmergencyResource;
+use App\Models\HandbookTest;
 use Flux\Flux;
-use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Collection;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -14,77 +11,79 @@ use Livewire\Component;
 new #[Title('Aufgaben-Inbox')] class extends Component {
     public string $statusFilter = 'open';
 
-    public string $systemFilter = '';
-
-    public string $assigneeFilter = 'all';
+    public string $typeFilter = 'all';
 
     public string $search = '';
 
-    public function currentEmployeeId(): ?string
-    {
-        $user = Auth::user();
-        if ($user === null) {
-            return null;
-        }
-
-        $employee = Employee::where('email', $user->email)->first();
-
-        return $employee?->id;
-    }
-
     /**
-     * @return Collection<int, SystemTask>
+     * Vereinheitlichte, gefilterte und sortierte Fälligkeitsliste aus
+     * Sofortmittel-Prüfungen und Testplan-Fälligkeiten.
+     *
+     * @return Collection<int, array<string, mixed>>
      */
     #[Computed]
-    public function tasks(): Collection
+    public function items(): Collection
     {
-        $query = SystemTask::with(['system', 'assignees', 'riskMitigation.risk'])
-            ->when($this->systemFilter !== '', fn ($q) => $q->where('system_id', $this->systemFilter))
-            ->when($this->search !== '', function ($q) {
-                $term = '%'.strtolower($this->search).'%';
-                $q->where(function ($inner) use ($term) {
-                    $inner->whereRaw('LOWER(title) LIKE ?', [$term])
-                        ->orWhereRaw('LOWER(COALESCE(description, \'\')) LIKE ?', [$term]);
-                });
-            });
+        $items = collect();
 
-        if ($this->statusFilter === 'open') {
-            $query->whereNull('completed_at');
-        } elseif ($this->statusFilter === 'overdue') {
-            $query->whereNull('completed_at')
-                ->whereNotNull('due_date')
-                ->whereDate('due_date', '<', now()->toDateString());
-        } elseif ($this->statusFilter === 'done') {
-            $query->whereNotNull('completed_at');
-        }
-
-        if ($this->assigneeFilter === 'mine') {
-            $employeeId = $this->currentEmployeeId();
-            if ($employeeId === null) {
-                return new Collection;
-            }
-            $query->whereHas('assignees', fn ($q) => $q->where('employees.id', $employeeId));
-        } elseif ($this->assigneeFilter === 'others') {
-            $employeeId = $this->currentEmployeeId();
-            if ($employeeId !== null) {
-                $query->whereDoesntHave('assignees', fn ($q) => $q->where('employees.id', $employeeId));
+        if ($this->typeFilter !== 'tests') {
+            foreach (EmergencyResource::query()->whereNotNull('next_check_at')->get() as $resource) {
+                $items->push([
+                    'type' => 'resource',
+                    'id' => $resource->id,
+                    'title' => $resource->name ?? $resource->type->label(),
+                    'detail' => $resource->location !== null && $resource->location !== ''
+                        ? __('Standort: :loc', ['loc' => $resource->location])
+                        : $resource->type->label(),
+                    'due' => $resource->next_check_at,
+                    'last_done' => $resource->last_check_at,
+                    'source_label' => __('Sofortmittel'),
+                    'source_color' => 'teal',
+                    'source_icon' => 'lifebuoy',
+                    'link' => route('emergency-resources.index'),
+                ]);
             }
         }
 
-        $tasks = $query->get();
+        if ($this->typeFilter !== 'resources') {
+            foreach (HandbookTest::query()->whereNotNull('next_due_at')->with(['responsible', 'responsibleRole'])->get() as $test) {
+                $responsible = $test->responsible?->fullName() ?? $test->responsibleRole?->name;
+
+                $items->push([
+                    'type' => 'test',
+                    'id' => $test->id,
+                    'title' => $test->name ?? $test->type->label(),
+                    'detail' => $responsible !== null
+                        ? __(':type · Verantwortlich: :who', ['type' => $test->type->label(), 'who' => $responsible])
+                        : $test->type->label(),
+                    'due' => $test->next_due_at,
+                    'last_done' => $test->last_executed_at,
+                    'source_label' => __('Testplan'),
+                    'source_color' => 'indigo',
+                    'source_icon' => 'clipboard-document-check',
+                    'link' => route('handbook-tests.index'),
+                ]);
+            }
+        }
 
         $today = now()->startOfDay();
 
-        return $tasks->sort(function (SystemTask $a, SystemTask $b) use ($today) {
-            $bucket = function (SystemTask $t) use ($today): int {
-                if ($t->isDone()) {
+        if ($this->statusFilter === 'overdue') {
+            $items = $items->filter(fn (array $i) => $i['due'] !== null && $i['due']->lt($today));
+        }
+
+        if ($this->search !== '') {
+            $term = mb_strtolower(trim($this->search));
+            $items = $items->filter(fn (array $i) => str_contains(mb_strtolower($i['title'].' '.$i['detail']), $term));
+        }
+
+        return $items->sort(function (array $a, array $b) use ($today) {
+            $bucket = function (array $i) use ($today): int {
+                if ($i['due'] === null) {
                     return 2;
                 }
-                if ($t->due_date !== null && $t->due_date->lt($today)) {
-                    return 0;
-                }
 
-                return 1;
+                return $i['due']->lt($today) ? 0 : 1;
             };
 
             $ba = $bucket($a);
@@ -93,120 +92,122 @@ new #[Title('Aufgaben-Inbox')] class extends Component {
                 return $ba <=> $bb;
             }
 
-            if ($ba === 0) {
-                return $a->due_date <=> $b->due_date;
+            if ($a['due'] === null && $b['due'] === null) {
+                return strcasecmp($a['title'], $b['title']);
+            }
+            if ($a['due'] === null) {
+                return 1;
+            }
+            if ($b['due'] === null) {
+                return -1;
             }
 
-            if ($ba === 1) {
-                $aDue = $a->due_date;
-                $bDue = $b->due_date;
-                if ($aDue === null && $bDue === null) {
-                    return 0;
-                }
-                if ($aDue === null) {
-                    return 1;
-                }
-                if ($bDue === null) {
-                    return -1;
-                }
-
-                return $aDue <=> $bDue;
-            }
-
-            return ($b->completed_at ?? now()) <=> ($a->completed_at ?? now());
+            return $a['due'] <=> $b['due'];
         })->values();
-    }
-
-    /**
-     * @return array<string, string>
-     */
-    #[Computed]
-    public function systemOptions(): array
-    {
-        return System::orderBy('name')->pluck('name', 'id')->all();
     }
 
     #[Computed]
     public function openCount(): int
     {
-        return SystemTask::whereNull('completed_at')->count();
+        return EmergencyResource::whereNotNull('next_check_at')->count()
+            + HandbookTest::whereNotNull('next_due_at')->count();
     }
 
     #[Computed]
     public function overdueCount(): int
     {
-        return SystemTask::whereNull('completed_at')
-            ->whereNotNull('due_date')
-            ->whereDate('due_date', '<', now()->toDateString())
-            ->count();
+        $today = now()->toDateString();
+
+        return EmergencyResource::whereNotNull('next_check_at')->whereDate('next_check_at', '<', $today)->count()
+            + HandbookTest::whereNotNull('next_due_at')->whereDate('next_due_at', '<', $today)->count();
     }
 
     #[Computed]
     public function doneTodayCount(): int
     {
-        return SystemTask::whereNotNull('completed_at')
-            ->whereDate('completed_at', now()->toDateString())
-            ->count();
+        $today = now()->toDateString();
+
+        return EmergencyResource::whereDate('last_check_at', $today)->count()
+            + HandbookTest::whereDate('last_executed_at', $today)->count();
     }
 
-    public function toggleTask(string $id): void
+    /**
+     * Sofortmittel-Prüfung als erledigt markieren: letzte Prüfung = heute,
+     * nächste Prüfung leeren (kein Intervall hinterlegt). Der Eintrag
+     * verschwindet damit aus der Liste; das nächste Datum kann auf der
+     * Sofortmittel-Seite gesetzt werden.
+     */
+    public function markResourceChecked(string $id): void
     {
-        $task = SystemTask::findOrFail($id);
+        $resource = EmergencyResource::findOrFail($id);
+        $resource->update(['last_check_at' => now()->toDateString(), 'next_check_at' => null]);
 
-        if ($task->isDone()) {
-            $task->update(['completed_at' => null]);
-            Flux::toast(variant: 'success', text: __('Aufgabe wieder geöffnet.'));
-        } else {
-            $task->update(['completed_at' => now()]);
-            Flux::toast(variant: 'success', text: __('Aufgabe als erledigt markiert.'));
-        }
+        $this->clearCaches();
+        Flux::toast(variant: 'success', text: __('Prüfung als erledigt vermerkt. Nächstes Datum bei Bedarf in den Sofortmitteln setzen.'));
+    }
 
-        unset($this->tasks, $this->openCount, $this->overdueCount, $this->doneTodayCount);
+    /**
+     * Testplan-Eintrag als durchgeführt markieren: schreibt das nächste
+     * Fälligkeitsdatum gemäß Intervall fort.
+     */
+    public function markTestExecuted(string $id): void
+    {
+        $test = HandbookTest::findOrFail($id);
+        $test->markExecuted();
+
+        $this->clearCaches();
+        Flux::toast(variant: 'success', text: __('Test als durchgeführt vermerkt.'));
+    }
+
+    private function clearCaches(): void
+    {
+        unset($this->items, $this->openCount, $this->overdueCount, $this->doneTodayCount);
     }
 
     public function resetFilters(): void
     {
         $this->statusFilter = 'open';
-        $this->systemFilter = '';
-        $this->assigneeFilter = 'all';
+        $this->typeFilter = 'all';
         $this->search = '';
     }
 
     public function hasActiveFilters(): bool
     {
-        return $this->statusFilter !== 'open'
-            || $this->systemFilter !== ''
-            || $this->assigneeFilter !== 'all'
-            || $this->search !== '';
+        return $this->statusFilter !== 'open' || $this->typeFilter !== 'all' || $this->search !== '';
     }
 
-    public function dueLabel(SystemTask $task): array
+    /**
+     * @param  array<string, mixed>  $item
+     * @return array{text: string, color: string}
+     */
+    public function dueLabel(array $item): array
     {
-        if ($task->due_date === null) {
+        $due = $item['due'];
+        if ($due === null) {
             return ['text' => __('Ohne Fälligkeit'), 'color' => 'zinc'];
         }
 
         $today = now()->startOfDay();
         $endOfWeek = now()->endOfWeek();
 
-        if ($task->isOverdue()) {
-            return ['text' => __('Überfällig: :date', ['date' => $task->due_date->format('d.m.Y')]), 'color' => 'red'];
+        if ($due->lt($today)) {
+            return ['text' => __('Überfällig: :date', ['date' => $due->format('d.m.Y')]), 'color' => 'red'];
         }
-        if ($task->due_date->isSameDay($today)) {
+        if ($due->isSameDay($today)) {
             return ['text' => __('Heute'), 'color' => 'amber'];
         }
-        if ($task->due_date->lte($endOfWeek)) {
-            return ['text' => __('Diese Woche: :date', ['date' => $task->due_date->format('d.m.')]), 'color' => 'sky'];
+        if ($due->lte($endOfWeek)) {
+            return ['text' => __('Diese Woche: :date', ['date' => $due->format('d.m.')]), 'color' => 'sky'];
         }
 
-        return ['text' => $task->due_date->format('d.m.Y'), 'color' => 'zinc'];
+        return ['text' => $due->format('d.m.Y'), 'color' => 'zinc'];
     }
 }; ?>
 
 <section class="w-full">
     <div class="mb-6">
         <flux:heading size="xl">{{ __('Aufgaben-Inbox') }}</flux:heading>
-        <flux:subheading>{{ __('Zentrale Sicht aller System-Aufgaben.') }}</flux:subheading>
+        <flux:subheading>{{ __('Fällige Sofortmittel-Prüfungen und Testplan-Termine auf einen Blick.') }}</flux:subheading>
     </div>
 
     <div class="mb-6 flex flex-wrap items-center gap-3 rounded-lg border border-zinc-200 bg-white p-3 dark:border-zinc-700 dark:bg-zinc-900">
@@ -219,26 +220,17 @@ new #[Title('Aufgaben-Inbox')] class extends Component {
 
     <div class="mb-4 flex flex-wrap items-end gap-3 rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-900">
         <flux:select wire:model.live="statusFilter" :label="__('Status')" class="min-w-40">
-            <flux:select.option value="all">{{ __('Alle') }}</flux:select.option>
             <flux:select.option value="open">{{ __('Offen') }}</flux:select.option>
             <flux:select.option value="overdue">{{ __('Überfällig') }}</flux:select.option>
-            <flux:select.option value="done">{{ __('Erledigt') }}</flux:select.option>
         </flux:select>
 
-        <flux:select wire:model.live="systemFilter" :label="__('System')" class="min-w-48">
-            <flux:select.option value="">{{ __('Alle Systeme') }}</flux:select.option>
-            @foreach ($this->systemOptions as $id => $name)
-                <flux:select.option value="{{ $id }}">{{ $name }}</flux:select.option>
-            @endforeach
-        </flux:select>
-
-        <flux:select wire:model.live="assigneeFilter" :label="__('Verantwortlich')" class="min-w-48">
+        <flux:select wire:model.live="typeFilter" :label="__('Art')" class="min-w-48">
             <flux:select.option value="all">{{ __('Alle') }}</flux:select.option>
-            <flux:select.option value="mine">{{ __('Mir zugewiesen') }}</flux:select.option>
-            <flux:select.option value="others">{{ __('Andere') }}</flux:select.option>
+            <flux:select.option value="resources">{{ __('Sofortmittel') }}</flux:select.option>
+            <flux:select.option value="tests">{{ __('Testplan') }}</flux:select.option>
         </flux:select>
 
-        <flux:input wire:model.live.debounce.300ms="search" :label="__('Suche')" type="search" :placeholder="__('Titel oder Beschreibung…')" class="min-w-56" />
+        <flux:input wire:model.live.debounce.300ms="search" :label="__('Suche')" type="search" :placeholder="__('Titel oder Detail…')" class="min-w-56" />
 
         @if ($this->hasActiveFilters())
             <flux:button size="sm" variant="ghost" icon="x-mark" wire:click="resetFilters" type="button">
@@ -247,57 +239,35 @@ new #[Title('Aufgaben-Inbox')] class extends Component {
         @endif
     </div>
 
-    @if ($assigneeFilter === 'mine' && $this->currentEmployeeId() === null)
-        <div class="mb-4 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-100">
-            {{ __('Ihr Account ist nicht mit einem Mitarbeiter verknüpft (gleiche E-Mail wie der Account erforderlich).') }}
-        </div>
-    @endif
-
     <div class="space-y-3">
-        @forelse ($this->tasks as $task)
-            @php
-                $due = $this->dueLabel($task);
-                $responsibleAssignees = $task->assignees->filter(fn ($e) => $e->pivot->raci_role === RaciRole::Responsible->value);
-            @endphp
-            <div @class([
-                'flex flex-col gap-3 rounded-xl border border-zinc-200 bg-white p-4 sm:flex-row sm:items-start sm:justify-between dark:border-zinc-700 dark:bg-zinc-900',
-                'opacity-70' => $task->isDone(),
-            ])>
+        @forelse ($this->items as $item)
+            @php($due = $this->dueLabel($item))
+            <div class="flex flex-col gap-3 rounded-xl border border-zinc-200 bg-white p-4 sm:flex-row sm:items-start sm:justify-between dark:border-zinc-700 dark:bg-zinc-900">
                 <div class="min-w-0 flex-1">
                     <div class="flex flex-wrap items-center gap-2">
-                        <flux:heading size="base" :class="$task->isDone() ? 'line-through' : ''" id="task-{{ $task->id }}">{{ $task->title }}</flux:heading>
-                        <flux:badge color="zinc" size="sm">{{ $task->system?->name }}</flux:badge>
-                        @if ($task->riskMitigation && $task->riskMitigation->risk && config('features.risk_register'))
-                            <a href="{{ route('risks.show', $task->riskMitigation->risk) }}" wire:navigate>
-                                <flux:badge color="rose" size="sm" icon="shield-exclamation">{{ __('aus Risiko') }}</flux:badge>
-                            </a>
-                        @endif
-                        <flux:badge color="{{ $due['color'] }}" size="sm">{{ $due['text'] }}</flux:badge>
-                        @if ($task->isDone())
-                            <flux:badge color="emerald" size="sm">{{ __('Erledigt') }}</flux:badge>
-                        @endif
+                        <flux:heading size="base">{{ $item['title'] }}</flux:heading>
+                        <flux:badge :color="$item['source_color']" size="sm" :icon="$item['source_icon']">{{ $item['source_label'] }}</flux:badge>
+                        <flux:badge :color="$due['color']" size="sm">{{ $due['text'] }}</flux:badge>
                     </div>
-                    @if ($task->description)
-                        <flux:text class="mt-1 line-clamp-2 text-sm text-zinc-600 dark:text-zinc-300">{{ $task->description }}</flux:text>
-                    @endif
-                    @if ($responsibleAssignees->isNotEmpty())
-                        <div class="mt-2 flex flex-wrap items-center gap-1.5">
-                            <span class="text-xs uppercase tracking-wide text-zinc-500 dark:text-zinc-400">R:</span>
-                            @foreach ($responsibleAssignees as $emp)
-                                <flux:badge color="amber" size="sm" inset="top bottom">{{ $emp->fullName() }}</flux:badge>
-                            @endforeach
-                        </div>
+                    <flux:text class="mt-1 text-sm text-zinc-600 dark:text-zinc-300">{{ $item['detail'] }}</flux:text>
+                    @if ($item['last_done'])
+                        <flux:text class="mt-1 text-xs text-zinc-400 dark:text-zinc-500">
+                            {{ __('Zuletzt: :date', ['date' => $item['last_done']->format('d.m.Y')]) }}
+                        </flux:text>
                     @endif
                 </div>
 
-                <div class="shrink-0">
-                    @if ($task->isDone())
-                        <flux:button size="sm" variant="ghost" icon="arrow-path" wire:click="toggleTask('{{ $task->id }}')" type="button">
-                            {{ __('Wieder öffnen') }}
+                <div class="flex shrink-0 items-center gap-2">
+                    <flux:button size="sm" variant="ghost" icon="arrow-top-right-on-square" :href="$item['link']" wire:navigate type="button">
+                        {{ __('Öffnen') }}
+                    </flux:button>
+                    @if ($item['type'] === 'resource')
+                        <flux:button size="sm" variant="primary" icon="check" wire:click="markResourceChecked('{{ $item['id'] }}')" type="button">
+                            {{ __('Geprüft') }}
                         </flux:button>
                     @else
-                        <flux:button size="sm" variant="primary" icon="check" wire:click="toggleTask('{{ $task->id }}')" type="button">
-                            {{ __('Erledigt') }}
+                        <flux:button size="sm" variant="primary" icon="check" wire:click="markTestExecuted('{{ $item['id'] }}')" type="button">
+                            {{ __('Durchgeführt') }}
                         </flux:button>
                     @endif
                 </div>
@@ -305,7 +275,7 @@ new #[Title('Aufgaben-Inbox')] class extends Component {
         @empty
             <div class="rounded-xl border border-dashed border-zinc-300 bg-white px-5 py-12 text-center dark:border-zinc-700 dark:bg-zinc-900">
                 <flux:text class="text-zinc-500 dark:text-zinc-400">
-                    {{ __('Keine Aufgaben gefunden.') }}
+                    {{ __('Keine fälligen Prüfungen oder Tests.') }}
                 </flux:text>
                 @if ($this->hasActiveFilters())
                     <div class="mt-3">
