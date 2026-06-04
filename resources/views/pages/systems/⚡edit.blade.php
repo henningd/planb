@@ -172,6 +172,51 @@ new #[Title('System bearbeiten')] class extends Component {
     }
 
     /**
+     * Standard-Aufgaben-Vorlage (generischer Notfall-Ablauf), die für ein
+     * System ohne eigene Aufgaben übernommen werden kann.
+     *
+     * @return list<array{title: string, description: string}>
+     */
+    private static function defaultTaskTemplate(): array
+    {
+        return [
+            ['title' => __('Prüfen'), 'description' => __('Lage einschätzen: Was genau ist betroffen? Umfang und Ursache klären.')],
+            ['title' => __('Sofortmaßnahme'), 'description' => __('Schaden begrenzen: kritische Daten und Geräte sichern, Betroffene informieren.')],
+            ['title' => __('Eskalation'), 'description' => __('Zuständige Stellen, Dienstleister und Geschäftsführung informieren.')],
+            ['title' => __('Wiederherstellung'), 'description' => __('System in definierter Reihenfolge wieder anfahren und Funktion testen.')],
+            ['title' => __('Kommunikation'), 'description' => __('Mitarbeiter und – falls relevant – Kunden über den Status informieren.')],
+        ];
+    }
+
+    /**
+     * Übernimmt die Standard-Aufgaben-Vorlage – nur, wenn das System noch
+     * keine Aufgaben hat (verhindert versehentliches Duplizieren).
+     */
+    public function applyTaskTemplate(): void
+    {
+        if ($this->system === null) {
+            return;
+        }
+
+        if (SystemTask::where('system_id', $this->system->id)->exists()) {
+            return;
+        }
+
+        $sort = 0;
+        foreach (self::defaultTaskTemplate() as $task) {
+            SystemTask::create([
+                'system_id' => $this->system->id,
+                'title' => $task['title'],
+                'description' => $task['description'],
+                'sort' => $sort++,
+            ]);
+        }
+
+        unset($this->tasks);
+        Flux::toast(variant: 'success', text: __('Standard-Aufgaben übernommen.'));
+    }
+
+    /**
      * @return Collection<int, EmergencyLevel>
      */
     #[Computed]
@@ -1676,9 +1721,16 @@ new #[Title('System bearbeiten')] class extends Component {
                         {{ __('Übersicht der Wartungs- und Vorbereitungs-Aufgaben zu diesem System. Anlegen, bearbeiten und löschen erfolgt in der Detail-Ansicht.') }}
                     </flux:subheading>
                 </div>
-                <flux:button size="sm" icon="arrow-top-right-on-square" :href="route('systems.show', ['system' => $system->id])" wire:navigate>
-                    {{ __('Aufgaben verwalten') }}
-                </flux:button>
+                <div class="flex shrink-0 items-center gap-2">
+                    @if ($this->tasks->isEmpty())
+                        <flux:button size="sm" variant="primary" icon="sparkles" wire:click="applyTaskTemplate" wire:confirm="{{ __('Standard-Aufgaben für dieses System anlegen?') }}">
+                            {{ __('Vorlage übernehmen') }}
+                        </flux:button>
+                    @endif
+                    <flux:button size="sm" icon="arrow-top-right-on-square" :href="route('systems.show', ['system' => $system->id])" wire:navigate>
+                        {{ __('Aufgaben verwalten') }}
+                    </flux:button>
+                </div>
             </div>
 
             <div class="p-6">
