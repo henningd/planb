@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuditLogExportController;
+use App\Http\Controllers\AuthActivityExportController;
 use App\Http\Controllers\BackupController;
 use App\Http\Controllers\HandbookVersionPdfController;
 use App\Http\Controllers\PreferenceController;
@@ -303,6 +304,10 @@ Route::prefix('{current_team}')
             Route::livewire('communication-templates', 'pages::communication-templates.index')->name('communication-templates.index');
             Route::livewire('audit-log', 'pages::audit-log.index')->name('audit-log.index');
             Route::livewire('login-activity', 'pages::login-activity.index')->name('login-activity.index');
+            Route::get('handbook-export/login-activity.csv', [AuthActivityExportController::class, 'csv'])
+                ->name('login-activity.export.csv');
+            Route::get('handbook-export/login-activity.pdf', [AuthActivityExportController::class, 'pdf'])
+                ->name('login-activity.export.pdf');
             Route::get('handbook-export/audit-log.csv', [AuditLogExportController::class, 'csv'])
                 ->name('audit-log.export.csv');
             Route::get('handbook-export/audit-log.pdf', [AuditLogExportController::class, 'pdf'])

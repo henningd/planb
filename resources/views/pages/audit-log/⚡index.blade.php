@@ -117,14 +117,14 @@ new #[Title('Aktivitäten')] class extends Component {
         </flux:subheading>
     </div>
 
-    <div class="mb-4 flex gap-1 border-b border-zinc-200 dark:border-zinc-700">
-        <flux:button size="sm" variant="ghost" :href="route('audit-log.index')" class="!text-zinc-900 dark:!text-white" wire:navigate>
+    <flux:navbar class="mb-4 border-b border-zinc-200 dark:border-zinc-700">
+        <flux:navbar.item :href="route('audit-log.index')" :current="request()->routeIs('audit-log.*')" wire:navigate>
             {{ __('Änderungen') }}
-        </flux:button>
-        <flux:button size="sm" variant="ghost" :href="route('login-activity.index')" wire:navigate>
+        </flux:navbar.item>
+        <flux:navbar.item :href="route('login-activity.index')" :current="request()->routeIs('login-activity.*')" wire:navigate>
             {{ __('Anmeldungen') }}
-        </flux:button>
-    </div>
+        </flux:navbar.item>
+    </flux:navbar>
 
     @unless ($this->hasCompany)
         <div class="mb-6 rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-100">

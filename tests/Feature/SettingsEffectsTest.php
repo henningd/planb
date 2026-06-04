@@ -166,6 +166,118 @@ test('cleanup command falls back to the default retention when 0 instead of keep
     expect(DB::table('audit_log_entries')->where('entity_type', 'ancient')->exists())->toBeFalse();
 });
 
+test('cleanup command chunked delete removes all old rows and keeps recent ones across both tables', function () {
+    $user = User::factory()->create();
+    $company = Company::factory()->for($user->currentTeam)->create();
+    CompanySetting::for($company)->set('audit_retention_days', 7);
+
+    // More rows than a single delete chunk (2000) to exercise the batch loop.
+    $oldAudit = [];
+    $freshAudit = [];
+    $oldAuth = [];
+    $freshAuth = [];
+
+    for ($i = 0; $i < 2100; $i++) {
+        $oldAudit[] = [
+            'id' => Str::uuid()->toString(),
+            'company_id' => $company->id,
+            'user_id' => $user->id,
+            'entity_type' => 'old',
+            'entity_id' => Str::uuid()->toString(),
+            'entity_label' => 'old',
+            'action' => 'created',
+            'created_at' => now()->subDays(30),
+        ];
+        $oldAuth[] = [
+            'id' => Str::uuid()->toString(),
+            'company_id' => $company->id,
+            'user_id' => $user->id,
+            'event' => 'login',
+            'created_at' => now()->subDays(30),
+        ];
+    }
+
+    for ($i = 0; $i < 5; $i++) {
+        $freshAudit[] = [
+            'id' => Str::uuid()->toString(),
+            'company_id' => $company->id,
+            'user_id' => $user->id,
+            'entity_type' => 'fresh',
+            'entity_id' => Str::uuid()->toString(),
+            'entity_label' => 'fresh',
+            'action' => 'created',
+            'created_at' => now()->subDay(),
+        ];
+        $freshAuth[] = [
+            'id' => Str::uuid()->toString(),
+            'company_id' => $company->id,
+            'user_id' => $user->id,
+            'event' => 'login',
+            'created_at' => now()->subDay(),
+        ];
+    }
+
+    DB::table('audit_log_entries')->insert(array_merge($oldAudit, $freshAudit));
+    DB::table('auth_activity_log')->insert(array_merge($oldAuth, $freshAuth));
+
+    $this->artisan('app:cleanup-audit-log')->assertSuccessful();
+
+    expect(DB::table('audit_log_entries')->where('entity_type', 'old')->count())->toBe(0);
+    expect(DB::table('audit_log_entries')->where('entity_type', 'fresh')->count())->toBe(5);
+    expect(DB::table('auth_activity_log')->where('created_at', '<', now()->subDays(7))->count())->toBe(0);
+    expect(DB::table('auth_activity_log')->count())->toBe(5);
+});
+
+test('cleanup command applies the 360 day cap when the configured value exceeds it', function () {
+    $user = User::factory()->create();
+    $company = Company::factory()->for($user->currentTeam)->create();
+    // Above the catalog max; the command must clamp to 360 days.
+    CompanySetting::for($company)->set('audit_retention_days', 3650);
+
+    DB::table('audit_log_entries')->insert([
+        'id' => Str::uuid()->toString(),
+        'company_id' => $company->id,
+        'user_id' => $user->id,
+        'entity_type' => 'beyond_cap',
+        'entity_id' => Str::uuid()->toString(),
+        'entity_label' => 'beyond_cap',
+        'action' => 'created',
+        'created_at' => now()->subDays(400),
+    ]);
+    DB::table('audit_log_entries')->insert([
+        'id' => Str::uuid()->toString(),
+        'company_id' => $company->id,
+        'user_id' => $user->id,
+        'entity_type' => 'within_cap',
+        'entity_id' => Str::uuid()->toString(),
+        'entity_label' => 'within_cap',
+        'action' => 'created',
+        'created_at' => now()->subDays(300),
+    ]);
+
+    $this->artisan('app:cleanup-audit-log')->assertSuccessful();
+
+    expect(DB::table('audit_log_entries')->where('entity_type', 'beyond_cap')->exists())->toBeFalse();
+    expect(DB::table('audit_log_entries')->where('entity_type', 'within_cap')->exists())->toBeTrue();
+});
+
+test('cap migration lifts a stored unlimited (0) override to the cap and clamps oversized values', function () {
+    $user = User::factory()->create();
+    $companyUnlimited = Company::factory()->for($user->currentTeam)->create();
+    $companyOversized = Company::factory()->for(User::factory()->create()->currentTeam)->create();
+
+    CompanySetting::for($companyUnlimited)->set('audit_retention_days', 0);
+    CompanySetting::for($companyOversized)->set('audit_retention_days', 3650);
+
+    $migration = require database_path('migrations/2026_06_04_130000_cap_existing_audit_retention.php');
+    $migration->up();
+
+    Cache::flush();
+
+    expect((int) CompanySetting::for($companyUnlimited)->get('audit_retention_days'))->toBe(360);
+    expect((int) CompanySetting::for($companyOversized)->get('audit_retention_days'))->toBe(360);
+});
+
 // === enforce_2fa_admins ===
 
 test('admin without 2fa is redirected when enforcement is on for tenant', function () {

@@ -12,6 +12,7 @@ use Illuminate\Auth\Events\Login;
 use Illuminate\Auth\Events\Logout;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Schema;
 
 uses(RefreshDatabase::class);
 
@@ -79,6 +80,20 @@ test('a login without a company is not recorded', function () {
     event(new Login('web', $user->fresh(), false));
 
     expect(authActivities())->toHaveCount(0);
+});
+
+test('a logging failure does not break the auth flow', function () {
+    [$user] = userWithCompany();
+
+    // Simulate a persistence failure (e.g. transient DB problem) by removing the
+    // backing table; the auth event must still complete without throwing.
+    Schema::drop('auth_activity_log');
+
+    // Reaching the assertion below proves the event dispatch returned normally
+    // instead of bubbling the insert failure up into the auth flow.
+    event(new Login('web', $user, false));
+
+    expect(Schema::hasTable('auth_activity_log'))->toBeFalse();
 });
 
 test('auth activity is scoped to the current company', function () {

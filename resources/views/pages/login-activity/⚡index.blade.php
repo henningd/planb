@@ -1,8 +1,8 @@
 <?php
 
 use App\Models\AuthActivity;
+use App\Support\AuthActivityFilter;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Title;
@@ -16,6 +16,10 @@ new #[Title('Anmeldungen')] class extends Component {
 
     public string $search = '';
 
+    public string $from = '';
+
+    public string $to = '';
+
     #[Computed]
     public function hasCompany(): bool
     {
@@ -23,34 +27,37 @@ new #[Title('Anmeldungen')] class extends Component {
     }
 
     /**
+     * Aktuelle Filter als Query-Parameter, wie sie der Export-Controller erwartet.
+     *
+     * @return array<string, string>
+     */
+    #[Computed]
+    public function exportQuery(): array
+    {
+        return [
+            'event' => $this->event,
+            'search' => $this->search,
+            'from' => $this->from,
+            'to' => $this->to,
+        ];
+    }
+
+    /**
      * @return LengthAwarePaginator<AuthActivity>
      */
     public function entries(): LengthAwarePaginator
     {
-        $query = AuthActivity::query()->with('user')->orderByDesc('created_at');
-
-        if ($this->event !== '') {
-            $query->where('event', $this->event);
-        }
-
-        $search = trim($this->search);
-        if ($search !== '') {
-            $like = '%'.$search.'%';
-            $query->where(function (Builder $q) use ($like): void {
-                $q->where('email', 'like', $like)
-                    ->orWhere('ip_address', 'like', $like)
-                    ->orWhereHas('user', function (Builder $u) use ($like): void {
-                        $u->where('name', 'like', $like);
-                    });
-            });
-        }
-
-        return $query->paginate(25);
+        return AuthActivityFilter::build([
+            'event' => $this->event,
+            'search' => $this->search,
+            'from' => $this->from,
+            'to' => $this->to,
+        ])->paginate(25);
     }
 
     public function resetFilters(): void
     {
-        $this->reset(['event', 'search']);
+        $this->reset(['event', 'search', 'from', 'to']);
         $this->resetPage();
     }
 
@@ -60,6 +67,16 @@ new #[Title('Anmeldungen')] class extends Component {
     }
 
     public function updatingSearch(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatingFrom(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatingTo(): void
     {
         $this->resetPage();
     }
@@ -86,14 +103,14 @@ new #[Title('Anmeldungen')] class extends Component {
         </flux:subheading>
     </div>
 
-    <div class="mb-4 flex gap-1 border-b border-zinc-200 dark:border-zinc-700">
-        <flux:button size="sm" variant="ghost" :href="route('audit-log.index')" wire:navigate>
+    <flux:navbar class="mb-4 border-b border-zinc-200 dark:border-zinc-700">
+        <flux:navbar.item :href="route('audit-log.index')" :current="request()->routeIs('audit-log.*')" wire:navigate>
             {{ __('Änderungen') }}
-        </flux:button>
-        <flux:button size="sm" variant="ghost" :href="route('login-activity.index')" class="!text-zinc-900 dark:!text-white" wire:navigate>
+        </flux:navbar.item>
+        <flux:navbar.item :href="route('login-activity.index')" :current="request()->routeIs('login-activity.*')" wire:navigate>
             {{ __('Anmeldungen') }}
-        </flux:button>
-    </div>
+        </flux:navbar.item>
+    </flux:navbar>
 
     @unless ($this->hasCompany)
         <div class="mb-6 rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-100">
@@ -110,15 +127,42 @@ new #[Title('Anmeldungen')] class extends Component {
                     <flux:select.option value="failed">{{ __('Fehlgeschlagen') }}</flux:select.option>
                 </flux:select>
             </flux:field>
+            <flux:field>
+                <flux:label>{{ __('Von') }}</flux:label>
+                <flux:input type="date" wire:model.live="from" />
+            </flux:field>
+            <flux:field>
+                <flux:label>{{ __('Bis') }}</flux:label>
+                <flux:input type="date" wire:model.live="to" />
+            </flux:field>
             <flux:field class="min-w-64">
                 <flux:label>{{ __('Suche') }}</flux:label>
                 <flux:input wire:model.live.debounce.300ms="search" icon="magnifying-glass" placeholder="{{ __('Name, E-Mail oder IP') }}" />
             </flux:field>
-            @if ($event !== '' || $search !== '')
+            @if ($event !== '' || $search !== '' || $from !== '' || $to !== '')
                 <flux:button size="sm" variant="ghost" icon="x-mark" wire:click="resetFilters">
                     {{ __('Filter zurücksetzen') }}
                 </flux:button>
             @endif
+
+            <div class="ml-auto flex items-center gap-2">
+                <flux:button
+                    size="sm"
+                    variant="ghost"
+                    icon="arrow-down-tray"
+                    :href="route('login-activity.export.csv', $this->exportQuery)"
+                >
+                    {{ __('Als CSV') }}
+                </flux:button>
+                <flux:button
+                    size="sm"
+                    variant="ghost"
+                    icon="document-text"
+                    :href="route('login-activity.export.pdf', $this->exportQuery)"
+                >
+                    {{ __('Als PDF') }}
+                </flux:button>
+            </div>
         </div>
 
         @php($entries = $this->entries())

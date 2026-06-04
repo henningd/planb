@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Models\Company;
 use App\Scopes\CurrentCompanyScope;
 use App\Support\Settings\CompanySetting;
+use App\Support\Settings\SettingsCatalog;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
@@ -15,42 +16,69 @@ use Illuminate\Support\Facades\DB;
 class CleanupAuditLog extends Command
 {
     /**
-     * Hard cap on retention, regardless of the configured value.
+     * Catalog key that is the single source of truth for the retention
+     * default and the hard cap. See {@see SettingsCatalog::all()}.
      */
-    private const MAX_RETENTION_DAYS = 360;
+    private const RETENTION_KEY = 'audit_retention_days';
 
-    private const DEFAULT_RETENTION_DAYS = 30;
+    /**
+     * Rows deleted per statement to avoid long table locks and binlog bloat
+     * on large audit tables.
+     */
+    private const DELETE_CHUNK = 2000;
 
     public function handle(): int
     {
-        $companies = Company::withoutGlobalScope(CurrentCompanyScope::class)->get();
+        $definition = SettingsCatalog::definition(self::RETENTION_KEY);
+        $defaultDays = (int) ($definition['default'] ?? 30);
+        $maxDays = (int) ($definition['max'] ?? 360);
+
         $totalDeleted = 0;
 
-        foreach ($companies as $company) {
-            $days = (int) CompanySetting::for($company)->get('audit_retention_days', self::DEFAULT_RETENTION_DAYS);
-            if ($days <= 0) {
-                $days = self::DEFAULT_RETENTION_DAYS;
-            }
-            $days = min(self::MAX_RETENTION_DAYS, $days);
+        Company::withoutGlobalScope(CurrentCompanyScope::class)
+            ->cursor()
+            ->each(function (Company $company) use ($defaultDays, $maxDays, &$totalDeleted): void {
+                $days = (int) CompanySetting::for($company)->get(self::RETENTION_KEY, $defaultDays);
+                if ($days <= 0) {
+                    $days = $defaultDays;
+                }
+                $days = min($maxDays, $days);
 
-            $cutoff = now()->subDays($days);
+                $cutoff = now()->subDays($days);
 
-            $deleted = 0;
-            foreach (['audit_log_entries', 'auth_activity_log'] as $table) {
-                $deleted += DB::table($table)
-                    ->where('company_id', $company->id)
-                    ->where('created_at', '<', $cutoff)
-                    ->delete();
-            }
+                $deleted = 0;
+                foreach (['audit_log_entries', 'auth_activity_log'] as $table) {
+                    $deleted += $this->deleteInChunks($table, $company->id, $cutoff->toDateTimeString());
+                }
 
-            if ($deleted > 0) {
-                $this->info("[{$company->name}] {$deleted} Einträge < {$cutoff->toDateTimeString()} gelöscht.");
-                $totalDeleted += $deleted;
-            }
-        }
+                if ($deleted > 0) {
+                    $this->info("[{$company->name}] {$deleted} Einträge < {$cutoff->toDateTimeString()} gelöscht.");
+                    $totalDeleted += $deleted;
+                }
+            });
 
         $this->info("Fertig. Insgesamt {$totalDeleted} Einträge entfernt.");
 
         return self::SUCCESS;
+    }
+
+    /**
+     * Delete matching rows in bounded batches and return the total removed.
+     */
+    private function deleteInChunks(string $table, string $companyId, string $cutoff): int
+    {
+        $deleted = 0;
+
+        do {
+            $batch = DB::table($table)
+                ->where('company_id', $companyId)
+                ->where('created_at', '<', $cutoff)
+                ->limit(self::DELETE_CHUNK)
+                ->delete();
+
+            $deleted += $batch;
+        } while ($batch > 0);
+
+        return $deleted;
     }
 }

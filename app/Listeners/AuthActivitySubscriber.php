@@ -4,11 +4,11 @@ namespace App\Listeners;
 
 use App\Models\AuthActivity;
 use App\Models\User;
-use App\Scopes\CurrentCompanyScope;
 use Illuminate\Auth\Events\Failed;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Auth\Events\Logout;
 use Illuminate\Support\Facades\Request;
+use Throwable;
 
 /**
  * Persists authentication events (login, logout, failed login) into
@@ -35,6 +35,14 @@ class AuthActivitySubscriber
         }
     }
 
+    /**
+     * Records a failed login attempt for a known user.
+     *
+     * Each attempt produces one row plus one user lookup; this is acceptable
+     * because Fortify already throttles logins (default 5/min per email+IP), so
+     * the volume of failed events is bounded. No additional dedupe/throttle is
+     * applied here on purpose.
+     */
     public function handleFailed(Failed $event): void
     {
         $email = $event->credentials['email'] ?? null;
@@ -42,7 +50,7 @@ class AuthActivitySubscriber
         $user = $event->user instanceof User
             ? $event->user
             : ($email !== null
-                ? User::withoutGlobalScope(CurrentCompanyScope::class)->where('email', $email)->first()
+                ? User::where('email', $email)->first()
                 : null);
 
         if ($user === null) {
@@ -52,6 +60,19 @@ class AuthActivitySubscriber
         $this->record($user, 'failed', $email);
     }
 
+    /**
+     * Writes a single auth activity row for the user's current company.
+     *
+     * Logging must never break authentication: any persistence failure (e.g. a
+     * transient DB error) is reported and swallowed so login/logout still
+     * succeed for the user.
+     *
+     * Note: Request::ip() returns the correct client IP only when running
+     * directly. Behind a reverse proxy or load balancer (e.g. Laravel Cloud),
+     * TrustProxies must be configured in bootstrap/app.php
+     * ($middleware->trustProxies(...)) for the real client IP to be captured;
+     * otherwise the recorded ip_address may be the proxy's address.
+     */
     protected function record(User $user, string $event, ?string $email = null): void
     {
         $companyId = $user->currentCompany()?->id;
@@ -60,13 +81,17 @@ class AuthActivitySubscriber
             return;
         }
 
-        AuthActivity::create([
-            'company_id' => $companyId,
-            'user_id' => $user->getKey(),
-            'email' => $email ?? $user->email,
-            'event' => $event,
-            'ip_address' => Request::ip(),
-            'user_agent' => substr((string) Request::userAgent(), 0, 255),
-        ]);
+        try {
+            AuthActivity::create([
+                'company_id' => $companyId,
+                'user_id' => $user->getKey(),
+                'email' => $email ?? $user->email,
+                'event' => $event,
+                'ip_address' => Request::ip(),
+                'user_agent' => substr((string) Request::userAgent(), 0, 255),
+            ]);
+        } catch (Throwable $e) {
+            report($e);
+        }
     }
 }
