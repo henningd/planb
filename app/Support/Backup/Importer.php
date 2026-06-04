@@ -49,13 +49,19 @@ class Importer
                     continue;
                 }
 
-                $parentIds = self::companyRowIds($area, $company);
+                // Nur wenn der Bereich verschachtelte Kind-Tabellen hat, brauchen
+                // wir die Parent-IDs. companyRowIds() selektiert `id` — das gibt es
+                // bei id-losen Pivot-Tabellen (z. B. system_dependencies) nicht,
+                // daher hier nicht unbedingt aufrufen.
+                if (! empty($area['nested'])) {
+                    $parentIds = self::companyRowIds($area, $company);
 
-                foreach ($area['nested'] ?? [] as $nested) {
-                    if ($parentIds->isNotEmpty()) {
-                        DB::table($nested['table'])
-                            ->whereIn($nested['fk'], $parentIds)
-                            ->delete();
+                    foreach ($area['nested'] as $nested) {
+                        if ($parentIds->isNotEmpty()) {
+                            DB::table($nested['table'])
+                                ->whereIn($nested['fk'], $parentIds)
+                                ->delete();
+                        }
                     }
                 }
 

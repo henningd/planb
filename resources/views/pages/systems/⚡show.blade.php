@@ -97,6 +97,20 @@ new #[Title('System')] class extends Component {
     }
 
     /**
+     * Übernimmt die Standard-Aufgaben-Vorlage – nur, wenn das System noch
+     * keine Aufgaben hat (verhindert versehentliches Duplizieren).
+     */
+    public function applyTaskTemplate(): void
+    {
+        $created = \App\Support\SystemTaskTemplate::applyTo($this->system);
+
+        if ($created > 0) {
+            unset($this->tasks);
+            Flux::toast(variant: 'success', text: __('Standard-Aufgaben übernommen.'));
+        }
+    }
+
+    /**
      * @return Collection<int, Employee>
      */
     #[Computed]
@@ -1339,6 +1353,11 @@ new #[Title('System')] class extends Component {
                 </flux:subheading>
             </div>
             <div class="flex shrink-0 items-center gap-2">
+                @if ($this->tasks->isEmpty())
+                    <flux:button type="button" variant="filled" icon="sparkles" wire:click="applyTaskTemplate" wire:confirm="{{ __('Standard-Aufgaben für dieses System anlegen?') }}">
+                        {{ __('Vorlage übernehmen') }}
+                    </flux:button>
+                @endif
                 <flux:button type="button" variant="primary" icon="plus" x-show="!showTaskForm" @click="showTaskForm = true">
                     {{ __('Aufgabe erfassen') }}
                 </flux:button>

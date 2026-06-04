@@ -49,3 +49,26 @@ test('the template button shows only when no tasks exist', function () {
     Livewire\Livewire::test('pages::systems.edit', ['system' => $system])
         ->assertDontSee('Vorlage übernehmen');
 });
+
+test('applyTaskTemplate on the detail page creates the default tasks', function () {
+    $system = bootSystemForTemplate();
+
+    Livewire\Livewire::test('pages::systems.show', ['system' => $system])
+        ->call('applyTaskTemplate');
+
+    $titles = SystemTask::where('system_id', $system->id)->orderBy('sort')->pluck('title')->all();
+
+    expect($titles)->toBe(['Prüfen', 'Sofortmaßnahme', 'Eskalation', 'Wiederherstellung', 'Kommunikation']);
+});
+
+test('the template button shows on the detail page only when no tasks exist', function () {
+    $system = bootSystemForTemplate();
+
+    Livewire\Livewire::test('pages::systems.show', ['system' => $system])
+        ->assertSee('Vorlage übernehmen');
+
+    SystemTask::create(['system_id' => $system->id, 'title' => 'Da', 'sort' => 0]);
+
+    Livewire\Livewire::test('pages::systems.show', ['system' => $system])
+        ->assertDontSee('Vorlage übernehmen');
+});

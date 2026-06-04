@@ -172,23 +172,6 @@ new #[Title('System bearbeiten')] class extends Component {
     }
 
     /**
-     * Standard-Aufgaben-Vorlage (generischer Notfall-Ablauf), die für ein
-     * System ohne eigene Aufgaben übernommen werden kann.
-     *
-     * @return list<array{title: string, description: string}>
-     */
-    private static function defaultTaskTemplate(): array
-    {
-        return [
-            ['title' => __('Prüfen'), 'description' => __('Lage einschätzen: Was genau ist betroffen? Umfang und Ursache klären.')],
-            ['title' => __('Sofortmaßnahme'), 'description' => __('Schaden begrenzen: kritische Daten und Geräte sichern, Betroffene informieren.')],
-            ['title' => __('Eskalation'), 'description' => __('Zuständige Stellen, Dienstleister und Geschäftsführung informieren.')],
-            ['title' => __('Wiederherstellung'), 'description' => __('System in definierter Reihenfolge wieder anfahren und Funktion testen.')],
-            ['title' => __('Kommunikation'), 'description' => __('Mitarbeiter und – falls relevant – Kunden über den Status informieren.')],
-        ];
-    }
-
-    /**
      * Übernimmt die Standard-Aufgaben-Vorlage – nur, wenn das System noch
      * keine Aufgaben hat (verhindert versehentliches Duplizieren).
      */
@@ -198,22 +181,12 @@ new #[Title('System bearbeiten')] class extends Component {
             return;
         }
 
-        if (SystemTask::where('system_id', $this->system->id)->exists()) {
-            return;
-        }
+        $created = \App\Support\SystemTaskTemplate::applyTo($this->system);
 
-        $sort = 0;
-        foreach (self::defaultTaskTemplate() as $task) {
-            SystemTask::create([
-                'system_id' => $this->system->id,
-                'title' => $task['title'],
-                'description' => $task['description'],
-                'sort' => $sort++,
-            ]);
+        if ($created > 0) {
+            unset($this->tasks);
+            Flux::toast(variant: 'success', text: __('Standard-Aufgaben übernommen.'));
         }
-
-        unset($this->tasks);
-        Flux::toast(variant: 'success', text: __('Standard-Aufgaben übernommen.'));
     }
 
     /**
