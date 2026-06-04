@@ -99,10 +99,28 @@ new #[Title('Vorfall')] class extends Component {
                                 <flux:icon.clock class="h-4 w-4 text-zinc-400" />
                                 <span class="{{ $isOverdue ? 'text-rose-700 dark:text-rose-400 font-medium' : '' }}">
                                     {{ __('Frist') }}: {{ $deadline->format('d.m.Y H:i') }}
-                                    @if (! $isReported)
-                                        ({{ $deadline->diffForHumans() }})
-                                    @endif
                                 </span>
+                                @if (! $isReported)
+                                    <span
+                                        class="inline-flex items-center font-mono text-xs tabular-nums {{ $isOverdue ? 'animate-pulse rounded bg-rose-100 px-1.5 py-0.5 text-rose-800 dark:bg-rose-900/60 dark:text-rose-100' : ($tight ? 'text-amber-700 dark:text-amber-400' : 'text-zinc-600 dark:text-zinc-300') }}"
+                                        x-data="{
+                                            deadline: @js($deadline->toIso8601String()),
+                                            display: '–',
+                                            tick() {
+                                                const target = new Date(this.deadline).getTime();
+                                                let diff = Math.floor((target - Date.now()) / 1000);
+                                                const sign = diff < 0 ? '-' : '';
+                                                diff = Math.abs(diff);
+                                                const h = Math.floor(diff / 3600);
+                                                const m = Math.floor((diff % 3600) / 60);
+                                                const pad = (n) => n.toString().padStart(2, '0');
+                                                this.display = `${sign}${pad(h)}:${pad(m)}`;
+                                            }
+                                        }"
+                                        x-init="tick(); setInterval(() => tick(), 30000)"
+                                        x-text="display"
+                                    >–</span>
+                                @endif
                             </div>
                         @else
                             <div class="mt-3 flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400">

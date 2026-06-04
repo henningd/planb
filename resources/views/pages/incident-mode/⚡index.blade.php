@@ -2,11 +2,15 @@
 
 use App\Enums\CommunicationChannel;
 use App\Models\Company;
+use App\Models\CrisisLogEntry;
+use App\Models\ScenarioRun;
 use App\Models\ScenarioRunStep;
+use App\Services\Sms\SmsGatewayContract;
 use App\Support\BibleVerses;
 use App\Support\Incident\Cockpit;
 use App\Support\Incident\CockpitData;
 use Flux\Flux;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Title;
@@ -14,6 +18,16 @@ use Livewire\Component;
 
 new #[Title('Krisen-Cockpit')] class extends Component {
     public ?string $previewTemplateId = null;
+
+    /**
+     * Typ für einen neuen manuellen Logbuch-Eintrag (note|decision|action).
+     */
+    public string $newLogType = 'note';
+
+    /**
+     * Freitext für einen neuen manuellen Logbuch-Eintrag.
+     */
+    public string $newLogMessage = '';
 
     /**
      * Beim Page-Load gewählter Bibel-Vers für „kein Notfall". Bleibt für die
@@ -76,6 +90,7 @@ new #[Title('Krisen-Cockpit')] class extends Component {
         }
 
         $run->update(['ended_at' => now()]);
+        $this->writeLogEntry($run, 'system', __('Szenario beendet'));
         unset($this->cockpit);
 
         Flux::toast(variant: 'success', text: __('Szenario beendet.'));
@@ -102,14 +117,185 @@ new #[Title('Krisen-Cockpit')] class extends Component {
                 'checked_at' => now(),
                 'checked_by_user_id' => Auth::id(),
             ]);
+            $this->writeLogEntry($run, 'step', __('Schritt erledigt: :title', ['title' => $step->title]));
         } else {
             $step->update([
                 'checked_at' => null,
                 'checked_by_user_id' => null,
             ]);
+            $this->writeLogEntry($run, 'step', __('Schritt zurückgesetzt: :title', ['title' => $step->title]));
         }
 
         unset($this->cockpit);
+    }
+
+    /**
+     * Alarmiert den Krisenstab per SMS an alle hinterlegten Mobilnummern
+     * (Hauptpersonen + Vertretungen, eindeutig). Schreibt einen
+     * zusammenfassenden Logbuch-Eintrag.
+     */
+    public function alertCrisisStaff(): void
+    {
+        $gateway = app(SmsGatewayContract::class);
+        if (! $gateway->isConfigured()) {
+            return;
+        }
+
+        $cockpit = $this->cockpit;
+        $run = $cockpit?->activeRun;
+        if ($run === null) {
+            return;
+        }
+
+        $numbers = collect($cockpit->crisisStaff)
+            ->flatMap(function (array $member): array {
+                $people = collect([$member['main'] ?? null])
+                    ->merge($member['deputies'] ?? collect())
+                    ->filter();
+
+                return $people->pluck('mobile_phone')->all();
+            })
+            ->map(fn ($number) => trim((string) $number))
+            ->filter()
+            ->unique()
+            ->values();
+
+        if ($numbers->isEmpty()) {
+            Flux::toast(variant: 'warning', text: __('Keine Mobilnummern im Krisenstab hinterlegt.'));
+
+            return;
+        }
+
+        $scenarioName = $run->scenario?->name ?? $run->title ?? '–';
+        $message = __('[PlanB] Krisenstab-Aktivierung: :scenario. Bitte umgehend ins Krisen-Cockpit.', [
+            'scenario' => $scenarioName,
+        ]);
+
+        $success = 0;
+        $failure = 0;
+        foreach ($numbers as $number) {
+            $result = $gateway->send($number, $message);
+            if ($result->success) {
+                $success++;
+            } else {
+                $failure++;
+            }
+        }
+
+        $this->writeLogEntry(
+            $run,
+            'alert',
+            __('Krisenstab alarmiert: :success/:total SMS erfolgreich', [
+                'success' => $success,
+                'total' => $numbers->count(),
+            ]),
+        );
+
+        unset($this->cockpit);
+
+        Flux::toast(
+            variant: $failure === 0 ? 'success' : 'warning',
+            text: __('Krisenstab alarmiert: :success/:total SMS erfolgreich.', [
+                'success' => $success,
+                'total' => $numbers->count(),
+            ]),
+        );
+    }
+
+    /**
+     * Legt einen manuellen Logbuch-Eintrag (Notiz/Entscheidung/Maßnahme) an.
+     */
+    public function addLogEntry(): void
+    {
+        $cockpit = $this->cockpit;
+        $run = $cockpit?->activeRun;
+        if ($run === null) {
+            return;
+        }
+
+        $message = trim($this->newLogMessage);
+        if ($message === '') {
+            Flux::toast(variant: 'warning', text: __('Bitte einen Text für den Eintrag eingeben.'));
+
+            return;
+        }
+
+        $type = in_array($this->newLogType, ['note', 'decision', 'action'], true)
+            ? $this->newLogType
+            : 'note';
+
+        $this->writeLogEntry($run, $type, $message);
+
+        $this->newLogMessage = '';
+        $this->newLogType = 'note';
+        unset($this->logEntries);
+
+        Flux::toast(variant: 'success', text: __('Eintrag im Krisen-Logbuch gespeichert.'));
+    }
+
+    /**
+     * Logbuch-Einträge des aktiven Laufs, absteigend nach Zeitpunkt.
+     *
+     * @return Collection<int, CrisisLogEntry>
+     */
+    #[Computed]
+    public function logEntries(): Collection
+    {
+        $run = $this->cockpit?->activeRun;
+        if ($run === null) {
+            return collect();
+        }
+
+        return CrisisLogEntry::where('scenario_run_id', $run->id)
+            ->with('user')
+            ->orderByDesc('occurred_at')
+            ->get();
+    }
+
+    /**
+     * Schreibt einen Logbuch-Eintrag für den gegebenen Lauf.
+     */
+    private function writeLogEntry(ScenarioRun $run, string $type, string $message): void
+    {
+        CrisisLogEntry::create([
+            'company_id' => $run->company_id,
+            'scenario_run_id' => $run->id,
+            'user_id' => Auth::id(),
+            'type' => $type,
+            'message' => $message,
+            'occurred_at' => now(),
+        ]);
+    }
+
+    /**
+     * Farbe der Typ-Badge im Krisen-Logbuch.
+     */
+    public function logTypeBadgeColor(string $type): string
+    {
+        return match ($type) {
+            'decision' => 'indigo',
+            'action' => 'amber',
+            'alert' => 'red',
+            'step' => 'emerald',
+            'system' => 'zinc',
+            default => 'sky',
+        };
+    }
+
+    /**
+     * Anzeige-Label der Typ-Badge im Krisen-Logbuch.
+     */
+    public function logTypeLabel(string $type): string
+    {
+        return match ($type) {
+            'note' => __('Notiz'),
+            'decision' => __('Entscheidung'),
+            'action' => __('Maßnahme'),
+            'step' => __('Schritt'),
+            'alert' => __('Alarmierung'),
+            'system' => __('System'),
+            default => $type,
+        };
     }
 
     public function openTemplate(string $id): void
@@ -285,10 +471,28 @@ new #[Title('Krisen-Cockpit')] class extends Component {
                 </div>
 
                 {{-- Sektion 2: Krisenstab --}}
+                @php
+                    $smsConfigured = app(\App\Services\Sms\SmsGatewayContract::class)->isConfigured();
+                @endphp
                 <div class="rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
-                    <div class="mb-4 flex items-center gap-2">
-                        <flux:icon.users class="h-5 w-5 text-zinc-500" />
-                        <flux:heading size="lg">{{ __('Krisenstab') }}</flux:heading>
+                    <div class="mb-4 flex items-center justify-between gap-3">
+                        <div class="flex items-center gap-2">
+                            <flux:icon.users class="h-5 w-5 text-zinc-500" />
+                            <flux:heading size="lg">{{ __('Krisenstab') }}</flux:heading>
+                        </div>
+                        @if ($smsConfigured)
+                            <flux:button
+                                type="button"
+                                variant="primary"
+                                size="sm"
+                                icon="bell-alert"
+                                wire:click="alertCrisisStaff"
+                                wire:confirm="{{ __('Krisenstab jetzt per SMS alarmieren?') }}"
+                                data-test="cockpit-alert-crisis-staff"
+                            >
+                                {{ __('Krisenstab alarmieren') }}
+                            </flux:button>
+                        @endif
                     </div>
 
                     @if (count($cockpit->crisisStaff) === 0)
@@ -732,6 +936,74 @@ new #[Title('Krisen-Cockpit')] class extends Component {
                                                 {{ __('Offen') }}
                                             </flux:badge>
                                         @endif
+                                    </div>
+                                </li>
+                            @endforeach
+                        </ul>
+                    @endif
+                </div>
+
+                {{-- Sektion 7: Krisen-Logbuch --}}
+                <div class="rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900" data-test="cockpit-log">
+                    <div class="mb-4 flex items-center justify-between gap-3">
+                        <div class="flex items-center gap-2">
+                            <flux:icon.book-open class="h-5 w-5 text-zinc-500" />
+                            <flux:heading size="lg">{{ __('Krisen-Logbuch') }}</flux:heading>
+                        </div>
+                        <flux:button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            icon="document-arrow-down"
+                            :href="route('scenario-runs.protocol.pdf', ['run' => $run])"
+                            target="_blank"
+                            data-test="cockpit-log-pdf"
+                        >
+                            {{ __('Protokoll als PDF') }}
+                        </flux:button>
+                    </div>
+
+                    {{-- Eingabeformular für manuelle Einträge --}}
+                    <div class="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end">
+                        <flux:select wire:model="newLogType" :label="__('Typ')" class="sm:w-48">
+                            <flux:select.option value="note">{{ __('Notiz') }}</flux:select.option>
+                            <flux:select.option value="decision">{{ __('Entscheidung') }}</flux:select.option>
+                            <flux:select.option value="action">{{ __('Maßnahme') }}</flux:select.option>
+                        </flux:select>
+                        <flux:input
+                            wire:model="newLogMessage"
+                            :label="__('Eintrag')"
+                            :placeholder="__('Was wurde entschieden oder getan?')"
+                            class="flex-1"
+                            wire:keydown.enter="addLogEntry"
+                            data-test="cockpit-log-input"
+                        />
+                        <flux:button type="button" variant="primary" icon="plus" wire:click="addLogEntry" data-test="cockpit-log-add">
+                            {{ __('Hinzufügen') }}
+                        </flux:button>
+                    </div>
+
+                    @if ($this->logEntries->isEmpty())
+                        <flux:text class="text-sm text-zinc-500 dark:text-zinc-400">
+                            {{ __('Noch keine Einträge im Krisen-Logbuch.') }}
+                        </flux:text>
+                    @else
+                        <ul class="divide-y divide-zinc-100 dark:divide-zinc-800" data-test="cockpit-log-entries">
+                            @foreach ($this->logEntries as $entry)
+                                <li class="flex items-start gap-3 py-3">
+                                    <flux:badge color="{{ $this->logTypeBadgeColor((string) $entry->type) }}" size="sm" class="mt-0.5 shrink-0">
+                                        {{ $this->logTypeLabel((string) $entry->type) }}
+                                    </flux:badge>
+                                    <div class="min-w-0 flex-1">
+                                        <div class="text-sm text-zinc-900 dark:text-zinc-100">
+                                            {{ $entry->message }}
+                                        </div>
+                                        <div class="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+                                            {{ $entry->occurred_at?->isoFormat('DD.MM.YYYY HH:mm') }}
+                                            @if ($entry->user)
+                                                · {{ $entry->user->name }}
+                                            @endif
+                                        </div>
                                     </div>
                                 </li>
                             @endforeach

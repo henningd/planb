@@ -118,6 +118,9 @@
                     <flux:sidebar.item icon="clipboard-document-check" :href="route('scenario-runs.index')" :current="request()->routeIs('scenario-runs.*')" wire:navigate>
                         {{ __('Protokolle & Übungen') }}
                     </flux:sidebar.item>
+                    <flux:sidebar.item icon="identification" :href="route('emergency-card.pdf')" target="_blank">
+                        {{ __('Notfallkarte (PDF)') }}
+                    </flux:sidebar.item>
                     @if (config('features.lessons_learned') && \Illuminate\Support\Facades\Route::has('lessons-learned.index'))
                         <flux:sidebar.item icon="academic-cap" :href="route('lessons-learned.index')" :current="request()->routeIs('lessons-learned.*')" wire:navigate>
                             {{ __('Lessons Learned') }}

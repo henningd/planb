@@ -3,6 +3,8 @@
 use App\Http\Controllers\AuditLogExportController;
 use App\Http\Controllers\AuthActivityExportController;
 use App\Http\Controllers\BackupController;
+use App\Http\Controllers\CrisisLogExportController;
+use App\Http\Controllers\EmergencyCardController;
 use App\Http\Controllers\HandbookVersionPdfController;
 use App\Http\Controllers\PreferenceController;
 use App\Http\Middleware\EnforceBillingState;
@@ -274,6 +276,9 @@ Route::prefix('{current_team}')
         Route::livewire('scenarios/{scenario}', 'pages::scenarios.show')->name('scenarios.show');
         Route::livewire('scenario-runs', 'pages::scenario-runs.index')->name('scenario-runs.index');
         Route::livewire('scenario-runs/{run}', 'pages::scenario-runs.show')->name('scenario-runs.show');
+        Route::get('scenario-runs/{run}/protokoll.pdf', [CrisisLogExportController::class, 'pdf'])->name('scenario-runs.protocol.pdf');
+
+        Route::get('notfallkarte.pdf', [EmergencyCardController::class, 'pdf'])->name('emergency-card.pdf');
 
         Route::livewire('incidents', 'pages::incidents.index')->name('incidents.index');
         Route::livewire('incidents/{report}', 'pages::incidents.show')->name('incidents.show');
