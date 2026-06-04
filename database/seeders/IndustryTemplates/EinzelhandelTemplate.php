@@ -76,7 +76,6 @@ class EinzelhandelTemplate implements Contract
                 'name' => 'Schöngeist Wohnen GmbH',
                 'industry' => 'handel',
                 'employee_count' => 14,
-                'locations_count' => 2,
                 'review_cycle_months' => 12,
                 'legal_form' => 'gmbh',
                 'kritis_relevant' => 'no',

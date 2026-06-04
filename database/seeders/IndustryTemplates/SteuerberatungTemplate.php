@@ -76,7 +76,6 @@ class SteuerberatungTemplate implements Contract
                 'name' => 'Schmidt & Partner Steuerberatung mbB',
                 'industry' => 'dienstleistung',
                 'employee_count' => 10,
-                'locations_count' => 2,
                 'review_cycle_months' => 12,
                 'legal_form' => 'sonstiges',
                 'kritis_relevant' => 'no',

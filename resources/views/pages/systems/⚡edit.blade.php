@@ -44,6 +44,8 @@ new #[Title('System bearbeiten')] class extends Component {
 
     public ?int $downtime_cost_per_hour = null;
 
+    public bool $downtime_cost_from_dependents = false;
+
     public string $monitoring_keys_text = '';
 
     /** @var array<int, array{provider_id: string, ownership_kind: string, is_deputy: bool, note: string}> */
@@ -66,6 +68,12 @@ new #[Title('System bearbeiten')] class extends Component {
 
     public string $dependencySearch = '';
 
+    /** System-ID, für die gerade die Ausfallkosten-Rückfrage angezeigt wird. */
+    public ?string $pendingCarrierId = null;
+
+    /** Träger-Systeme, deren Eigenkosten beim Speichern deaktiviert werden sollen. */
+    public array $carriersToDeactivate = [];
+
     public function mount(?System $system = null): void
     {
         abort_unless(Auth::user()->currentCompany(), 403);
@@ -85,6 +93,7 @@ new #[Title('System bearbeiten')] class extends Component {
             $this->rto_minutes = $system->rto_minutes;
             $this->rpo_minutes = $system->rpo_minutes;
             $this->downtime_cost_per_hour = $system->downtime_cost_per_hour;
+            $this->downtime_cost_from_dependents = (bool) $system->downtime_cost_from_dependents;
             $this->monitoring_keys_text = is_array($system->monitoring_keys)
                 ? implode("\n", $system->monitoring_keys)
                 : '';
@@ -522,6 +531,48 @@ new #[Title('System bearbeiten')] class extends Component {
         ];
 
         $this->dependencySearch = '';
+
+        // Hat das verknüpfte Träger-System eigene Ausfallkosten, fragen wir, ob
+        // diese deaktiviert und stattdessen aus den abhängigen Systemen berechnet
+        // werden sollen (Vermeidung von Doppelzählung).
+        $candidate = $this->dependencyCandidatesById[$id] ?? null;
+        if ($candidate !== null
+            && (int) ($candidate->downtime_cost_per_hour ?? 0) > 0
+            && ! $candidate->downtime_cost_from_dependents
+            && ! in_array($id, $this->carriersToDeactivate, true)) {
+            $this->pendingCarrierId = $id;
+            Flux::modal('dependency-cost-prompt')->show();
+        }
+    }
+
+    #[Computed]
+    public function pendingCarrier(): ?System
+    {
+        if ($this->pendingCarrierId === null) {
+            return null;
+        }
+
+        return $this->dependencyCandidatesById[$this->pendingCarrierId] ?? null;
+    }
+
+    /**
+     * Bestätigt, dass die Eigenkosten des Träger-Systems beim Speichern
+     * deaktiviert werden (Kosten dann aus abhängigen Systemen).
+     */
+    public function confirmDeactivateCarrier(): void
+    {
+        if ($this->pendingCarrierId !== null && ! in_array($this->pendingCarrierId, $this->carriersToDeactivate, true)) {
+            $this->carriersToDeactivate[] = $this->pendingCarrierId;
+        }
+
+        $this->pendingCarrierId = null;
+        Flux::modal('dependency-cost-prompt')->close();
+    }
+
+    public function dismissCarrierPrompt(): void
+    {
+        $this->pendingCarrierId = null;
+        Flux::modal('dependency-cost-prompt')->close();
     }
 
     public function removeDependency(int $index): void
@@ -605,6 +656,7 @@ new #[Title('System bearbeiten')] class extends Component {
             'rto_minutes' => ['nullable', 'integer', 'in:'.implode(',', $validDurations)],
             'rpo_minutes' => ['nullable', 'integer', 'in:'.implode(',', $validDurations)],
             'downtime_cost_per_hour' => ['nullable', 'integer', 'min:0', 'max:100000000'],
+            'downtime_cost_from_dependents' => ['boolean'],
             'monitoring_keys_text' => ['nullable', 'string', 'max:2000'],
             'providerAssignments' => ['array'],
             'providerAssignments.*.provider_id' => ['required', 'uuid', 'exists:service_providers,id'],
@@ -698,6 +750,15 @@ new #[Title('System bearbeiten')] class extends Component {
         AssignmentSync::sync($system, $system->employees(), $employeeSync);
         AssignmentSync::sync($system, $system->roles(), $roleSync);
         $system->dependencies()->sync($dependencySync);
+
+        // Träger-Systeme, für die der Nutzer die Rückfrage bestätigt hat, auf
+        // „Kosten aus abhängigen Systemen" umstellen — sofern noch verknüpft.
+        $linkedDependencyIds = array_keys($dependencySync);
+        foreach (array_unique($this->carriersToDeactivate) as $carrierId) {
+            if (in_array($carrierId, $linkedDependencyIds, true)) {
+                System::whereKey($carrierId)->update(['downtime_cost_from_dependents' => true]);
+            }
+        }
 
         Flux::toast(variant: 'success', text: __('System gespeichert.'));
 
@@ -874,6 +935,12 @@ new #[Title('System bearbeiten')] class extends Component {
                     <flux:input wire:model="downtime_cost_per_hour" type="number" min="0" step="1" placeholder="z. B. 250" />
                 </flux:field>
             @endif
+
+            <flux:switch
+                wire:model="downtime_cost_from_dependents"
+                :label="__('Ausfallkosten aus abhängigen Systemen berechnen')"
+                :description="__('Für Träger-Systeme (z. B. Stromversorgung): Die eigenen Ausfallkosten zählen in Summen nicht mehr — der Schaden ergibt sich aus den abhängigen Systemen. Verhindert Doppelzählung.')"
+            />
 
             <div class="grid gap-4 sm:grid-cols-2">
                 <flux:field>
@@ -1691,4 +1758,25 @@ new #[Title('System bearbeiten')] class extends Component {
             </div>
         </div>
     @endif
+
+    <flux:modal name="dependency-cost-prompt" class="max-w-lg">
+        @php($carrier = $this->pendingCarrier)
+        <div class="space-y-4">
+            <div>
+                <flux:heading size="lg">{{ __('Ausfallkosten deaktivieren?') }}</flux:heading>
+                @if ($carrier)
+                    <flux:subheading>
+                        {{ __(':name hat eigene Ausfallkosten von :cost €/h hinterlegt.', ['name' => $carrier->name, 'cost' => number_format((int) $carrier->downtime_cost_per_hour, 0, ',', '.')]) }}
+                    </flux:subheading>
+                @endif
+            </div>
+            <flux:text>
+                {{ __('Da nun Systeme von diesem System abhängen, würden die Ausfallkosten doppelt gezählt. Sollen die eigenen Ausfallkosten dieses Systems deaktiviert und stattdessen aus den abhängigen Systemen berechnet werden?') }}
+            </flux:text>
+            <div class="flex justify-end gap-2">
+                <flux:button variant="ghost" wire:click="dismissCarrierPrompt">{{ __('Nein, beibehalten') }}</flux:button>
+                <flux:button variant="primary" wire:click="confirmDeactivateCarrier">{{ __('Ja, deaktivieren') }}</flux:button>
+            </div>
+        </div>
+    </flux:modal>
 </section>

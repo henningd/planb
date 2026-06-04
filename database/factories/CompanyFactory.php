@@ -36,7 +36,6 @@ class CompanyFactory extends Factory
             'data_protection_authority_phone' => null,
             'data_protection_authority_website' => null,
             'employee_count' => fake()->numberBetween(3, 250),
-            'locations_count' => fake()->numberBetween(1, 5),
         ];
     }
 }

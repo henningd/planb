@@ -1127,6 +1127,9 @@ new #[Title('System')] class extends Component {
             </div>
 
             <div x-show="tab === 'dependencies'" x-cloak class="space-y-6">
+                @php
+                    $downtimeCost = \App\Support\DowntimeCost::forCompany($system->company);
+                @endphp
                 <div>
                     <flux:heading size="sm" class="mb-3">{{ __('Braucht:') }}</flux:heading>
                     @if ($system->dependencies->isEmpty())
@@ -1144,6 +1147,16 @@ new #[Title('System')] class extends Component {
                                             <div class="flex flex-wrap items-center gap-2">
                                                 <flux:heading size="base" class="group-hover:underline">{{ $dep->name }}</flux:heading>
                                                 <flux:badge color="zinc" size="sm">{{ $dep->category->label() }}</flux:badge>
+                                                @php
+                                                    $depHourly = $downtimeCost->isCarrier($dep->id)
+                                                        ? $downtimeCost->derivedHourly($dep->id)
+                                                        : (int) ($dep->downtime_cost_per_hour ?? 0);
+                                                @endphp
+                                                @if ($downtimeCost->isCarrier($dep->id))
+                                                    <flux:badge color="amber" size="sm" icon="banknotes">{{ number_format($depHourly, 0, ',', '.') }} €/h · {{ __('abgeleitet') }}</flux:badge>
+                                                @elseif ($depHourly > 0)
+                                                    <flux:badge color="zinc" size="sm" icon="banknotes">{{ number_format($depHourly, 0, ',', '.') }} €/h</flux:badge>
+                                                @endif
                                             </div>
                                             @if ($dep->description)
                                                 <flux:text class="mt-1 line-clamp-2 text-sm text-zinc-500 dark:text-zinc-400">
@@ -1183,6 +1196,16 @@ new #[Title('System')] class extends Component {
                                             <div class="flex flex-wrap items-center gap-2">
                                                 <flux:heading size="base" class="group-hover:underline">{{ $dep->name }}</flux:heading>
                                                 <flux:badge color="violet" size="sm">{{ $dep->category->label() }}</flux:badge>
+                                                @php
+                                                    $depHourly = $downtimeCost->isCarrier($dep->id)
+                                                        ? $downtimeCost->derivedHourly($dep->id)
+                                                        : (int) ($dep->downtime_cost_per_hour ?? 0);
+                                                @endphp
+                                                @if ($downtimeCost->isCarrier($dep->id))
+                                                    <flux:badge color="amber" size="sm" icon="banknotes">{{ number_format($depHourly, 0, ',', '.') }} €/h · {{ __('abgeleitet') }}</flux:badge>
+                                                @elseif ($depHourly > 0)
+                                                    <flux:badge color="zinc" size="sm" icon="banknotes">{{ number_format($depHourly, 0, ',', '.') }} €/h</flux:badge>
+                                                @endif
                                             </div>
                                             @if ($dep->description)
                                                 <flux:text class="mt-1 line-clamp-2 text-sm text-zinc-500 dark:text-zinc-400">

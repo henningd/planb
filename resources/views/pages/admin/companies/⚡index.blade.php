@@ -17,8 +17,6 @@ new #[Title('Admin · Kunden')] class extends Component {
 
     public ?int $employee_count = null;
 
-    public ?int $locations_count = null;
-
     public ?string $deletingId = null;
 
     #[Computed]
@@ -26,6 +24,7 @@ new #[Title('Admin · Kunden')] class extends Component {
     {
         return Company::withoutGlobalScope(CurrentCompanyScope::class)
             ->with(['team', 'employees', 'systems'])
+            ->withCount('locations')
             ->orderBy('name')
             ->get();
     }
@@ -38,7 +37,6 @@ new #[Title('Admin · Kunden')] class extends Component {
         $this->name = $company->name;
         $this->industry = $company->industry->value;
         $this->employee_count = $company->employee_count;
-        $this->locations_count = $company->locations_count;
 
         Flux::modal('admin-company-form')->show();
     }
@@ -49,7 +47,6 @@ new #[Title('Admin · Kunden')] class extends Component {
             'name' => ['required', 'string', 'max:255'],
             'industry' => ['required', 'in:'.collect(Industry::cases())->pluck('value')->implode(',')],
             'employee_count' => ['nullable', 'integer', 'min:0', 'max:1000000'],
-            'locations_count' => ['nullable', 'integer', 'min:0', 'max:10000'],
         ]);
 
         $company = Company::withoutGlobalScope(CurrentCompanyScope::class)->findOrFail($this->editingId);
@@ -110,7 +107,7 @@ new #[Title('Admin · Kunden')] class extends Component {
                         <td class="px-5 py-3">
                             <div class="font-medium">{{ $company->name }}</div>
                             @if ($company->employee_count)
-                                <div class="text-xs text-zinc-500 dark:text-zinc-400">{{ $company->employee_count }} MA · {{ $company->locations_count ?? 1 }} Standort(e)</div>
+                                <div class="text-xs text-zinc-500 dark:text-zinc-400">{{ $company->employee_count }} MA · {{ $company->locations_count }} Standort(e)</div>
                             @endif
                         </td>
                         <td class="px-5 py-3">{{ $company->industry->label() }}</td>
@@ -159,10 +156,10 @@ new #[Title('Admin · Kunden')] class extends Component {
                 @endforeach
             </flux:select>
 
-            <div class="grid gap-4 sm:grid-cols-2">
-                <flux:input wire:model="employee_count" :label="__('Mitarbeitende')" type="number" min="0" />
-                <flux:input wire:model="locations_count" :label="__('Standorte')" type="number" min="0" />
-            </div>
+            <flux:input wire:model="employee_count" :label="__('Mitarbeitende')" type="number" min="0" />
+            <flux:text class="text-xs text-zinc-500 dark:text-zinc-400">
+                {{ __('Standorte: :count (aus den erfassten Standorten berechnet).', ['count' => $editingId ? \App\Models\Location::withoutGlobalScope(CurrentCompanyScope::class)->where('company_id', $editingId)->count() : 0]) }}
+            </flux:text>
 
             <div class="flex items-center justify-end gap-2 border-t border-zinc-100 pt-4 dark:border-zinc-800">
                 <flux:modal.close>

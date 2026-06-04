@@ -42,7 +42,6 @@ Ein Unternehmen soll:
 - `name`
 - `industry` (enum: `handwerk`, `handel`, `dienstleistung`, `produktion`, `sonstiges`)
 - `employee_count`
-- `locations_count`
 - `created_at`, `updated_at`
 
 ### users (Laravel default erweitern)

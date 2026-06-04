@@ -77,7 +77,6 @@ class OnlineshopTemplate implements Contract
                 'name' => 'NaturBox Direct GmbH',
                 'industry' => 'handel',
                 'employee_count' => 9,
-                'locations_count' => 2,
                 'review_cycle_months' => 6,
                 'legal_form' => 'gmbh',
                 'kritis_relevant' => 'no',

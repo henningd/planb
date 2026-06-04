@@ -79,7 +79,6 @@ class SoftwareUnternehmenTemplate implements Contract
                 'name' => 'CloudMetric Analytics GmbH',
                 'industry' => 'dienstleistung',
                 'employee_count' => 14,
-                'locations_count' => 1,
                 'review_cycle_months' => 6,
                 'legal_form' => 'gmbh',
                 'kritis_relevant' => 'no',

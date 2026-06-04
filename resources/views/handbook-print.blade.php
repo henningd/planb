@@ -461,7 +461,8 @@
                 <th>Verantwortlicher / Organisation</th>
                 <td>
                     {{ $company->name }}@if ($company->legal_form), {{ $company->legal_form->label() }} @endif<br>
-                    Branche: {{ $company->industry->label() }} @if ($company->employee_count) · {{ $company->employee_count }} Mitarbeitende @endif @if ($company->locations_count) · {{ $company->locations_count }} Standorte @endif
+                    @php($locationsCount = $company->locations->count())
+                    Branche: {{ $company->industry->label() }} @if ($company->employee_count) · {{ $company->employee_count }} Mitarbeitende @endif @if ($locationsCount) · {{ $locationsCount }} Standorte @endif
                 </td>
             </tr>
             @if ($company->locations->isNotEmpty())
@@ -665,7 +666,7 @@
             <tr><th>Rechtsform</th><td>{{ $company->legal_form?->label() ?? '—' }}</td></tr>
             <tr><th>Branche</th><td>{{ $company->industry->label() }}</td></tr>
             <tr><th>Mitarbeitende</th><td>{{ $company->employee_count ?? '—' }}</td></tr>
-            <tr><th>Standorte (Anzahl)</th><td>{{ $company->locations_count ?? $company->locations->count() }}</td></tr>
+            <tr><th>Standorte (Anzahl)</th><td>{{ $company->locations->count() }}</td></tr>
             @if ($company->locations->isNotEmpty())
                 <tr>
                     <th>Standort-Adressen</th>

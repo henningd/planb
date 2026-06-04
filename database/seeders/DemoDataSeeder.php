@@ -124,7 +124,6 @@ class DemoDataSeeder extends Seeder
                 'data_protection_authority_phone' => '0711 615541-0',
                 'data_protection_authority_website' => 'https://www.baden-wuerttemberg.datenschutz.de',
                 'employee_count' => 9,
-                'locations_count' => 2,
             ],
         );
 

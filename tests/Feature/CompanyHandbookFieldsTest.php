@@ -22,7 +22,6 @@ test('company edit page saves all handbook fields', function () {
         ->set('nis2_classification', Nis2Classification::Important->value)
         ->set('valid_from', '2026-01-01')
         ->set('employee_count', 42)
-        ->set('locations_count', 3)
         ->set('cyber_insurance_deductible', '1.500 €')
         ->set('budget_it_lead', '500')
         ->set('budget_emergency_officer', '2000')

@@ -31,8 +31,6 @@ new #[Title('Firma')] class extends Component {
 
     public ?int $employee_count = null;
 
-    public ?int $locations_count = null;
-
     public string $cyber_insurance_deductible = '';
 
     public ?string $budget_it_lead = null;
@@ -68,7 +66,6 @@ new #[Title('Firma')] class extends Component {
             $this->nis2_classification = $company->nis2_classification?->value ?? '';
             $this->valid_from = $company->valid_from?->toDateString();
             $this->employee_count = $company->employee_count;
-            $this->locations_count = $company->locations_count;
             $this->cyber_insurance_deductible = (string) $company->cyber_insurance_deductible;
             $this->budget_it_lead = $company->budget_it_lead !== null ? (string) $company->budget_it_lead : null;
             $this->budget_emergency_officer = $company->budget_emergency_officer !== null ? (string) $company->budget_emergency_officer : null;
@@ -112,7 +109,6 @@ new #[Title('Firma')] class extends Component {
             'nis2_classification' => ['nullable', 'string', Rule::in(collect(Nis2Classification::cases())->pluck('value'))],
             'valid_from' => ['nullable', 'date'],
             'employee_count' => ['nullable', 'integer', 'min:0', 'max:1000000'],
-            'locations_count' => ['nullable', 'integer', 'min:0', 'max:10000'],
             'cyber_insurance_deductible' => ['nullable', 'string', 'max:100'],
             'budget_it_lead' => ['nullable', 'numeric', 'min:0'],
             'budget_emergency_officer' => ['nullable', 'numeric', 'min:0'],
@@ -136,6 +132,18 @@ new #[Title('Firma')] class extends Component {
         $this->exists = true;
 
         Flux::toast(variant: 'success', text: __('Firmenprofil gespeichert.'));
+    }
+
+    /**
+     * Anzahl der tatsächlich erfassten Standorte — abgeleitet aus den
+     * Location-Datensätzen, damit es keine doppelt zu pflegende Zahl gibt.
+     */
+    #[Computed]
+    public function locationsCount(): int
+    {
+        $company = Auth::user()->currentCompany();
+
+        return $company ? $company->locations()->count() : 0;
     }
 
     /**
@@ -289,7 +297,17 @@ new #[Title('Firma')] class extends Component {
 
             <div class="grid gap-6 sm:grid-cols-3">
                 <flux:input wire:model="employee_count" :label="__('Anzahl Mitarbeitende')" type="number" min="0" placeholder="z. B. 24" />
-                <flux:input wire:model="locations_count" :label="__('Anzahl Standorte')" type="number" min="0" placeholder="z. B. 2" />
+                <flux:field>
+                    <flux:label>{{ __('Standorte') }}</flux:label>
+                    <div class="flex h-10 items-center gap-2 text-sm text-zinc-600 dark:text-zinc-300">
+                        <span class="font-medium">{{ $this->locationsCount }}</span>
+                        <span class="text-zinc-400">{{ __('erfasst') }}</span>
+                        @if ($exists)
+                            <flux:link :href="route('locations.index')" wire:navigate class="text-xs">{{ __('verwalten') }}</flux:link>
+                        @endif
+                    </div>
+                    <flux:description>{{ __('Wird aus den angelegten Standorten berechnet.') }}</flux:description>
+                </flux:field>
                 <flux:input wire:model="valid_from" :label="__('Geltung ab')" type="date" />
             </div>
         </div>

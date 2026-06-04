@@ -152,7 +152,6 @@ test('company area is updated in-place, not deleted', function () {
                 'name' => 'Neu-Name',
                 'industry' => $company->industry->value,
                 'employee_count' => 42,
-                'locations_count' => $company->locations_count ?? 1,
                 'review_cycle_months' => 6,
                 'last_reviewed_at' => null,
                 'last_reminder_sent_at' => null,

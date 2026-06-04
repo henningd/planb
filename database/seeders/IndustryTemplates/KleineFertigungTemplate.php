@@ -80,7 +80,6 @@ class KleineFertigungTemplate implements Contract
                 'name' => 'Präzisions-Mechanik Hofmann GmbH',
                 'industry' => 'produktion',
                 'employee_count' => 48,
-                'locations_count' => 1,
                 'review_cycle_months' => 12,
                 'legal_form' => 'gmbh',
                 'kritis_relevant' => 'no',

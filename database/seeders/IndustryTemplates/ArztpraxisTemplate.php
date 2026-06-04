@@ -73,7 +73,6 @@ class ArztpraxisTemplate implements Contract
                 'name' => 'Dr. med. Anna Beispiel – Hausärztliche Praxis',
                 'industry' => 'dienstleistung',
                 'employee_count' => 8,
-                'locations_count' => 1,
                 'review_cycle_months' => 12,
                 'legal_form' => 'einzelunternehmen',
                 'kritis_relevant' => 'pending',

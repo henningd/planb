@@ -78,7 +78,6 @@ class ItDienstleisterTemplate implements Contract
                 'name' => 'NetWise Managed Services GmbH',
                 'industry' => 'dienstleistung',
                 'employee_count' => 13,
-                'locations_count' => 1,
                 'review_cycle_months' => 6,
                 'legal_form' => 'gmbh',
                 'kritis_relevant' => 'no',

@@ -88,7 +88,7 @@ class PortalProfileController extends Controller
                 'name' => $company->name,
                 'industry' => $company->industry?->value,
                 'employee_count' => $company->employee_count,
-                'locations_count' => $company->locations_count,
+                'locations_count' => $company->locations()->count(),
             ],
             'crisis_roles' => $crisisRoles,
             'insured_types' => $insuredTypes,

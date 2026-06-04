@@ -15,7 +15,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['company_id', 'name', 'description', 'fallback_process', 'runbook_reference', 'emergency_level_id', 'category', 'system_type', 'system_priority_id', 'rto_minutes', 'rpo_minutes', 'downtime_cost_per_hour', 'monitoring_keys'])]
+#[Fillable(['company_id', 'name', 'description', 'fallback_process', 'runbook_reference', 'emergency_level_id', 'category', 'system_type', 'system_priority_id', 'rto_minutes', 'rpo_minutes', 'downtime_cost_per_hour', 'downtime_cost_from_dependents', 'monitoring_keys'])]
 class System extends Model
 {
     /** @use HasFactory<SystemFactory> */
@@ -170,6 +170,7 @@ class System extends Model
             'rto_minutes' => 'integer',
             'rpo_minutes' => 'integer',
             'downtime_cost_per_hour' => 'integer',
+            'downtime_cost_from_dependents' => 'boolean',
             'monitoring_keys' => 'array',
         ];
     }

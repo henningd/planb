@@ -78,7 +78,6 @@ class PflegedienstTemplate implements Contract
                 'name' => 'Pflegeteam Mustermann GmbH',
                 'industry' => 'sonstiges',
                 'employee_count' => 22,
-                'locations_count' => 1,
                 'review_cycle_months' => 12,
                 'legal_form' => 'gmbh',
                 'kritis_relevant' => 'no',

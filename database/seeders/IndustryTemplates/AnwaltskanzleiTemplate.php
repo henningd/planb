@@ -75,7 +75,6 @@ class AnwaltskanzleiTemplate implements Contract
                 'name' => 'Kessler & Partner Rechtsanwälte mbB',
                 'industry' => 'dienstleistung',
                 'employee_count' => 11,
-                'locations_count' => 2,
                 'review_cycle_months' => 12,
                 'legal_form' => 'partg',
                 'kritis_relevant' => 'no',

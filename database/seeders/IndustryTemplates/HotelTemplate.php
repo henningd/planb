@@ -81,7 +81,6 @@ class HotelTemplate implements Contract
                 'name' => 'Hotel Sonnenhof GmbH',
                 'industry' => 'dienstleistung',
                 'employee_count' => 28,
-                'locations_count' => 1,
                 'review_cycle_months' => 12,
                 'legal_form' => 'gmbh',
                 'kritis_relevant' => 'no',

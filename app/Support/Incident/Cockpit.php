@@ -12,6 +12,7 @@ use App\Models\Role;
 use App\Models\ScenarioRun;
 use App\Models\System;
 use App\Models\SystemTask;
+use App\Support\DowntimeCost;
 use App\Support\Settings\CompanySetting;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -300,32 +301,11 @@ class Cockpit
      */
     private static function damageRates(Company $company): array
     {
-        $systems = System::query()
-            ->where('company_id', $company->id)
-            ->select(['id', 'name', 'downtime_cost_per_hour'])
-            ->get();
-
-        $total = 0;
-        $perSystem = [];
-
-        foreach ($systems as $system) {
-            $hourly = (int) ($system->downtime_cost_per_hour ?? 0);
-            $total += $hourly;
-
-            if ($hourly > 0) {
-                $perSystem[] = [
-                    'system_id' => (string) $system->id,
-                    'system_name' => (string) $system->name,
-                    'hourly' => $hourly,
-                ];
-            }
-        }
-
-        usort($perSystem, fn (array $a, array $b) => $b['hourly'] <=> $a['hourly']);
+        $downtimeCost = DowntimeCost::forCompany($company);
 
         return [
-            'total' => $total,
-            'per_system' => $perSystem,
+            'total' => $downtimeCost->totalHourly(),
+            'per_system' => $downtimeCost->perSystemBreakdown(),
         ];
     }
 

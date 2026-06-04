@@ -3,6 +3,7 @@
 use App\Enums\SystemCategory;
 use App\Models\Company;
 use App\Models\System;
+use App\Support\DowntimeCost;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Computed;
@@ -101,7 +102,7 @@ new #[Title('Ausfallrechner')] class extends Component {
 
     /**
      * @return array{
-     *     systems: list<array{id:string, name:string, hourly:int, partial:int}>,
+     *     systems: list<array{id:string, name:string, hourly:int, partial:int, carrier:bool, derived:int, implicit:bool}>,
      *     hourly_total: int,
      *     duration: float,
      *     total: int,
@@ -113,8 +114,9 @@ new #[Title('Ausfallrechner')] class extends Component {
     public function summary(): array
     {
         $duration = max(0.0, (float) $this->durationHours);
+        $company = $this->company;
 
-        if (empty($this->selectedSystemIds)) {
+        if ($company === null || empty($this->selectedSystemIds)) {
             return [
                 'systems' => [],
                 'hourly_total' => 0,
@@ -125,37 +127,48 @@ new #[Title('Ausfallrechner')] class extends Component {
             ];
         }
 
-        $selected = System::query()
-            ->whereIn('id', $this->selectedSystemIds)
-            ->orderByDesc('downtime_cost_per_hour')
-            ->orderBy('name')
-            ->get(['id', 'name', 'downtime_cost_per_hour']);
+        $downtimeCost = DowntimeCost::forCompany($company);
+        $selected = array_values($this->selectedSystemIds);
+        $selectedLookup = array_flip($selected);
 
-        $hourlyTotal = 0;
-        $missing = 0;
         $rows = [];
+        $missing = 0;
 
-        foreach ($selected as $system) {
-            $hourly = (int) ($system->downtime_cost_per_hour ?? 0);
-            if ($hourly <= 0) {
+        // Auswahl wird um die abhängigen Systeme jedes gewählten Trägers erweitert,
+        // damit die Summe doppelzählungsfrei bleibt und die Zeilen sie ergeben.
+        foreach ($downtimeCost->expandSelection($selected) as $id) {
+            if (! $downtimeCost->exists($id)) {
+                continue;
+            }
+
+            $carrier = $downtimeCost->isCarrier($id);
+            $hourly = $downtimeCost->effectiveOwnHourly($id);
+
+            if (! $carrier && $hourly <= 0) {
                 $missing++;
             }
-            $hourlyTotal += $hourly;
 
             $rows[] = [
-                'id' => (string) $system->id,
-                'name' => (string) $system->name,
+                'id' => $id,
+                'name' => $downtimeCost->name($id),
                 'hourly' => $hourly,
                 'partial' => (int) round($hourly * $duration),
+                'carrier' => $carrier,
+                'derived' => $carrier ? $downtimeCost->derivedHourly($id) : 0,
+                'implicit' => ! isset($selectedLookup[$id]),
             ];
         }
+
+        usort($rows, fn (array $a, array $b) => $b['hourly'] <=> $a['hourly']);
+
+        $hourlyTotal = $downtimeCost->totalHourly($selected);
 
         return [
             'systems' => $rows,
             'hourly_total' => $hourlyTotal,
             'duration' => $duration,
             'total' => (int) round($hourlyTotal * $duration),
-            'selected_count' => count($rows),
+            'selected_count' => count($this->selectedSystemIds),
             'missing_cost_count' => $missing,
         ];
     }
@@ -343,7 +356,14 @@ new #[Title('Ausfallrechner')] class extends Component {
                         <div class="divide-y divide-zinc-100 dark:divide-zinc-800">
                             @foreach ($summary['systems'] as $row)
                                 <div class="flex items-center justify-between gap-3 px-4 py-2 text-sm" wire:key="sum-{{ $row['id'] }}">
-                                    <div class="min-w-0 flex-1 truncate text-zinc-800 dark:text-zinc-200">{{ $row['name'] }}</div>
+                                    <div class="min-w-0 flex-1">
+                                        <div class="truncate text-zinc-800 dark:text-zinc-200">{{ $row['name'] }}</div>
+                                        @if ($row['carrier'])
+                                            <div class="text-xs text-zinc-400 dark:text-zinc-500">{{ __('Träger – eigene Kosten deaktiviert, über abhängige Systeme erfasst (abgeleitet :v €/h)', ['v' => $fmt((int) $row['derived'])]) }}</div>
+                                        @elseif ($row['implicit'])
+                                            <div class="text-xs text-zinc-400 dark:text-zinc-500">{{ __('automatisch einbezogen (abhängig von einem ausgewählten Träger)') }}</div>
+                                        @endif
+                                    </div>
                                     <div class="shrink-0 text-right">
                                         <div class="tabular-nums text-zinc-900 dark:text-zinc-50">{{ $fmt((int) $row['partial']) }} €</div>
                                         <div class="text-xs tabular-nums text-zinc-500 dark:text-zinc-400">{{ $fmt((int) $row['hourly']) }} €/h</div>
