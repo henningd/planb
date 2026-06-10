@@ -1,6 +1,7 @@
 <?php
 
 use App\Concerns\PasswordValidationRules;
+use App\Support\Audit\AccountAudit;
 use Flux\Flux;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
@@ -57,9 +58,19 @@ new #[Title('Security settings')] class extends Component {
             throw $e;
         }
 
-        Auth::user()->update([
+        $user = Auth::user();
+
+        $user->update([
             'password' => $validated['password'],
         ]);
+
+        AccountAudit::record(
+            action: 'security.password_changed',
+            entityType: 'User',
+            entityId: $user->id,
+            entityLabel: $user->name,
+            actorId: $user->id,
+        );
 
         $this->reset('current_password', 'password', 'password_confirmation');
 

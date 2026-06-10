@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\TeamInvitation;
+use App\Support\Audit\AccountAudit;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -42,6 +43,16 @@ new #[Title('Einladung annehmen'), Layout('layouts.auth')] class extends Compone
             $this->invitation->update(['accepted_at' => now()]);
 
             $user->switchTeam($team);
+
+            AccountAudit::record(
+                action: 'member.joined',
+                entityType: 'User',
+                entityId: $user->id,
+                entityLabel: $user->name,
+                companyId: $team->company?->id,
+                actorId: $user->id,
+                changes: ['role' => $this->invitation->role->value],
+            );
         });
 
         session()->forget('url.intended');

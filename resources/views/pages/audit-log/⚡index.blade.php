@@ -93,16 +93,33 @@ new #[Title('Aktivitäten')] class extends Component {
             'color' => match (true) {
                 $action === 'created' => 'emerald',
                 $action === 'deleted' => 'rose',
+                $action === 'member.joined' => 'emerald',
+                $action === 'member.removed' => 'rose',
+                $action === 'member.disabled' => 'amber',
+                str_starts_with($action, 'member.') => 'indigo',
+                str_starts_with($action, 'security.') => 'violet',
                 $isAssignment => 'teal',
                 $isUnassignment => 'amber',
                 default => 'sky',
             },
-            'label' => match (true) {
-                $action === 'created' => __('Angelegt'),
-                $action === 'deleted' => __('Gelöscht'),
-                $isAssignment => __('Zugewiesen'),
-                $isUnassignment => __('Entzogen'),
-                default => __('Geändert'),
+            'label' => match ($action) {
+                'created' => __('Angelegt'),
+                'deleted' => __('Gelöscht'),
+                'member.invited' => __('Eingeladen'),
+                'member.joined' => __('Beigetreten'),
+                'member.role_changed' => __('Rolle geändert'),
+                'member.removed' => __('Entfernt'),
+                'member.disabled' => __('Deaktiviert'),
+                'member.reactivated' => __('Reaktiviert'),
+                'security.password_changed' => __('Passwort geändert'),
+                'security.2fa_enabled' => __('2FA aktiviert'),
+                'security.2fa_disabled' => __('2FA deaktiviert'),
+                'security.profile_updated' => __('Profil geändert'),
+                default => match (true) {
+                    $isAssignment => __('Zugewiesen'),
+                    $isUnassignment => __('Entzogen'),
+                    default => __('Geändert'),
+                },
             },
             'icon' => SeverityIndicator::auditActionIcon($action),
         ];
@@ -149,6 +166,7 @@ new #[Title('Aktivitäten')] class extends Component {
                     <flux:select.option value="updated">{{ __('Geändert') }}</flux:select.option>
                     <flux:select.option value="deleted">{{ __('Gelöscht') }}</flux:select.option>
                     <flux:select.option value="assignments">{{ __('Zuordnungen') }}</flux:select.option>
+                    <flux:select.option value="account">{{ __('Konten & Sicherheit') }}</flux:select.option>
                 </flux:select>
             </flux:field>
             @if ($entityType !== '' || $action !== '')
@@ -211,7 +229,7 @@ new #[Title('Aktivitäten')] class extends Component {
                                 @if ($entry->user) · {{ $entry->user->name }} @endif
                             </flux:text>
 
-                            @if ($entry->action === 'updated' && is_array($entry->changes) && $entry->changes !== [])
+                            @if (in_array($entry->action, ['updated', 'member.role_changed', 'security.profile_updated'], true) && is_array($entry->changes) && $entry->changes !== [])
                                 <div class="mt-2 space-y-1 text-sm">
                                     @foreach ($entry->changes as $field => $diff)
                                         <div class="flex flex-wrap items-baseline gap-2 text-zinc-700 dark:text-zinc-200">

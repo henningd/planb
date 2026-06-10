@@ -19,7 +19,7 @@ class AuditLogFilter
      *
      * Erwartete Parameter (alle optional):
      *  - entity_type: exakter Match auf entity_type
-     *  - action: 'created'|'updated'|'deleted'|'assignments'|sonst
+     *  - action: 'created'|'updated'|'deleted'|'assignments'|'account'|sonst
      *  - search: Volltext über entity_label und user.name
      *  - from: ISO-Datum (Y-m-d) — created_at >= 00:00:00
      *  - to:   ISO-Datum (Y-m-d) — created_at <= 23:59:59
@@ -41,6 +41,12 @@ class AuditLogFilter
             $query->where(function (Builder $q): void {
                 $q->where('action', 'like', '%.assigned')
                     ->orWhere('action', 'like', '%.unassigned');
+            });
+        } elseif ($action === 'account') {
+            $query->where(function (Builder $q): void {
+                $q->where('action', 'like', 'member.%')
+                    ->orWhere('action', 'like', 'security.%')
+                    ->orWhereIn('entity_type', ['User', 'Team', 'Company']);
             });
         } elseif ($action !== '') {
             $query->where('action', $action);

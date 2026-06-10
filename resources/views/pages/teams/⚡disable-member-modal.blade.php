@@ -3,6 +3,7 @@
 use App\Enums\TeamRole;
 use App\Models\Team;
 use App\Models\User;
+use App\Support\Audit\AccountAudit;
 use Flux\Flux;
 use Illuminate\Support\Facades\Gate;
 use Livewire\Component;
@@ -49,6 +50,15 @@ new class extends Component {
             : now();
 
         $membership->update(['disabled_at' => $disabledAt]);
+
+        AccountAudit::record(
+            action: 'member.disabled',
+            entityType: 'User',
+            entityId: $this->memberId,
+            entityLabel: $this->memberName !== '' ? $this->memberName : $membership->user?->name,
+            companyId: $this->team->company?->id,
+            changes: ['disabled_at' => $disabledAt->toDateString()],
+        );
 
         if ($membership->user && $membership->user->isCurrentTeam($this->team) && $membership->isDisabled()) {
             $fallback = $membership->user->fallbackTeam(excluding: $this->team);

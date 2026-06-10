@@ -3,6 +3,7 @@
 use App\Enums\TeamRole;
 use App\Models\Team;
 use App\Rules\TeamName;
+use App\Support\Audit\AccountAudit;
 use App\Support\TeamPermissions;
 use Flux\Flux;
 use Illuminate\Support\Facades\Auth;
@@ -70,10 +71,23 @@ new class extends Component
             'role' => ['required', 'string', Rule::enum(TeamRole::class)],
         ])->validate();
 
-        $this->teamModel->memberships()
+        $membership = $this->teamModel->memberships()
             ->where('user_id', $userId)
-            ->firstOrFail()
-            ->update(['role' => TeamRole::from($validated['role'])]);
+            ->firstOrFail();
+
+        $oldRole = $membership->role;
+        $membership->update(['role' => TeamRole::from($validated['role'])]);
+
+        if ($oldRole->value !== $validated['role']) {
+            AccountAudit::record(
+                action: 'member.role_changed',
+                entityType: 'User',
+                entityId: $userId,
+                entityLabel: $membership->user?->name,
+                companyId: $this->teamModel->company?->id,
+                changes: ['role' => ['old' => $oldRole->value, 'new' => $validated['role']]],
+            );
+        }
 
         $this->populateTeamData();
 
@@ -84,10 +98,19 @@ new class extends Component
     {
         Gate::authorize('removeMember', $this->teamModel);
 
-        $this->teamModel->memberships()
+        $membership = $this->teamModel->memberships()
             ->where('user_id', $userId)
-            ->firstOrFail()
-            ->update(['disabled_at' => null]);
+            ->firstOrFail();
+
+        $membership->update(['disabled_at' => null]);
+
+        AccountAudit::record(
+            action: 'member.reactivated',
+            entityType: 'User',
+            entityId: $userId,
+            entityLabel: $membership->user?->name,
+            companyId: $this->teamModel->company?->id,
+        );
 
         $this->populateTeamData();
 
