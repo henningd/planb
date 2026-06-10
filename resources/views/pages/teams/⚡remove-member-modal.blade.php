@@ -2,6 +2,7 @@
 
 use App\Models\Team;
 use App\Models\User;
+use App\Support\Audit\AccountAudit;
 use Flux\Flux;
 use Illuminate\Support\Facades\Gate;
 use Livewire\Component;
@@ -41,6 +42,14 @@ new class extends Component {
         $this->team->memberships()
             ->where('user_id', $user->id)
             ->delete();
+
+        AccountAudit::record(
+            action: 'member.removed',
+            entityType: 'User',
+            entityId: $user->id,
+            entityLabel: $this->memberName,
+            companyId: $this->team->company?->id,
+        );
 
         if ($user->isCurrentTeam($this->team)) {
             $user->switchTeam($user->personalTeam());

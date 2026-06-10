@@ -1,6 +1,7 @@
 <?php
 
 use App\Concerns\ProfileValidationRules;
+use App\Support\Audit\AccountAudit;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Flux\Flux;
 use Illuminate\Support\Facades\Auth;
@@ -38,7 +39,25 @@ new #[Title('Profile settings')] class extends Component {
             $user->email_verified_at = null;
         }
 
+        $changes = [];
+        foreach (['name', 'email'] as $field) {
+            if ($user->isDirty($field)) {
+                $changes[$field] = ['old' => $user->getOriginal($field), 'new' => $user->{$field}];
+            }
+        }
+
         $user->save();
+
+        if ($changes !== []) {
+            AccountAudit::record(
+                action: 'security.profile_updated',
+                entityType: 'User',
+                entityId: $user->id,
+                entityLabel: $user->name,
+                actorId: $user->id,
+                changes: $changes,
+            );
+        }
 
         Flux::toast(variant: 'success', text: __('Profile updated.'));
     }

@@ -8,6 +8,7 @@ use App\Concerns\ProfileValidationRules;
 use App\Models\Team;
 use App\Models\TeamInvitation;
 use App\Models\User;
+use App\Support\Audit\AccountAudit;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
@@ -111,5 +112,15 @@ class CreateNewUser implements CreatesNewUsers
         $invitation->update(['accepted_at' => now()]);
 
         $user->forceFill(['current_team_id' => $team->id])->save();
+
+        AccountAudit::record(
+            action: 'member.joined',
+            entityType: 'User',
+            entityId: $user->id,
+            entityLabel: $user->name,
+            companyId: $team->company?->id,
+            actorId: $user->id,
+            changes: ['role' => $invitation->role->value, 'via' => 'registration'],
+        );
     }
 }

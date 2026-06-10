@@ -130,6 +130,16 @@ class AuditLogExportController extends Controller
             'created' => 'Angelegt',
             'updated' => 'Geändert',
             'deleted' => 'Gelöscht',
+            'member.invited' => 'Eingeladen',
+            'member.joined' => 'Beigetreten',
+            'member.role_changed' => 'Rolle geändert',
+            'member.removed' => 'Entfernt',
+            'member.disabled' => 'Deaktiviert',
+            'member.reactivated' => 'Reaktiviert',
+            'security.password_changed' => 'Passwort geändert',
+            'security.2fa_enabled' => '2FA aktiviert',
+            'security.2fa_disabled' => '2FA deaktiviert',
+            'security.profile_updated' => 'Profil geändert',
             default => $action,
         };
     }
@@ -151,7 +161,7 @@ class AuditLogExportController extends Controller
             return trim($related.($raci !== '' ? ' ('.$raci.')' : ''));
         }
 
-        if ($action === 'updated') {
+        if (in_array($action, ['updated', 'member.role_changed', 'security.profile_updated'], true)) {
             $parts = [];
             foreach ($changes as $field => $diff) {
                 $old = (string) ($diff['old'] ?? '');

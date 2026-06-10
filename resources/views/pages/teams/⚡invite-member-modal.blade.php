@@ -4,6 +4,7 @@ use App\Enums\TeamRole;
 use App\Models\Team;
 use App\Notifications\Teams\TeamInvitation as TeamInvitationNotification;
 use App\Rules\UniqueTeamInvitation;
+use App\Support\Audit\AccountAudit;
 use Flux\Flux;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
@@ -39,6 +40,15 @@ new class extends Component {
             'invited_by' => Auth::id(),
             'expires_at' => now()->addDays(3),
         ]);
+
+        AccountAudit::record(
+            action: 'member.invited',
+            entityType: 'User',
+            entityId: $invitation->id,
+            entityLabel: $invitation->email,
+            companyId: $this->team->company?->id,
+            changes: ['role' => $invitation->role->value],
+        );
 
         Notification::route('mail', $invitation->email)
             ->notify(new TeamInvitationNotification($invitation));

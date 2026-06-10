@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Concerns\GeneratesUniqueTeamSlugs;
 use App\Enums\TeamRole;
+use App\Support\Audit\AccountAudit;
 use Database\Factories\TeamFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -36,6 +37,19 @@ class Team extends Model
         static::updating(function (Team $team) {
             if ($team->isDirty('name')) {
                 $team->slug = static::generateUniqueTeamSlug($team->name, $team->id);
+            }
+        });
+
+        static::updated(function (Team $team) {
+            if ($team->wasChanged('name')) {
+                AccountAudit::record(
+                    action: 'updated',
+                    entityType: 'Team',
+                    entityId: $team->id,
+                    entityLabel: $team->name,
+                    companyId: $team->company?->id,
+                    changes: ['name' => ['old' => $team->getOriginal('name'), 'new' => $team->name]],
+                );
             }
         });
     }

@@ -4,6 +4,7 @@ namespace App\Observers;
 
 use App\Models\Company;
 use App\Models\GlobalScenario;
+use App\Support\Audit\AccountAudit;
 use App\Support\SystemRoleProvisioner;
 
 class CompanyObserver
@@ -81,5 +82,43 @@ class CompanyObserver
         }
 
         SystemRoleProvisioner::ensureFor($company);
+
+        AccountAudit::record(
+            action: 'created',
+            entityType: 'Company',
+            entityId: $company->id,
+            entityLabel: $company->name,
+            companyId: $company->id,
+        );
+    }
+
+    /**
+     * Logs renames of the company name / display name into the audit trail.
+     */
+    public function updated(Company $company): void
+    {
+        $changes = [];
+
+        foreach (['name', 'display_name'] as $field) {
+            if ($company->wasChanged($field)) {
+                $changes[$field] = [
+                    'old' => $company->getOriginal($field),
+                    'new' => $company->{$field},
+                ];
+            }
+        }
+
+        if ($changes === []) {
+            return;
+        }
+
+        AccountAudit::record(
+            action: 'updated',
+            entityType: 'Company',
+            entityId: $company->id,
+            entityLabel: $company->name,
+            companyId: $company->id,
+            changes: $changes,
+        );
     }
 }
