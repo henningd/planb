@@ -888,6 +888,13 @@
                     </details>
                 @endforeach
             </div>
+
+            <p class="mt-8 text-center text-slate-600">
+                Mehr Tiefe gewünscht? In unseren Ratgebern:
+                <a href="{{ route('guides.show', 'notfallhandbuch') }}" class="font-medium text-indigo-600 hover:text-indigo-700 transition">Notfallhandbuch erstellen</a>
+                und
+                <a href="{{ route('guides.show', 'krisenmanagement') }}" class="font-medium text-indigo-600 hover:text-indigo-700 transition">Krisenmanagement im Mittelstand</a>.
+            </p>
         </div>
     </section>
 
@@ -1000,6 +1007,11 @@
                         <li><a href="#zielgruppen" class="hover:text-slate-900 transition">Zielgruppen</a></li>
                         <li><a href="#ablauf" class="hover:text-slate-900 transition">So funktioniert es</a></li>
                         <li><a href="#kontakt" class="hover:text-slate-900 transition">Demo anfragen</a></li>
+                    </ul>
+                    <div class="mt-6 text-sm font-semibold text-slate-900">Ratgeber</div>
+                    <ul class="mt-4 space-y-3 text-sm text-slate-600">
+                        <li><a href="{{ route('guides.show', 'notfallhandbuch') }}" class="hover:text-slate-900 transition">Notfallhandbuch erstellen</a></li>
+                        <li><a href="{{ route('guides.show', 'krisenmanagement') }}" class="hover:text-slate-900 transition">Krisenmanagement im Mittelstand</a></li>
                     </ul>
                 </div>
 
