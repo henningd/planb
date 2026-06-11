@@ -443,56 +443,7 @@
         </div>
     </section>
 
-    {{-- ============ FOOTER ============ --}}
-    <footer class="border-t border-slate-200 bg-white">
-        <div class="max-w-7xl mx-auto px-6 lg:px-8 py-12">
-            <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
-                <div>
-                    <a href="{{ route('home') }}" class="flex items-center gap-2">
-                        <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-600 to-blue-600 text-white">
-                            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-                            </svg>
-                        </span>
-                        <span class="font-semibold text-slate-900">{{ $productName }}</span>
-                    </a>
-                    <p class="mt-3 text-sm text-slate-600 max-w-xs">
-                        Ein Produkt der <a href="{{ route('legal.imprint') }}" class="hover:text-slate-900 transition">{{ $companyName }}</a>.
-                    </p>
-                </div>
-                <div>
-                    <h4 class="text-sm font-semibold text-slate-900 mb-3">Produkt</h4>
-                    <ul class="space-y-2 text-sm text-slate-600">
-                        <li><a href="{{ route('home') }}#features" class="hover:text-slate-900 transition">Funktionen</a></li>
-                        <li><a href="{{ route('pricing.show') }}" class="hover:text-slate-900 transition">Preise</a></li>
-                        <li><a href="{{ route('manual.index') }}" class="hover:text-slate-900 transition">Handbuch</a></li>
-                    </ul>
-                </div>
-                <div>
-                    <h4 class="text-sm font-semibold text-slate-900 mb-3">Rechtliches</h4>
-                    <ul class="space-y-2 text-sm text-slate-600">
-                        <li><a href="{{ route('legal.imprint') }}" class="hover:text-slate-900 transition">Impressum</a></li>
-                        <li><a href="{{ route('legal.privacy') }}" class="hover:text-slate-900 transition">Datenschutz</a></li>
-                        <li><a href="{{ route('legal.terms') }}" class="hover:text-slate-900 transition">AGB</a></li>
-                        <li><a href="{{ route('legal.av_contract') }}" class="hover:text-slate-900 transition">AVV</a></li>
-                    </ul>
-                </div>
-                <div>
-                    <h4 class="text-sm font-semibold text-slate-900 mb-3">Konto</h4>
-                    <ul class="space-y-2 text-sm text-slate-600">
-                        <li><a href="{{ route('login') }}" class="hover:text-slate-900 transition">Anmelden</a></li>
-                        @if ($canRegister ?? true)
-                            <li><a href="{{ route('register') }}" class="hover:text-slate-900 transition">Registrieren</a></li>
-                        @endif
-                        <li><a href="{{ route('legal.status') }}" class="hover:text-slate-900 transition">Plattform-Status</a></li>
-                    </ul>
-                </div>
-            </div>
-            <div class="mt-10 pt-6 border-t border-slate-100 text-xs text-slate-500">
-                © {{ date('Y') }} {{ $companyName }}.
-            </div>
-        </div>
-    </footer>
+    @include('partials.marketing-footer')
 
     <script>
         (function () {

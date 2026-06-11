@@ -58,19 +58,6 @@
         @endif
     </main>
 
-    <footer class="border-t border-slate-200 bg-white">
-        <div class="max-w-7xl mx-auto px-6 lg:px-8 py-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-sm text-slate-500">
-            <div>&copy; {{ date('Y') }} {{ $productName }}.</div>
-            <div class="flex flex-wrap items-center gap-4">
-                <a href="{{ route('legal.imprint') }}" class="hover:text-slate-900 transition">Impressum</a>
-                <a href="{{ route('legal.privacy') }}" class="hover:text-slate-900 transition">Datenschutz</a>
-                <a href="{{ route('legal.terms') }}" class="hover:text-slate-900 transition">AGB</a>
-                <a href="{{ route('legal.av_contract') }}" class="hover:text-slate-900 transition">AVV</a>
-                <a href="{{ route('legal.tom') }}" class="hover:text-slate-900 transition">TOM</a>
-                <a href="{{ route('legal.subprocessors') }}" class="hover:text-slate-900 transition">Subprocessors</a>
-                <a href="{{ route('legal.accessibility') }}" class="hover:text-slate-900 transition">Barrierefreiheit</a>
-            </div>
-        </div>
-    </footer>
+    @include('partials.marketing-footer')
 </body>
 </html>
