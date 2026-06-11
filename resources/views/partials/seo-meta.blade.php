@@ -20,9 +20,13 @@
 <meta property="og:url" content="{{ $seoUrl }}">
 <meta property="og:title" content="{{ $seoTitle }}">
 <meta property="og:description" content="{{ $seoDescription }}">
-<meta name="twitter:card" content="summary">
+<meta property="og:image" content="{{ url('/og-image.png') }}">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="{{ $seoTitle }}">
 <meta name="twitter:description" content="{{ $seoDescription }}">
+<meta name="twitter:image" content="{{ url('/og-image.png') }}">
 
 @if (! empty($seoBreadcrumbs))
     <script type="application/ld+json">

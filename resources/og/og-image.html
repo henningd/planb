@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<link rel="preconnect" href="https://fonts.bunny.net">
+<link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600,700" rel="stylesheet" />
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+        width: 1200px;
+        height: 630px;
+        font-family: 'Instrument Sans', -apple-system, 'Segoe UI', Roboto, sans-serif;
+        background: linear-gradient(135deg, #312e81 0%, #4338ca 45%, #1d4ed8 100%);
+        color: #fff;
+        position: relative;
+        overflow: hidden;
+    }
+    .glow {
+        position: absolute;
+        inset: 0;
+        background:
+            radial-gradient(ellipse 700px 420px at 85% -10%, rgba(255,255,255,0.22), transparent 60%),
+            radial-gradient(ellipse 600px 400px at -5% 110%, rgba(56,189,248,0.25), transparent 55%);
+    }
+    .grid-pattern {
+        position: absolute;
+        inset: 0;
+        background-image:
+            linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
+        background-size: 48px 48px;
+        mask-image: radial-gradient(ellipse 900px 600px at 30% 40%, black 30%, transparent 75%);
+        -webkit-mask-image: radial-gradient(ellipse 900px 600px at 30% 40%, black 30%, transparent 75%);
+    }
+    .content {
+        position: relative;
+        height: 100%;
+        padding: 72px 80px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+    .brand { display: flex; align-items: center; gap: 18px; }
+    .logo {
+        width: 72px; height: 72px;
+        border-radius: 18px;
+        background: rgba(255,255,255,0.14);
+        border: 1px solid rgba(255,255,255,0.25);
+        display: flex; align-items: center; justify-content: center;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+    }
+    .logo svg { width: 40px; height: 40px; }
+    .brand-name { font-size: 44px; font-weight: 700; letter-spacing: -0.5px; }
+    h1 {
+        font-size: 64px;
+        font-weight: 700;
+        line-height: 1.12;
+        letter-spacing: -1.5px;
+        max-width: 980px;
+    }
+    h1 .accent { color: #a5b4fc; }
+    .sub {
+        margin-top: 22px;
+        font-size: 28px;
+        font-weight: 400;
+        color: rgba(255,255,255,0.85);
+        max-width: 900px;
+        line-height: 1.4;
+    }
+    .footer { display: flex; align-items: center; justify-content: space-between; }
+    .chips { display: flex; gap: 14px; }
+    .chip {
+        padding: 10px 22px;
+        border-radius: 999px;
+        background: rgba(255,255,255,0.12);
+        border: 1px solid rgba(255,255,255,0.22);
+        font-size: 22px;
+        font-weight: 600;
+    }
+    .domain { font-size: 24px; font-weight: 500; color: rgba(255,255,255,0.75); }
+</style>
+</head>
+<body>
+    <div class="glow"></div>
+    <div class="grid-pattern"></div>
+    <div class="content">
+        <div class="brand">
+            <div class="logo">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                </svg>
+            </div>
+            <div class="brand-name">PlanB</div>
+        </div>
+
+        <div>
+            <h1>Digitales Notfallhandbuch<br>&amp; <span class="accent">Krisenmanagement</span></h1>
+            <div class="sub">Im Ernstfall wissen, was zu tun ist — strukturiert vorbereitet auf Cyberangriff, Ausfall und Krise.</div>
+        </div>
+
+        <div class="footer">
+            <div class="chips">
+                <div class="chip">NIS2</div>
+                <div class="chip">BSI 200-4</div>
+                <div class="chip">DSGVO</div>
+            </div>
+            <div class="domain">planb.uniguard.cloud</div>
+        </div>
+    </div>
+</body>
+</html>

@@ -82,6 +82,25 @@ test('pricing and feature pages expose canonical, open graph and breadcrumbs', f
     }
 });
 
+test('every public page exposes the social share image', function () {
+    expect(file_exists(public_path('og-image.png')))->toBeTrue();
+
+    $urls = [
+        route('home'),
+        route('pricing.show'),
+        route('guides.index'),
+        route('guides.show', 'notfallhandbuch'),
+        route('feature.show', 'compliance-dashboard'),
+    ];
+
+    foreach ($urls as $url) {
+        $html = $this->get($url)->assertOk()->getContent();
+
+        expect($html)->toContain('property="og:image" content="'.url('/og-image.png').'"')
+            ->and($html)->toContain('name="twitter:card" content="summary_large_image"');
+    }
+});
+
 test('robots.txt references the sitemap', function () {
     expect(file_get_contents(public_path('robots.txt')))->toContain('Sitemap:');
 });

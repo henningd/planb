@@ -20,9 +20,13 @@
     <meta property="og:url" content="{{ $guideUrl }}">
     <meta property="og:title" content="{{ $guide['browser_title'] }}">
     <meta property="og:description" content="{{ $guide['meta_description'] }}">
-    <meta name="twitter:card" content="summary">
+    <meta property="og:image" content="{{ url('/og-image.png') }}">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="{{ $guide['browser_title'] }}">
     <meta name="twitter:description" content="{{ $guide['meta_description'] }}">
+    <meta name="twitter:image" content="{{ url('/og-image.png') }}">
 
     <script type="application/ld+json">
         {!! json_encode([
