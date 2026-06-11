@@ -34,6 +34,25 @@ test('every public marketing page shows the shared footer', function () {
     }
 });
 
+test('every public marketing page shows the shared top navigation', function () {
+    $urls = [
+        route('home'),
+        route('pricing.show'),
+        route('guides.show', 'notfallhandbuch'),
+        route('feature.show', 'compliance-dashboard'),
+        route('legal.imprint'),
+    ];
+
+    foreach ($urls as $url) {
+        $this->get($url)
+            ->assertOk()
+            ->assertSee(route('home').'#problem', false)
+            ->assertSee(route('home').'#loesung', false)
+            ->assertSee(route('pricing.show'), false)
+            ->assertSee('Anmelden');
+    }
+});
+
 test('footer anchor links point to the home page so they work on subpages', function () {
     $this->get(route('guides.show', 'notfallhandbuch'))
         ->assertSee(route('home').'#features', false)

@@ -11,21 +11,7 @@
 </head>
 <body class="bg-white text-slate-900 antialiased font-sans">
 
-    <header class="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-slate-200">
-        <div class="max-w-7xl mx-auto px-6 lg:px-8 h-16 flex items-center justify-between">
-            <a href="{{ route('home') }}" class="flex items-center gap-2">
-                <span class="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-gradient-to-br from-indigo-600 to-blue-600 text-white shadow-sm">
-                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-                    </svg>
-                </span>
-                <span class="font-semibold text-slate-900 tracking-tight">{{ $productName }}</span>
-            </a>
-            <a href="{{ route('home') }}" class="text-sm text-slate-600 hover:text-slate-900 transition">
-                ← {{ __('Zur Startseite') }}
-            </a>
-        </div>
-    </header>
+    @include('partials.marketing-header')
 
     <main class="max-w-3xl mx-auto px-6 lg:px-8 py-12 lg:py-20">
         <h1 class="text-3xl sm:text-4xl font-semibold tracking-tight text-slate-900">{{ $heading }}</h1>
