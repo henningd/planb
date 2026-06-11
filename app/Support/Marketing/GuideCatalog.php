@@ -20,6 +20,7 @@ class GuideCatalog
         return [
             'notfallhandbuch' => [
                 'slug' => 'notfallhandbuch',
+                'updated' => '2026-06-11',
                 'title' => 'Notfallhandbuch für Unternehmen: Inhalte, Aufbau und Pflege',
                 'browser_title' => 'Notfallhandbuch erstellen: Inhalte, Aufbau & Vorlage für Unternehmen',
                 'meta_description' => 'Was gehört in ein Notfallhandbuch? Definition, Pflichtinhalte, Aufbau in fünf Schritten und Tipps zur Pflege – der Praxis-Ratgeber für kleine und mittelständische Unternehmen inkl. NIS2 und BSI 200-4.',
@@ -92,6 +93,7 @@ class GuideCatalog
             ],
             'krisenmanagement' => [
                 'slug' => 'krisenmanagement',
+                'updated' => '2026-06-11',
                 'title' => 'Krisenmanagement im Mittelstand: Phasen, Rollen und Werkzeuge',
                 'browser_title' => 'Krisenmanagement für Unternehmen: Phasen, Krisenstab & Praxis-Leitfaden',
                 'meta_description' => 'Krisenmanagement praxisnah erklärt: die vier Phasen, Aufbau des Krisenstabs, Krisenkommunikation und typische Szenarien im Mittelstand – inkl. Anforderungen aus NIS2 und BSI 200-4.',
@@ -161,6 +163,7 @@ class GuideCatalog
             ],
             'it-notfallplan' => [
                 'slug' => 'it-notfallplan',
+                'updated' => '2026-06-11',
                 'title' => 'IT-Notfallplan erstellen: Aufbau, Inhalte und typische Fehler',
                 'browser_title' => 'IT-Notfallplan erstellen: Aufbau, Inhalte & Vorlage für den Mittelstand',
                 'meta_description' => 'IT-Notfallplan Schritt für Schritt: Welche Systeme, Wiederanlaufpläne und Zugänge hineingehören, wie RTO und RPO helfen und welche Fehler Sie vermeiden sollten – der Praxis-Ratgeber.',
@@ -230,6 +233,7 @@ class GuideCatalog
             ],
             'bsi-200-4' => [
                 'slug' => 'bsi-200-4',
+                'updated' => '2026-06-11',
                 'title' => 'BSI-Standard 200-4 umsetzen: Business Continuity Schritt für Schritt',
                 'browser_title' => 'BSI 200-4 umsetzen: BCM-Anforderungen & Praxis-Leitfaden für KMU',
                 'meta_description' => 'BSI-Standard 200-4 verständlich erklärt: das Stufenmodell, die Kernelemente vom BCM-Aufbau über die Business-Impact-Analyse bis zu Übungen – und wie der Mittelstand pragmatisch startet.',
@@ -289,6 +293,7 @@ class GuideCatalog
             ],
             'nis2-checkliste' => [
                 'slug' => 'nis2-checkliste',
+                'updated' => '2026-06-11',
                 'title' => 'NIS2-Checkliste: Anforderungen und Umsetzung für Unternehmen',
                 'browser_title' => 'NIS2-Checkliste: Wer betroffen ist & welche Maßnahmen Pflicht sind',
                 'meta_description' => 'NIS2 kompakt: Wer betroffen ist, welche zehn Mindestmaßnahmen die Richtlinie fordert, wie die Meldepflichten funktionieren und mit welcher Checkliste Unternehmen die Umsetzung strukturieren.',

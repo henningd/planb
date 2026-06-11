@@ -34,6 +34,14 @@ Route::get('/', function () {
     ]);
 })->name('home');
 
+Route::get('/ratgeber', function () {
+    return view('guides-index', [
+        'productName' => SystemSetting::get('platform_name') ?: config('app.name', 'PlanB'),
+        'canRegister' => Features::enabled(Features::registration())
+            && SystemSetting::get('registration_enabled', true),
+    ]);
+})->name('guides.index');
+
 Route::get('/{slug}', function (string $slug) {
     $guide = GuideCatalog::find($slug);
     abort_unless($guide !== null, 404);
@@ -50,10 +58,12 @@ Route::get('/sitemap.xml', function () {
     $urls = [
         ['loc' => route('home'), 'priority' => '1.0'],
         ['loc' => route('pricing.show'), 'priority' => '0.8'],
-        ...array_map(fn (string $slug) => [
-            'loc' => route('guides.show', $slug),
+        ['loc' => route('guides.index'), 'priority' => '0.8'],
+        ...array_map(fn (array $guide) => [
+            'loc' => route('guides.show', $guide['slug']),
             'priority' => '0.8',
-        ], GuideCatalog::slugs()),
+            'lastmod' => $guide['updated'],
+        ], array_values(GuideCatalog::all())),
         ...array_map(fn (string $slug) => [
             'loc' => route('feature.show', $slug),
             'priority' => '0.7',
@@ -63,7 +73,8 @@ Route::get('/sitemap.xml', function () {
     $xml = '<?xml version="1.0" encoding="UTF-8"?>'."\n";
     $xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'."\n";
     foreach ($urls as $url) {
-        $xml .= '  <url><loc>'.e($url['loc']).'</loc><priority>'.$url['priority'].'</priority></url>'."\n";
+        $lastmod = isset($url['lastmod']) ? '<lastmod>'.$url['lastmod'].'</lastmod>' : '';
+        $xml .= '  <url><loc>'.e($url['loc']).'</loc>'.$lastmod.'<priority>'.$url['priority'].'</priority></url>'."\n";
     }
     $xml .= '</urlset>';
 

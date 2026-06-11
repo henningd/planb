@@ -19,6 +19,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="{{ $feature['title'] }} – {{ $feature['tagline'] }}">
     <title>{{ $feature['title'] }} – {{ $productName }}</title>
+    @include('partials.seo-meta', [
+        'seoTitle' => $feature['title'].' – '.$productName,
+        'seoDescription' => $feature['title'].' – '.$feature['tagline'],
+        'seoUrl' => route('feature.show', $feature['slug']),
+        'seoBreadcrumbs' => [
+            ['name' => $productName, 'item' => route('home')],
+            ['name' => 'Funktionen', 'item' => route('home').'#features'],
+            ['name' => $feature['title'], 'item' => route('feature.show', $feature['slug'])],
+        ],
+    ])
     <link rel="icon" href="/favicon.svg" type="image/svg+xml">
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600,700" rel="stylesheet" />

@@ -1,6 +1,7 @@
 @php
     $contactEmail = (string) \App\Support\Settings\SystemSetting::get('platform_contact_email');
     $companyName = 'Arento AI GmbH';
+    $pricingDescription = 'Preise für '.$productName.' – Notfallhandbuch und BCM für Unternehmen. Starter, Advanced, Enterprise. Monatlich oder jährlich.';
 
     // Preis-Definitionen — eine Quelle für Karten und Vergleichstabelle.
     $monthlyPrices = [
@@ -164,8 +165,17 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="Preise für {{ $productName }} – Notfallhandbuch und BCM für Unternehmen. Starter, Advanced, Enterprise. Monatlich oder jährlich.">
+    <meta name="description" content="{{ $pricingDescription }}">
     <title>Preise – {{ $productName }}</title>
+    @include('partials.seo-meta', [
+        'seoTitle' => 'Preise – '.$productName,
+        'seoDescription' => $pricingDescription,
+        'seoUrl' => route('pricing.show'),
+        'seoBreadcrumbs' => [
+            ['name' => $productName, 'item' => route('home')],
+            ['name' => 'Preise', 'item' => route('pricing.show')],
+        ],
+    ])
     <link rel="icon" href="/favicon.svg" type="image/svg+xml">
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600,700" rel="stylesheet" />

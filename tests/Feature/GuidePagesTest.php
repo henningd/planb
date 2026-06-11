@@ -85,3 +85,38 @@ test('the sitemap lists both guide pages', function () {
 test('unknown guide slugs return 404', function () {
     $this->get('/unbekannter-ratgeber')->assertNotFound();
 });
+
+test('the guide hub lists every guide with canonical and collection schema', function () {
+    $response = $this->get(route('guides.index'))->assertOk();
+    $html = $response->getContent();
+
+    expect($html)->toContain('<link rel="canonical" href="'.route('guides.index').'">')
+        ->and($html)->toContain('"CollectionPage"');
+
+    foreach (GuideCatalog::slugs() as $slug) {
+        expect($html)->toContain(route('guides.show', $slug));
+    }
+});
+
+test('guides show a table of contents, a last-updated date and dateModified schema', function () {
+    $html = $this->get(route('guides.show', 'notfallhandbuch'))->getContent();
+
+    expect($html)->toContain('Inhaltsverzeichnis')
+        ->and($html)->toContain('Stand: 11.06.2026')
+        ->and($html)->toContain('"dateModified":"2026-06-11"')
+        ->and($html)->toContain('id="was-ist-ein-notfallhandbuch"')
+        ->and($html)->toContain('href="#was-ist-ein-notfallhandbuch"');
+});
+
+test('the sitemap lists the guide hub and lastmod dates', function () {
+    $xml = $this->get('/sitemap.xml')->assertOk()->getContent();
+
+    expect($xml)->toContain('<loc>'.route('guides.index').'</loc>')
+        ->and($xml)->toContain('<lastmod>2026-06-11</lastmod>');
+});
+
+test('the header navigation links to the guide hub on every public page', function () {
+    foreach ([route('home'), route('pricing.show'), route('guides.show', 'notfallhandbuch')] as $url) {
+        $this->get($url)->assertOk()->assertSee(route('guides.index'), false);
+    }
+});

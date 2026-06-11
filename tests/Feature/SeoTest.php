@@ -66,6 +66,22 @@ test('the sitemap lists home, pricing and all feature pages', function () {
     }
 });
 
+test('pricing and feature pages expose canonical, open graph and breadcrumbs', function () {
+    $urls = [
+        route('pricing.show'),
+        route('feature.show', 'compliance-dashboard'),
+    ];
+
+    foreach ($urls as $url) {
+        $html = $this->get($url)->assertOk()->getContent();
+
+        expect($html)->toContain('<link rel="canonical" href="'.$url.'">')
+            ->and($html)->toContain('property="og:title"')
+            ->and($html)->toContain('property="og:url" content="'.$url.'"')
+            ->and($html)->toContain('"BreadcrumbList"');
+    }
+});
+
 test('robots.txt references the sitemap', function () {
     expect(file_get_contents(public_path('robots.txt')))->toContain('Sitemap:');
 });

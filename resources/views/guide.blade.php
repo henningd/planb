@@ -34,6 +34,8 @@
                     'description' => $guide['meta_description'],
                     'inLanguage' => 'de',
                     'mainEntityOfPage' => $guideUrl,
+                    'datePublished' => $guide['updated'],
+                    'dateModified' => $guide['updated'],
                     'author' => ['@type' => 'Organization', 'name' => $productName],
                     'publisher' => ['@type' => 'Organization', 'name' => $productName, 'url' => route('home')],
                 ],
@@ -69,14 +71,33 @@
     <section class="relative overflow-hidden">
         <div class="absolute inset-0 -z-10 bg-gradient-to-b from-slate-50 via-white to-white"></div>
         <div class="max-w-3xl mx-auto px-6 lg:px-8 pt-16 lg:pt-20 pb-10">
-            <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 text-xs font-medium ring-1 ring-indigo-100">
-                Ratgeber
-            </span>
+            <div class="flex flex-wrap items-center gap-3">
+                <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 text-xs font-medium ring-1 ring-indigo-100">
+                    Ratgeber
+                </span>
+                <span class="text-xs text-slate-500">
+                    Stand: {{ \Illuminate\Support\Carbon::parse($guide['updated'])->format('d.m.Y') }}
+                </span>
+            </div>
             <h1 class="mt-6 text-4xl sm:text-5xl font-semibold tracking-tight text-slate-900 leading-tight">
                 {{ $guide['title'] }}
             </h1>
             <p class="mt-4 text-xl text-slate-600 leading-relaxed">{{ $guide['tagline'] }}</p>
             <p class="mt-6 text-lg text-slate-700 leading-relaxed">{{ $guide['lead'] }}</p>
+
+            <nav class="mt-8 rounded-xl bg-slate-50 ring-1 ring-slate-200 p-5" aria-label="Inhaltsverzeichnis">
+                <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Inhalt</div>
+                <ol class="mt-3 space-y-2 text-sm">
+                    @foreach ($guide['sections'] as $section)
+                        <li>
+                            <a href="#{{ \Illuminate\Support\Str::slug($section['heading']) }}" class="text-indigo-600 hover:text-indigo-700 transition">
+                                {{ $section['heading'] }}
+                            </a>
+                        </li>
+                    @endforeach
+                    <li><a href="#haeufige-fragen" class="text-indigo-600 hover:text-indigo-700 transition">Häufige Fragen</a></li>
+                </ol>
+            </nav>
         </div>
     </section>
 
@@ -84,7 +105,7 @@
     <section class="py-12 lg:py-16">
         <div class="max-w-3xl mx-auto px-6 lg:px-8 grid gap-12">
             @foreach ($guide['sections'] as $section)
-                <div>
+                <div id="{{ \Illuminate\Support\Str::slug($section['heading']) }}" class="scroll-mt-24">
                     <h2 class="text-2xl font-semibold tracking-tight text-slate-900">{{ $section['heading'] }}</h2>
                     @foreach ($section['paragraphs'] as $paragraph)
                         <p class="mt-4 text-slate-700 leading-relaxed">{{ $paragraph }}</p>
@@ -110,7 +131,7 @@
     </section>
 
     {{-- ============ FAQ ============ --}}
-    <section class="py-12 lg:py-16 bg-slate-50 border-y border-slate-100">
+    <section id="haeufige-fragen" class="py-12 lg:py-16 bg-slate-50 border-y border-slate-100 scroll-mt-24">
         <div class="max-w-3xl mx-auto px-6 lg:px-8">
             <h2 class="text-2xl font-semibold tracking-tight text-slate-900">Häufige Fragen</h2>
             <div class="mt-8 space-y-4">
