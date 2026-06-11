@@ -304,10 +304,12 @@ Route::prefix('{current_team}')
         Route::livewire('employees/{employee}/edit', 'pages::employees.edit')
             ->where('employee', '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}')
             ->name('employees.edit');
-        Route::livewire('roles', 'pages::roles.index')->name('roles.index');
-        Route::livewire('roles/{role}', 'pages::roles.show')
-            ->where('role', '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}')
-            ->name('roles.show');
+        Route::middleware('feature:roles')->group(function () {
+            Route::livewire('roles', 'pages::roles.index')->name('roles.index');
+            Route::livewire('roles/{role}', 'pages::roles.show')
+                ->where('role', '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}')
+                ->name('roles.show');
+        });
 
         Route::livewire('scenarios', 'pages::scenarios.index')->name('scenarios.index');
         Route::livewire('scenarios/{scenario}', 'pages::scenarios.show')->name('scenarios.show');
@@ -408,7 +410,7 @@ Route::prefix('{current_team}')
             );
         })->name('systems.export');
 
-        Route::get('roles/export', function () {
+        Route::middleware('feature:roles')->get('roles/export', function () {
             $company = CurrentCompany::resolve();
             abort_unless($company, 404);
 

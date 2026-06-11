@@ -27,6 +27,11 @@ return [
 
     'risk_register' => filter_var(env('FEATURE_RISK_REGISTER_ENABLED', true), FILTER_VALIDATE_BOOLEAN),
 
+    // Bereich „Abteilungen / Rollen" (/roles): Menüpunkt und Seiten. Routen
+    // bleiben registriert und liefern 404, damit Verweise aus Onboarding und
+    // Compliance-Dashboard nicht brechen.
+    'roles' => filter_var(env('FEATURE_ROLES_ENABLED', true), FILTER_VALIDATE_BOOLEAN),
+
     'monitoring_api' => filter_var(env('FEATURE_MONITORING_API_ENABLED', true), FILTER_VALIDATE_BOOLEAN),
 
     // Bibel-Verse im Krisen-Cockpit anzeigen — je ein Vers für „kein Notfall"

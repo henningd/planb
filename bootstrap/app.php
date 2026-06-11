@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\EnforceTwoFactorForAdmins;
+use App\Http\Middleware\EnsureFeatureEnabled;
 use App\Http\Middleware\EnsureRegistrationEnabled;
 use App\Http\Middleware\SetTeamUrlDefaults;
 use Illuminate\Foundation\Application;
@@ -17,6 +18,10 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->alias([
+            'feature' => EnsureFeatureEnabled::class,
+        ]);
+
         $middleware->web(append: [
             SetTeamUrlDefaults::class,
             EnsureRegistrationEnabled::class,
