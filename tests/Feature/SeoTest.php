@@ -1,5 +1,6 @@
 <?php
 
+use App\Support\Marketing\FeatureCatalog;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -60,7 +61,7 @@ test('the sitemap lists home, pricing and all feature pages', function () {
     expect($xml)->toContain('<loc>'.route('home').'</loc>')
         ->and($xml)->toContain('<loc>'.route('pricing.show').'</loc>');
 
-    foreach (\App\Support\Marketing\FeatureCatalog::slugs() as $slug) {
+    foreach (FeatureCatalog::slugs() as $slug) {
         expect($xml)->toContain('<loc>'.route('feature.show', $slug).'</loc>');
     }
 });
