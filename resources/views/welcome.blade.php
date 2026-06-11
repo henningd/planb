@@ -1012,6 +1012,9 @@
                     <ul class="mt-4 space-y-3 text-sm text-slate-600">
                         <li><a href="{{ route('guides.show', 'notfallhandbuch') }}" class="hover:text-slate-900 transition">Notfallhandbuch erstellen</a></li>
                         <li><a href="{{ route('guides.show', 'krisenmanagement') }}" class="hover:text-slate-900 transition">Krisenmanagement im Mittelstand</a></li>
+                        <li><a href="{{ route('guides.show', 'it-notfallplan') }}" class="hover:text-slate-900 transition">IT-Notfallplan erstellen</a></li>
+                        <li><a href="{{ route('guides.show', 'bsi-200-4') }}" class="hover:text-slate-900 transition">BSI 200-4 umsetzen</a></li>
+                        <li><a href="{{ route('guides.show', 'nis2-checkliste') }}" class="hover:text-slate-900 transition">NIS2-Checkliste</a></li>
                     </ul>
                 </div>
 

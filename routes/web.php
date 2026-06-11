@@ -44,7 +44,7 @@ Route::get('/{slug}', function (string $slug) {
         'canRegister' => Features::enabled(Features::registration())
             && SystemSetting::get('registration_enabled', true),
     ]);
-})->where('slug', 'notfallhandbuch|krisenmanagement')->name('guides.show');
+})->where('slug', implode('|', GuideCatalog::slugs()))->name('guides.show');
 
 Route::get('/sitemap.xml', function () {
     $urls = [

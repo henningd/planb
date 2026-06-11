@@ -36,19 +36,42 @@ test('the krisenmanagement guide covers the target keyword in depth', function (
         ->and($html)->toContain('Lessons Learned');
 });
 
-test('guides cross-link each other', function () {
-    $this->get(route('guides.show', 'notfallhandbuch'))
-        ->assertSee(route('guides.show', 'krisenmanagement'), false);
+test('every guide cross-links all other guides', function () {
+    $slugs = GuideCatalog::slugs();
 
-    $this->get(route('guides.show', 'krisenmanagement'))
-        ->assertSee(route('guides.show', 'notfallhandbuch'), false);
+    foreach ($slugs as $slug) {
+        $html = $this->get(route('guides.show', $slug))->getContent();
+
+        foreach ($slugs as $other) {
+            if ($other !== $slug) {
+                expect($html)->toContain(route('guides.show', $other));
+            }
+        }
+    }
 });
 
-test('the home page links to both guides', function () {
-    $this->get(route('home'))
-        ->assertOk()
-        ->assertSee(route('guides.show', 'notfallhandbuch'), false)
-        ->assertSee(route('guides.show', 'krisenmanagement'), false);
+test('the home page links to every guide', function () {
+    $response = $this->get(route('home'))->assertOk();
+
+    foreach (GuideCatalog::slugs() as $slug) {
+        $response->assertSee(route('guides.show', $slug), false);
+    }
+});
+
+test('the new guides cover their target keywords in depth', function () {
+    $expectations = [
+        'it-notfallplan' => ['IT-Notfallplan', 'RTO', 'Wiederanlauf'],
+        'bsi-200-4' => ['BSI-Standard 200-4', 'Business-Impact-Analyse', 'BCMS'],
+        'nis2-checkliste' => ['NIS2', 'Meldepflichten', 'Geschäftsleitung'],
+    ];
+
+    foreach ($expectations as $slug => $keywords) {
+        $html = $this->get(route('guides.show', $slug))->assertOk()->getContent();
+
+        foreach ($keywords as $keyword) {
+            expect(substr_count($html, $keyword))->toBeGreaterThanOrEqual(2, "[$slug] erwartet '$keyword' mindestens 2x");
+        }
+    }
 });
 
 test('the sitemap lists both guide pages', function () {
