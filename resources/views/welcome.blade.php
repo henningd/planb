@@ -172,9 +172,58 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="{{ $productName }} – das digitale Notfallhandbuch für kleine und mittelständische Unternehmen. Strukturiert vorbereitet auf Cyberangriff, Ausfall und Krise.">
+    @php($metaDescription = $productName.' – digitales Notfallhandbuch und Krisenmanagement für kleine und mittelständische Unternehmen. Strukturiert vorbereitet auf Cyberangriff, IT-Ausfall und Krise – inkl. NIS2- und BSI-200-4-Unterstützung.')
+    <meta name="description" content="{{ $metaDescription }}">
 
-    <title>{{ $productName }} – Digitales Notfallhandbuch für Unternehmen</title>
+    <title>{{ $productName }} – Digitales Notfallhandbuch &amp; Krisenmanagement für Unternehmen</title>
+
+    <link rel="canonical" href="{{ route('home') }}">
+
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="{{ $productName }}">
+    <meta property="og:locale" content="de_DE">
+    <meta property="og:url" content="{{ route('home') }}">
+    <meta property="og:title" content="{{ $productName }} – Digitales Notfallhandbuch &amp; Krisenmanagement für Unternehmen">
+    <meta property="og:description" content="{{ $metaDescription }}">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="{{ $productName }} – Digitales Notfallhandbuch &amp; Krisenmanagement für Unternehmen">
+    <meta name="twitter:description" content="{{ $metaDescription }}">
+
+    <script type="application/ld+json">
+        {!! json_encode([
+            '@context' => 'https://schema.org',
+            '@graph' => [
+                [
+                    '@type' => 'Organization',
+                    '@id' => route('home').'#organization',
+                    'name' => $productName,
+                    'url' => route('home'),
+                ],
+                [
+                    '@type' => 'WebSite',
+                    '@id' => route('home').'#website',
+                    'name' => $productName,
+                    'url' => route('home'),
+                    'inLanguage' => 'de',
+                    'publisher' => ['@id' => route('home').'#organization'],
+                ],
+                [
+                    '@type' => 'SoftwareApplication',
+                    'name' => $productName,
+                    'url' => route('home'),
+                    'description' => $metaDescription,
+                    'applicationCategory' => 'BusinessApplication',
+                    'operatingSystem' => 'Web',
+                    'inLanguage' => 'de',
+                    'offers' => [
+                        '@type' => 'Offer',
+                        'url' => route('pricing.show'),
+                        'priceCurrency' => 'EUR',
+                    ],
+                ],
+            ],
+        ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}
+    </script>
 
     <link rel="icon" href="/favicon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="/favicon.svg">
@@ -205,6 +254,7 @@
                 <a href="#compliance" class="hover:text-slate-900 transition">Compliance</a>
                 <a href="{{ route('pricing.show') }}" class="hover:text-slate-900 transition">Preise</a>
                 <a href="#zielgruppen" class="hover:text-slate-900 transition">Zielgruppen</a>
+                <a href="#faq" class="hover:text-slate-900 transition">FAQ</a>
             </nav>
 
             <div class="flex items-center gap-3">
@@ -250,7 +300,7 @@
                     </h1>
 
                     <p class="mt-6 text-lg text-slate-600 leading-relaxed max-w-xl">
-                        {{ $productName }} führt Ihr Unternehmen strukturiert durch die Erstellung eines Notfallhandbuchs – mit klaren Rollen, Wiederanlaufplänen und Checklisten. Damit bei Cyberangriff, Serverausfall oder Krise jeder weiß, wer entscheidet und was zuerst passiert.
+                        {{ $productName }} führt Ihr Unternehmen strukturiert durch die Erstellung eines Notfallhandbuchs – mit klaren Rollen, Wiederanlaufplänen und Checklisten als Fundament für professionelles Krisenmanagement. Damit bei Cyberangriff, Serverausfall oder Krise jeder weiß, wer entscheidet und was zuerst passiert.
                     </p>
 
                     <div class="mt-8 flex flex-col sm:flex-row gap-3">
@@ -791,6 +841,75 @@
         </div>
     </section>
 
+    {{-- ============ FAQ ============ --}}
+    @php($faqs = [
+        [
+            'q' => 'Was ist ein Notfallhandbuch?',
+            'a' => 'Ein Notfallhandbuch bündelt alle Informationen, die ein Unternehmen im Ernstfall braucht: Verantwortlichkeiten und Vertretungen, kritische Systeme mit Wiederanlaufplänen, Notfallkontakte, Kommunikationsvorlagen und Checklisten für typische Szenarien wie Cyberangriff oder Serverausfall. Es macht Krisenreaktion planbar, statt sie dem Zufall zu überlassen.',
+        ],
+        [
+            'q' => 'Was gehört in ein gutes Notfallhandbuch?',
+            'a' => 'Mindestens: klar benannte Rollen (Krisenstab, IT-Leitung, Kommunikation) mit Stellvertretern, eine priorisierte Übersicht der kritischen Systeme und Prozesse, Wiederanlaufpläne mit Ausweichverfahren, Erreichbarkeiten von Dienstleistern und Behörden sowie vorbereitete Meldewege. '.$productName.' führt Schritt für Schritt durch genau diese Bausteine.',
+        ],
+        [
+            'q' => 'Wie unterstützt '.$productName.' das Krisenmanagement?',
+            'a' => 'Neben der Erstellung des Notfallhandbuchs bietet '.$productName.' einen Vorfallmodus für das akute Krisenmanagement: Szenarien mit Schritt-für-Schritt-Checklisten, dokumentierte Entscheidungen im War Room, Kommunikationsvorlagen und eine lückenlose Nachdokumentation inklusive Lessons Learned für die Zeit nach dem Vorfall.',
+        ],
+        [
+            'q' => 'Hilft '.$productName.' bei NIS2 und BSI 200-4?',
+            'a' => 'Ja. Das Compliance-Dashboard zeigt den Umsetzungsstand entlang der Anforderungen aus NIS2 und BSI-Standard 200-4, der Audit-Export liefert prüffähige Nachweise, und das Aktivitätsprotokoll dokumentiert nachvollziehbar, wer wann was geändert hat.',
+        ],
+        [
+            'q' => 'Wie schnell ist das Notfallhandbuch einsatzbereit?',
+            'a' => 'Die geführte Struktur ist auf kleine und mittelständische Unternehmen ohne eigene Stabsstelle zugeschnitten: Mit vorhandenen Informationen entsteht in wenigen Arbeitssitzungen eine erste belastbare Version, die danach kontinuierlich gepflegt und durch Tests überprüft wird.',
+        ],
+    ])
+    <section id="faq" class="py-20 lg:py-28 bg-slate-50">
+        <div class="max-w-4xl mx-auto px-6 lg:px-8">
+            <div class="text-center">
+                <h2 class="text-3xl sm:text-4xl font-semibold tracking-tight text-slate-900">
+                    Häufige Fragen zu Notfallhandbuch &amp; Krisenmanagement
+                </h2>
+                <p class="mt-4 text-lg text-slate-600">
+                    Die wichtigsten Antworten rund um Notfallplanung, Krisenmanagement und Compliance.
+                </p>
+            </div>
+
+            <div class="mt-12 space-y-4">
+                @foreach ($faqs as $faq)
+                    <details class="group rounded-xl bg-white ring-1 ring-slate-200 p-6">
+                        <summary class="flex cursor-pointer items-center justify-between gap-4 font-medium text-slate-900 list-none">
+                            {{ $faq['q'] }}
+                            <svg class="w-5 h-5 shrink-0 text-slate-400 transition group-open:rotate-180" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                            </svg>
+                        </summary>
+                        <p class="mt-4 text-slate-600 leading-relaxed">{{ $faq['a'] }}</p>
+                    </details>
+                @endforeach
+            </div>
+
+            <p class="mt-8 text-center text-slate-600">
+                Mehr Tiefe gewünscht? In unseren Ratgebern:
+                <a href="{{ route('guides.show', 'notfallhandbuch') }}" class="font-medium text-indigo-600 hover:text-indigo-700 transition">Notfallhandbuch erstellen</a>
+                und
+                <a href="{{ route('guides.show', 'krisenmanagement') }}" class="font-medium text-indigo-600 hover:text-indigo-700 transition">Krisenmanagement im Mittelstand</a>.
+            </p>
+        </div>
+    </section>
+
+    <script type="application/ld+json">
+        {!! json_encode([
+            '@context' => 'https://schema.org',
+            '@type' => 'FAQPage',
+            'mainEntity' => collect($faqs)->map(fn ($faq) => [
+                '@type' => 'Question',
+                'name' => $faq['q'],
+                'acceptedAnswer' => ['@type' => 'Answer', 'text' => $faq['a']],
+            ])->all(),
+        ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}
+    </script>
+
     {{-- ============ FINAL CTA ============ --}}
     <section id="kontakt" class="py-20 lg:py-28">
         <div class="max-w-5xl mx-auto px-6 lg:px-8">
@@ -888,6 +1007,11 @@
                         <li><a href="#zielgruppen" class="hover:text-slate-900 transition">Zielgruppen</a></li>
                         <li><a href="#ablauf" class="hover:text-slate-900 transition">So funktioniert es</a></li>
                         <li><a href="#kontakt" class="hover:text-slate-900 transition">Demo anfragen</a></li>
+                    </ul>
+                    <div class="mt-6 text-sm font-semibold text-slate-900">Ratgeber</div>
+                    <ul class="mt-4 space-y-3 text-sm text-slate-600">
+                        <li><a href="{{ route('guides.show', 'notfallhandbuch') }}" class="hover:text-slate-900 transition">Notfallhandbuch erstellen</a></li>
+                        <li><a href="{{ route('guides.show', 'krisenmanagement') }}" class="hover:text-slate-900 transition">Krisenmanagement im Mittelstand</a></li>
                     </ul>
                 </div>
 
