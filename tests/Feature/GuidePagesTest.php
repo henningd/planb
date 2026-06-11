@@ -98,6 +98,14 @@ test('the guide hub lists every guide with canonical and collection schema', fun
     }
 });
 
+test('guides expose article author and publish date for social platforms', function () {
+    $html = $this->get(route('guides.show', 'notfallhandbuch'))->getContent();
+
+    expect($html)->toContain('property="article:published_time" content="2026-06-11T')
+        ->and($html)->toContain('property="article:author"')
+        ->and($html)->toContain('name="author"');
+});
+
 test('guides show a table of contents, a last-updated date and dateModified schema', function () {
     $html = $this->get(route('guides.show', 'notfallhandbuch'))->getContent();
 

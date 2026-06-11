@@ -188,6 +188,7 @@
     <meta property="og:image" content="{{ url('/og-image.png') }}">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
+    <meta name="author" content="{{ $productName }} – Arento AI GmbH">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="{{ $productName }} – Digitales Notfallhandbuch &amp; Krisenmanagement für Unternehmen">
     <meta name="twitter:description" content="{{ $metaDescription }}">
