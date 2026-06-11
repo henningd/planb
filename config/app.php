@@ -56,6 +56,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Kanonischer Host
+    |--------------------------------------------------------------------------
+    |
+    | Ist dieser Wert gesetzt, leitet RedirectToCanonicalHost alle Anfragen
+    | an andere Hostnamen (Alt-Domain, www-Variante) per 301 hierhin um.
+    | Leer lassen, um die Umleitung zu deaktivieren (z.B. lokal).
+    |
+    */
+
+    'canonical_host' => env('CANONICAL_HOST', ''),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Timezone
     |--------------------------------------------------------------------------
     |

@@ -1,4 +1,4 @@
 User-agent: *
 Disallow:
 
-Sitemap: https://planb.uniguard.cloud/sitemap.xml
+Sitemap: https://notfallhandbuch.eu/sitemap.xml

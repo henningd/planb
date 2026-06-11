@@ -3,6 +3,7 @@
 use App\Http\Middleware\EnforceTwoFactorForAdmins;
 use App\Http\Middleware\EnsureFeatureEnabled;
 use App\Http\Middleware\EnsureRegistrationEnabled;
+use App\Http\Middleware\RedirectToCanonicalHost;
 use App\Http\Middleware\SetTeamUrlDefaults;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -20,6 +21,10 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'feature' => EnsureFeatureEnabled::class,
+        ]);
+
+        $middleware->web(prepend: [
+            RedirectToCanonicalHost::class,
         ]);
 
         $middleware->web(append: [
