@@ -60,6 +60,7 @@
                 </ul>
                 <div class="mt-6 text-sm font-semibold text-slate-900">Anbieter-Portal</div>
                 <ul class="mt-4 space-y-3 text-sm text-slate-600">
+                    <li><a href="{{ route('home') }}#portal" class="hover:text-slate-900 transition">Was ist das Portal?</a></li>
                     <li><a href="{{ $footerPortalUrl }}/anbieter" class="hover:text-slate-900 transition">Anbieter-Verzeichnis</a></li>
                     <li><a href="{{ $footerPortalUrl }}/register" class="hover:text-slate-900 transition">Als Dienstleister registrieren</a></li>
                 </ul>

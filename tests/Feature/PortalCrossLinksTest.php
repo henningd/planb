@@ -38,3 +38,15 @@ test('header and footer link the portal on all public marketing pages', function
             ->assertSee('Als Dienstleister registrieren');
     }
 });
+
+test('the footer links the portal explainer section via anchor', function () {
+    $this->get(route('guides.show', 'notfallhandbuch'))
+        ->assertOk()
+        ->assertSee(route('home').'#portal', false)
+        ->assertSee('Was ist das Portal?');
+
+    // Der Anker muss auf der Startseite existieren.
+    $this->get(route('home'))
+        ->assertOk()
+        ->assertSee('id="portal"', false);
+});
