@@ -22,6 +22,7 @@ use App\Support\Manual\ManualCatalog;
 use App\Support\Manual\ManualRenderer;
 use App\Support\Marketing\FeatureCatalog;
 use App\Support\Marketing\GuideCatalog;
+use App\Support\Marketing\MarketingUrls;
 use App\Support\Settings\SystemSetting;
 use App\Support\SystemImport;
 use Illuminate\Support\Facades\Route;
@@ -54,21 +55,15 @@ Route::get('/{slug}', function (string $slug) {
     ]);
 })->where('slug', implode('|', GuideCatalog::slugs()))->name('guides.show');
 
+// IndexNow-Schlüsseldatei zur Domain-Verifizierung (nur bei gesetztem Key).
+if (($indexNowKey = (string) config('services.indexnow.key')) !== '') {
+    Route::get('/'.$indexNowKey.'.txt', fn () => response($indexNowKey, 200, [
+        'Content-Type' => 'text/plain; charset=UTF-8',
+    ]))->name('indexnow.key');
+}
+
 Route::get('/sitemap.xml', function () {
-    $urls = [
-        ['loc' => route('home'), 'priority' => '1.0'],
-        ['loc' => route('pricing.show'), 'priority' => '0.8'],
-        ['loc' => route('guides.index'), 'priority' => '0.8'],
-        ...array_map(fn (array $guide) => [
-            'loc' => route('guides.show', $guide['slug']),
-            'priority' => '0.8',
-            'lastmod' => $guide['updated'],
-        ], array_values(GuideCatalog::all())),
-        ...array_map(fn (string $slug) => [
-            'loc' => route('feature.show', $slug),
-            'priority' => '0.7',
-        ], FeatureCatalog::slugs()),
-    ];
+    $urls = MarketingUrls::all();
 
     $xml = '<?xml version="1.0" encoding="UTF-8"?>'."\n";
     $xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'."\n";

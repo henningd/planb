@@ -40,6 +40,12 @@ return [
         'url' => env('PORTAL_URL', 'https://portal.notfallhandbuch.eu'),
     ],
 
+    'indexnow' => [
+        // IndexNow-Schlüssel (Bing/Yandex & Co. sofort über URL-Änderungen
+        // informieren). Leer = Feature deaktiviert.
+        'key' => env('INDEXNOW_KEY', ''),
+    ],
+
     'sevenio' => [
         'key' => env('SEVENIO_API_KEY'),
         'sender' => env('SEVENIO_SENDER'), // optional: Absender (z. B. Firmenname, max. 11 Zeichen)
