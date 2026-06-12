@@ -496,6 +496,32 @@
         </div>
     </section>
 
+    {{-- ============ BAUSTEINE ============ --}}
+    <section id="bausteine" class="py-20 lg:py-28 bg-slate-50 border-y border-slate-100">
+        <div class="max-w-7xl mx-auto px-6 lg:px-8">
+            <div class="max-w-2xl mx-auto text-center">
+                <span class="text-sm font-semibold uppercase tracking-wide text-indigo-600">Business Continuity Management</span>
+                <h2 class="mt-3 text-3xl sm:text-4xl font-semibold tracking-tight text-slate-900">
+                    Die Bausteine eines belastbaren Notfallhandbuchs
+                </h2>
+                <p class="mt-4 text-lg text-slate-600 leading-relaxed">
+                    Ein Notfallhandbuch ist das Herzstück des betrieblichen Kontinuitätsmanagements (BCM).
+                    {{ $productName }} führt Sie durch alle sieben Bausteine – und hält sie mit dem
+                    Kreislauf aus Erstellen, Pflegen und Üben dauerhaft aktuell.
+                </p>
+            </div>
+
+            <div class="mt-12 max-w-3xl mx-auto">
+                @include('partials.handbook-diagram')
+            </div>
+
+            <p class="mt-8 text-center text-slate-600">
+                Was im Detail in jeden Baustein gehört, zeigt unser
+                <a href="{{ route('guides.show', 'notfallhandbuch') }}" class="font-medium text-indigo-600 hover:text-indigo-700 transition">Ratgeber „Notfallhandbuch erstellen"</a>.
+            </p>
+        </div>
+    </section>
+
     {{-- ============ FEATURES ============ --}}
     <section id="features" class="py-20 lg:py-28 bg-slate-50 border-y border-slate-100">
         <div class="max-w-7xl mx-auto px-6 lg:px-8">
