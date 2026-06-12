@@ -8,6 +8,7 @@
     $navProductName = \App\Support\Settings\SystemSetting::get('platform_name') ?: config('app.name', 'PlanB');
     $navCanRegister = \Laravel\Fortify\Features::enabled(\Laravel\Fortify\Features::registration())
         && \App\Support\Settings\SystemSetting::get('registration_enabled', true);
+    $navPortalUrl = rtrim((string) config('services.portal.url'), '/');
 @endphp
 
 <header class="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-slate-200">
@@ -29,6 +30,7 @@
             <a href="{{ route('pricing.show') }}" @class(['text-slate-900 font-medium' => request()->routeIs('pricing.*'), 'hover:text-slate-900 transition' => ! request()->routeIs('pricing.*')])>Preise</a>
             <a href="{{ route('home') }}#zielgruppen" class="hover:text-slate-900 transition">Zielgruppen</a>
             <a href="{{ route('guides.index') }}" @class(['text-slate-900 font-medium' => request()->routeIs('guides.*'), 'hover:text-slate-900 transition' => ! request()->routeIs('guides.*')])>Ratgeber</a>
+            <a href="{{ $navPortalUrl }}/anbieter" class="hover:text-slate-900 transition">Anbieter-Portal</a>
             <a href="{{ route('home') }}#faq" class="hover:text-slate-900 transition">FAQ</a>
         </nav>
 

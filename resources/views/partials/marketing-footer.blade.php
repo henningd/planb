@@ -7,6 +7,7 @@
 @php
     $footerProductName = \App\Support\Settings\SystemSetting::get('platform_name') ?: config('app.name', 'PlanB');
     $footerCompanyName = 'Arento AI GmbH';
+    $footerPortalUrl = rtrim((string) config('services.portal.url'), '/');
 @endphp
 
 <footer class="border-t border-slate-200 bg-white">
@@ -56,6 +57,11 @@
                     <li><a href="{{ route('legal.imprint') }}" class="hover:text-slate-900 transition">Impressum</a></li>
                     <li><a href="{{ route('legal.privacy') }}" class="hover:text-slate-900 transition">Datenschutz</a></li>
                     <li><a href="{{ route('legal.terms') }}" class="hover:text-slate-900 transition">AGB</a></li>
+                </ul>
+                <div class="mt-6 text-sm font-semibold text-slate-900">Anbieter-Portal</div>
+                <ul class="mt-4 space-y-3 text-sm text-slate-600">
+                    <li><a href="{{ $footerPortalUrl }}/anbieter" class="hover:text-slate-900 transition">Anbieter-Verzeichnis</a></li>
+                    <li><a href="{{ $footerPortalUrl }}/register" class="hover:text-slate-900 transition">Als Dienstleister registrieren</a></li>
                 </ul>
             </div>
 

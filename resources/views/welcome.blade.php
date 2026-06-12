@@ -3,6 +3,7 @@
     $contactEmail = (string) \App\Support\Settings\SystemSetting::get('platform_contact_email');
     $contactPhone = (string) \App\Support\Settings\SystemSetting::get('platform_contact_phone');
     $companyName = 'Arento AI GmbH';
+    $portalUrl = rtrim((string) config('services.portal.url'), '/');
 
     $problems = [
         [
@@ -733,6 +734,112 @@
                         <p class="mt-4 text-sm text-slate-600 leading-relaxed">{{ $audience['text'] }}</p>
                     </div>
                 @endforeach
+            </div>
+        </div>
+    </section>
+
+    {{-- ============ ANBIETER-PORTAL ============ --}}
+    <section id="portal" class="py-20 lg:py-28 bg-slate-50 border-y border-slate-100">
+        <div class="max-w-7xl mx-auto px-6 lg:px-8">
+            <div class="grid lg:grid-cols-2 gap-12 items-center">
+                <div>
+                    <span class="text-sm font-semibold uppercase tracking-wide text-indigo-600">PlanB Portal</span>
+                    <h2 class="mt-3 text-3xl sm:text-4xl font-semibold tracking-tight text-slate-900">
+                        Wenn Sie Unterstützung brauchen: Experten im Anbieter-Portal finden.
+                    </h2>
+                    <p class="mt-4 text-lg text-slate-600">
+                        Ein Notfallhandbuch ist die Grundlage – manchmal braucht es zusätzlich die richtigen Partner.
+                        Im <a href="{{ $portalUrl }}" class="font-medium text-indigo-600 hover:text-indigo-700 transition">PlanB Portal</a>,
+                        unserem Marktplatz für Notfall- und Business-Continuity-Dienstleistungen, finden Sie geprüfte
+                        Versicherungen, Versicherungsmakler, BCM-Berater und IT-Dienstleister – kostenlos und ohne Registrierung durchsuchbar.
+                    </p>
+                    <ul class="mt-6 space-y-3 text-sm text-slate-600">
+                        <li class="flex items-start gap-3">
+                            <svg class="w-5 h-5 mt-0.5 shrink-0 text-indigo-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                            <span>Cyber-Versicherung, Beratung oder technische Wiederherstellung – passende Anbieter nach Fachgebiet filtern.</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <svg class="w-5 h-5 mt-0.5 shrink-0 text-indigo-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                            <span>Anfragen direkt über das Portal stellen und Angebote vergleichen.</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <svg class="w-5 h-5 mt-0.5 shrink-0 text-indigo-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                            <span>Sie sind selbst Dienstleister? Präsentieren Sie Ihr Profil dort, wo Unternehmen nach Notfall-Expertise suchen.</span>
+                        </li>
+                    </ul>
+                    <div class="mt-8 flex flex-col sm:flex-row gap-3">
+                        <a href="{{ $portalUrl }}/anbieter" class="inline-flex items-center justify-center px-5 py-3 text-sm font-medium rounded-lg bg-slate-900 text-white hover:bg-slate-800 transition shadow-sm">
+                            Anbieter-Verzeichnis öffnen
+                        </a>
+                        <a href="{{ $portalUrl }}/register" class="inline-flex items-center justify-center px-5 py-3 text-sm font-medium rounded-lg ring-1 ring-slate-300 text-slate-700 hover:bg-white hover:text-slate-900 transition">
+                            Als Dienstleister registrieren
+                        </a>
+                    </div>
+                </div>
+                {{-- Diagramm: Unternehmen ↔ Portal ↔ Anbieter --}}
+                <div class="rounded-xl bg-white ring-1 ring-slate-200 shadow-sm p-6 lg:p-8">
+                    <svg viewBox="0 0 480 412" class="w-full h-auto" role="img" aria-labelledby="portal-diagram-title">
+                        <title id="portal-diagram-title">So verbindet das PlanB Portal Ihr Unternehmen mit Notfall-Experten</title>
+
+                        {{-- Ihr Unternehmen --}}
+                        <rect x="120" y="16" width="240" height="76" rx="14" fill="#ffffff" stroke="#e2e8f0" stroke-width="1.5"/>
+                        <text x="240" y="48" text-anchor="middle" font-size="15" font-weight="600" fill="#0f172a">Ihr Unternehmen</text>
+                        <text x="240" y="70" text-anchor="middle" font-size="12" fill="#64748b">mit digitalem Notfallhandbuch</text>
+
+                        {{-- Verbindung --}}
+                        <line x1="240" y1="98" x2="240" y2="142" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4 4"/>
+                        <path d="M235 103 L240 95 L245 103 Z" fill="#94a3b8"/>
+                        <path d="M235 137 L240 145 L245 137 Z" fill="#94a3b8"/>
+                        <text x="252" y="116" font-size="11" fill="#64748b">sucht Expertise</text>
+                        <text x="228" y="132" text-anchor="end" font-size="11" fill="#64748b">erhält Angebote</text>
+
+                        {{-- Hub: PlanB Portal --}}
+                        <rect x="130" y="148" width="220" height="82" rx="16" fill="#4f46e5"/>
+                        <text x="240" y="184" text-anchor="middle" font-size="16" font-weight="600" fill="#ffffff">PlanB Portal</text>
+                        <text x="240" y="206" text-anchor="middle" font-size="12" fill="#c7d2fe">Marktplatz für Notfall-Expertise</text>
+
+                        {{-- Verbindungen zu den Anbieter-Kategorien --}}
+                        <line x1="240" y1="230" x2="90" y2="298" stroke="#cbd5e1" stroke-width="1.5"/>
+                        <line x1="240" y1="230" x2="240" y2="298" stroke="#cbd5e1" stroke-width="1.5"/>
+                        <line x1="240" y1="230" x2="390" y2="298" stroke="#cbd5e1" stroke-width="1.5"/>
+
+                        {{-- Anbieter-Kategorien --}}
+                        <rect x="16" y="300" width="148" height="92" rx="12" fill="#ffffff" stroke="#e2e8f0" stroke-width="1.5"/>
+                        <text x="90" y="328" text-anchor="middle" font-size="13" font-weight="600" fill="#0f172a">Versicherungen</text>
+                        <text x="90" y="344" text-anchor="middle" font-size="13" font-weight="600" fill="#0f172a">&amp; Makler</text>
+                        <text x="90" y="366" text-anchor="middle" font-size="11" fill="#64748b">Cyber-Police &amp;</text>
+                        <text x="90" y="380" text-anchor="middle" font-size="11" fill="#64748b">Absicherung</text>
+
+                        <rect x="166" y="300" width="148" height="92" rx="12" fill="#ffffff" stroke="#e2e8f0" stroke-width="1.5"/>
+                        <text x="240" y="336" text-anchor="middle" font-size="13" font-weight="600" fill="#0f172a">BCM-Berater</text>
+                        <text x="240" y="366" text-anchor="middle" font-size="11" fill="#64748b">BSI 200-4 &amp;</text>
+                        <text x="240" y="380" text-anchor="middle" font-size="11" fill="#64748b">NIS2</text>
+
+                        <rect x="316" y="300" width="148" height="92" rx="12" fill="#ffffff" stroke="#e2e8f0" stroke-width="1.5"/>
+                        <text x="390" y="336" text-anchor="middle" font-size="13" font-weight="600" fill="#0f172a">IT-Dienstleister</text>
+                        <text x="390" y="366" text-anchor="middle" font-size="11" fill="#64748b">Backup &amp;</text>
+                        <text x="390" y="380" text-anchor="middle" font-size="11" fill="#64748b">Incident Response</text>
+                    </svg>
+                </div>
+            </div>
+
+            <div class="mt-12 grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="p-6 rounded-xl bg-white ring-1 ring-slate-200 shadow-sm">
+                    <h3 class="font-semibold text-slate-900">Versicherungen &amp; Makler</h3>
+                    <p class="mt-2 text-sm text-slate-600 leading-relaxed">Cyber-Policen, Betriebsunterbrechung und Beratung zur passenden Absicherung.</p>
+                </div>
+                <div class="p-6 rounded-xl bg-white ring-1 ring-slate-200 shadow-sm">
+                    <h3 class="font-semibold text-slate-900">BCM-Berater</h3>
+                    <p class="mt-2 text-sm text-slate-600 leading-relaxed">Unterstützung bei Notfallplanung, BSI 200-4 und NIS2-Anforderungen.</p>
+                </div>
+                <div class="p-6 rounded-xl bg-white ring-1 ring-slate-200 shadow-sm">
+                    <h3 class="font-semibold text-slate-900">IT-Dienstleister</h3>
+                    <p class="mt-2 text-sm text-slate-600 leading-relaxed">Backup, Wiederherstellung und Incident Response im Ernstfall.</p>
+                </div>
+                <div class="p-6 rounded-xl bg-white ring-1 ring-slate-200 shadow-sm">
+                    <h3 class="font-semibold text-slate-900">Für Anbieter</h3>
+                    <p class="mt-2 text-sm text-slate-600 leading-relaxed">Eigenes Profil anlegen und Anfragen von vorbereiteten Unternehmen erhalten.</p>
+                </div>
             </div>
         </div>
     </section>

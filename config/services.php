@@ -35,6 +35,11 @@ return [
         ],
     ],
 
+    'portal' => [
+        // Öffentliche URL des PlanB Portals (Anbieter-Marktplatz) für Cross-Links.
+        'url' => env('PORTAL_URL', 'https://portal.notfallhandbuch.eu'),
+    ],
+
     'sevenio' => [
         'key' => env('SEVENIO_API_KEY'),
         'sender' => env('SEVENIO_SENDER'), // optional: Absender (z. B. Firmenname, max. 11 Zeichen)
