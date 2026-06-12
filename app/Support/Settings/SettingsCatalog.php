@@ -39,7 +39,7 @@ class SettingsCatalog
 
         Umsatzsteuer-ID
         Umsatzsteuer-Identifikationsnummer gemäß § 27 a Umsatzsteuergesetz:
-        folgt.
+        DE462705376
 
         Inhaltlich verantwortlich gemäß § 18 Abs. 2 MStV
         Daniel Henninger, Anschrift wie oben
@@ -90,7 +90,7 @@ class SettingsCatalog
     private const DEFAULT_PRIVACY = <<<'TEXT'
         DATENSCHUTZERKLÄRUNG
 
-        Stand: April 2026
+        Stand: Mai 2026
 
         1. VERANTWORTLICHER
 
@@ -347,7 +347,7 @@ class SettingsCatalog
     private const DEFAULT_TERMS = <<<'TEXT'
         ALLGEMEINE GESCHÄFTSBEDINGUNGEN
 
-        Stand: April 2026
+        Stand: Mai 2026
 
         Hinweis: Diese AGB richten sich ausschließlich an Unternehmer im Sinne
         des § 14 BGB, juristische Personen des öffentlichen Rechts oder
