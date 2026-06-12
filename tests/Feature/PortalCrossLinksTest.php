@@ -33,6 +33,10 @@ test('header and footer link the portal on all public marketing pages', function
     foreach ($urls as $url) {
         $this->get($url)
             ->assertOk()
+            // Nav-Punkt führt auf die Portal-Startseite (exakter href, da die
+            // Basis-URL als Substring in jedem Deep-Link steckt).
+            ->assertSee('href="https://portal.notfallhandbuch.eu"', false)
+            ->assertSee('Anbieter-Portal')
             ->assertSee('https://portal.notfallhandbuch.eu/anbieter', false)
             ->assertSee('https://portal.notfallhandbuch.eu/register', false)
             ->assertSee('Als Dienstleister registrieren');
