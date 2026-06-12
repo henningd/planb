@@ -18,6 +18,7 @@ class FeatureCatalog
         return [
             'compliance-dashboard' => [
                 'slug' => 'compliance-dashboard',
+                'related_guides' => ['nis2-checkliste', 'bsi-200-4'],
                 'title' => 'Compliance-Dashboard',
                 'tagline' => 'Reifegrad nach BSI 200-4 und NIS2 — automatisch errechnet aus echten Daten.',
                 'icon_color' => 'indigo',
@@ -51,6 +52,7 @@ class FeatureCatalog
 
             'risiko-register' => [
                 'slug' => 'risiko-register',
+                'related_guides' => ['bsi-200-4', 'krisenmanagement'],
                 'title' => 'Risiko-Register',
                 'tagline' => 'ISO-27001-konformes Register mit 5×5-Heatmap, Maßnahmen und Restrisiko.',
                 'icon_color' => 'rose',
@@ -84,6 +86,7 @@ class FeatureCatalog
 
             'lessons-learned' => [
                 'slug' => 'lessons-learned',
+                'related_guides' => ['krisenmanagement', 'bsi-200-4'],
                 'title' => 'Lessons Learned',
                 'tagline' => 'Strukturierte After-Action-Auswertung pro Vorfall und Übung.',
                 'icon_color' => 'violet',
@@ -117,6 +120,7 @@ class FeatureCatalog
 
             'war-room' => [
                 'slug' => 'war-room',
+                'related_guides' => ['krisenmanagement', 'notfallhandbuch'],
                 'title' => 'Live-Krisenstab (War-Room)',
                 'tagline' => 'Echtzeit-Sicht auf den laufenden Krisenstab — mehrere Personen, ein gemeinsames Bild.',
                 'icon_color' => 'amber',
@@ -149,6 +153,7 @@ class FeatureCatalog
 
             'audit-export' => [
                 'slug' => 'audit-export',
+                'related_guides' => ['nis2-checkliste', 'bsi-200-4'],
                 'title' => 'Audit-Log und Mandanten-Export',
                 'tagline' => 'Lückenlose Änderungshistorie und vollständiger DSGVO-Auskunfts-Export auf Klick.',
                 'icon_color' => 'emerald',
@@ -182,6 +187,7 @@ class FeatureCatalog
 
             'monitoring' => [
                 'slug' => 'monitoring',
+                'related_guides' => ['it-notfallplan', 'nis2-checkliste'],
                 'title' => 'Monitoring-Integration',
                 'tagline' => 'Zabbix oder Prometheus → automatischer Incident in PlanB, Eskalation greift sofort.',
                 'icon_color' => 'sky',

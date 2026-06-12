@@ -71,6 +71,7 @@ class GuideCatalog
                     ],
                     [
                         'heading' => 'Word-Dokument oder digitales Notfallhandbuch?',
+                        'feature' => ['slug' => 'compliance-dashboard', 'label' => 'Compliance-Dashboard'],
                         'paragraphs' => [
                             'Viele Unternehmen starten mit einem Word-Dokument oder einer Vorlage. Das Problem zeigt sich später: Statische Dokumente veralten unbemerkt, niemand erinnert an Reviews, Änderungen sind nicht nachvollziehbar – und liegt die Datei auf dem Server, der gerade ausgefallen ist, ist sie im entscheidenden Moment unerreichbar.',
                             'Ein digitales Notfallhandbuch wie PlanB führt strukturiert durch alle Bausteine, erinnert an fällige Überprüfungen, protokolliert jede Änderung revisionssicher im Aktivitätsprotokoll und bleibt als PDF-Export und Notfallkarte auch dann verfügbar, wenn die eigene IT steht. Für Audits liefern Compliance-Dashboard und Audit-Export prüffähige Nachweise auf Knopfdruck.',
@@ -109,6 +110,7 @@ class GuideCatalog
                     ],
                     [
                         'heading' => 'Die vier Phasen des Krisenmanagements',
+                        'feature' => ['slug' => 'lessons-learned', 'label' => 'Lessons Learned'],
                         'paragraphs' => [
                             'Professionelles Krisenmanagement beginnt lange vor der Krise und endet erst nach ihrer Auswertung:',
                         ],
@@ -148,6 +150,7 @@ class GuideCatalog
                     ],
                     [
                         'heading' => 'Werkzeuge: vom Plan zur gelebten Praxis',
+                        'feature' => ['slug' => 'war-room', 'label' => 'War Room'],
                         'paragraphs' => [
                             'Papier ist geduldig – Krisen sind es nicht. Software-gestütztes Krisenmanagement macht den Unterschied zwischen einem Ordner im Regal und gelebter Handlungsfähigkeit: Ein Vorfallmodus führt den Krisenstab durch die vorbereiteten Checklisten, der War Room dokumentiert Entscheidungen in Echtzeit, und das Aktivitätsprotokoll macht im Nachgang lückenlos nachvollziehbar, wer wann was getan hat.',
                             'PlanB verbindet beides: das strukturierte Notfallhandbuch für die Vorbereitung und die operativen Werkzeuge für die Bewältigung – inklusive Lessons Learned für die Nachbereitung und Compliance-Nachweisen für NIS2 und BSI 200-4.',
@@ -212,6 +215,7 @@ class GuideCatalog
                     ],
                     [
                         'heading' => 'Die teuersten Fehler in der Praxis',
+                        'feature' => ['slug' => 'audit-export', 'label' => 'Audit-Export & Aktivitätsprotokoll'],
                         'paragraphs' => [
                             'Drei Fehler tauchen in fast jeder Nachbetrachtung auf: Der Plan liegt ausschließlich digital auf Systemen, die im Ernstfall selbst betroffen sind. Die Wiederanlauf-Reihenfolge ignoriert Abhängigkeiten – das ERP startet nicht ohne Datenbank, die Datenbank nicht ohne Storage. Und der Plan kennt nur den Normalfall einer verfügbaren IT-Mannschaft, aber keine Vertretungsregelung für Urlaub und Krankheit.',
                             'Dazu kommt der Klassiker: Der Plan wurde einmal geschrieben und nie aktualisiert. Neue Systeme fehlen, alte Dienstleisterkontakte stimmen nicht mehr. Ein digitales Notfallhandbuch mit Erinnerungen an fällige Reviews und einem Aktivitätsprotokoll über jede Änderung beugt genau dem vor.',
@@ -260,6 +264,7 @@ class GuideCatalog
                     ],
                     [
                         'heading' => 'Die Kernelemente in der Praxis',
+                        'feature' => ['slug' => 'risiko-register', 'label' => 'Risiko-Register'],
                         'paragraphs' => [
                             'Unabhängig von der Stufe stehen vier Bausteine im Zentrum jeder 200-4-Umsetzung:',
                         ],
@@ -346,6 +351,7 @@ class GuideCatalog
                     ],
                     [
                         'heading' => 'Checkliste: so strukturieren Sie die Umsetzung',
+                        'feature' => ['slug' => 'compliance-dashboard', 'label' => 'Compliance-Dashboard'],
                         'paragraphs' => [
                             'Für den Einstieg hat sich diese Reihenfolge bewährt:',
                         ],

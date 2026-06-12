@@ -133,6 +133,12 @@
                             @endforeach
                         </ul>
                     @endif
+                    @if (! empty($section['feature']))
+                        <a href="{{ route('feature.show', $section['feature']['slug']) }}" class="mt-5 inline-flex items-center gap-2 rounded-full bg-indigo-50 px-4 py-2 text-sm font-medium text-indigo-700 ring-1 ring-indigo-100 hover:bg-indigo-100 transition">
+                            Passende Funktion: {{ $section['feature']['label'] }}
+                            <svg class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+                        </a>
+                    @endif
                 </div>
             @endforeach
         </div>

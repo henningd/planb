@@ -123,6 +123,21 @@ test('the sitemap lists the guide hub and lastmod dates', function () {
         ->and($xml)->toContain('<lastmod>2026-06-11</lastmod>');
 });
 
+test('guides link to matching feature pages and vice versa', function () {
+    // Ratgeber → Funktion: Kapitel-Chip
+    $this->get(route('guides.show', 'krisenmanagement'))
+        ->assertOk()
+        ->assertSee('Passende Funktion: War Room')
+        ->assertSee(route('feature.show', 'war-room'), false);
+
+    // Funktion → Ratgeber: Vertiefungs-Box
+    $this->get(route('feature.show', 'compliance-dashboard'))
+        ->assertOk()
+        ->assertSee('Vertiefung im Ratgeber')
+        ->assertSee(route('guides.show', 'nis2-checkliste'), false)
+        ->assertSee(route('guides.show', 'bsi-200-4'), false);
+});
+
 test('the header navigation links to the guide hub on every public page', function () {
     foreach ([route('home'), route('pricing.show'), route('guides.show', 'notfallhandbuch')] as $url) {
         $this->get($url)->assertOk()->assertSee(route('guides.index'), false);

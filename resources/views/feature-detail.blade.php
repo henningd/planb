@@ -111,6 +111,28 @@
         </section>
     @endif
 
+    {{-- ============ VERTIEFUNG IM RATGEBER ============ --}}
+    @if (! empty($feature['related_guides']))
+        <section class="py-12 lg:py-16">
+            <div class="max-w-4xl mx-auto px-6 lg:px-8">
+                <div class="text-xs font-semibold uppercase tracking-wide {{ $color['text'] }}">Vertiefung im Ratgeber</div>
+                <div class="mt-4 grid gap-3 sm:grid-cols-2">
+                    @foreach ($feature['related_guides'] as $guideSlug)
+                        @php($guide = \App\Support\Marketing\GuideCatalog::find($guideSlug))
+                        @if ($guide)
+                            <a href="{{ route('guides.show', $guideSlug) }}" class="group flex items-center justify-between gap-4 rounded-xl ring-1 ring-slate-200 p-5 hover:ring-indigo-300 hover:bg-indigo-50/40 transition">
+                                <span class="font-medium text-slate-900">{{ $guide['title'] }}</span>
+                                <svg class="w-5 h-5 shrink-0 text-slate-400 group-hover:text-indigo-600 transition" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                                </svg>
+                            </a>
+                        @endif
+                    @endforeach
+                </div>
+            </div>
+        </section>
+    @endif
+
     {{-- ============ CTA ============ --}}
     <section class="py-16 lg:py-20">
         <div class="max-w-3xl mx-auto px-6 lg:px-8">
