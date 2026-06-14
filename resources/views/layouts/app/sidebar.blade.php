@@ -27,7 +27,7 @@
                             {{ __('Compliance') }}
                         </flux:sidebar.item>
                     @endif
-                    @if (config('features.risk_register') && \Illuminate\Support\Facades\Route::has('risks.index') && auth()->user()->isCurrentTeamAdmin())
+                    @if (config('features.risk_register') && \Illuminate\Support\Facades\Route::has('risks.index') && auth()->user()->isAtLeastConsultant())
                         <flux:sidebar.item icon="shield-exclamation" :href="route('risks.index')" :current="request()->routeIs('risks.*')" wire:navigate>
                             {{ __('Risiken') }}
                         </flux:sidebar.item>
@@ -63,7 +63,7 @@
                     <flux:sidebar.item icon="wrench-screwdriver" :href="route('service-providers.index')" :current="request()->routeIs('service-providers.*')" wire:navigate>
                         {{ __('Dienstleister') }}
                     </flux:sidebar.item>
-                    @if (auth()->user()->isCurrentTeamAdmin())
+                    @if (auth()->user()->isAtLeastConsultant())
                         <flux:sidebar.item icon="shield-check" :href="route('insurance-policies.index')" :current="request()->routeIs('insurance-policies.*')" wire:navigate>
                             {{ __('Versicherungen') }}
                         </flux:sidebar.item>
@@ -128,7 +128,7 @@
                             {{ __('Lessons Learned') }}
                         </flux:sidebar.item>
                     @endif
-                    @if (auth()->user()->isCurrentTeamAdmin())
+                    @if (auth()->user()->isAtLeastConsultant())
                         <flux:sidebar.item icon="document-duplicate" :href="route('communication-templates.index')" :current="request()->routeIs('communication-templates.*')" wire:navigate>
                             {{ __('Vorlagen') }}
                         </flux:sidebar.item>

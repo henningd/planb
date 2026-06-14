@@ -113,6 +113,25 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
+     * True if the user is at least a Berater (Consultant) on their current team.
+     * Gates the content sections a consultant may maintain (risks, insurance,
+     * communication templates) without granting admin/governance access.
+     */
+    public function isAtLeastConsultant(): bool
+    {
+        if ($this->isSuperAdmin()) {
+            return true;
+        }
+
+        $team = $this->currentTeam;
+        if (! $team) {
+            return false;
+        }
+
+        return $this->teamRole($team)?->isAtLeast(TeamRole::Consultant) ?? false;
+    }
+
+    /**
      * True if the user has any activity on record (audit log, scenario runs/steps,
      * handbook shares, outgoing invitations). Used to decide whether a hard delete
      * of the user account is safe.
