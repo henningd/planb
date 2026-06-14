@@ -37,6 +37,12 @@ class EnforceTwoFactorSetup
             return $next($request);
         }
 
+        // Bestandsnutzer sind von der 2FA-Pflicht ausgenommen (Grandfathering);
+        // nur für neue Registrierungen ist das Flag gesetzt.
+        if (! $user->two_factor_required) {
+            return $next($request);
+        }
+
         // 2FA bereits eingerichtet und bestätigt → nichts zu tun.
         if ($user->two_factor_confirmed_at !== null) {
             return $next($request);

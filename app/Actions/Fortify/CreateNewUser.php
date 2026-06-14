@@ -42,6 +42,10 @@ class CreateNewUser implements CreatesNewUsers
                 'password' => $input['password'],
             ]);
 
+            // Neue Nutzer müssen 2FA einrichten; Bestandsnutzer bleiben
+            // unberührt (Default false aus der Migration).
+            $user->forceFill(['two_factor_required' => true])->save();
+
             $invitation = $this->pendingInvitationFor($input['email']);
 
             if ($invitation !== null) {
