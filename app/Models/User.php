@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Concerns\HasTeams;
 use App\Enums\TeamRole;
+use App\Notifications\QueuedVerifyEmail;
 use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -37,6 +38,15 @@ class User extends Authenticatable implements MustVerifyEmail
             'is_super_admin' => 'boolean',
             'preferences' => 'array',
         ];
+    }
+
+    /**
+     * Send the email verification notification via the queue so a slow or
+     * failing SMTP server can never break or delay the registration request.
+     */
+    public function sendEmailVerificationNotification(): void
+    {
+        $this->notify(new QueuedVerifyEmail);
     }
 
     /**
