@@ -438,6 +438,151 @@
         </div>
     </section>
 
+    {{-- ============ AUSFALLRECHNER ============ --}}
+    <section id="ausfallrechner" class="py-20 lg:py-28">
+        <div class="max-w-7xl mx-auto px-6 lg:px-8">
+            <div class="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+
+                {{-- Copy --}}
+                <div>
+                    <span class="text-sm font-semibold uppercase tracking-wide text-indigo-600">Ausfallrechner</span>
+                    <h2 class="mt-3 text-3xl sm:text-4xl font-semibold tracking-tight text-slate-900">
+                        Was kostet Sie ein IT-Ausfall – pro Stunde?
+                    </h2>
+                    <p class="mt-4 text-lg text-slate-600 leading-relaxed">
+                        Serverausfall, Ransomware-Angriff oder eine längere Betriebsunterbrechung summieren sich schneller, als man denkt – aus stillstehender Belegschaft und entgangenem Umsatz. Rechnen Sie Ihre Ausfallkosten in Sekunden durch.
+                    </p>
+                    <ul class="mt-6 space-y-3 text-slate-600">
+                        <li class="flex items-start gap-3">
+                            <svg class="w-5 h-5 text-indigo-600 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                            <span>Jede Stunde Stillstand kostet doppelt: Personal <em>und</em> Umsatz.</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <svg class="w-5 h-5 text-indigo-600 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                            <span>{{ $productName }} verkürzt Ausfall- und Wiederanlaufzeit durch klare Pläne, Rollen und Checklisten.</span>
+                        </li>
+                    </ul>
+                    <div class="mt-8">
+                        @auth
+                            <a href="{{ route('dashboard') }}" class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-slate-900 text-white font-medium hover:bg-slate-800 transition shadow-sm">
+                                Zum Dashboard
+                            </a>
+                        @else
+                            @if ($canRegister)
+                                <a href="{{ route('register') }}" class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-slate-900 text-white font-medium hover:bg-slate-800 transition shadow-sm">
+                                    Jetzt vorsorgen – Notfallhandbuch starten
+                                </a>
+                            @else
+                                <a href="#loesung" class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-slate-900 text-white font-medium hover:bg-slate-800 transition shadow-sm">
+                                    Lösung ansehen
+                                </a>
+                            @endif
+                        @endauth
+                    </div>
+                </div>
+
+                {{-- Interaktiver Rechner --}}
+                <div class="rounded-2xl ring-1 ring-slate-200 shadow-lg p-6 sm:p-8 bg-gradient-to-b from-white to-indigo-50/40">
+                    <form class="space-y-6" onsubmit="return false" aria-label="Ausfallkosten berechnen">
+                        <div>
+                            <div class="flex items-center justify-between">
+                                <label for="ar-employees" class="text-sm font-medium text-slate-700">Betroffene Mitarbeitende</label>
+                                <span id="ar-employees-val" class="text-sm font-semibold text-indigo-700 tabular-nums">25</span>
+                            </div>
+                            <input id="ar-employees" type="range" min="1" max="500" step="1" value="25"
+                                class="mt-2 w-full accent-indigo-600 cursor-pointer" aria-label="Betroffene Mitarbeitende">
+                        </div>
+                        <div>
+                            <div class="flex items-center justify-between">
+                                <label for="ar-laborcost" class="text-sm font-medium text-slate-700">Personalkosten je Mitarbeitende:r / Stunde</label>
+                                <span id="ar-laborcost-val" class="text-sm font-semibold text-indigo-700 tabular-nums">45 €</span>
+                            </div>
+                            <input id="ar-laborcost" type="range" min="20" max="150" step="5" value="45"
+                                class="mt-2 w-full accent-indigo-600 cursor-pointer" aria-label="Personalkosten je Mitarbeitende:r und Stunde">
+                        </div>
+                        <div>
+                            <div class="flex items-center justify-between">
+                                <label for="ar-revenue" class="text-sm font-medium text-slate-700">Umsatz pro Stunde</label>
+                                <span id="ar-revenue-val" class="text-sm font-semibold text-indigo-700 tabular-nums">1.200 €</span>
+                            </div>
+                            <input id="ar-revenue" type="range" min="0" max="10000" step="100" value="1200"
+                                class="mt-2 w-full accent-indigo-600 cursor-pointer" aria-label="Umsatz pro Stunde">
+                        </div>
+                        <div>
+                            <div class="flex items-center justify-between">
+                                <label for="ar-hours" class="text-sm font-medium text-slate-700">Ausfalldauer</label>
+                                <span id="ar-hours-val" class="text-sm font-semibold text-indigo-700 tabular-nums">8 h</span>
+                            </div>
+                            <input id="ar-hours" type="range" min="1" max="72" step="1" value="8"
+                                class="mt-2 w-full accent-indigo-600 cursor-pointer" aria-label="Ausfalldauer in Stunden">
+                        </div>
+                    </form>
+
+                    <div class="mt-6 space-y-2 border-t border-slate-200 pt-5 text-sm">
+                        <div class="flex items-center justify-between text-slate-600">
+                            <span>Personalausfall</span>
+                            <span id="ar-labor-result" class="font-medium text-slate-900 tabular-nums">9.000 €</span>
+                        </div>
+                        <div class="flex items-center justify-between text-slate-600">
+                            <span>Umsatzausfall</span>
+                            <span id="ar-revenue-result" class="font-medium text-slate-900 tabular-nums">9.600 €</span>
+                        </div>
+                        <div class="mt-3 flex items-center justify-between rounded-lg bg-slate-900 px-4 py-3 text-white">
+                            <span class="font-medium">Geschätzte Ausfallkosten</span>
+                            <span id="ar-total-result" class="text-xl font-semibold tabular-nums">18.600 €</span>
+                        </div>
+                    </div>
+                    <p class="mt-4 text-xs text-slate-500">
+                        Beispielrechnung, keine verbindliche Kalkulation. Indirekte Folgekosten (Reputation, Vertragsstrafen, Datenverlust) sind hier nicht enthalten.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            (function () {
+                var fmt = new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 });
+                var inputs = ['ar-employees', 'ar-laborcost', 'ar-revenue', 'ar-hours'];
+
+                function val(id) {
+                    var n = parseFloat(document.getElementById(id).value);
+                    return (isNaN(n) || n < 0) ? 0 : n;
+                }
+
+                var dec = new Intl.NumberFormat('de-DE');
+                var badge = {
+                    'ar-employees': function (v) { return dec.format(v); },
+                    'ar-laborcost': function (v) { return fmt.format(v); },
+                    'ar-revenue': function (v) { return fmt.format(v); },
+                    'ar-hours': function (v) { return dec.format(v) + ' h'; }
+                };
+
+                function recalc() {
+                    inputs.forEach(function (id) {
+                        var b = document.getElementById(id + '-val');
+                        if (b) { b.textContent = badge[id](val(id)); }
+                    });
+
+                    var laborLoss = val('ar-employees') * val('ar-laborcost') * val('ar-hours');
+                    var revenueLoss = val('ar-revenue') * val('ar-hours');
+                    document.getElementById('ar-labor-result').textContent = fmt.format(laborLoss);
+                    document.getElementById('ar-revenue-result').textContent = fmt.format(revenueLoss);
+                    document.getElementById('ar-total-result').textContent = fmt.format(laborLoss + revenueLoss);
+                }
+
+                function init() {
+                    inputs.forEach(function (id) {
+                        var el = document.getElementById(id);
+                        if (el) { el.addEventListener('input', recalc); }
+                    });
+                    recalc();
+                }
+
+                if (document.readyState !== 'loading') { init(); } else { document.addEventListener('DOMContentLoaded', init); }
+            })();
+        </script>
+    </section>
+
     {{-- ============ LÖSUNG ============ --}}
     <section id="loesung" class="py-20 lg:py-28">
         <div class="max-w-7xl mx-auto px-6 lg:px-8">
@@ -574,6 +719,145 @@
                         <p class="mt-2 text-sm text-slate-600 leading-relaxed">{{ $feature['text'] }}</p>
                     </div>
                 @endforeach
+            </div>
+        </div>
+    </section>
+
+    {{-- ============ SMS-ALARMIERUNG ============ --}}
+    <section id="sms" class="py-20 lg:py-28">
+        <style>
+            @keyframes smsToastIn {
+                0%, 8%   { opacity: 0; transform: translateY(-16px) scale(0.98); }
+                16%, 82% { opacity: 1; transform: translateY(0) scale(1); }
+                92%,100% { opacity: 0; transform: translateY(-16px) scale(0.98); }
+            }
+            @keyframes smsBuzz {
+                0%,12%,20%,100% { transform: translateX(0); }
+                13%,17%         { transform: translateX(-2px); }
+                15%,19%         { transform: translateX(2px); }
+            }
+            .sms-toast { animation: smsToastIn 6s ease-in-out infinite; }
+            .sms-phone { animation: smsBuzz 6s ease-in-out infinite; }
+            @media (prefers-reduced-motion: reduce) {
+                .sms-toast { animation: none; opacity: 1; transform: none; }
+                .sms-phone { animation: none; }
+            }
+        </style>
+        <div class="max-w-7xl mx-auto px-6 lg:px-8">
+            <div class="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+
+                {{-- Copy --}}
+                <div>
+                    <span class="text-sm font-semibold uppercase tracking-wide text-indigo-600">SMS-Alarmierung</span>
+                    <h2 class="mt-3 text-3xl sm:text-4xl font-semibold tracking-tight text-slate-900">
+                        Alarm per SMS – auch wenn E-Mail, Chat und Internet ausfallen.
+                    </h2>
+                    <p class="mt-4 text-lg text-slate-600 leading-relaxed">
+                        Genau dann, wenn die IT steht, versagen die üblichen Kanäle. {{ $productName }} alarmiert Ihren Krisenstab und Schlüsselpersonen zusätzlich per SMS – über die Anbindung an seven.io. Eine Nachricht, die garantiert ankommt.
+                    </p>
+                    <ul class="mt-6 space-y-3 text-slate-600">
+                        @foreach ([
+                            'Erreicht jeden sofort – auf jedem Handy, ohne App, ohne Login.',
+                            'Funktioniert, wenn es darauf ankommt: Die SMS kommt auch an, wenn E-Mail, Messenger oder das Firmennetz stehen.',
+                            'Krisenstab und Verantwortliche in Sekunden alarmiert – nicht erst, wenn jemand sein Postfach öffnet.',
+                            'Direkt aus dem Notfallhandbuch ausgelöst – inklusive Kurzlink zur aktuellen Lage.',
+                        ] as $smsBenefit)
+                            <li class="flex items-start gap-3">
+                                <svg class="w-5 h-5 text-indigo-600 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                                <span>{{ $smsBenefit }}</span>
+                            </li>
+                        @endforeach
+                    </ul>
+                </div>
+
+                {{-- Animiertes Handy --}}
+                <div class="flex justify-center">
+                    <div class="sms-phone relative w-[260px] rounded-[2.5rem] bg-slate-900 p-3 shadow-2xl ring-1 ring-slate-800">
+                        <div class="absolute left-1/2 top-3 z-10 h-6 w-32 -translate-x-1/2 rounded-b-2xl bg-slate-900"></div>
+                        <div class="relative h-[520px] overflow-hidden rounded-[2rem] bg-gradient-to-b from-slate-700 via-slate-800 to-slate-900">
+                            <div class="pt-12 text-center text-white">
+                                <div class="text-5xl font-light tracking-tight">14:03</div>
+                                <div class="mt-1 text-sm text-white/50">Dienstag, 14. Juni</div>
+                            </div>
+                            <div class="sms-toast absolute inset-x-3 top-36">
+                                <div class="rounded-2xl bg-white/95 p-3 shadow-lg ring-1 ring-black/5 backdrop-blur">
+                                    <div class="flex items-center gap-2">
+                                        <span class="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-rose-600 text-[11px] font-bold text-white">PB</span>
+                                        <div class="flex-1 text-[13px] font-semibold text-slate-900">PlanB Notfall</div>
+                                        <div class="text-[11px] text-slate-400">jetzt</div>
+                                    </div>
+                                    <p class="mt-2 text-[13px] leading-snug text-slate-700">
+                                        IT-Notfall gemeldet 14:03 – Ransomware-Verdacht. Krisenstab aktiviert. Lage öffnen: nfh.eu/k/3f9a2c – bitte umgehend Rückmeldung.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    {{-- ============ AUSHANG & QR-CODE ============ --}}
+    <section id="aushang" class="py-20 lg:py-28 bg-slate-50 border-y border-slate-100">
+        <div class="max-w-7xl mx-auto px-6 lg:px-8">
+            <div class="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+
+                {{-- Poster-Mockup mit QR --}}
+                <div class="order-2 lg:order-1 flex justify-center">
+                    <div class="relative max-w-sm">
+                        <div class="-rotate-2 rounded-xl bg-white p-7 shadow-xl ring-1 ring-slate-200">
+                            <div class="text-center">
+                                <div class="text-xs font-semibold uppercase tracking-widest text-rose-600">Notfall-Aushang</div>
+                                <h3 class="mt-2 text-xl font-semibold text-slate-900">IT-Ausfall? Im Notfall hier scannen.</h3>
+                                <p class="mt-1 text-sm text-slate-500">Serverraum · Standort Hauptsitz</p>
+                            </div>
+                            <div class="mt-5 flex justify-center">
+                                <svg viewBox="0 0 120 120" class="h-40 w-40" role="img" aria-label="Beispiel-QR-Code des Notfall-Aushangs">
+                                    <rect width="120" height="120" fill="#ffffff"/>
+                                    {{-- Finder-Patterns --}}
+                                    @foreach ([[4,4],[88,4],[4,88]] as [$fx,$fy])
+                                        <rect x="{{ $fx }}" y="{{ $fy }}" width="28" height="28" fill="#0f172a"/>
+                                        <rect x="{{ $fx+4 }}" y="{{ $fy+4 }}" width="20" height="20" fill="#ffffff"/>
+                                        <rect x="{{ $fx+8 }}" y="{{ $fy+8 }}" width="12" height="12" fill="#0f172a"/>
+                                    @endforeach
+                                    {{-- Datenmodule (dekorativ) --}}
+                                    @foreach ([[48,8],[64,8],[80,8],[40,16],[96,16],[48,24],[72,24],[40,40],[56,40],[88,40],[104,40],[16,48],[48,48],[72,48],[96,48],[32,56],[64,56],[112,56],[48,64],[80,64],[40,72],[56,72],[88,72],[104,72],[48,88],[64,96],[80,88],[96,104],[112,96],[48,104],[72,112],[88,104],[104,112]] as [$mx,$my])
+                                        <rect x="{{ $mx }}" y="{{ $my }}" width="8" height="8" fill="#0f172a"/>
+                                    @endforeach
+                                </svg>
+                            </div>
+                            <div class="mt-5 rounded-lg bg-slate-50 p-3 text-center">
+                                <div class="text-sm font-medium text-slate-900">Zuständigen Dienstleister & erste Schritte anzeigen</div>
+                                <div class="mt-1 text-xs text-slate-500">Kein Login · immer aktuell</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Copy --}}
+                <div class="order-1 lg:order-2">
+                    <span class="text-sm font-semibold uppercase tracking-wide text-indigo-600">Aushang & QR-Code</span>
+                    <h2 class="mt-3 text-3xl sm:text-4xl font-semibold tracking-tight text-slate-900">
+                        Ein Aushang, ein Scan – im Ernstfall weiß jeder sofort, was zu tun ist.
+                    </h2>
+                    <p class="mt-4 text-lg text-slate-600 leading-relaxed">
+                        {{ $productName }} erzeugt aus Ihrem Notfallhandbuch druckfertige Aushänge mit QR-Code – für Serverraum, Flur oder Schwarzes Brett. Ein Scan führt direkt zur stets aktuellen digitalen Notfall-Info, ganz ohne Login.
+                    </p>
+                    <ul class="mt-6 space-y-3 text-slate-600">
+                        @foreach ([
+                            'Physisch dort, wo es zählt – am Systemstandort sichtbar, auch bei totalem IT-Ausfall.',
+                            'QR scannen → sofort die richtigen Schritte und der zuständige Dienstleister.',
+                            'Immer aktuell: Der QR-Code zeigt auf die gepflegte digitale Version, nicht auf totes Papier.',
+                            'Pro System oder Standort – an jedem kritischen Ort einen eigenen Aushang.',
+                        ] as $aushangBenefit)
+                            <li class="flex items-start gap-3">
+                                <svg class="w-5 h-5 text-indigo-600 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                                <span>{{ $aushangBenefit }}</span>
+                            </li>
+                        @endforeach
+                    </ul>
+                </div>
             </div>
         </div>
     </section>
