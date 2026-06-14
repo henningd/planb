@@ -337,7 +337,7 @@ Route::prefix('{current_team}')
         }
 
         if (config('features.risk_register')) {
-            Route::middleware([EnsureTeamMembership::class.':admin'])->group(function () {
+            Route::middleware([EnsureTeamMembership::class.':consultant'])->group(function () {
                 Route::livewire('risks', 'pages::risks.index')->name('risks.index');
                 Route::livewire('risks/create', 'pages::risks.create')->name('risks.create');
                 Route::livewire('risks/{risk}', 'pages::risks.show')
@@ -346,12 +346,17 @@ Route::prefix('{current_team}')
             });
         }
 
-        Route::middleware([EnsureTeamMembership::class.':admin'])->group(function () {
+        // Berater-Ebene: sensible, aber inhaltliche Handbuch-Bereiche, die ein
+        // Berater pflegen darf (nicht jedoch Governance wie Audit/Einstellungen).
+        Route::middleware([EnsureTeamMembership::class.':consultant'])->group(function () {
             Route::livewire('insurance-policies', 'pages::insurance-policies.index')->name('insurance-policies.index');
             Route::livewire('insurance-policies/{policy}', 'pages::insurance-policies.show')
                 ->where('policy', '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}')
                 ->name('insurance-policies.show');
             Route::livewire('communication-templates', 'pages::communication-templates.index')->name('communication-templates.index');
+        });
+
+        Route::middleware([EnsureTeamMembership::class.':admin'])->group(function () {
             Route::livewire('audit-log', 'pages::audit-log.index')->name('audit-log.index');
             Route::livewire('login-activity', 'pages::login-activity.index')->name('login-activity.index');
             Route::get('handbook-export/login-activity.csv', [AuthActivityExportController::class, 'csv'])

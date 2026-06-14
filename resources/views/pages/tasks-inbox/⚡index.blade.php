@@ -24,7 +24,7 @@ new #[Title('Aufgaben-Inbox')] class extends Component {
      */
     public function includeRisks(): bool
     {
-        return (bool) config('features.risk_register') && (bool) Auth::user()?->isCurrentTeamAdmin();
+        return (bool) config('features.risk_register') && (bool) Auth::user()?->isAtLeastConsultant();
     }
 
     /**

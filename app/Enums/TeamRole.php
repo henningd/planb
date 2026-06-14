@@ -6,6 +6,7 @@ enum TeamRole: string
 {
     case Owner = 'owner';
     case Admin = 'admin';
+    case Consultant = 'consultant';
     case Member = 'member';
 
     /**
@@ -16,6 +17,7 @@ enum TeamRole: string
         return match ($this) {
             self::Owner => 'Inhaber',
             self::Admin => 'Administrator',
+            self::Consultant => 'Berater',
             self::Member => 'Mitglied',
         };
     }
@@ -34,6 +36,8 @@ enum TeamRole: string
                 TeamPermission::CreateInvitation,
                 TeamPermission::CancelInvitation,
             ],
+            // Berater pflegen Inhalte, haben aber keine Team-/Governance-Rechte.
+            self::Consultant => [],
             self::Member => [],
         };
     }
@@ -53,8 +57,9 @@ enum TeamRole: string
     public function level(): int
     {
         return match ($this) {
-            self::Owner => 3,
-            self::Admin => 2,
+            self::Owner => 4,
+            self::Admin => 3,
+            self::Consultant => 2,
             self::Member => 1,
         };
     }
