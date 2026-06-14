@@ -2,6 +2,7 @@
 
 use App\Mail\NewUserRegisteredMail;
 use App\Models\User;
+use App\Notifications\QueuedVerifyEmail;
 use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Notification;
@@ -19,7 +20,7 @@ test('registering sends the combined welcome/verification mail and leaves the us
     $user = User::where('email', 'jane@example.com')->firstOrFail();
 
     expect($user->hasVerifiedEmail())->toBeFalse();
-    Notification::assertSentTo($user, VerifyEmail::class);
+    Notification::assertSentTo($user, QueuedVerifyEmail::class);
 });
 
 test('the verification mail uses the German welcome wording', function () {
@@ -43,7 +44,7 @@ test('a BCC notification is sent to the configured admin addresses on registrati
         'password_confirmation' => 'password',
     ])->assertSessionHasNoErrors();
 
-    Mail::assertSent(NewUserRegisteredMail::class, function (NewUserRegisteredMail $mail) {
+    Mail::assertQueued(NewUserRegisteredMail::class, function (NewUserRegisteredMail $mail) {
         return $mail->recipients === ['admin@example.com', 'info@example.com']
             && $mail->user->email === 'jane@example.com';
     });
@@ -61,7 +62,7 @@ test('no BCC notification is sent when MAIL_REGISTER_BCC is empty', function () 
         'password_confirmation' => 'password',
     ])->assertSessionHasNoErrors();
 
-    Mail::assertNotSent(NewUserRegisteredMail::class);
+    Mail::assertNotQueued(NewUserRegisteredMail::class);
 });
 
 test('the BCC mail addresses the recipients as bcc only', function () {

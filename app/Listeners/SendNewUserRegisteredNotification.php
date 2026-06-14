@@ -6,6 +6,7 @@ use App\Mail\NewUserRegisteredMail;
 use App\Models\User;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Support\Facades\Mail;
+use Throwable;
 
 /**
  * Schickt bei jeder Registrierung eine interne BCC-Benachrichtigung an die in
@@ -29,6 +30,13 @@ class SendNewUserRegisteredNotification
             return;
         }
 
-        Mail::send(new NewUserRegisteredMail($event->user, $recipients));
+        // Der Versand darf die Registrierung niemals abbrechen: Fehler werden
+        // gemeldet, aber geschluckt. (Mailable ist ShouldQueue, läuft also
+        // ohnehin im Worker.)
+        try {
+            Mail::send(new NewUserRegisteredMail($event->user, $recipients));
+        } catch (Throwable $e) {
+            report($e);
+        }
     }
 }
