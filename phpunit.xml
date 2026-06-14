@@ -44,5 +44,9 @@
         <env name="FEATURE_ROLES_ENABLED" value="true" force="true"/>
         <env name="FEATURE_MONITORING_API_ENABLED" value="true" force="true"/>
         <env name="FEATURE_BIBLE_VERSES_ENABLED" value="true" force="true"/>
+        <!-- 2FA-Pflicht in der Test-Suite standardmäßig aus, damit bestehende
+             Tests ohne 2FA-Setup auf geschützte Seiten kommen. Die gezielten
+             Tests aktivieren sie per config(). -->
+        <env name="FEATURE_ENFORCE_2FA" value="false" force="true"/>
     </php>
 </phpunit>

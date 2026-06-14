@@ -115,4 +115,20 @@ return [
         'name' => env('MAIL_FROM_NAME', env('APP_NAME', 'Laravel')),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Registrierungs-BCC
+    |--------------------------------------------------------------------------
+    |
+    | Adressen, die bei jeder Neu-Registrierung eine interne BCC-Benachrichtigung
+    | erhalten. In MAIL_REGISTER_BCC kommagetrennt hinterlegen, z. B.:
+    | MAIL_REGISTER_BCC="info@arento.ai,admin@arento.ai". Leer = deaktiviert.
+    |
+    */
+
+    'register_bcc' => array_values(array_filter(array_map(
+        'trim',
+        explode(',', (string) env('MAIL_REGISTER_BCC', '')),
+    ))),
+
 ];

@@ -44,4 +44,8 @@ return [
     // Modul nur sichtbar wird, wenn Stripe-Keys hinterlegt sind und der
     // Betreiber die Abrechnung wirklich nutzen will.
     'billing' => filter_var(env('FEATURE_BILLING_ENABLED', false), FILTER_VALIDATE_BOOLEAN),
+
+    // 2FA-Pflicht: Jeder verifizierte Nutzer ohne bestätigtes 2FA wird zur
+    // Einrichtung gezwungen, bevor er die App nutzen kann. Default an.
+    'enforce_two_factor' => filter_var(env('FEATURE_ENFORCE_2FA', true), FILTER_VALIDATE_BOOLEAN),
 ];
