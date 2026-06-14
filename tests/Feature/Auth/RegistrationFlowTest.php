@@ -1,6 +1,8 @@
 <?php
 
+use App\Enums\TeamRole;
 use App\Mail\NewUserRegisteredMail;
+use App\Models\Team;
 use App\Models\User;
 use App\Notifications\QueuedVerifyEmail;
 use Illuminate\Auth\Notifications\VerifyEmail;
@@ -73,6 +75,17 @@ test('the BCC mail addresses the recipients as bcc only', function () {
     expect($envelope->bcc)->toHaveCount(1)
         ->and($envelope->bcc[0]->address)->toBe('admin@example.com')
         ->and($envelope->to)->toBe([]);
+});
+
+test('the /dashboard entry point redirects to the team-scoped dashboard (Fortify verified target)', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $user->forceFill(['current_team_id' => $team->id])->save();
+
+    $this->actingAs($user->fresh())
+        ->get('/dashboard?verified=1')
+        ->assertRedirect(route('dashboard', ['current_team' => $team->slug, 'verified' => 1]));
 });
 
 test('an unverified user cannot reach the dashboard and is sent to verify their email', function () {

@@ -511,6 +511,24 @@ Route::prefix('admin')
 Route::middleware(['auth'])->group(function () {
     Route::patch('preferences/sidebar-group', [PreferenceController::class, 'updateSidebarGroup'])
         ->name('preferences.sidebar-group');
+
+    // Fester Einstiegspunkt /dashboard: Fortify leitet nach der
+    // E-Mail-Verifizierung auf fortify.home (/dashboard); diese App ist aber
+    // team-spezifisch (/{current_team}/dashboard). Hier leiten wir auf das
+    // Dashboard des aktuellen Teams weiter, statt 404 zu liefern.
+    Route::get('dashboard', function () {
+        $user = request()->user();
+        $team = $user?->currentTeam ?? $user?->personalTeam();
+
+        if ($team === null) {
+            abort(403);
+        }
+
+        return redirect()->route('dashboard', array_filter([
+            'current_team' => $team->slug,
+            'verified' => request()->boolean('verified') ? 1 : null,
+        ]));
+    })->name('dashboard.home');
 });
 
 Route::livewire('invitations/{invitation}/accept', 'pages::teams.accept-invitation')->name('invitations.accept');
