@@ -596,7 +596,7 @@ class SettingsCatalog
     private const DEFAULT_AV_CONTRACT = <<<'TEXT'
         VERTRAG ZUR AUFTRAGSVERARBEITUNG NACH ART. 28 DSGVO
 
-        Stand: April 2026
+        Stand: Mai 2026
 
         zwischen
 
@@ -705,7 +705,7 @@ class SettingsCatalog
     private const DEFAULT_TOM = <<<'TEXT'
         TECHNISCHE UND ORGANISATORISCHE MAßNAHMEN (TOM) NACH ART. 32 DSGVO
 
-        Stand: April 2026
+        Stand: Mai 2026
 
         Verantwortlich
         Arento AI GmbH, Wiesenstr. 28, 53773 Hennef
@@ -839,7 +839,7 @@ class SettingsCatalog
     private const DEFAULT_ACCESSIBILITY = <<<'TEXT'
         ERKLÄRUNG ZUR BARRIEREFREIHEIT
 
-        Stand: April 2026
+        Stand: Mai 2026
 
         Diese Erklärung zur digitalen Barrierefreiheit gilt für die unter
         dieser Domain erreichbare Plattform PlanB einschließlich aller
@@ -896,7 +896,7 @@ class SettingsCatalog
 
         ## Erstellung dieser Erklärung
 
-        Diese Erklärung wurde am **15. April 2026** auf Basis einer
+        Diese Erklärung wurde am **15. Mai 2026** auf Basis einer
         Selbstbewertung des Anbieters erstellt. Sie wird mindestens
         **einmal jährlich** sowie bei wesentlichen Änderungen der
         Plattform überprüft und aktualisiert.
@@ -939,7 +939,7 @@ class SettingsCatalog
     private const DEFAULT_SUBPROCESSORS = <<<'TEXT'
         SUBUNTERAUFTRAGSVERARBEITER (SUBPROCESSORS)
 
-        Stand: April 2026
+        Stand: Mai 2026
 
         Diese Liste beschreibt alle Unterauftragsverarbeiter, die im Rahmen
         der Plattform-Bereitstellung eingesetzt werden. Mit jedem Anbieter
