@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\EnforceTwoFactorForAdmins;
+use App\Http\Middleware\EnforceTwoFactorSetup;
 use App\Http\Middleware\EnsureFeatureEnabled;
 use App\Http\Middleware\EnsureRegistrationEnabled;
 use App\Http\Middleware\RedirectToCanonicalHost;
@@ -30,6 +31,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->web(append: [
             SetTeamUrlDefaults::class,
             EnsureRegistrationEnabled::class,
+            EnforceTwoFactorSetup::class,
             EnforceTwoFactorForAdmins::class,
         ]);
 
