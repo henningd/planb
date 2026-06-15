@@ -20,6 +20,7 @@ class ManualCatalog
             ['category' => 'Erste Schritte', 'slug' => 'einleitung', 'title' => 'Was ist ein Notfallhandbuch?', 'summary' => 'Worum es bei diesem System geht und warum jeder Betrieb ab fünf Mitarbeitern eines braucht.'],
             ['category' => 'Erste Schritte', 'slug' => 'konto', 'title' => 'Konto anlegen und anmelden', 'summary' => 'Registrierung, Anmeldung, Passwort vergessen, Zwei-Faktor-Authentifizierung.'],
             ['category' => 'Erste Schritte', 'slug' => 'einrichtung', 'title' => 'Geführte Einrichtung', 'summary' => 'Der Wizard mit den neun Pflicht-Schritten — pausierbar, fortsetzbar, nachvollziehbar.'],
+            ['category' => 'Erste Schritte', 'slug' => 'notfallhandbuch-schritt-fuer-schritt', 'title' => 'Notfallhandbuch erstellen — Schritt für Schritt', 'summary' => 'Die komplette Anleitung an einem Ort: vom Grundgerüst über den BCMS-Ausbau nach BSI 200-4 / NIS2 bis zur laufenden Pflege. Druckbar.'],
             ['category' => 'Erste Schritte', 'slug' => 'branchen-template', 'title' => 'Branchen-Template anwenden', 'summary' => 'Vorlagen für typische Geschäftsmodelle, die viele Stammdaten in einem Schritt anlegen.'],
             ['category' => 'Erste Schritte', 'slug' => 'dashboard', 'title' => 'Das Dashboard verstehen', 'summary' => 'Was bedeuten die Kacheln, was sind „Heute zu erledigen"-Punkte, wo geht es weiter?'],
 
