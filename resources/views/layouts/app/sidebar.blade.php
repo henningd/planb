@@ -102,7 +102,7 @@
                 </flux:sidebar.group>
 
                 <flux:sidebar.group
-                    :heading="__('BCMS &amp; Governance')"
+                    :heading="__('BCMS & Governance')"
                     expandable
                     :expanded="auth()->user()?->isSidebarGroupExpanded('bcms') ?? false"
                     data-sidebar-key="bcms"
