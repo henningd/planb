@@ -890,7 +890,7 @@ new #[Title('System')] class extends Component {
                     {{ __('Abhängigkeiten') }}
                     <flux:badge color="teal" size="sm">{{ $system->dependencies->count() + $system->dependents->count() }}</flux:badge>
                 </button>
-                @if (config('features.preventive_measures'))
+                @if (config('features.preventive_measures') && \Illuminate\Support\Facades\Route::has('preventive-measures.index'))
                 <button
                     type="button"
                     role="tab"
@@ -1305,7 +1305,7 @@ new #[Title('System')] class extends Component {
                 </div>
             </div>
 
-            @if (config('features.preventive_measures'))
+            @if (config('features.preventive_measures') && \Illuminate\Support\Facades\Route::has('preventive-measures.index'))
             <div x-show="tab === 'prevention'" x-cloak class="space-y-4">
                 <div class="flex flex-wrap items-center justify-between gap-2">
                     <flux:text class="text-sm text-zinc-500 dark:text-zinc-400">
