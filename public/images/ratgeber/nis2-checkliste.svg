@@ -1,0 +1,44 @@
+<svg viewBox="0 0 1200 675" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="NIS2: zehn Mindestmaßnahmen nach Artikel 21 und die gestaffelten Meldefristen" font-family="'Instrument Sans', ui-sans-serif, system-ui, sans-serif">
+  <defs>
+    <linearGradient id="bg5" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#f8fafc"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="675" rx="24" fill="url(#bg5)"/>
+
+  <text x="64" y="68" font-size="20" font-weight="600" fill="#4f46e5" letter-spacing="3">NIS2-CHECKLISTE</text>
+  <text x="64" y="114" font-size="42" font-weight="700" fill="#0f172a">10 Mindestmaßnahmen (Art. 21)</text>
+
+  <!-- 10 Chips, 2 x 5 -->
+  <g font-size="16" font-weight="600" fill="#0f172a">
+    <g><rect x="64" y="150" width="198" height="62" rx="12" fill="#ffffff" stroke="#e2e8f0"/><circle cx="92" cy="181" r="15" fill="#eef2ff"/><text x="92" y="187" font-size="14" font-weight="700" fill="#4f46e5" text-anchor="middle">1</text><text x="118" y="186">Risikoanalyse</text></g>
+    <g><rect x="282" y="150" width="198" height="62" rx="12" fill="#ffffff" stroke="#e2e8f0"/><circle cx="310" cy="181" r="15" fill="#eef2ff"/><text x="310" y="187" font-size="14" font-weight="700" fill="#4f46e5" text-anchor="middle">2</text><text x="336" y="186">Vorfälle</text></g>
+    <g><rect x="500" y="150" width="198" height="62" rx="12" fill="#ffffff" stroke="#e2e8f0"/><circle cx="528" cy="181" r="15" fill="#eef2ff"/><text x="528" y="187" font-size="14" font-weight="700" fill="#4f46e5" text-anchor="middle">3</text><text x="554" y="178">Business</text><text x="554" y="196">Continuity</text></g>
+    <g><rect x="718" y="150" width="198" height="62" rx="12" fill="#ffffff" stroke="#e2e8f0"/><circle cx="746" cy="181" r="15" fill="#eef2ff"/><text x="746" y="187" font-size="14" font-weight="700" fill="#4f46e5" text-anchor="middle">4</text><text x="772" y="186">Lieferkette</text></g>
+    <g><rect x="936" y="150" width="200" height="62" rx="12" fill="#ffffff" stroke="#e2e8f0"/><circle cx="964" cy="181" r="15" fill="#eef2ff"/><text x="964" y="187" font-size="14" font-weight="700" fill="#4f46e5" text-anchor="middle">5</text><text x="990" y="178">Sichere</text><text x="990" y="196">Beschaffung</text></g>
+
+    <g><rect x="64" y="226" width="198" height="62" rx="12" fill="#ffffff" stroke="#e2e8f0"/><circle cx="92" cy="257" r="15" fill="#eef2ff"/><text x="92" y="263" font-size="14" font-weight="700" fill="#4f46e5" text-anchor="middle">6</text><text x="118" y="262">Wirksamkeit</text></g>
+    <g><rect x="282" y="226" width="198" height="62" rx="12" fill="#ffffff" stroke="#e2e8f0"/><circle cx="310" cy="257" r="15" fill="#eef2ff"/><text x="310" y="263" font-size="14" font-weight="700" fill="#4f46e5" text-anchor="middle">7</text><text x="336" y="262">Cyberhygiene</text></g>
+    <g><rect x="500" y="226" width="198" height="62" rx="12" fill="#ffffff" stroke="#e2e8f0"/><circle cx="528" cy="257" r="15" fill="#eef2ff"/><text x="528" y="263" font-size="14" font-weight="700" fill="#4f46e5" text-anchor="middle">8</text><text x="554" y="262">Kryptografie</text></g>
+    <g><rect x="718" y="226" width="198" height="62" rx="12" fill="#ffffff" stroke="#e2e8f0"/><circle cx="746" cy="257" r="15" fill="#eef2ff"/><text x="746" y="263" font-size="14" font-weight="700" fill="#4f46e5" text-anchor="middle">9</text><text x="772" y="262">Zugriffe</text></g>
+    <g><rect x="936" y="226" width="200" height="62" rx="12" fill="#ffffff" stroke="#e2e8f0"/><circle cx="964" cy="257" r="15" fill="#eef2ff"/><text x="964" y="263" font-size="13" font-weight="700" fill="#4f46e5" text-anchor="middle">10</text><text x="990" y="262">MFA</text></g>
+  </g>
+
+  <!-- Meldefristen -->
+  <text x="64" y="362" font-size="22" font-weight="700" fill="#0f172a">Meldepflichten bei erheblichen Vorfällen</text>
+  <line x1="120" y1="470" x2="1080" y2="470" stroke="#cbd5e1" stroke-width="3"/>
+  <g text-anchor="middle">
+    <circle cx="220" cy="470" r="13" fill="#4f46e5"/>
+    <text x="220" y="430" font-size="26" font-weight="700" fill="#0f172a">24 h</text>
+    <text x="220" y="516" font-size="17" fill="#64748b">Frühwarnung</text>
+    <circle cx="600" cy="470" r="13" fill="#4f46e5"/>
+    <text x="600" y="430" font-size="26" font-weight="700" fill="#0f172a">72 h</text>
+    <text x="600" y="516" font-size="17" fill="#64748b">Meldung mit Bewertung</text>
+    <circle cx="980" cy="470" r="13" fill="#4f46e5"/>
+    <text x="980" y="430" font-size="26" font-weight="700" fill="#0f172a">1 Monat</text>
+    <text x="980" y="516" font-size="17" fill="#64748b">Abschlussbericht</text>
+  </g>
+
+  <text x="64" y="600" font-size="18" fill="#94a3b8">Geschäftsleitung in der Pflicht: billigen, überwachen, schulen – mit persönlicher Haftung.</text>
+</svg>

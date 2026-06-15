@@ -8,7 +8,7 @@ namespace App\Support\Marketing;
  * Repository, nicht in die Datenbank.
  *
  * @phpstan-type GuideSection array{heading: string, paragraphs: array<int, string>, list?: array<int, array{title: string, text: string}>}
- * @phpstan-type Guide array{slug: string, title: string, browser_title: string, meta_description: string, tagline: string, lead: string, sections: array<int, GuideSection>, faqs: array<int, array{q: string, a: string}>}
+ * @phpstan-type Guide array{slug: string, title: string, browser_title: string, meta_description: string, tagline: string, lead: string, image?: array{src: string, alt: string}, sections: array<int, GuideSection>, faqs: array<int, array{q: string, a: string}>}
  */
 class GuideCatalog
 {
@@ -21,6 +21,10 @@ class GuideCatalog
             'notfallhandbuch' => [
                 'slug' => 'notfallhandbuch',
                 'updated' => '2026-06-11',
+                'image' => [
+                    'src' => '/images/ratgeber/notfallhandbuch.svg',
+                    'alt' => 'Aufbau eines Notfallhandbuchs für Unternehmen: Rollen und Vertretungen, kritische Systeme, Wiederanlaufpläne, Notfallkontakte und Szenario-Checklisten im Überblick',
+                ],
                 'title' => 'Notfallhandbuch für Unternehmen: Inhalte, Aufbau und Pflege',
                 'browser_title' => 'Notfallhandbuch erstellen: Inhalte, Aufbau & Vorlage für Unternehmen',
                 'meta_description' => 'Was gehört in ein Notfallhandbuch? Definition, Pflichtinhalte, Aufbau in fünf Schritten und Tipps zur Pflege – der Praxis-Ratgeber für kleine und mittelständische Unternehmen inkl. NIS2 und BSI 200-4.',
@@ -95,6 +99,10 @@ class GuideCatalog
             'krisenmanagement' => [
                 'slug' => 'krisenmanagement',
                 'updated' => '2026-06-11',
+                'image' => [
+                    'src' => '/images/ratgeber/krisenmanagement.svg',
+                    'alt' => 'Die vier Phasen des Krisenmanagements – Prävention, Vorbereitung, Bewältigung und Nachbereitung – rund um den Krisenstab im Mittelstand',
+                ],
                 'title' => 'Krisenmanagement im Mittelstand: Phasen, Rollen und Werkzeuge',
                 'browser_title' => 'Krisenmanagement für Unternehmen: Phasen, Krisenstab & Praxis-Leitfaden',
                 'meta_description' => 'Krisenmanagement praxisnah erklärt: die vier Phasen, Aufbau des Krisenstabs, Krisenkommunikation und typische Szenarien im Mittelstand – inkl. Anforderungen aus NIS2 und BSI 200-4.',
@@ -167,6 +175,10 @@ class GuideCatalog
             'it-notfallplan' => [
                 'slug' => 'it-notfallplan',
                 'updated' => '2026-06-11',
+                'image' => [
+                    'src' => '/images/ratgeber/it-notfallplan.svg',
+                    'alt' => 'Aufbau eines IT-Notfallplans: priorisierte Wiederanlauf-Reihenfolge kritischer Systeme anhand von RTO und RPO mit Abhängigkeiten und Zugängen',
+                ],
                 'title' => 'IT-Notfallplan erstellen: Aufbau, Inhalte und typische Fehler',
                 'browser_title' => 'IT-Notfallplan erstellen: Aufbau, Inhalte & Vorlage für den Mittelstand',
                 'meta_description' => 'IT-Notfallplan Schritt für Schritt: Welche Systeme, Wiederanlaufpläne und Zugänge hineingehören, wie RTO und RPO helfen und welche Fehler Sie vermeiden sollten – der Praxis-Ratgeber.',
@@ -238,6 +250,10 @@ class GuideCatalog
             'bsi-200-4' => [
                 'slug' => 'bsi-200-4',
                 'updated' => '2026-06-11',
+                'image' => [
+                    'src' => '/images/ratgeber/bsi-200-4.svg',
+                    'alt' => 'Das Stufenmodell des BSI-Standards 200-4 mit Reaktiv-, Aufbau- und Standard-BCMS auf dem Weg zum Business Continuity Management',
+                ],
                 'title' => 'BSI-Standard 200-4 umsetzen: Business Continuity Schritt für Schritt',
                 'browser_title' => 'BSI 200-4 umsetzen: BCM-Anforderungen & Praxis-Leitfaden für KMU',
                 'meta_description' => 'BSI-Standard 200-4 verständlich erklärt: das Stufenmodell, die Kernelemente vom BCM-Aufbau über die Business-Impact-Analyse bis zu Übungen – und wie der Mittelstand pragmatisch startet.',
@@ -299,6 +315,10 @@ class GuideCatalog
             'nis2-checkliste' => [
                 'slug' => 'nis2-checkliste',
                 'updated' => '2026-06-11',
+                'image' => [
+                    'src' => '/images/ratgeber/nis2-checkliste.svg',
+                    'alt' => 'NIS2-Checkliste mit den zehn Mindestmaßnahmen nach Artikel 21 und den gestaffelten Meldefristen von 24 Stunden, 72 Stunden und einem Monat',
+                ],
                 'title' => 'NIS2-Checkliste: Anforderungen und Umsetzung für Unternehmen',
                 'browser_title' => 'NIS2-Checkliste: Wer betroffen ist & welche Maßnahmen Pflicht sind',
                 'meta_description' => 'NIS2 kompakt: Wer betroffen ist, welche zehn Mindestmaßnahmen die Richtlinie fordert, wie die Meldepflichten funktionieren und mit welcher Checkliste Unternehmen die Umsetzung strukturieren.',

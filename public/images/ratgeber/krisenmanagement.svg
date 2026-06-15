@@ -1,0 +1,51 @@
+<svg viewBox="0 0 1200 675" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Die vier Phasen des Krisenmanagements rund um den Krisenstab" font-family="'Instrument Sans', ui-sans-serif, system-ui, sans-serif">
+  <defs>
+    <linearGradient id="bg2" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#f8fafc"/>
+    </linearGradient>
+    <marker id="ah" markerWidth="12" markerHeight="12" refX="8" refY="6" orient="auto">
+      <path d="M2 2 L10 6 L2 10 z" fill="#a5b4fc"/>
+    </marker>
+  </defs>
+  <rect width="1200" height="675" rx="24" fill="url(#bg2)"/>
+
+  <text x="64" y="70" font-size="20" font-weight="600" fill="#4f46e5" letter-spacing="3">KRISENMANAGEMENT</text>
+  <text x="64" y="118" font-size="44" font-weight="700" fill="#0f172a">Die vier Phasen</text>
+
+  <!-- Pfeile im Uhrzeigersinn -->
+  <g fill="none" stroke="#a5b4fc" stroke-width="3">
+    <path d="M745 185 Q 905 205 950 320" marker-end="url(#ah)"/>
+    <path d="M950 430 Q 905 545 750 565" marker-end="url(#ah)"/>
+    <path d="M455 565 Q 295 545 250 430" marker-end="url(#ah)"/>
+    <path d="M250 320 Q 295 205 450 185" marker-end="url(#ah)"/>
+  </g>
+
+  <!-- Zentrum: Krisenstab -->
+  <circle cx="600" cy="375" r="92" fill="#4f46e5"/>
+  <text x="600" y="368" font-size="24" font-weight="700" fill="#ffffff" text-anchor="middle">Krisenstab</text>
+  <text x="600" y="396" font-size="15" fill="#c7d2fe" text-anchor="middle">Lagebild ·</text>
+  <text x="600" y="416" font-size="15" fill="#c7d2fe" text-anchor="middle">Entscheidung</text>
+
+  <!-- Knoten -->
+  <g>
+    <rect x="450" y="150" width="300" height="92" rx="16" fill="#ffffff" stroke="#c7d2fe"/>
+    <text x="600" y="190" font-size="23" font-weight="700" fill="#0f172a" text-anchor="middle">1 · Prävention</text>
+    <text x="600" y="218" font-size="16" fill="#64748b" text-anchor="middle">Risiken erfassen &amp; bewerten</text>
+  </g>
+  <g>
+    <rect x="828" y="329" width="300" height="92" rx="16" fill="#ffffff" stroke="#c7d2fe"/>
+    <text x="978" y="369" font-size="23" font-weight="700" fill="#0f172a" text-anchor="middle">2 · Vorbereitung</text>
+    <text x="978" y="397" font-size="16" fill="#64748b" text-anchor="middle">Handbuch, Stab, Übungen</text>
+  </g>
+  <g>
+    <rect x="450" y="508" width="300" height="92" rx="16" fill="#ffffff" stroke="#c7d2fe"/>
+    <text x="600" y="548" font-size="23" font-weight="700" fill="#0f172a" text-anchor="middle">3 · Bewältigung</text>
+    <text x="600" y="576" font-size="16" fill="#64748b" text-anchor="middle">Stab aktivieren, dokumentieren</text>
+  </g>
+  <g>
+    <rect x="72" y="329" width="300" height="92" rx="16" fill="#ffffff" stroke="#c7d2fe"/>
+    <text x="222" y="369" font-size="23" font-weight="700" fill="#0f172a" text-anchor="middle">4 · Nachbereitung</text>
+    <text x="222" y="397" font-size="16" fill="#64748b" text-anchor="middle">Lessons Learned</text>
+  </g>
+</svg>

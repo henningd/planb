@@ -1,0 +1,45 @@
+<svg viewBox="0 0 1200 675" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Das Stufenmodell des BSI-Standards 200-4" font-family="'Instrument Sans', ui-sans-serif, system-ui, sans-serif">
+  <defs>
+    <linearGradient id="bg4" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#f8fafc"/>
+    </linearGradient>
+    <marker id="ah4" markerWidth="13" markerHeight="13" refX="8" refY="6" orient="auto">
+      <path d="M2 2 L10 6 L2 10 z" fill="#4f46e5"/>
+    </marker>
+  </defs>
+  <rect width="1200" height="675" rx="24" fill="url(#bg4)"/>
+
+  <text x="64" y="70" font-size="20" font-weight="600" fill="#4f46e5" letter-spacing="3">BSI-STANDARD 200-4</text>
+  <text x="64" y="118" font-size="44" font-weight="700" fill="#0f172a">Das Stufenmodell zum BCMS</text>
+
+  <!-- aufsteigender Pfeil -->
+  <path d="M120 600 L1080 230" fill="none" stroke="#c7d2fe" stroke-width="4" stroke-dasharray="2 12" stroke-linecap="round" marker-end="url(#ah4)"/>
+
+  <!-- Stufe 1 -->
+  <rect x="120" y="430" width="300" height="160" rx="16" fill="#ffffff" stroke="#e2e8f0"/>
+  <text x="144" y="472" font-size="15" font-weight="700" fill="#4f46e5" letter-spacing="1">EINSTIEG</text>
+  <text x="144" y="508" font-size="25" font-weight="700" fill="#0f172a">Reaktiv-BCMS</text>
+  <text x="144" y="544" font-size="17" fill="#64748b">Krisenstab, Notfallhandbuch,</text>
+  <text x="144" y="568" font-size="17" fill="#64748b">Sofortmaßnahmen.</text>
+
+  <!-- Stufe 2 -->
+  <rect x="450" y="330" width="300" height="260" rx="16" fill="#ffffff" stroke="#e2e8f0"/>
+  <text x="474" y="372" font-size="15" font-weight="700" fill="#4f46e5" letter-spacing="1">AUSBAU</text>
+  <text x="474" y="408" font-size="25" font-weight="700" fill="#0f172a">Aufbau-BCMS</text>
+  <text x="474" y="444" font-size="17" fill="#64748b">Business-Impact-Analyse,</text>
+  <text x="474" y="468" font-size="17" fill="#64748b">Risikobetrachtung und</text>
+  <text x="474" y="492" font-size="17" fill="#64748b">Notfallpläne.</text>
+
+  <!-- Stufe 3 -->
+  <rect x="780" y="230" width="300" height="360" rx="16" fill="#4f46e5"/>
+  <text x="804" y="272" font-size="15" font-weight="700" fill="#c7d2fe" letter-spacing="1">VOLLAUSBAU</text>
+  <text x="804" y="308" font-size="25" font-weight="700" fill="#ffffff">Standard-BCMS</text>
+  <text x="804" y="344" font-size="17" fill="#e0e7ff">Managementsystem mit</text>
+  <text x="804" y="368" font-size="17" fill="#e0e7ff">Leitlinie, Kennzahlen und</text>
+  <text x="804" y="392" font-size="17" fill="#e0e7ff">Übungsprogramm.</text>
+  <text x="804" y="438" font-size="16" font-weight="700" fill="#ffffff">→ anschlussfähig an</text>
+  <text x="804" y="462" font-size="16" font-weight="700" fill="#ffffff">ISO 22301</text>
+
+  <text x="64" y="638" font-size="18" fill="#94a3b8">Einstieg passend zur Reife der Organisation – iterativ vom Reaktiv- zum Standard-BCMS.</text>
+</svg>

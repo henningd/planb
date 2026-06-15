@@ -138,6 +138,43 @@ test('guides link to matching feature pages and vice versa', function () {
         ->assertSee(route('guides.show', 'bsi-200-4'), false);
 });
 
+test('every guide defines a descriptive alt text for its content image', function () {
+    foreach (GuideCatalog::all() as $slug => $guide) {
+        expect($guide['image']['src'] ?? null)->not->toBeNull("[$slug] erwartet ein Bild")
+            ->and($guide['image']['alt'] ?? '')->toBeString()
+            ->and(strlen($guide['image']['alt'] ?? ''))->toBeGreaterThan(30, "[$slug] Alt-Text zu kurz");
+    }
+});
+
+test('the guide renders its content image with alt text when the file exists', function () {
+    $guide = GuideCatalog::find('notfallhandbuch');
+
+    // Die ausgelieferten Schaubilder liegen im Repository.
+    expect(file_exists(public_path($guide['image']['src'])))->toBeTrue();
+
+    $this->get(route('guides.show', 'notfallhandbuch'))
+        ->assertOk()
+        ->assertSee('alt="'.e($guide['image']['alt']).'"', false)
+        ->assertSee($guide['image']['src'], false);
+});
+
+test('the guide hides the content image when the file is missing', function () {
+    $guide = GuideCatalog::find('notfallhandbuch');
+    $path = public_path($guide['image']['src']);
+    $backup = $path.'.testbak';
+
+    // Datei kurzzeitig beiseitelegen, um den file_exists-Gate zu prüfen.
+    rename($path, $backup);
+
+    try {
+        $this->get(route('guides.show', 'notfallhandbuch'))
+            ->assertOk()
+            ->assertDontSee('alt="'.e($guide['image']['alt']).'"', false);
+    } finally {
+        rename($backup, $path);
+    }
+});
+
 test('the header navigation links to the guide hub on every public page', function () {
     foreach ([route('home'), route('pricing.show'), route('guides.show', 'notfallhandbuch')] as $url) {
         $this->get($url)->assertOk()->assertSee(route('guides.index'), false);

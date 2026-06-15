@@ -93,6 +93,17 @@
             <p class="mt-4 text-xl text-slate-600 leading-relaxed">{{ $guide['tagline'] }}</p>
             <p class="mt-6 text-lg text-slate-700 leading-relaxed">{{ $guide['lead'] }}</p>
 
+            @if (! empty($guide['image']) && file_exists(public_path($guide['image']['src'])))
+                <figure class="mt-8">
+                    <img
+                        src="{{ asset($guide['image']['src']) }}"
+                        alt="{{ $guide['image']['alt'] }}"
+                        class="w-full rounded-2xl ring-1 ring-slate-200 shadow-sm"
+                        decoding="async"
+                    >
+                </figure>
+            @endif
+
             <nav class="mt-8 rounded-xl bg-slate-50 ring-1 ring-slate-200 p-5" aria-label="Inhaltsverzeichnis">
                 <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Inhalt</div>
                 <ol class="mt-3 space-y-2 text-sm">
