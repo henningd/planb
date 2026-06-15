@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
+use App\Casts\IndustryEnum;
 use App\Enums\CrisisRole;
-use App\Enums\Industry;
 use App\Enums\KritisRelevance;
 use App\Enums\LegalForm;
 use App\Enums\Nis2Classification;
@@ -291,7 +291,7 @@ class Company extends Model
     protected function casts(): array
     {
         return [
-            'industry' => Industry::class,
+            'industry' => IndustryEnum::class,
             'legal_form' => LegalForm::class,
             'kritis_relevant' => KritisRelevance::class,
             'nis2_classification' => Nis2Classification::class,
