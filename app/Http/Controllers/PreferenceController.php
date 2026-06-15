@@ -15,7 +15,7 @@ class PreferenceController extends Controller
     public function updateSidebarGroup(Request $request): Response
     {
         $validated = $request->validate([
-            'key' => ['required', 'string', 'in:handbook,emergency,team,settings,administration'],
+            'key' => ['required', 'string', 'in:handbook,bcms,emergency,team,settings,administration'],
             'expanded' => ['required', 'boolean'],
         ]);
 

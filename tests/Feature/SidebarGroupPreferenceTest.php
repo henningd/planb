@@ -97,6 +97,25 @@ test('administration sidebar group renders expandable with persisted state for s
         ->assertSee('data-sidebar-key="administration"', false);
 });
 
+test('endpoint accepts the bcms group key and persists it', function () {
+    $user = User::factory()->create();
+    Company::factory()->for($user->currentTeam)->create();
+
+    $this->actingAs($user->fresh())
+        ->patchJson(route('preferences.sidebar-group'), [
+            'key' => 'bcms',
+            'expanded' => true,
+        ])
+        ->assertNoContent();
+
+    expect($user->fresh()->isSidebarGroupExpanded('bcms'))->toBeTrue();
+
+    $this->actingAs($user->fresh())
+        ->get(route('dashboard'))
+        ->assertOk()
+        ->assertSee('data-sidebar-key="bcms"', false);
+});
+
 test('endpoint rejects unknown group keys', function () {
     $user = User::factory()->create();
 
