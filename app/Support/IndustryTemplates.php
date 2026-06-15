@@ -112,6 +112,54 @@ class IndustryTemplates
                 ['name' => 'Zutrittssystem / Alarmanlage', 'description' => 'Zugangskontrolle, Objektsicherung.', 'category' => 'unterstuetzend', 'priority' => 'Normal', 'rto_minutes' => 1440, 'rpo_minutes' => 1440],
             ],
         ],
+
+        Industry::OeffentlicheEinrichtung->value => [
+            'label' => 'Öffentliche Einrichtung',
+            'hint' => 'Kommunen, Behörden, Schulen, Eigenbetriebe – Fachverfahren, Bürgerdienste (OZG), E-Akte. NIS2-/KRITIS-relevant.',
+            'systems' => [
+                ['name' => 'Stromversorgung / USV', 'description' => 'Netzstrom und Notstromversorgung für Rechenzentrum und Arbeitsplätze.', 'category' => 'basisbetrieb', 'priority' => 'Kritisch', 'rto_minutes' => 15, 'rpo_minutes' => null],
+                ['name' => 'Internetanschluss', 'description' => 'Primäre Verbindung, Voraussetzung für Online-Dienste und Fachverfahren.', 'category' => 'basisbetrieb', 'priority' => 'Kritisch', 'rto_minutes' => 240, 'rpo_minutes' => null],
+                ['name' => 'Netzwerk / WLAN', 'description' => 'Internes Verwaltungsnetz, Anbindung der Liegenschaften.', 'category' => 'basisbetrieb', 'priority' => 'Kritisch', 'rto_minutes' => 60, 'rpo_minutes' => null],
+                ['name' => 'Zentrale Server / Rechenzentrum', 'description' => 'Datenbank- und Verzeichnisdienste, Virtualisierung.', 'category' => 'basisbetrieb', 'priority' => 'Kritisch', 'rto_minutes' => 240, 'rpo_minutes' => 60],
+                ['name' => 'Telefonanlage / VoIP', 'description' => 'Erreichbarkeit für Bürgerinnen und Bürger.', 'category' => 'basisbetrieb', 'priority' => 'Kritisch', 'rto_minutes' => 60, 'rpo_minutes' => null],
+
+                ['name' => 'Fachverfahren', 'description' => 'Fachanwendungen (z. B. Einwohnerwesen, Kfz-Zulassung, Sozialwesen).', 'category' => 'geschaeftsbetrieb', 'priority' => 'Kritisch', 'rto_minutes' => 240, 'rpo_minutes' => 60],
+                ['name' => 'DMS / E-Akte', 'description' => 'Elektronische Aktenführung, Vorgangsbearbeitung, Archiv.', 'category' => 'geschaeftsbetrieb', 'priority' => 'Kritisch', 'rto_minutes' => 240, 'rpo_minutes' => 60],
+                ['name' => 'Finanz- / Haushalts- und Kassensystem', 'description' => 'Haushaltsbewirtschaftung, Buchung, Zahlungsverkehr.', 'category' => 'geschaeftsbetrieb', 'priority' => 'Kritisch', 'rto_minutes' => 240, 'rpo_minutes' => 60],
+                ['name' => 'Bürgerportal / Online-Dienste (OZG)', 'description' => 'Online-Anträge, Servicekonto, Bezahldienste.', 'category' => 'geschaeftsbetrieb', 'priority' => 'Hoch', 'rto_minutes' => 240, 'rpo_minutes' => 60],
+                ['name' => 'Ratsinformationssystem', 'description' => 'Sitzungsmanagement, Vorlagen, Beschlüsse.', 'category' => 'geschaeftsbetrieb', 'priority' => 'Hoch', 'rto_minutes' => 1440, 'rpo_minutes' => 1440],
+                ['name' => 'GIS / Geoinformationssystem', 'description' => 'Liegenschafts- und Kartendaten, Planauskunft.', 'category' => 'geschaeftsbetrieb', 'priority' => 'Normal', 'rto_minutes' => 1440, 'rpo_minutes' => 1440],
+
+                ['name' => 'E-Mail', 'description' => 'Dienstliche Postfächer, Posteingang Verwaltung.', 'category' => 'unterstuetzend', 'priority' => 'Hoch', 'rto_minutes' => 240, 'rpo_minutes' => 240],
+                ['name' => 'Cloud- / Dateispeicher', 'description' => 'Gemeinsame Ablage, Dokumente, Vorlagen.', 'category' => 'unterstuetzend', 'priority' => 'Hoch', 'rto_minutes' => 480, 'rpo_minutes' => 60],
+                ['name' => 'Office-Paket', 'description' => 'Textverarbeitung, Tabellen, Schriftgut.', 'category' => 'unterstuetzend', 'priority' => 'Normal', 'rto_minutes' => 1440, 'rpo_minutes' => 1440],
+                ['name' => 'Website / CMS', 'description' => 'Amtliche Bekanntmachungen, Informationen.', 'category' => 'unterstuetzend', 'priority' => 'Normal', 'rto_minutes' => 1440, 'rpo_minutes' => 4320],
+                ['name' => 'Zutritts- / Alarmanlage', 'description' => 'Zugangskontrolle und Objektsicherung der Liegenschaften.', 'category' => 'unterstuetzend', 'priority' => 'Normal', 'rto_minutes' => 1440, 'rpo_minutes' => 1440],
+            ],
+        ],
+
+        Industry::Sonstiges->value => [
+            'label' => 'Allgemein (sonstige Branche)',
+            'hint' => 'Branchenneutrale Basis-Systeme für kleine und mittlere Unternehmen – als Ausgangspunkt zum Anpassen.',
+            'systems' => [
+                ['name' => 'Stromversorgung / USV', 'description' => 'Netzstrom und Notstromabsicherung für IT und Büro.', 'category' => 'basisbetrieb', 'priority' => 'Kritisch', 'rto_minutes' => 15, 'rpo_minutes' => null],
+                ['name' => 'Internetanschluss', 'description' => 'Primäre Internetverbindung für Cloud, E-Mail, VoIP.', 'category' => 'basisbetrieb', 'priority' => 'Kritisch', 'rto_minutes' => 240, 'rpo_minutes' => null],
+                ['name' => 'Netzwerk / WLAN', 'description' => 'Internes Netzwerk, Switches, Access Points.', 'category' => 'basisbetrieb', 'priority' => 'Kritisch', 'rto_minutes' => 60, 'rpo_minutes' => null],
+                ['name' => 'Server / Zentralrechner', 'description' => 'Dateiablage, Benutzerverwaltung, zentrale Anwendungen.', 'category' => 'basisbetrieb', 'priority' => 'Kritisch', 'rto_minutes' => 240, 'rpo_minutes' => 60],
+                ['name' => 'Telefonanlage / Mobilfunk', 'description' => 'Erreichbarkeit für Kunden und Partner.', 'category' => 'basisbetrieb', 'priority' => 'Hoch', 'rto_minutes' => 240, 'rpo_minutes' => null],
+
+                ['name' => 'Branchensoftware / Kernanwendung', 'description' => 'Die zentrale Anwendung des Geschäftsbetriebs.', 'category' => 'geschaeftsbetrieb', 'priority' => 'Kritisch', 'rto_minutes' => 240, 'rpo_minutes' => 60],
+                ['name' => 'Rechnungs- und Angebotswesen', 'description' => 'Angebote, Rechnungen, Mahnwesen.', 'category' => 'geschaeftsbetrieb', 'priority' => 'Hoch', 'rto_minutes' => 240, 'rpo_minutes' => 60],
+                ['name' => 'Buchhaltung', 'description' => 'Finanzbuchhaltung und Lohn (z. B. DATEV, Lexware).', 'category' => 'geschaeftsbetrieb', 'priority' => 'Hoch', 'rto_minutes' => 1440, 'rpo_minutes' => 1440],
+                ['name' => 'CRM / Kundenverwaltung', 'description' => 'Kundenstammdaten, Kontakte, Vertrieb.', 'category' => 'geschaeftsbetrieb', 'priority' => 'Hoch', 'rto_minutes' => 1440, 'rpo_minutes' => 1440],
+                ['name' => 'Online-Präsenz / Website', 'description' => 'Firmenwebsite, Anfrageformulare, Google-Business.', 'category' => 'geschaeftsbetrieb', 'priority' => 'Normal', 'rto_minutes' => 1440, 'rpo_minutes' => 4320],
+
+                ['name' => 'E-Mail', 'description' => 'Geschäfts-E-Mail-Postfächer.', 'category' => 'unterstuetzend', 'priority' => 'Hoch', 'rto_minutes' => 240, 'rpo_minutes' => 240],
+                ['name' => 'Cloud-Speicher', 'description' => 'Gemeinsame Dokumente, Belege, Dateien.', 'category' => 'unterstuetzend', 'priority' => 'Hoch', 'rto_minutes' => 480, 'rpo_minutes' => 60],
+                ['name' => 'Office-Paket', 'description' => 'Word/Excel für Schriftverkehr und Listen.', 'category' => 'unterstuetzend', 'priority' => 'Normal', 'rto_minutes' => 1440, 'rpo_minutes' => 1440],
+                ['name' => 'Kalender / Terminplanung', 'description' => 'Termine, Urlaube, gemeinsame Kalender.', 'category' => 'unterstuetzend', 'priority' => 'Normal', 'rto_minutes' => 1440, 'rpo_minutes' => 1440],
+            ],
+        ],
     ];
 
     /**
@@ -149,8 +197,8 @@ class IndustryTemplates
      */
     public static function defaultFor(?Industry $industry): ?string
     {
-        if ($industry === null || $industry === Industry::Sonstiges) {
-            return Industry::Handwerk->value;
+        if ($industry === null) {
+            return Industry::Sonstiges->value;
         }
 
         return self::has($industry->value) ? $industry->value : null;
