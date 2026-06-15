@@ -102,6 +102,45 @@
                 </flux:sidebar.group>
 
                 <flux:sidebar.group
+                    :heading="__('BCMS &amp; Governance')"
+                    expandable
+                    :expanded="auth()->user()?->isSidebarGroupExpanded('bcms') ?? false"
+                    data-sidebar-key="bcms"
+                    class="grid"
+                >
+                    @if (config('features.bia') && \Illuminate\Support\Facades\Route::has('business-processes.index'))
+                        <flux:sidebar.item icon="rectangle-group" :href="route('business-processes.index')" :current="request()->routeIs('business-processes.*')" wire:navigate>
+                            {{ __('Geschäftsprozesse / BIA') }}
+                        </flux:sidebar.item>
+                    @endif
+                    @if (config('features.supply_chain_risk') && \Illuminate\Support\Facades\Route::has('supplier-risk.index'))
+                        <flux:sidebar.item icon="truck" :href="route('supplier-risk.index')" :current="request()->routeIs('supplier-risk.*')" wire:navigate>
+                            {{ __('Lieferketten-Risiko') }}
+                        </flux:sidebar.item>
+                    @endif
+                    @if (config('features.training_records') && \Illuminate\Support\Facades\Route::has('training-records.index'))
+                        <flux:sidebar.item icon="academic-cap" :href="route('training-records.index')" :current="request()->routeIs('training-records.*')" wire:navigate>
+                            {{ __('Schulungen') }}
+                        </flux:sidebar.item>
+                    @endif
+                    @if (config('features.bcm_policy') && \Illuminate\Support\Facades\Route::has('bcm-policy.index'))
+                        <flux:sidebar.item icon="document-check" :href="route('bcm-policy.index')" :current="request()->routeIs('bcm-policy.*')" wire:navigate>
+                            {{ __('BCM-Leitlinie') }}
+                        </flux:sidebar.item>
+                    @endif
+                    @if (config('features.management_review') && \Illuminate\Support\Facades\Route::has('management-reviews.index'))
+                        <flux:sidebar.item icon="clipboard-document-list" :href="route('management-reviews.index')" :current="request()->routeIs('management-reviews.*')" wire:navigate>
+                            {{ __('Management-Review') }}
+                        </flux:sidebar.item>
+                    @endif
+                    @if (config('features.maturity') && \Illuminate\Support\Facades\Route::has('maturity.index'))
+                        <flux:sidebar.item icon="chart-bar-square" :href="route('maturity.index')" :current="request()->routeIs('maturity.*')" wire:navigate>
+                            {{ __('Reifegrad (BSI 200-4)') }}
+                        </flux:sidebar.item>
+                    @endif
+                </flux:sidebar.group>
+
+                <flux:sidebar.group
                     :heading="__('Ernstfall')"
                     expandable
                     :expanded="auth()->user()?->isSidebarGroupExpanded('emergency') ?? false"

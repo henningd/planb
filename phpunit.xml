@@ -44,6 +44,12 @@
         <env name="FEATURE_ROLES_ENABLED" value="true" force="true"/>
         <env name="FEATURE_MONITORING_API_ENABLED" value="true" force="true"/>
         <env name="FEATURE_PREVENTIVE_MEASURES_ENABLED" value="true" force="true"/>
+        <env name="FEATURE_BIA_ENABLED" value="true" force="true"/>
+        <env name="FEATURE_MATURITY_ENABLED" value="true" force="true"/>
+        <env name="FEATURE_SUPPLY_CHAIN_RISK_ENABLED" value="true" force="true"/>
+        <env name="FEATURE_BCM_POLICY_ENABLED" value="true" force="true"/>
+        <env name="FEATURE_MANAGEMENT_REVIEW_ENABLED" value="true" force="true"/>
+        <env name="FEATURE_TRAINING_RECORDS_ENABLED" value="true" force="true"/>
         <env name="FEATURE_BIBLE_VERSES_ENABLED" value="true" force="true"/>
         <!-- 2FA-Pflicht in der Test-Suite standardmäßig aus, damit bestehende
              Tests ohne 2FA-Setup auf geschützte Seiten kommen. Die gezielten

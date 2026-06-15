@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 #[Fillable([
     'company_id',
@@ -62,6 +63,14 @@ class ServiceProvider extends Model
             ->withPivot(['id', 'raci_role', 'is_deputy', 'assigned_at', 'assigned_by_user_id', 'removed_at', 'removed_by_user_id'])
             ->withTimestamps()
             ->wherePivotNull('removed_at');
+    }
+
+    /**
+     * @return HasOne<SupplierRiskAssessment, $this>
+     */
+    public function riskAssessment(): HasOne
+    {
+        return $this->hasOne(SupplierRiskAssessment::class);
     }
 
     /**

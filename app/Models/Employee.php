@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Collection;
 
 #[Fillable([
@@ -184,6 +185,16 @@ class Employee extends Model
             ->withPivot(['id', 'raci_role', 'is_deputy', 'assigned_at', 'assigned_by_user_id', 'removed_at', 'removed_by_user_id'])
             ->withTimestamps()
             ->wherePivotNull('removed_at');
+    }
+
+    /**
+     * Schulungs-/Awareness-Nachweise dieses Mitarbeiters (NIS2 Art. 21).
+     *
+     * @return HasMany<TrainingRecord, $this>
+     */
+    public function trainingRecords(): HasMany
+    {
+        return $this->hasMany(TrainingRecord::class);
     }
 
     /**

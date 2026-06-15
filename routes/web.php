@@ -297,6 +297,24 @@ Route::prefix('{current_team}')
         if (config('features.preventive_measures')) {
             Route::livewire('praevention', 'pages::preventive-measures.index')->name('preventive-measures.index');
         }
+        if (config('features.bia')) {
+            Route::livewire('geschaeftsprozesse', 'pages::business-processes.index')->name('business-processes.index');
+        }
+        if (config('features.maturity')) {
+            Route::livewire('reifegrad', 'pages::maturity.index')->name('maturity.index');
+        }
+        if (config('features.supply_chain_risk')) {
+            Route::livewire('lieferketten-risiko', 'pages::supplier-risk.index')->name('supplier-risk.index');
+        }
+        if (config('features.bcm_policy')) {
+            Route::livewire('bcm-leitlinie', 'pages::bcm-policy.index')->name('bcm-policy.index');
+        }
+        if (config('features.management_review')) {
+            Route::livewire('management-review', 'pages::management-reviews.index')->name('management-reviews.index');
+        }
+        if (config('features.training_records')) {
+            Route::livewire('schulungen', 'pages::training-records.index')->name('training-records.index');
+        }
         if (config('features.dependencies')) {
             Route::livewire('dependencies', 'pages::dependencies.index')->name('dependencies.index');
         }

@@ -123,6 +123,18 @@ class System extends Model
     }
 
     /**
+     * Geschäftsprozesse, die dieses System zur Durchführung benötigen.
+     *
+     * @return BelongsToMany<BusinessProcess, $this>
+     */
+    public function businessProcesses(): BelongsToMany
+    {
+        return $this->belongsToMany(BusinessProcess::class, 'business_process_system')
+            ->withPivot('note')
+            ->withTimestamps();
+    }
+
+    /**
      * @return BelongsToMany<FallbackProcess, $this>
      */
     public function fallbackProcesses(): BelongsToMany

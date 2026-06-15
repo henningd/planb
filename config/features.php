@@ -32,6 +32,14 @@ return [
     // und Reminder-Cron. Default an.
     'preventive_measures' => filter_var(env('FEATURE_PREVENTIVE_MEASURES_ENABLED', true), FILTER_VALIDATE_BOOLEAN),
 
+    // BCMS-Ausbau nach BSI 200-4 / NIS2:
+    'bia' => filter_var(env('FEATURE_BIA_ENABLED', true), FILTER_VALIDATE_BOOLEAN),
+    'maturity' => filter_var(env('FEATURE_MATURITY_ENABLED', true), FILTER_VALIDATE_BOOLEAN),
+    'supply_chain_risk' => filter_var(env('FEATURE_SUPPLY_CHAIN_RISK_ENABLED', true), FILTER_VALIDATE_BOOLEAN),
+    'bcm_policy' => filter_var(env('FEATURE_BCM_POLICY_ENABLED', true), FILTER_VALIDATE_BOOLEAN),
+    'management_review' => filter_var(env('FEATURE_MANAGEMENT_REVIEW_ENABLED', true), FILTER_VALIDATE_BOOLEAN),
+    'training_records' => filter_var(env('FEATURE_TRAINING_RECORDS_ENABLED', true), FILTER_VALIDATE_BOOLEAN),
+
     // Bereich „Abteilungen / Rollen" (/roles): Menüpunkt und Seiten. Routen
     // bleiben registriert und liefern 404, damit Verweise aus Onboarding und
     // Compliance-Dashboard nicht brechen.
