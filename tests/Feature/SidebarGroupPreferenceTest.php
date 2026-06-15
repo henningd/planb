@@ -33,12 +33,12 @@ test('endpoint stores the toggled state for the authenticated user', function ()
 
     $this->actingAs($user)
         ->patchJson(route('preferences.sidebar-group'), [
-            'key' => 'handbook',
+            'key' => 'stammdaten',
             'expanded' => true,
         ])
         ->assertNoContent();
 
-    expect($user->fresh()->isSidebarGroupExpanded('handbook'))->toBeTrue();
+    expect($user->fresh()->isSidebarGroupExpanded('stammdaten'))->toBeTrue();
 });
 
 test('endpoint accepts the administration group key for super admins', function () {
@@ -138,12 +138,37 @@ test('endpoint requires authentication', function () {
 test('sidebar renders expandable groups with the persisted state', function () {
     $user = User::factory()->create();
     Company::factory()->for($user->currentTeam)->create();
-    $user->setSidebarGroupExpanded('handbook', true);
+    $user->setSidebarGroupExpanded('stammdaten', true);
 
     $this->actingAs($user->fresh())
         ->get(route('dashboard'))
         ->assertOk()
-        ->assertSee('data-sidebar-key="handbook"', false)
+        ->assertSee('data-sidebar-key="stammdaten"', false)
+        ->assertSee('data-sidebar-key="systeme"', false)
         ->assertSee('data-sidebar-key="emergency"', false)
         ->assertSee('data-sidebar-key="team"', false);
+});
+
+test('the sidebar shows a help link to the manual', function () {
+    $user = User::factory()->create();
+    Company::factory()->for($user->currentTeam)->create();
+
+    $this->actingAs($user->fresh())
+        ->get(route('dashboard'))
+        ->assertOk()
+        ->assertSee('Hilfe &amp; Handbuch', false)
+        ->assertSee(route('manual.index'), false);
+});
+
+test('the endpoint accepts the new stammdaten and systeme group keys', function () {
+    $user = User::factory()->create();
+    Company::factory()->for($user->currentTeam)->create();
+
+    foreach (['stammdaten', 'systeme'] as $key) {
+        $this->actingAs($user->fresh())
+            ->patchJson(route('preferences.sidebar-group'), ['key' => $key, 'expanded' => true])
+            ->assertNoContent();
+
+        expect($user->fresh()->isSidebarGroupExpanded($key))->toBeTrue();
+    }
 });

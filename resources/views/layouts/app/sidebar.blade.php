@@ -35,10 +35,10 @@
                 </flux:sidebar.group>
 
                 <flux:sidebar.group
-                    :heading="__('Notfallhandbuch')"
+                    :heading="__('Stammdaten')"
                     expandable
-                    :expanded="auth()->user()?->isSidebarGroupExpanded('handbook') ?? false"
-                    data-sidebar-key="handbook"
+                    :expanded="auth()->user()?->isSidebarGroupExpanded('stammdaten') ?? false"
+                    data-sidebar-key="stammdaten"
                     class="grid"
                 >
                     <flux:sidebar.item icon="building-office-2" :href="route('company.edit')" :current="request()->routeIs('company.*')" wire:navigate>
@@ -68,17 +68,35 @@
                             {{ __('Versicherungen') }}
                         </flux:sidebar.item>
                     @endif
+                </flux:sidebar.group>
+
+                <flux:sidebar.group
+                    :heading="__('Systeme & Vorsorge')"
+                    expandable
+                    :expanded="auth()->user()?->isSidebarGroupExpanded('systeme') ?? false"
+                    data-sidebar-key="systeme"
+                    class="grid"
+                >
                     <flux:sidebar.item icon="server-stack" :href="route('systems.index')" :current="request()->routeIs('systems.index') || request()->routeIs('systems.create') || request()->routeIs('systems.show') || request()->routeIs('systems.edit') || request()->routeIs('systems.export')" wire:navigate>
                         {{ __('Systeme') }}
+                    </flux:sidebar.item>
+                    @if (config('features.dependencies') && \Illuminate\Support\Facades\Route::has('dependencies.index'))
+                        <flux:sidebar.item icon="share" :href="route('dependencies.index')" :current="request()->routeIs('dependencies.*')" wire:navigate>
+                            {{ __('Abhängigkeiten') }}
+                        </flux:sidebar.item>
+                    @endif
+                    <flux:sidebar.item icon="shield-exclamation" :href="route('emergency-levels.index')" :current="request()->routeIs('emergency-levels.*')" wire:navigate>
+                        {{ __('Notfall-Level') }}
+                    </flux:sidebar.item>
+                    <flux:sidebar.item icon="lifebuoy" :href="route('fallback-processes.index')" :current="request()->routeIs('fallback-processes.*')" wire:navigate>
+                        {{ __('Notfallbetrieb') }}
+                    </flux:sidebar.item>
+                    <flux:sidebar.item icon="briefcase" :href="route('emergency-resources.index')" :current="request()->routeIs('emergency-resources.*')" wire:navigate>
+                        {{ __('Sofortmittel') }}
                     </flux:sidebar.item>
                     @if (config('features.preventive_measures') && \Illuminate\Support\Facades\Route::has('preventive-measures.index'))
                         <flux:sidebar.item icon="shield-check" :href="route('preventive-measures.index')" :current="request()->routeIs('preventive-measures.*')" wire:navigate>
                             {{ __('Prävention') }}
-                        </flux:sidebar.item>
-                    @endif
-                    @if (config('features.dependencies') && \Illuminate\Support\Facades\Route::has('dependencies.index'))
-                        <flux:sidebar.item icon="share" :href="route('dependencies.index')" :current="request()->routeIs('dependencies.*')" wire:navigate>
-                            {{ __('Abhängigkeiten') }}
                         </flux:sidebar.item>
                     @endif
                     <flux:sidebar.item icon="inbox" :href="route('tasks-inbox.index')" :current="request()->routeIs('tasks-inbox.*')" wire:navigate>
@@ -89,15 +107,6 @@
                     </flux:sidebar.item>
                     <flux:sidebar.item icon="calculator" :href="route('systems.cost-calculator')" :current="request()->routeIs('systems.cost-calculator')" wire:navigate>
                         {{ __('Ausfallrechner') }}
-                    </flux:sidebar.item>
-                    <flux:sidebar.item icon="briefcase" :href="route('emergency-resources.index')" :current="request()->routeIs('emergency-resources.*')" wire:navigate>
-                        {{ __('Sofortmittel') }}
-                    </flux:sidebar.item>
-                    <flux:sidebar.item icon="lifebuoy" :href="route('fallback-processes.index')" :current="request()->routeIs('fallback-processes.*')" wire:navigate>
-                        {{ __('Notfallbetrieb') }}
-                    </flux:sidebar.item>
-                    <flux:sidebar.item icon="shield-exclamation" :href="route('emergency-levels.index')" :current="request()->routeIs('emergency-levels.*')" wire:navigate>
-                        {{ __('Notfall-Level') }}
                     </flux:sidebar.item>
                 </flux:sidebar.group>
 
@@ -268,6 +277,12 @@
             </flux:sidebar.nav>
 
             <flux:spacer />
+
+            <flux:sidebar.nav>
+                <flux:sidebar.item icon="book-open" :href="route('manual.index')" target="_blank">
+                    {{ __('Hilfe & Handbuch') }}
+                </flux:sidebar.item>
+            </flux:sidebar.nav>
 
             @php
                 $platformFooter = \App\Support\Settings\SystemSetting::get('platform_footer', '');
