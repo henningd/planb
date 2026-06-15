@@ -303,6 +303,8 @@ class Company extends Model
             'review_cycle_months' => 'integer',
             'last_reviewed_at' => 'datetime',
             'last_reminder_sent_at' => 'datetime',
+            'portal_link_generated_at' => 'datetime',
+            'portal_link_last_used_at' => 'datetime',
         ];
     }
 }
