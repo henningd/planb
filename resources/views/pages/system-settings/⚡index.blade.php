@@ -273,6 +273,31 @@ new #[Title('Systemeinstellungen')] class extends Component {
         $totalUpd = collect($this->importSummary)->sum(fn ($v) => $v['updated'] ?? 0);
         Flux::toast(variant: 'success', text: __(':ins Datensätze importiert, :upd aktualisiert.', ['ins' => $totalIns, 'upd' => $totalUpd]));
     }
+
+    public string $resetConfirmName = '';
+
+    /**
+     * Setzt den Mandanten zurück (alle Daten löschen, Benutzer/Team/Profil
+     * behalten) und schickt anschließend ins frische Onboarding.
+     */
+    public function resetTenant(): void
+    {
+        $user = Auth::user();
+        $company = $user->currentCompany();
+
+        abort_unless($company && $user->isCurrentTeamAdmin(), 403);
+
+        if (trim($this->resetConfirmName) !== $company->name) {
+            $this->addError('resetConfirmName', __('Der Firmenname stimmt nicht überein.'));
+
+            return;
+        }
+
+        \App\Support\Tenant\CompanyReset::run($company);
+
+        Flux::toast(variant: 'success', text: __('Team zurückgesetzt — Sie können von vorne beginnen.'));
+        $this->redirectRoute('onboarding.index', ['current_team' => $user->currentTeam->slug], navigate: true);
+    }
 }; ?>
 
 <section class="w-full">
@@ -496,4 +521,35 @@ new #[Title('Systemeinstellungen')] class extends Component {
             </div>
         </div>
     </div>
+
+    @if (auth()->user()?->isCurrentTeamAdmin())
+        <div class="mt-10 rounded-xl border border-rose-300 bg-rose-50 p-5 dark:border-rose-800 dark:bg-rose-950/40">
+            <flux:heading size="md" class="text-rose-800 dark:text-rose-200">{{ __('Gefahrenzone') }}</flux:heading>
+            <flux:subheading class="mt-1 text-rose-700/80 dark:text-rose-300/80">
+                {{ __('Team zurücksetzen: löscht ALLE Daten dieses Mandanten (Systeme, Mitarbeiter, Szenarien, Risiken, Handbuch-Versionen, Protokolle …) und startet das Onboarding neu. App-Benutzer, Team und Firmenprofil bleiben erhalten. Diese Aktion ist nicht umkehrbar.') }}
+            </flux:subheading>
+            <flux:modal.trigger name="reset-tenant">
+                <flux:button class="mt-4" variant="danger" icon="trash">{{ __('Team zurücksetzen …') }}</flux:button>
+            </flux:modal.trigger>
+        </div>
+
+        <flux:modal name="reset-tenant" class="max-w-lg">
+            <div class="space-y-5">
+                <div>
+                    <flux:heading size="lg">{{ __('Team wirklich zurücksetzen?') }}</flux:heading>
+                    <flux:subheading>
+                        {{ __('Alle Mandanten-Daten werden unwiderruflich gelöscht. App-Benutzer, Team und Firmenprofil bleiben erhalten. Geben Sie zur Bestätigung den Firmennamen ein:') }}
+                        <span class="font-semibold text-zinc-900 dark:text-zinc-100">{{ auth()->user()->currentCompany()?->name }}</span>
+                    </flux:subheading>
+                </div>
+                <flux:input wire:model="resetConfirmName" :label="__('Firmenname zur Bestätigung')" />
+                <div class="flex items-center justify-end gap-2">
+                    <flux:modal.close>
+                        <flux:button variant="filled" type="button">{{ __('Abbrechen') }}</flux:button>
+                    </flux:modal.close>
+                    <flux:button variant="danger" icon="trash" wire:click="resetTenant">{{ __('Endgültig zurücksetzen') }}</flux:button>
+                </div>
+            </div>
+        </flux:modal>
+    @endif
 </section>
