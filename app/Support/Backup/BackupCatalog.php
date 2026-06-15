@@ -105,8 +105,8 @@ class BackupCatalog
                 'label' => 'Mitarbeiter',
                 'table' => 'employees',
                 'mode' => 'replace',
-                'order' => 20, // nach locations
-                'id_remap' => ['location_id' => 'locations'],
+                'order' => 20, // nach locations + departments
+                'id_remap' => ['location_id' => 'locations', 'department_id' => 'departments'],
                 // Pflichtrollen liegen seit dem Refactoring im
                 // employee_role-Pivot zur passenden System-Rolle. Alte
                 // Industry-Template-Payloads enthalten die Felder noch und
@@ -192,6 +192,118 @@ class BackupCatalog
                 'id_remap' => ['responsible_employee_id' => 'employees'],
             ],
 
+            'departments' => [
+                'label' => 'Abteilungen',
+                'table' => 'departments',
+                'mode' => 'replace',
+                'order' => 5, // vor employees (employee.department_id)
+            ],
+            'fallback_processes' => [
+                'label' => 'Notfallbetrieb / Ausweichverfahren',
+                'table' => 'fallback_processes',
+                'mode' => 'replace',
+                'order' => 30, // nach roles + employees
+                'id_remap' => [
+                    'responsible_role_id' => 'roles',
+                    'responsible_employee_id' => 'employees',
+                ],
+            ],
+            'risks' => [
+                'label' => 'Risiken (Risikoregister)',
+                'table' => 'risks',
+                'mode' => 'replace',
+                'order' => 20,
+                'strip_on_insert' => ['owner_user_id'],
+            ],
+            'risk_mitigations' => [
+                'label' => 'Risiko-Maßnahmen',
+                'table' => 'risk_mitigations',
+                'mode' => 'replace',
+                'order' => 50, // nach risks, employees, system_tasks
+                'company_via' => ['parent_table' => 'risks', 'fk' => 'risk_id'],
+                'id_remap' => [
+                    'risk_id' => 'risks',
+                    'responsible_employee_id' => 'employees',
+                    'system_task_id' => 'system_tasks',
+                ],
+            ],
+            'lessons_learned' => [
+                'label' => 'Lessons Learned',
+                'table' => 'lessons_learned',
+                'mode' => 'replace',
+                'order' => 50, // nach incident_reports + scenario_runs
+                'strip_on_insert' => ['author_user_id'],
+                'id_remap' => [
+                    'incident_report_id' => 'incident_reports',
+                    'scenario_run_id' => 'scenario_runs',
+                ],
+            ],
+            'lesson_learned_action_items' => [
+                'label' => 'Lessons-Learned-Maßnahmen',
+                'table' => 'lesson_learned_action_items',
+                'mode' => 'replace',
+                'order' => 60, // nach lessons_learned + employees
+                'company_via' => ['parent_table' => 'lessons_learned', 'fk' => 'lesson_learned_id'],
+                'id_remap' => [
+                    'lesson_learned_id' => 'lessons_learned',
+                    'responsible_employee_id' => 'employees',
+                ],
+            ],
+            'business_processes' => [
+                'label' => 'Geschäftsprozesse (BIA)',
+                'table' => 'business_processes',
+                'mode' => 'replace',
+                'order' => 30, // nach employees + roles
+                'id_remap' => [
+                    'responsible_employee_id' => 'employees',
+                    'responsible_role_id' => 'roles',
+                ],
+            ],
+            'preventive_measures' => [
+                'label' => 'Präventivmaßnahmen',
+                'table' => 'preventive_measures',
+                'mode' => 'replace',
+                'order' => 50, // nach systems, employees, roles, risks
+                'id_remap' => [
+                    'system_id' => 'systems',
+                    'responsible_employee_id' => 'employees',
+                    'responsible_role_id' => 'roles',
+                    'risk_id' => 'risks',
+                ],
+            ],
+            'supplier_risk_assessments' => [
+                'label' => 'Lieferketten-Risikobewertungen',
+                'table' => 'supplier_risk_assessments',
+                'mode' => 'replace',
+                'order' => 30, // nach service_providers
+                'id_remap' => ['service_provider_id' => 'service_providers'],
+            ],
+            'training_records' => [
+                'label' => 'Schulungs-Nachweise',
+                'table' => 'training_records',
+                'mode' => 'replace',
+                'order' => 30, // nach employees
+                'id_remap' => ['employee_id' => 'employees'],
+            ],
+            'maturity_assessments' => [
+                'label' => 'Reifegrad-Assessments',
+                'table' => 'maturity_assessments',
+                'mode' => 'replace',
+                'order' => 10,
+            ],
+            'bcm_policies' => [
+                'label' => 'BCM-Leitlinien',
+                'table' => 'bcm_policies',
+                'mode' => 'replace',
+                'order' => 10,
+            ],
+            'management_reviews' => [
+                'label' => 'Management-Reviews',
+                'table' => 'management_reviews',
+                'mode' => 'replace',
+                'order' => 10,
+            ],
+
             // Pivots / Zuordnungen — keine eigene company_id, gefiltert über Parent.
             'pivot_employee_role' => [
                 'label' => 'Zuordnung Mitarbeiter ↔ Rolle',
@@ -255,6 +367,30 @@ class BackupCatalog
                 'company_via' => ['parent_table' => 'system_tasks', 'fk' => 'system_task_id'],
                 'strip_on_insert' => ['assigned_by_user_id', 'removed_by_user_id'],
                 'id_remap' => ['system_task_id' => 'system_tasks', 'service_provider_id' => 'service_providers'],
+            ],
+            'pivot_risk_system' => [
+                'label' => 'Zuordnung Risiko ↔ System',
+                'table' => 'risk_system',
+                'mode' => 'replace',
+                'order' => 60,
+                'company_via' => ['parent_table' => 'risks', 'fk' => 'risk_id'],
+                'id_remap' => ['risk_id' => 'risks', 'system_id' => 'systems'],
+            ],
+            'pivot_fallback_process_system' => [
+                'label' => 'Zuordnung Notfallbetrieb ↔ System',
+                'table' => 'fallback_process_system',
+                'mode' => 'replace',
+                'order' => 60,
+                'company_via' => ['parent_table' => 'fallback_processes', 'fk' => 'fallback_process_id'],
+                'id_remap' => ['fallback_process_id' => 'fallback_processes', 'system_id' => 'systems'],
+            ],
+            'pivot_business_process_system' => [
+                'label' => 'Zuordnung Geschäftsprozess ↔ System',
+                'table' => 'business_process_system',
+                'mode' => 'replace',
+                'order' => 60,
+                'company_via' => ['parent_table' => 'business_processes', 'fk' => 'business_process_id'],
+                'id_remap' => ['business_process_id' => 'business_processes', 'system_id' => 'systems'],
             ],
         ];
     }
