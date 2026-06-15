@@ -1,0 +1,15 @@
+<svg viewBox="0 0 88 88" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="VoltMaster">
+  <defs>
+    <linearGradient id="vmi" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fbbf24"/>
+      <stop offset="1" stop-color="#f97316"/>
+    </linearGradient>
+  </defs>
+  <rect x="4" y="4" width="80" height="80" rx="22" fill="url(#vmi)"/>
+  <g stroke="#ffffff" stroke-width="2.8" stroke-linecap="round" opacity="0.6">
+    <line x1="44" y1="20" x2="44" y2="27"/>
+    <line x1="26" y1="27" x2="30.5" y2="31.5"/>
+    <line x1="62" y1="27" x2="57.5" y2="31.5"/>
+  </g>
+  <path d="M48 28 L30 56 H42 L37.5 72 L58 44 H46 Z" fill="#ffffff"/>
+</svg>
