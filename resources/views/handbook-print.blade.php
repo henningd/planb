@@ -982,7 +982,7 @@
         <h3>7.1 Lagebesprechungen</h3>
         <ul>
             <li>Lagebesprechungen sind kurz und strukturiert. Maximale Dauer: 15 Minuten.</li>
-            <li>Turnus: Stufe 3 alle 60 Minuten, Stufe 2 alle 2 Stunden, Stufe 1 einmal täglich.</li>
+            <li>Turnus: Stufe 1 alle 60 Minuten, Stufe 2 alle 2 Stunden, Stufe 3 einmal täglich.</li>
             <li>Leitung ausschließlich durch den/die Notfallbeauftragte/n oder dessen/deren Vertretung.</li>
         </ul>
 
