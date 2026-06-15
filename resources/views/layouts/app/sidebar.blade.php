@@ -71,6 +71,11 @@
                     <flux:sidebar.item icon="server-stack" :href="route('systems.index')" :current="request()->routeIs('systems.index') || request()->routeIs('systems.create') || request()->routeIs('systems.show') || request()->routeIs('systems.edit') || request()->routeIs('systems.export')" wire:navigate>
                         {{ __('Systeme') }}
                     </flux:sidebar.item>
+                    @if (config('features.preventive_measures') && \Illuminate\Support\Facades\Route::has('preventive-measures.index'))
+                        <flux:sidebar.item icon="shield-check" :href="route('preventive-measures.index')" :current="request()->routeIs('preventive-measures.*')" wire:navigate>
+                            {{ __('Prävention') }}
+                        </flux:sidebar.item>
+                    @endif
                     @if (config('features.dependencies') && \Illuminate\Support\Facades\Route::has('dependencies.index'))
                         <flux:sidebar.item icon="share" :href="route('dependencies.index')" :current="request()->routeIs('dependencies.*')" wire:navigate>
                             {{ __('Abhängigkeiten') }}

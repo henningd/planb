@@ -2,6 +2,7 @@
 
 use App\Models\EmergencyResource;
 use App\Models\HandbookTest;
+use App\Models\PreventiveMeasure;
 use App\Models\Risk;
 use Flux\Flux;
 use Illuminate\Support\Collection;
@@ -25,6 +26,14 @@ new #[Title('Aufgaben-Inbox')] class extends Component {
     public function includeRisks(): bool
     {
         return (bool) config('features.risk_register') && (bool) Auth::user()?->isAtLeastConsultant();
+    }
+
+    /**
+     * Präventivmaßnahmen nur einbeziehen, wenn das Modul aktiviert ist.
+     */
+    public function includeMeasures(): bool
+    {
+        return (bool) config('features.preventive_measures');
     }
 
     /**
@@ -74,6 +83,27 @@ new #[Title('Aufgaben-Inbox')] class extends Component {
                     'source_color' => 'indigo',
                     'source_icon' => 'clipboard-document-check',
                     'link' => route('handbook-tests.index').'#test-'.$test->id,
+                ]);
+            }
+        }
+
+        if ($this->includeMeasures() && in_array($this->typeFilter, ['all', 'measures'], true)) {
+            foreach (PreventiveMeasure::recurringDue()->with(['system', 'responsible', 'responsibleRole'])->get() as $measure) {
+                $responsible = $measure->responsible?->fullName() ?? $measure->responsibleRole?->name;
+
+                $items->push([
+                    'type' => 'measure',
+                    'id' => $measure->id,
+                    'title' => $measure->title,
+                    'detail' => $responsible !== null
+                        ? __(':category · :system · Verantwortlich: :who', ['category' => $measure->category->label(), 'system' => $measure->system?->name, 'who' => $responsible])
+                        : __(':category · :system', ['category' => $measure->category->label(), 'system' => $measure->system?->name]),
+                    'due' => $measure->next_due_at,
+                    'last_done' => $measure->last_executed_at,
+                    'source_label' => __('Prävention'),
+                    'source_color' => 'emerald',
+                    'source_icon' => 'shield-check',
+                    'link' => route('preventive-measures.index', ['system' => $measure->system_id]),
                 ]);
             }
         }
@@ -141,6 +171,10 @@ new #[Title('Aufgaben-Inbox')] class extends Component {
         $count = EmergencyResource::whereNotNull('next_check_at')->count()
             + HandbookTest::whereNotNull('next_due_at')->count();
 
+        if ($this->includeMeasures()) {
+            $count += PreventiveMeasure::recurringDue()->count();
+        }
+
         if ($this->includeRisks()) {
             $count += Risk::whereNotNull('review_due_at')->where('status', '!=', 'closed')->count();
         }
@@ -156,6 +190,10 @@ new #[Title('Aufgaben-Inbox')] class extends Component {
         $count = EmergencyResource::whereNotNull('next_check_at')->whereDate('next_check_at', '<', $today)->count()
             + HandbookTest::whereNotNull('next_due_at')->whereDate('next_due_at', '<', $today)->count();
 
+        if ($this->includeMeasures()) {
+            $count += PreventiveMeasure::recurringDue()->whereDate('next_due_at', '<', $today)->count();
+        }
+
         if ($this->includeRisks()) {
             $count += Risk::whereNotNull('review_due_at')->where('status', '!=', 'closed')->whereDate('review_due_at', '<', $today)->count();
         }
@@ -168,8 +206,14 @@ new #[Title('Aufgaben-Inbox')] class extends Component {
     {
         $today = now()->toDateString();
 
-        return EmergencyResource::whereDate('last_check_at', $today)->count()
+        $count = EmergencyResource::whereDate('last_check_at', $today)->count()
             + HandbookTest::whereDate('last_executed_at', $today)->count();
+
+        if ($this->includeMeasures()) {
+            $count += PreventiveMeasure::whereDate('last_executed_at', $today)->count();
+        }
+
+        return $count;
     }
 
     /**
@@ -198,6 +242,18 @@ new #[Title('Aufgaben-Inbox')] class extends Component {
 
         $this->clearCaches();
         Flux::toast(variant: 'success', text: __('Test als durchgeführt vermerkt.'));
+    }
+
+    /**
+     * Präventivmaßnahme als durchgeführt markieren: schreibt das nächste
+     * Fälligkeitsdatum gemäß Intervall fort.
+     */
+    public function markMeasureExecuted(string $id): void
+    {
+        PreventiveMeasure::findOrFail($id)->markExecuted();
+
+        $this->clearCaches();
+        Flux::toast(variant: 'success', text: __('Maßnahme als durchgeführt vermerkt.'));
     }
 
     private function clearCaches(): void
@@ -248,7 +304,7 @@ new #[Title('Aufgaben-Inbox')] class extends Component {
 <section class="w-full">
     <div class="mb-6">
         <flux:heading size="xl">{{ __('Aufgaben-Inbox') }}</flux:heading>
-        <flux:subheading>{{ __('Fällige Sofortmittel-Prüfungen, Testplan-Termine und Risiko-Reviews auf einen Blick.') }}</flux:subheading>
+        <flux:subheading>{{ __('Fällige Sofortmittel-Prüfungen, Testplan-Termine, Präventivmaßnahmen und Risiko-Reviews auf einen Blick.') }}</flux:subheading>
     </div>
 
     <div class="mb-6 flex flex-wrap items-center gap-3 rounded-lg border border-zinc-200 bg-white p-3 dark:border-zinc-700 dark:bg-zinc-900">
@@ -269,6 +325,9 @@ new #[Title('Aufgaben-Inbox')] class extends Component {
             <flux:select.option value="all">{{ __('Alle') }}</flux:select.option>
             <flux:select.option value="resources">{{ __('Sofortmittel') }}</flux:select.option>
             <flux:select.option value="tests">{{ __('Testplan') }}</flux:select.option>
+            @if ($this->includeMeasures())
+                <flux:select.option value="measures">{{ __('Prävention') }}</flux:select.option>
+            @endif
             @if ($this->includeRisks())
                 <flux:select.option value="risks">{{ __('Risiko-Reviews') }}</flux:select.option>
             @endif
@@ -311,6 +370,10 @@ new #[Title('Aufgaben-Inbox')] class extends Component {
                         </flux:button>
                     @elseif ($item['type'] === 'test')
                         <flux:button size="sm" variant="primary" icon="check" wire:click="markTestExecuted('{{ $item['id'] }}')" type="button">
+                            {{ __('Durchgeführt') }}
+                        </flux:button>
+                    @elseif ($item['type'] === 'measure')
+                        <flux:button size="sm" variant="primary" icon="check" wire:click="markMeasureExecuted('{{ $item['id'] }}')" type="button">
                             {{ __('Durchgeführt') }}
                         </flux:button>
                     @endif

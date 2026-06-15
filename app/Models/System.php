@@ -113,6 +113,16 @@ class System extends Model
     }
 
     /**
+     * @return HasMany<PreventiveMeasure, $this>
+     */
+    public function preventiveMeasures(): HasMany
+    {
+        return $this->hasMany(PreventiveMeasure::class)
+            ->orderBy('sort')
+            ->orderBy('title');
+    }
+
+    /**
      * @return BelongsToMany<FallbackProcess, $this>
      */
     public function fallbackProcesses(): BelongsToMany

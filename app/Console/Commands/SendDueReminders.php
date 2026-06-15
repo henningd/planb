@@ -3,12 +3,14 @@
 namespace App\Console\Commands;
 
 use App\Enums\CrisisRole;
+use App\Mail\MeasureDueReminder;
 use App\Mail\ResourceDueReminder;
 use App\Mail\TestDueReminder;
 use App\Models\Company;
 use App\Models\EmergencyResource;
 use App\Models\Employee;
 use App\Models\HandbookTest;
+use App\Models\PreventiveMeasure;
 use App\Scopes\CurrentCompanyScope;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
@@ -38,6 +40,10 @@ class SendDueReminders extends Command
         foreach ($companies as $company) {
             $sent += $this->sendTestReminders($company, $horizon);
             $sent += $this->sendResourceReminders($company, $horizon, $now);
+
+            if (config('features.preventive_measures')) {
+                $sent += $this->sendMeasureReminders($company, $horizon);
+            }
         }
 
         $this->info("Fertig. {$sent} Reminder verschickt.");
@@ -118,6 +124,52 @@ class SendDueReminders extends Command
         }
 
         return $count;
+    }
+
+    protected function sendMeasureReminders(Company $company, Carbon $horizon): int
+    {
+        $measures = PreventiveMeasure::withoutGlobalScope(CurrentCompanyScope::class)
+            ->recurringDue()
+            ->with(['responsible', 'system'])
+            ->where('company_id', $company->id)
+            ->where('next_due_at', '<=', $horizon)
+            ->get();
+
+        $count = 0;
+
+        foreach ($measures as $measure) {
+            if (! $this->shouldSendForMeasure($measure)) {
+                continue;
+            }
+
+            $email = $measure->responsible?->email;
+            if (! $email) {
+                continue;
+            }
+
+            Mail::to($email)->send(new MeasureDueReminder($measure));
+
+            $measure->forceFill(['last_reminder_sent_at' => Carbon::now()])->save();
+
+            $this->line("→ [{$company->name}] Präventiv-Reminder an {$email}");
+            $count++;
+        }
+
+        return $count;
+    }
+
+    protected function shouldSendForMeasure(PreventiveMeasure $measure): bool
+    {
+        if ($measure->last_reminder_sent_at === null) {
+            return true;
+        }
+
+        $threshold = $measure->next_due_at?->copy()->subDays(self::LEAD_DAYS);
+        if ($threshold === null) {
+            return true;
+        }
+
+        return $measure->last_reminder_sent_at->lessThan($threshold);
     }
 
     protected function shouldSendForTest(HandbookTest $test): bool

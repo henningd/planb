@@ -294,6 +294,9 @@ Route::prefix('{current_team}')
             ->name('service-providers.show');
         Route::livewire('emergency-resources', 'pages::emergency-resources.index')->name('emergency-resources.index');
         Route::livewire('fallback-processes', 'pages::fallback-processes.index')->name('fallback-processes.index');
+        if (config('features.preventive_measures')) {
+            Route::livewire('praevention', 'pages::preventive-measures.index')->name('preventive-measures.index');
+        }
         if (config('features.dependencies')) {
             Route::livewire('dependencies', 'pages::dependencies.index')->name('dependencies.index');
         }

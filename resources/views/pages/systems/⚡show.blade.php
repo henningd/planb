@@ -3,6 +3,7 @@
 use App\Enums\RaciRole;
 use App\Models\Employee;
 use App\Models\Role;
+use App\Models\PreventiveMeasure;
 use App\Models\ServiceProvider;
 use App\Models\System;
 use App\Models\SystemTask;
@@ -10,6 +11,7 @@ use App\Support\Accessibility\SeverityIndicator;
 use App\Support\AssignmentHistory;
 use App\Support\AssignmentSync;
 use App\Support\Duration;
+use App\Support\Prevention\PreventiveMeasureCatalog;
 use Flux\Flux;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Auth;
@@ -108,6 +110,60 @@ new #[Title('System')] class extends Component {
             unset($this->tasks);
             Flux::toast(variant: 'success', text: __('Standard-Aufgaben übernommen.'));
         }
+    }
+
+    /**
+     * Präventivmaßnahmen dieses Systems – vorbeugende Kontrollen gegen Ausfall.
+     *
+     * @return Collection<int, PreventiveMeasure>
+     */
+    #[Computed]
+    public function preventiveMeasures(): Collection
+    {
+        return $this->system->preventiveMeasures()
+            ->with(['responsible', 'responsibleRole'])
+            ->get();
+    }
+
+    public function markMeasureExecuted(string $id): void
+    {
+        $this->system->preventiveMeasures()->findOrFail($id)->markExecuted();
+        unset($this->preventiveMeasures);
+        Flux::toast(variant: 'success', text: __('Als durchgeführt markiert.'));
+    }
+
+    /**
+     * Übernimmt die Vorschlags-Maßnahmen für den Systemtyp – ohne Duplikate.
+     */
+    public function importMeasureCatalog(): void
+    {
+        $existing = $this->system->preventiveMeasures()
+            ->pluck('title')
+            ->map(fn ($t) => mb_strtolower($t))
+            ->all();
+
+        $created = 0;
+        foreach (PreventiveMeasureCatalog::forSystemType($this->system->system_type) as $suggestion) {
+            if (in_array(mb_strtolower($suggestion['title']), $existing, true)) {
+                continue;
+            }
+
+            $this->system->preventiveMeasures()->create([
+                'title' => $suggestion['title'],
+                'description' => $suggestion['description'],
+                'category' => $suggestion['category'],
+                'status' => \App\Enums\PreventiveMeasureStatus::Planned,
+                'interval' => $suggestion['interval'],
+            ]);
+            $created++;
+        }
+
+        unset($this->preventiveMeasures);
+
+        Flux::toast(
+            variant: $created > 0 ? 'success' : 'warning',
+            text: $created > 0 ? __(':count Maßnahmen übernommen.', ['count' => $created]) : __('Keine neuen Vorschläge.'),
+        );
     }
 
     /**
@@ -834,6 +890,22 @@ new #[Title('System')] class extends Component {
                     {{ __('Abhängigkeiten') }}
                     <flux:badge color="teal" size="sm">{{ $system->dependencies->count() + $system->dependents->count() }}</flux:badge>
                 </button>
+                @if (config('features.preventive_measures'))
+                <button
+                    type="button"
+                    role="tab"
+                    :aria-selected="tab === 'prevention'"
+                    @click="tab = 'prevention'"
+                    :class="tab === 'prevention'
+                        ? 'border-b-2 border-zinc-900 text-zinc-900 dark:border-white dark:text-white'
+                        : 'border-b-2 border-transparent text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200'"
+                    class="flex items-center gap-2 px-4 py-2 text-sm font-medium"
+                >
+                    <flux:icon.shield-check class="h-4 w-4" />
+                    {{ __('Prävention') }}
+                    <flux:badge color="teal" size="sm">{{ $this->preventiveMeasures->count() }}</flux:badge>
+                </button>
+                @endif
                 <button
                     type="button"
                     role="tab"
@@ -1232,6 +1304,72 @@ new #[Title('System')] class extends Component {
                     @endif
                 </div>
             </div>
+
+            @if (config('features.preventive_measures'))
+            <div x-show="tab === 'prevention'" x-cloak class="space-y-4">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                    <flux:text class="text-sm text-zinc-500 dark:text-zinc-400">
+                        {{ __('Vorbeugende Maßnahmen, die einen Ausfall dieses Systems verhindern sollen.') }}
+                    </flux:text>
+                    <div class="flex items-center gap-2">
+                        <flux:button size="sm" variant="filled" icon="sparkles" wire:click="importMeasureCatalog">
+                            {{ __('Vorschläge übernehmen') }}
+                        </flux:button>
+                        <flux:button size="sm" variant="primary" icon="plus" :href="route('preventive-measures.index', ['system' => $system->id])" wire:navigate>
+                            {{ __('Maßnahme hinzufügen') }}
+                        </flux:button>
+                    </div>
+                </div>
+
+                @forelse ($this->preventiveMeasures as $measure)
+                    <div wire:key="sysmeasure-{{ $measure->id }}" class="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-900">
+                        <div class="flex items-start justify-between gap-3">
+                            <div class="min-w-0">
+                                <flux:heading size="sm">{{ $measure->title }}</flux:heading>
+                                <div class="mt-1 flex flex-wrap items-center gap-1.5">
+                                    <flux:badge color="zinc" size="sm" :icon="$measure->category->icon()">{{ $measure->category->label() }}</flux:badge>
+                                    <flux:badge :color="$measure->status->color()" size="sm">{{ $measure->status->label() }}</flux:badge>
+                                    @if ($measure->interval)
+                                        <flux:badge color="zinc" size="sm" icon="arrow-path">{{ $measure->interval->label() }}</flux:badge>
+                                    @endif
+                                    @if ($measure->isOverdue())
+                                        <flux:badge color="red" size="sm">{{ __('Überfällig') }}</flux:badge>
+                                    @endif
+                                </div>
+                                @if ($measure->description)
+                                    <flux:text class="mt-2 text-sm text-zinc-600 dark:text-zinc-300">{{ $measure->description }}</flux:text>
+                                @endif
+                                <div class="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-zinc-500 dark:text-zinc-400">
+                                    @if ($measure->responsible || $measure->responsibleRole)
+                                        <span class="inline-flex items-center gap-1">
+                                            <flux:icon.user class="h-3.5 w-3.5" />
+                                            {{ $measure->responsible?->fullName() ?? $measure->responsibleRole?->name }}
+                                        </span>
+                                    @endif
+                                    @if ($measure->next_due_at)
+                                        <span @class(['inline-flex items-center gap-1', 'text-red-600 dark:text-red-400 font-medium' => $measure->isOverdue()])>
+                                            <flux:icon.calendar class="h-3.5 w-3.5" />
+                                            {{ __('Fällig') }}: {{ $measure->next_due_at->format('d.m.Y') }}
+                                        </span>
+                                    @endif
+                                </div>
+                            </div>
+                            @if ($measure->isRecurring())
+                                <flux:button size="sm" variant="filled" icon="check-circle" wire:click="markMeasureExecuted('{{ $measure->id }}')">
+                                    {{ __('Erledigt') }}
+                                </flux:button>
+                            @endif
+                        </div>
+                    </div>
+                @empty
+                    <div class="rounded-xl border border-dashed border-zinc-300 bg-white px-5 py-10 text-center dark:border-zinc-700 dark:bg-zinc-900">
+                        <flux:text class="text-zinc-500 dark:text-zinc-400">
+                            {{ __('Noch keine Präventivmaßnahmen. Übernehmen Sie Vorschläge oder fügen Sie eine Maßnahme hinzu.') }}
+                        </flux:text>
+                    </div>
+                @endforelse
+            </div>
+            @endif
 
             <div x-show="tab === 'history'" x-cloak class="space-y-5">
                 <div class="rounded-xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-700 dark:bg-zinc-950/50">

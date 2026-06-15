@@ -27,6 +27,11 @@ return [
 
     'risk_register' => filter_var(env('FEATURE_RISK_REGISTER_ENABLED', true), FILTER_VALIDATE_BOOLEAN),
 
+    // Präventivmaßnahmen je System (vorbeugende Kontrollen gegen Ausfall):
+    // eigener Menüpunkt, Verwaltungsseite, System-Karteikarte, Aufgaben-Inbox
+    // und Reminder-Cron. Default an.
+    'preventive_measures' => filter_var(env('FEATURE_PREVENTIVE_MEASURES_ENABLED', true), FILTER_VALIDATE_BOOLEAN),
+
     // Bereich „Abteilungen / Rollen" (/roles): Menüpunkt und Seiten. Routen
     // bleiben registriert und liefern 404, damit Verweise aus Onboarding und
     // Compliance-Dashboard nicht brechen.
