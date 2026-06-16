@@ -991,6 +991,68 @@
         </div>
     </section>
 
+    {{-- ============ NIS2 VERSTÄNDLICH ============ --}}
+    <section id="nis2" class="py-20 lg:py-28 bg-slate-50 border-y border-slate-100">
+        <div class="max-w-7xl mx-auto px-6 lg:px-8">
+            <div class="max-w-3xl">
+                <span class="text-sm font-semibold uppercase tracking-wide text-indigo-600">NIS2 in verständlicher Sprache</span>
+                <h2 class="mt-3 text-3xl sm:text-4xl font-semibold tracking-tight text-slate-900">
+                    10 Erwartungen an die Führung — ohne Technik-Kauderwelsch.
+                </h2>
+                <p class="mt-4 text-lg text-slate-600">
+                    Was NIS2 von der Leitungsebene verlangt, in zehn klaren Punkten. Kein Fachjargon — nur das, was Sie als Geschäftsführung wirklich verantworten und entscheiden.
+                </p>
+            </div>
+
+            <div class="mt-12 grid gap-5 sm:grid-cols-2">
+                @php($nis2Points = [
+                        ['t' => 'Wissen, was geschäftskritisch ist', 'd' => 'Welche Systeme und Daten dürfen nie ausfallen — Kundendaten, ERP, Fachverfahren? Diese zuerst schützen.', 'p' => '<ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v6c0 1.7 4 3 9 3s9-1.3 9-3V5M3 11v6c0 1.7 4 3 9 3s9-1.3 9-3v-6"/>'],
+                        ['t' => 'Eine klare Verantwortung', 'd' => 'Eine benannte Person — intern oder als Partner — verantwortet die Cybersicherheit und berichtet direkt der Geschäftsführung.', 'p' => '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="m16 11 2 2 4-4"/>'],
+                        ['t' => 'Zugänge im Griff', 'd' => 'Persönliche Konten statt geteilter Logins, starke Passwörter und MFA für E-Mail, VPN und Fernzugriff.', 'p' => '<rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>'],
+                        ['t' => 'Systeme aktuell halten', 'd' => 'Regelmäßige Updates für Server, Geräte und Software — keine offenen Lücken bei kritischen Systemen.', 'p' => '<path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/>'],
+                        ['t' => 'Backups, die im Ernstfall tragen', 'd' => 'Automatisch, getrennt gespeichert und mindestens jährlich per Rückspieltest geprüft.', 'p' => '<path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/>'],
+                        ['t' => 'Grundschutz als Standard', 'd' => 'Virenschutz/EDR, Firewall, sicheres WLAN und verschlüsselte Geräte — selbstverständlich, kein Luxus.', 'p' => '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>'],
+                        ['t' => 'Menschen befähigen', 'd' => 'Kurze, regelmäßige Schulungen zu Phishing und sicherem Umgang mit E-Mail, KI und Cloud.', 'p' => '<path d="M22 10 12 5 2 10l10 5 10-5z"/><path d="M6 12v5c0 1 2.7 3 6 3s6-2 6-3v-5"/>'],
+                        ['t' => 'Lieferkette mitdenken', 'd' => 'Auch bei ausgelagerter IT bleibt die Verantwortung: Sicherheitsanforderungen vertraglich an Dienstleister weitergeben.', 'p' => '<path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/><path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/>'],
+                        ['t' => 'Vorbereitet auf den Vorfall', 'd' => 'Ein schriftlicher Plan: Wer macht was, wie und wann werden Kunden und Behörden informiert?', 'p' => '<rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/>'],
+                        ['t' => 'Sache der Leitung', 'd' => 'Sicherheit als fester Tagesordnungspunkt mit Kennzahlen und Entscheidungen — nicht „die IT macht das schon".', 'p' => '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/>'],
+                ])
+                @foreach ($nis2Points as $i => $point)
+                    <div class="group relative p-6 rounded-2xl bg-white ring-1 ring-slate-200 hover:ring-indigo-300 hover:shadow-lg hover:-translate-y-0.5 transition">
+                        <div class="flex items-start gap-4">
+                            <span class="shrink-0 inline-flex items-center justify-center w-11 h-11 rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-700 text-white text-lg font-semibold shadow-sm">{{ $i + 1 }}</span>
+                            <div class="min-w-0">
+                                <h3 class="flex items-center gap-2 font-semibold text-slate-900">
+                                    <svg class="w-4 h-4 shrink-0 text-indigo-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">{!! $point['p'] !!}</svg>
+                                    {{ $point['t'] }}
+                                </h3>
+                                <p class="mt-2 text-sm text-slate-600 leading-relaxed">{{ $point['d'] }}</p>
+                            </div>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+
+            <div class="mt-12 flex flex-col gap-4 rounded-2xl bg-slate-900 px-8 py-7 text-white sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                    <div class="text-lg font-semibold">Tiefer einsteigen?</div>
+                    <div class="mt-1 text-sm text-slate-300">Die vollständige NIS2-Checkliste: wer betroffen ist, welche Pflichten gelten und wie Sie sie umsetzen.</div>
+                </div>
+                <div class="flex shrink-0 flex-wrap gap-3">
+                    <a href="{{ route('guides.show', 'nis2-checkliste') }}" class="inline-flex items-center gap-2 rounded-lg bg-white px-5 py-3 font-medium text-slate-900 transition hover:bg-slate-100">
+                        NIS2-Checkliste lesen
+                        <svg class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+                    </a>
+                    @if ($canRegister)
+                        <a href="{{ route('register') }}" class="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-5 py-3 font-medium text-white transition hover:bg-indigo-500">
+                            Kostenlos starten
+                        </a>
+                    @endif
+                </div>
+            </div>
+        </div>
+    </section>
+
     {{-- ============ ZIELGRUPPEN ============ --}}
     <section id="zielgruppen" class="py-20 lg:py-28">
         <div class="max-w-7xl mx-auto px-6 lg:px-8">
