@@ -12,8 +12,12 @@ use Database\Seeders\IndustryTemplates\HeizungSanitaerTemplate;
 use Database\Seeders\IndustryTemplates\HotelTemplate;
 use Database\Seeders\IndustryTemplates\ItDienstleisterTemplate;
 use Database\Seeders\IndustryTemplates\KleineFertigungTemplate;
+use Database\Seeders\IndustryTemplates\KrankenhausKritisTemplate;
+use Database\Seeders\IndustryTemplates\KrankenhausTemplate;
 use Database\Seeders\IndustryTemplates\OnlineshopTemplate;
 use Database\Seeders\IndustryTemplates\PflegedienstTemplate;
+use Database\Seeders\IndustryTemplates\SeniorenzentrumKritisTemplate;
+use Database\Seeders\IndustryTemplates\SeniorenzentrumTemplate;
 use Database\Seeders\IndustryTemplates\SoftwareUnternehmenTemplate;
 use Database\Seeders\IndustryTemplates\SteuerberatungTemplate;
 use Illuminate\Database\Seeder;
@@ -41,6 +45,10 @@ class IndustryTemplatesSeeder extends Seeder
         AnwaltskanzleiTemplate::class,
         ItDienstleisterTemplate::class,
         SoftwareUnternehmenTemplate::class,
+        SeniorenzentrumTemplate::class,
+        SeniorenzentrumKritisTemplate::class,
+        KrankenhausTemplate::class,
+        KrankenhausKritisTemplate::class,
     ];
 
     public function run(): void
