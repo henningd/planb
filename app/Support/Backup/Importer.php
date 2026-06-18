@@ -30,7 +30,7 @@ class Importer
      *                               Source-IDs noch existieren würden.
      * @return array<string, array{deleted?: int, inserted?: int, updated?: int}>
      */
-    public static function import(Company $company, array $payload, array $areaKeys, bool $regenerateIds = false): array
+    public static function import(Company $company, array $payload, array $areaKeys, bool $regenerateIds = false, string $companyMode = 'overwrite'): array
     {
         $catalog = BackupCatalog::all();
         $selected = collect($areaKeys)
@@ -42,7 +42,7 @@ class Importer
         // regenerateIds aufgebaut und für FK-Remap genutzt.
         $idMap = [];
 
-        DB::transaction(function () use ($company, $selected, $payload, $regenerateIds, &$summary, &$idMap) {
+        DB::transaction(function () use ($company, $selected, $payload, $regenerateIds, $companyMode, &$summary, &$idMap) {
             // 1. DELETE in absteigender order — abhängige Bereiche zuerst.
             foreach ($selected->sortByDesc('order') as $key => $area) {
                 if ($area['mode'] === 'update_single') {
@@ -77,14 +77,26 @@ class Importer
                 $rows = $payload['areas'][$key] ?? [];
 
                 if ($area['mode'] === 'update_single') {
-                    if ($rows !== []) {
-                        $row = $rows[0];
-                        unset($row['id'], $row['team_id'], $row['created_at'], $row['updated_at'], $row['deleted_at']);
-                        if ($row !== []) {
-                            DB::table($area['table'])->where('id', $company->id)->update($row);
-                        }
-                        $summary[$key] = ['updated' => 1];
+                    // Firmenprofil: 'skip' lässt den Mandanten unangetastet,
+                    // 'keep_name' übernimmt Default-Felder ohne den Namen zu
+                    // überschreiben, 'overwrite' setzt alle gelieferten Felder.
+                    if ($companyMode === 'skip' || $rows === []) {
+                        $summary[$key] = ['skipped' => 1];
+
+                        continue;
                     }
+
+                    $row = $rows[0];
+                    unset($row['id'], $row['team_id'], $row['created_at'], $row['updated_at'], $row['deleted_at']);
+
+                    if ($companyMode === 'keep_name') {
+                        unset($row['name'], $row['display_name']);
+                    }
+
+                    if ($row !== []) {
+                        DB::table($area['table'])->where('id', $company->id)->update($row);
+                    }
+                    $summary[$key] = ['updated' => 1];
 
                     continue;
                 }

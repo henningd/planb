@@ -46,6 +46,11 @@ new #[Title('Admin · Branchen-Templates')] class extends Component {
 
     public bool $applyConfirming = false;
 
+    // Wie mit dem Firmenprofil (company) verfahren wird:
+    // keep_name = Defaults setzen, aber Namen behalten; skip = Profil nicht
+    // anfassen; overwrite = alle gelieferten Felder übernehmen.
+    public string $applyCompanyMode = 'keep_name';
+
     public ?string $previewingId = null;
 
     /**
@@ -285,6 +290,9 @@ new #[Title('Admin · Branchen-Templates')] class extends Component {
                 $template->payload ?? ['areas' => []],
                 array_keys($template->payload['areas'] ?? []),
                 regenerateIds: true,
+                companyMode: in_array($this->applyCompanyMode, ['keep_name', 'skip', 'overwrite'], true)
+                    ? $this->applyCompanyMode
+                    : 'keep_name',
             );
         } catch (\Throwable $e) {
             Flux::toast(variant: 'danger', text: __('Apply fehlgeschlagen: :msg', ['msg' => $e->getMessage()]));
@@ -467,6 +475,13 @@ new #[Title('Admin · Branchen-Templates')] class extends Component {
                 @foreach ($this->companies as $c)
                     <flux:select.option value="{{ $c->id }}">{{ $c->name }}</flux:select.option>
                 @endforeach
+            </flux:select>
+
+            <flux:select wire:model="applyCompanyMode" :label="__('Firmenprofil (Stammdaten)')"
+                :description="__('Steuert, ob Name und Profilfelder der Ziel-Firma überschrieben werden.')">
+                <flux:select.option value="keep_name">{{ __('Defaults übernehmen, Name behalten') }}</flux:select.option>
+                <flux:select.option value="skip">{{ __('Firmenprofil nicht verändern') }}</flux:select.option>
+                <flux:select.option value="overwrite">{{ __('Profil komplett überschreiben (inkl. Name)') }}</flux:select.option>
             </flux:select>
 
             @if ($applyConfirming)
