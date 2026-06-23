@@ -1,5 +1,6 @@
 <?php
 
+use App\Actions\Systems\ReplaceSystem;
 use App\Enums\RaciRole;
 use App\Models\Employee;
 use App\Models\Role;
@@ -15,12 +16,17 @@ use App\Support\Prevention\PreventiveMeasureCatalog;
 use Flux\Flux;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 
 new #[Title('System')] class extends Component {
     public System $system;
+
+    public bool $confirmingReplace = false;
+
+    public ?string $replaceTargetId = null;
 
     public string $newTaskTitle = '';
 
@@ -466,6 +472,46 @@ new #[Title('System')] class extends Component {
         Flux::toast(variant: 'success', text: __('Aufgabe gelöscht.'));
     }
 
+    /**
+     * Andere Systeme desselben Mandanten als Ziel des Austauschs.
+     *
+     * @return Collection<int, System>
+     */
+    public function replaceCandidates(): Collection
+    {
+        return System::query()
+            ->where('company_id', $this->system->company_id)
+            ->whereKeyNot($this->system->id)
+            ->orderBy('name')
+            ->get(['id', 'name']);
+    }
+
+    /**
+     * Überträgt alle Beziehungen dieses Systems auf das gewählte Ziel-System
+     * (Austausch, z. B. bei Anbieterwechsel).
+     */
+    public function replaceSystem(ReplaceSystem $action)
+    {
+        $this->validate([
+            'replaceTargetId' => [
+                'required',
+                'uuid',
+                Rule::exists('systems', 'id')->where('company_id', $this->system->company_id),
+            ],
+        ], attributes: ['replaceTargetId' => __('Ziel-System')]);
+
+        $target = System::query()
+            ->where('company_id', $this->system->company_id)
+            ->whereKeyNot($this->system->id)
+            ->findOrFail($this->replaceTargetId);
+
+        $action->handle($this->system, $target);
+
+        Flux::toast(variant: 'success', text: __('Beziehungen auf :name übertragen.', ['name' => $target->name]));
+
+        return redirect()->route('systems.show', $target);
+    }
+
     public function openEditTask(string $id): void
     {
         $task = SystemTask::with(['assignees', 'providerAssignees', 'roleAssignees'])
@@ -748,6 +794,9 @@ new #[Title('System')] class extends Component {
             <div class="flex shrink-0 gap-2">
                 <flux:button size="sm" variant="filled" icon="qr-code" :href="route('systems.sticker', ['system' => $system->id])" target="_blank">
                     {{ __('QR-Aushang') }}
+                </flux:button>
+                <flux:button size="sm" icon="arrows-right-left" wire:click="$set('confirmingReplace', true)">
+                    {{ __('Ersetzen') }}
                 </flux:button>
                 <flux:button size="sm" variant="primary" icon="pencil" :href="route('systems.edit', ['system' => $system->id])" wire:navigate>
                     {{ __('Bearbeiten') }}
@@ -2016,5 +2065,30 @@ new #[Title('System')] class extends Component {
                 <flux:button type="submit" variant="primary">{{ __('Speichern') }}</flux:button>
             </div>
         </form>
+    </flux:modal>
+
+    <flux:modal wire:model.self="confirmingReplace" class="max-w-md">
+        <div class="space-y-5">
+            <div>
+                <flux:heading size="lg">{{ __('System ersetzen') }}</flux:heading>
+                <flux:subheading>
+                    {{ __('Alle Beziehungen von :name (zuständige Mitarbeiter, Dienstleister und Rollen, Abhängigkeiten in beide Richtungen, Prozess- und Risiko-Verknüpfungen sowie Aufgaben und Maßnahmen) werden auf das gewählte System übertragen. :name bleibt erhalten, aber ohne Beziehungen.', ['name' => $system->name]) }}
+                </flux:subheading>
+            </div>
+            <flux:select wire:model="replaceTargetId" :label="__('Übertragen auf')" :placeholder="__('System wählen…')">
+                @foreach ($this->replaceCandidates() as $candidate)
+                    <flux:select.option value="{{ $candidate->id }}">{{ $candidate->name }}</flux:select.option>
+                @endforeach
+            </flux:select>
+            <flux:error name="replaceTargetId" />
+            <div class="flex items-center justify-end gap-2">
+                <flux:button type="button" variant="filled" wire:click="$set('confirmingReplace', false)">
+                    {{ __('Abbrechen') }}
+                </flux:button>
+                <flux:button variant="primary" icon="arrows-right-left" wire:click="replaceSystem">
+                    {{ __('Übertragen') }}
+                </flux:button>
+            </div>
+        </div>
     </flux:modal>
 </section>
