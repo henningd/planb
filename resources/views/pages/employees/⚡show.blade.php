@@ -1,11 +1,14 @@
 <?php
 
+use App\Actions\Employees\TransferResponsibilities;
 use App\Enums\RaciRole;
 use App\Enums\SystemOwnership;
 use App\Models\Employee;
 use App\Support\PhoneFormat;
 use Flux\Flux;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 
@@ -13,6 +16,10 @@ new #[Title('Mitarbeiter')] class extends Component {
     public Employee $employee;
 
     public bool $confirmingDelete = false;
+
+    public bool $confirmingHandover = false;
+
+    public ?string $handoverTargetId = null;
 
     public function mount(Employee $employee): void
     {
@@ -39,6 +46,47 @@ new #[Title('Mitarbeiter')] class extends Component {
         Flux::toast(variant: 'success', text: __('Mitarbeiter gelöscht.'));
 
         return redirect()->route('employees.index');
+    }
+
+    /**
+     * Andere Mitarbeiter desselben Mandanten als Ziel der Übergabe.
+     *
+     * @return Collection<int, Employee>
+     */
+    public function handoverCandidates(): Collection
+    {
+        return Employee::query()
+            ->where('company_id', $this->employee->company_id)
+            ->whereKeyNot($this->employee->id)
+            ->orderBy('last_name')
+            ->orderBy('first_name')
+            ->get(['id', 'first_name', 'last_name']);
+    }
+
+    /**
+     * Überträgt alle aktiven Zuständigkeiten dieses Mitarbeiters auf den
+     * gewählten Ziel-Mitarbeiter.
+     */
+    public function handover(TransferResponsibilities $action)
+    {
+        $this->validate([
+            'handoverTargetId' => [
+                'required',
+                'uuid',
+                Rule::exists('employees', 'id')->where('company_id', $this->employee->company_id),
+            ],
+        ], attributes: ['handoverTargetId' => __('Ziel-Mitarbeiter')]);
+
+        $target = Employee::query()
+            ->where('company_id', $this->employee->company_id)
+            ->whereKeyNot($this->employee->id)
+            ->findOrFail($this->handoverTargetId);
+
+        $action->handle($this->employee, $target);
+
+        Flux::toast(variant: 'success', text: __('Verantwortlichkeiten an :name übergeben.', ['name' => $target->fullName()]));
+
+        return redirect()->route('employees.show', $this->employee);
     }
 }; ?>
 
@@ -77,6 +125,9 @@ new #[Title('Mitarbeiter')] class extends Component {
             <div class="flex shrink-0 items-center gap-2">
                 <flux:button icon="pencil" :href="route('employees.edit', $employee)" wire:navigate>
                     {{ __('Bearbeiten') }}
+                </flux:button>
+                <flux:button icon="arrows-right-left" wire:click="$set('confirmingHandover', true)">
+                    {{ __('Übergeben') }}
                 </flux:button>
                 <flux:button variant="danger" icon="trash" wire:click="$set('confirmingDelete', true)">
                     {{ __('Löschen') }}
@@ -374,6 +425,31 @@ new #[Title('Mitarbeiter')] class extends Component {
                     {{ __('Abbrechen') }}
                 </flux:button>
                 <flux:button variant="danger" wire:click="delete">{{ __('Löschen') }}</flux:button>
+            </div>
+        </div>
+    </flux:modal>
+
+    <flux:modal wire:model.self="confirmingHandover" class="max-w-md">
+        <div class="space-y-5">
+            <div>
+                <flux:heading size="lg">{{ __('Verantwortlichkeiten übergeben') }}</flux:heading>
+                <flux:subheading>
+                    {{ __('Alle aktiven Zuständigkeiten von :name (Systeme, Aufgaben, Krisenrollen, geführte Mitarbeiter, Prozesse und Maßnahmen) werden auf die gewählte Person übertragen. :name bleibt erhalten, aber ohne aktive Zuständigkeiten. Historie und Nachweise bleiben unberührt.', ['name' => $employee->fullName()]) }}
+                </flux:subheading>
+            </div>
+            <flux:select wire:model="handoverTargetId" :label="__('Übertragen auf')" :placeholder="__('Mitarbeiter wählen…')">
+                @foreach ($this->handoverCandidates() as $candidate)
+                    <flux:select.option value="{{ $candidate->id }}">{{ $candidate->nameLastFirst() }}</flux:select.option>
+                @endforeach
+            </flux:select>
+            <flux:error name="handoverTargetId" />
+            <div class="flex items-center justify-end gap-2">
+                <flux:button type="button" variant="filled" wire:click="$set('confirmingHandover', false)">
+                    {{ __('Abbrechen') }}
+                </flux:button>
+                <flux:button variant="primary" icon="arrows-right-left" wire:click="handover">
+                    {{ __('Übergeben') }}
+                </flux:button>
             </div>
         </div>
     </flux:modal>
