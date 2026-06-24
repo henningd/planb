@@ -1,5 +1,6 @@
 <?php
 
+use App\Concerns\SendsCommunicationTemplates;
 use App\Enums\CommunicationChannel;
 use App\Models\Company;
 use App\Models\CrisisLogEntry;
@@ -17,6 +18,8 @@ use Livewire\Attributes\Title;
 use Livewire\Component;
 
 new #[Title('Krisen-Cockpit')] class extends Component {
+    use SendsCommunicationTemplates;
+
     public ?string $previewTemplateId = null;
 
     /**
@@ -369,11 +372,14 @@ new #[Title('Krisen-Cockpit')] class extends Component {
     @else
         @if (! $this->cockpit->hasActiveRun())
             <div class="space-y-6">
-                <div>
-                    <flux:heading size="xl">{{ __('Krisen-Cockpit') }}</flux:heading>
-                    <flux:subheading>
-                        {{ __('Reduzierte Sicht für den Ernstfall – Krisenstab, Wiederanlauf-Reihenfolge, Schritte und Meldepflichten.') }}
-                    </flux:subheading>
+                <div class="flex items-start justify-between gap-4">
+                    <div>
+                        <flux:heading size="xl">{{ __('Krisen-Cockpit') }}</flux:heading>
+                        <flux:subheading>
+                            {{ __('Reduzierte Sicht für den Ernstfall – Krisenstab, Wiederanlauf-Reihenfolge, Schritte und Meldepflichten.') }}
+                        </flux:subheading>
+                    </div>
+                    <x-manual-help slug="krisen-cockpit" />
                 </div>
 
                 <div class="rounded-xl border border-emerald-200 bg-emerald-50 p-6 dark:border-emerald-900 dark:bg-emerald-950/30">
@@ -817,9 +823,12 @@ new #[Title('Krisen-Cockpit')] class extends Component {
 
                 {{-- Sektion 5: Kommunikation --}}
                 <div class="rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
-                    <div class="mb-4 flex items-center gap-2">
-                        <flux:icon.megaphone class="h-5 w-5 text-zinc-500" />
-                        <flux:heading size="lg">{{ __('Kommunikation') }}</flux:heading>
+                    <div class="mb-4 flex items-center justify-between gap-2">
+                        <div class="flex items-center gap-2">
+                            <flux:icon.megaphone class="h-5 w-5 text-zinc-500" />
+                            <flux:heading size="lg">{{ __('Kommunikation') }}</flux:heading>
+                        </div>
+                        <x-manual-help slug="kommunikations-vorlagen" />
                     </div>
 
                     @if ($cockpit->communicationTemplates->isEmpty())
@@ -858,8 +867,13 @@ new #[Title('Krisen-Cockpit')] class extends Component {
                                         </flux:button>
                                         @if ($tpl->channel === CommunicationChannel::Sms)
                                             <flux:button type="button" size="xs" variant="ghost" icon="device-phone-mobile"
-                                                :href="route('communication-templates.index')" wire:navigate>
+                                                wire:click="openSmsSend('{{ $tpl->id }}')">
                                                 {{ __('Per SMS senden') }}
+                                            </flux:button>
+                                        @elseif ($tpl->channel === CommunicationChannel::Email)
+                                            <flux:button type="button" size="xs" variant="ghost" icon="envelope"
+                                                wire:click="openEmailSend('{{ $tpl->id }}')">
+                                                {{ __('Per E-Mail senden') }}
                                             </flux:button>
                                         @endif
                                     </div>
@@ -1011,6 +1025,8 @@ new #[Title('Krisen-Cockpit')] class extends Component {
                     @endif
                 </div>
             </div>
+
+            @include('partials.communication-send-modals')
 
             <flux:modal name="cockpit-template-preview" class="max-w-2xl">
                 @php
