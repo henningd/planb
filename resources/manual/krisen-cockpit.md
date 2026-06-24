@@ -14,7 +14,17 @@ Genau das zeigt das Cockpit auf einer Seite. Erreichbar über die Sidebar **„E
 2. **Krisenstab** — die fünf Pflichtrollen mit Hauptperson und Stellvertretung. Telefonnummern direkt anklickbar (`tel:`).
 3. **Wiederanlauf-Reihenfolge** — die kritischen Systeme in Wiederanlauf-Reihenfolge mit Hotline-Kontakten.
 4. **Schritte** — der laufende Szenario-Lauf mit allen Schritten zum Abhaken.
-5. **Meldepflichten** — wenn ein Vorfall existiert, die offenen Pflichtmeldungen mit Countdown.
+5. **Kommunikation** — die hinterlegten Vorlagen, direkt aus dem Cockpit versendbar (siehe unten).
+6. **Meldepflichten** — wenn ein Vorfall existiert, die offenen Pflichtmeldungen mit Countdown.
+
+## Kommunikation: Vorlagen direkt senden
+
+In der Sektion **„Kommunikation"** liegen die [Kommunikations-Vorlagen](/handbuch/kommunikations-vorlagen) als Karten — mit Badge für Zielgruppe und Kanal und einer kurzen Textvorschau. An jeder Karte gibt es:
+
+- **„Vorlage öffnen"** — zeigt den vollständigen, mit Platzhaltern gefüllten Text zum Vorlesen oder Kopieren.
+- **„Per SMS senden"** bzw. **„Per E-Mail senden"** (je nach Kanal) — öffnet den Versand-Dialog **direkt im Cockpit**: Empfänger auswählen, **„Senden vorbereiten"**, dann der rote Bestätigungsklick. So lösen Sie die Alarmierung im Ernstfall ohne Seitenwechsel aus.
+
+Empfänger sind die Mitarbeiter mit hinterlegter Mobilnummer (SMS) bzw. E-Mail-Adresse — Details im Kapitel [Kommunikations-Vorlagen](/handbuch/kommunikations-vorlagen).
 
 ## Im Hintergrund: Live-Updates
 

@@ -635,9 +635,12 @@ new #[Title('Kommunikations-Vorlagen')] class extends Component {
             </flux:subheading>
         </div>
 
-        <flux:button variant="primary" icon="plus" wire:click="openCreate" :disabled="! $this->hasCompany">
-            {{ __('Neue Vorlage') }}
-        </flux:button>
+        <div class="flex shrink-0 items-center gap-2">
+            <x-manual-help slug="kommunikations-vorlagen" />
+            <flux:button variant="primary" icon="plus" wire:click="openCreate" :disabled="! $this->hasCompany">
+                {{ __('Neue Vorlage') }}
+            </flux:button>
+        </div>
     </div>
 
     @unless ($this->hasCompany)
