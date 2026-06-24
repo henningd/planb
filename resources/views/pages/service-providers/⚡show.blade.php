@@ -1,10 +1,13 @@
 <?php
 
+use App\Actions\ServiceProviders\ReplaceServiceProvider;
 use App\Enums\RaciRole;
 use App\Enums\SystemOwnership;
 use App\Models\ServiceProvider;
 use Flux\Flux;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 
@@ -12,6 +15,10 @@ new #[Title('Dienstleister')] class extends Component {
     public ServiceProvider $provider;
 
     public bool $confirmingDelete = false;
+
+    public bool $confirmingReplace = false;
+
+    public ?string $replaceTargetId = null;
 
     public function mount(ServiceProvider $provider): void
     {
@@ -32,6 +39,46 @@ new #[Title('Dienstleister')] class extends Component {
         Flux::toast(variant: 'success', text: __('Dienstleister gelöscht.'));
 
         return redirect()->route('service-providers.index');
+    }
+
+    /**
+     * Andere Dienstleister desselben Mandanten als Ziel des Austauschs.
+     *
+     * @return Collection<int, ServiceProvider>
+     */
+    public function replaceCandidates(): Collection
+    {
+        return ServiceProvider::query()
+            ->where('company_id', $this->provider->company_id)
+            ->whereKeyNot($this->provider->id)
+            ->orderBy('name')
+            ->get(['id', 'name']);
+    }
+
+    /**
+     * Überträgt alle Zuordnungen dieses Dienstleisters auf den gewählten
+     * Ziel-Dienstleister (Austausch, z. B. bei Anbieterwechsel).
+     */
+    public function replaceProvider(ReplaceServiceProvider $action)
+    {
+        $this->validate([
+            'replaceTargetId' => [
+                'required',
+                'uuid',
+                Rule::exists('service_providers', 'id')->where('company_id', $this->provider->company_id),
+            ],
+        ], attributes: ['replaceTargetId' => __('Ziel-Dienstleister')]);
+
+        $target = ServiceProvider::query()
+            ->where('company_id', $this->provider->company_id)
+            ->whereKeyNot($this->provider->id)
+            ->findOrFail($this->replaceTargetId);
+
+        $action->handle($this->provider, $target);
+
+        Flux::toast(variant: 'success', text: __('Zuordnungen auf :name übertragen.', ['name' => $target->name]));
+
+        return redirect()->route('service-providers.show', $target);
     }
 }; ?>
 
@@ -62,6 +109,9 @@ new #[Title('Dienstleister')] class extends Component {
             <div class="flex shrink-0 items-center gap-2">
                 <flux:button icon="pencil" :href="route('service-providers.index')" wire:navigate>
                     {{ __('Bearbeiten') }}
+                </flux:button>
+                <flux:button icon="arrows-right-left" wire:click="$set('confirmingReplace', true)">
+                    {{ __('Ersetzen') }}
                 </flux:button>
                 <flux:button variant="danger" icon="trash" wire:click="$set('confirmingDelete', true)">
                     {{ __('Löschen') }}
@@ -253,6 +303,31 @@ new #[Title('Dienstleister')] class extends Component {
                     {{ __('Abbrechen') }}
                 </flux:button>
                 <flux:button variant="danger" wire:click="delete">{{ __('Löschen') }}</flux:button>
+            </div>
+        </div>
+    </flux:modal>
+
+    <flux:modal wire:model.self="confirmingReplace" class="max-w-md">
+        <div class="space-y-5">
+            <div>
+                <flux:heading size="lg">{{ __('Dienstleister ersetzen') }}</flux:heading>
+                <flux:subheading>
+                    {{ __('Alle System- und Aufgaben-Zuordnungen von :name werden auf den gewählten Dienstleister übertragen. :name bleibt erhalten, aber ohne Zuordnungen.', ['name' => $provider->name]) }}
+                </flux:subheading>
+            </div>
+            <flux:select wire:model="replaceTargetId" :label="__('Übertragen auf')" :placeholder="__('Dienstleister wählen…')">
+                @foreach ($this->replaceCandidates() as $candidate)
+                    <flux:select.option value="{{ $candidate->id }}">{{ $candidate->name }}</flux:select.option>
+                @endforeach
+            </flux:select>
+            <flux:error name="replaceTargetId" />
+            <div class="flex items-center justify-end gap-2">
+                <flux:button type="button" variant="filled" wire:click="$set('confirmingReplace', false)">
+                    {{ __('Abbrechen') }}
+                </flux:button>
+                <flux:button variant="primary" icon="arrows-right-left" wire:click="replaceProvider">
+                    {{ __('Übertragen') }}
+                </flux:button>
             </div>
         </div>
     </flux:modal>
