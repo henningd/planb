@@ -210,6 +210,8 @@
             padding: 1.5mm 2mm;
             vertical-align: top;
             text-align: left;
+            overflow-wrap: anywhere;
+            word-break: break-word;
         }
         th {
             background: #ececec;
@@ -223,6 +225,10 @@
         .meta-table td, .meta-table th { vertical-align: top; }
 
         /* Krisenrollen-Tabelle (4.1): kompakte 3-Spalten mit gestackter Erreichbarkeit. */
+        /* table-layout: fixed erzwingt die vorgegebenen Spaltenbreiten und
+           verhindert, dass langer Inhalt (z. B. 8.4) die Tabelle in Firefox
+           über den Seitenrand treibt. */
+        .role-table { table-layout: fixed; }
         .role-table td { vertical-align: top; }
         .role-table .role-function {
             font-style: italic;
@@ -255,6 +261,56 @@
             color: #555;
             line-height: 1.3;
             margin-top: 0.3mm;
+        }
+
+        /* Notfallbetrieb / Ersatzprozesse (8.4): je Prozess ein gestapelter
+           Block statt enger 5-Spalten-Tabelle — druck- und randsicher. */
+        .fallback-block {
+            border: 0.5pt solid #888;
+            margin: 2mm 0 3mm;
+            page-break-inside: avoid;
+        }
+        .fallback-head {
+            width: 100%;
+            border-collapse: collapse;
+            background: #ececec;
+        }
+        .fallback-head td {
+            border: 0;
+            padding: 1.5mm 2.5mm;
+            vertical-align: middle;
+            font-size: 10.5pt;
+        }
+        .fallback-head td.fb-dauer {
+            width: 48mm;
+            text-align: right;
+            white-space: nowrap;
+            font-size: 8.5pt;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: #444;
+        }
+        .fallback-meta {
+            width: 100%;
+            table-layout: fixed;
+            border-collapse: collapse;
+        }
+        .fallback-meta td {
+            border: 0;
+            border-top: 0.4pt solid #ddd;
+            padding: 1.4mm 2.5mm;
+            vertical-align: top;
+            font-size: 10pt;
+            overflow-wrap: anywhere;
+            word-break: break-word;
+        }
+        .fallback-meta tr:first-child td { border-top: 0; }
+        .fallback-meta td.fb-label {
+            width: 42mm;
+            font-size: 8pt;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: #555;
         }
 
         /* Geltungsbereich-Tabelle (3.4): Bullet-Listen in beiden Spalten. */
@@ -1150,47 +1206,37 @@
         @if ($company->fallbackProcesses->isNotEmpty())
             <h3>8.4 Notfallbetrieb / Ersatzprozesse</h3>
             <p class="small">Wie das Unternehmen weiterarbeitet, solange ein Ausfall andauert — bevor der Wiederanlauf greift.</p>
-            <table class="role-table">
-                <thead>
-                    <tr>
-                        <th style="width: 24%;">Ersatzprozess</th>
-                        <th style="width: 18%;">Auslöser</th>
-                        <th style="width: 18%;">Verantwortlich</th>
-                        <th style="width: 12%;">Max. Dauer</th>
-                        <th>Übergabe an Wiederanlauf</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach ($company->fallbackProcesses as $fp)
+            @foreach ($company->fallbackProcesses as $fp)
+                <div class="fallback-block">
+                    <table class="fallback-head">
                         <tr>
+                            <td><strong>{{ $fp->title }}</strong></td>
+                            <td class="fb-dauer">@if ($fp->max_duration_hours !== null)Max. Ausfalldauer: {{ $fp->max_duration_hours }} h @endif</td>
+                        </tr>
+                    </table>
+                    <table class="fallback-meta">
+                        @if ($fp->description)
+                            <tr><td class="fb-label">Vorgehen</td><td>{{ $fp->description }}</td></tr>
+                        @endif
+                        <tr><td class="fb-label">Auslöser</td><td>{{ $fp->trigger ?: '—' }}</td></tr>
+                        <tr>
+                            <td class="fb-label">Verantwortlich</td>
                             <td>
-                                <strong>{{ $fp->title }}</strong>
-                                @if ($fp->description)
-                                    <div class="small">{{ $fp->description }}</div>
-                                @endif
-                                @if ($fp->systems->isNotEmpty())
-                                    <div class="small contact-label-spaced"><em>Betroffene Systeme:</em>
-                                        {{ $fp->systems->pluck('name')->implode(', ') }}
-                                    </div>
-                                @endif
-                            </td>
-                            <td>{{ $fp->trigger ?: '—' }}</td>
-                            <td>
-                                @if ($fp->responsibleRole)
-                                    {{ $fp->responsibleRole->name }}
-                                @endif
-                                @if ($fp->responsibleRole && $fp->responsibleEmployee)<br>@endif
-                                @if ($fp->responsibleEmployee)
-                                    {{ $fp->responsibleEmployee->first_name }} {{ $fp->responsibleEmployee->last_name }}
-                                @endif
+                                @if ($fp->responsibleRole){{ $fp->responsibleRole->name }}@endif
+                                @if ($fp->responsibleRole && $fp->responsibleEmployee) · @endif
+                                @if ($fp->responsibleEmployee){{ $fp->responsibleEmployee->first_name }} {{ $fp->responsibleEmployee->last_name }}@endif
                                 @if (! $fp->responsibleRole && ! $fp->responsibleEmployee)—@endif
                             </td>
-                            <td>{{ $fp->max_duration_hours !== null ? $fp->max_duration_hours.' h' : '—' }}</td>
-                            <td>{{ $fp->handover_notes ?: '—' }}</td>
                         </tr>
-                    @endforeach
-                </tbody>
-            </table>
+                        @if ($fp->handover_notes)
+                            <tr><td class="fb-label">Übergabe an Wiederanlauf</td><td>{{ $fp->handover_notes }}</td></tr>
+                        @endif
+                        @if ($fp->systems->isNotEmpty())
+                            <tr><td class="fb-label">Betroffene Systeme</td><td>{{ $fp->systems->pluck('name')->implode(', ') }}</td></tr>
+                        @endif
+                    </table>
+                </div>
+            @endforeach
         @endif
 
         @php($directProviders = $providers->filter(fn ($p) => $p->direct_order_limit !== null))
