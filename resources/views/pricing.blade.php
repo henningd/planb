@@ -1,17 +1,19 @@
 @php
     $contactEmail = (string) \App\Support\Settings\SystemSetting::get('platform_contact_email');
     $companyName = 'Arento AI GmbH';
-    $pricingDescription = 'Preise für '.$productName.' – Notfallhandbuch und BCM für Unternehmen. Starter, Advanced, Enterprise. Monatlich oder jährlich.';
+    $pricingDescription = 'Preise für '.$productName.' – Notfallhandbuch und BCM für Unternehmen. Starter, Business, Advanced, Enterprise. Monatlich oder jährlich.';
 
     // Preis-Definitionen — eine Quelle für Karten und Vergleichstabelle.
     $monthlyPrices = [
         'starter' => 49,
+        'business' => 149,
         'advanced' => 389,
         'enterprise' => null, // individuell
     ];
     // Jahrespreis = 10 × Monatspreis (= "2 Monate gratis", entspricht ~17 % Rabatt).
     $yearlyPrices = [
         'starter' => $monthlyPrices['starter'] * 10,
+        'business' => $monthlyPrices['business'] * 10,
         'advanced' => $monthlyPrices['advanced'] * 10,
         'enterprise' => null,
     ];
@@ -20,52 +22,77 @@
         [
             'key' => 'starter',
             'name' => 'Starter',
-            'tagline' => 'Für kleine Betriebe, die ein DSGVO-konformes Notfallhandbuch brauchen.',
-            'audience' => '5–25 Mitarbeitende · 1 Standort',
+            'tagline' => 'Notfallhandbuch erstellen — für kleine Organisationen und den Einstieg.',
+            'audience' => 'Kleine Organisation · 1 Standort · 1 Admin',
             'monthly' => $monthlyPrices['starter'],
             'yearly' => $yearlyPrices['starter'],
             'cta' => 'Kostenlos starten',
             'cta_target' => 'register',
             'highlight' => false,
             'features' => [
-                'Stammdaten, Systeme, Wiederanlauf-Plan',
+                'Digitales Notfallhandbuch: Stammdaten, Rollen, Standorte',
+                'Systeme, Kritikalität & Wiederanlaufplan',
                 'Sofortmittel & Notfallbetrieb',
+                'RTO / RPO je System',
                 'PDF-Handbuch mit Versionen & Lesebestätigungen',
-                'Audit-Log + 2FA',
+                'Dienstleister & Notfallkontakte',
+                '2FA · Audit-Log · Branchen-Templates',
                 '1 App-Admin · 1 Standort',
-                'Branchen-Templates',
-                'Tabletop-Übungen manuell',
-                'E-Mail-Support (48 h)',
+                'E-Mail-Support',
+            ],
+        ],
+        [
+            'key' => 'business',
+            'name' => 'Business',
+            'tagline' => 'Notfallhandbuch pflegen und Prävention steuern — für KMU, Kommunen, Pflege, Schulen.',
+            'audience' => 'KMU / kleinere Kommunen · bis 3 Standorte · bis 3 Nutzer',
+            'monthly' => $monthlyPrices['business'],
+            'yearly' => $yearlyPrices['business'],
+            'cta' => '14 Tage kostenlos testen',
+            'cta_target' => 'register',
+            'highlight' => false,
+            'features' => [
+                'Alles aus Starter',
+                'Geschäftsprozesse mit RTO / RPO / MTPD',
+                'Business Impact Analyse (BIA light)',
+                'Risiko-Register: Bewertung & Behandlung',
+                'Prävention: Prüfaufgaben, Aufgaben-Inbox, Fälligkeiten',
+                'BSI 200-4 / NIS2-Orientierung',
+                'Verträge / SLA mit Notfallnummern',
+                'Tabletop-Übungen (manuell)',
+                'bis 3 Nutzer · bis 3 Standorte',
+                'Priorisierter E-Mail-Support · 1 h Onboarding',
             ],
         ],
         [
             'key' => 'advanced',
             'name' => 'Advanced',
-            'tagline' => 'Für NIS2-pflichtige Mittelständler — Compliance-Score, Live-Cockpit, Risiko-Register.',
-            'audience' => '25–250 Mitarbeitende · bis 5 Standorte',
+            'tagline' => 'BCM und Krisenmanagement vollständig abbilden — für Mittelstand, Kommunen, NIS2-nahe Organisationen.',
+            'audience' => 'Mittelstand / NIS2 · bis 5 Standorte · bis 10 Nutzer',
             'monthly' => $monthlyPrices['advanced'],
             'yearly' => $yearlyPrices['advanced'],
             'cta' => '14 Tage kostenlos testen',
             'cta_target' => 'register',
             'highlight' => true,
             'features' => [
-                'Alles aus Starter',
-                'Krisen-Cockpit (Live-Lagebild)',
-                'Risiko-Register (Bewertung, Behandlung, Restrisiko)',
+                'Alles aus Business',
+                'Krisen-Cockpit (Live-Lagebild) & War-Room',
                 'Lessons Learned mit Maßnahmen',
+                'Erweiterte Ausfallkosten & BIA',
+                'Restrisiko-Bewertung & Risiko-Reporting',
                 'Compliance-Score nach BSI 200-4 / NIS2',
                 'Meldepflichten-Workflow mit Fristen-Tracking',
-                'Kommunikation per E-Mail, SMS, Slack, Teams',
-                'Übungsmodus mit Reports',
-                'bis 5 App-User · bis 5 Standorte',
-                'Hotline 8/5 + 2 h Onboarding-Workshop',
+                'Übungsmodus mit Berichten',
+                'E-Mail-Benachrichtigungen & Kalendereinladungen',
+                'bis 10 Nutzer · bis 5 Standorte',
+                'Hotline 8/5 · 2 h Onboarding-Workshop',
             ],
         ],
         [
             'key' => 'enterprise',
             'name' => 'Enterprise',
-            'tagline' => 'Für Konzerne, KRITIS-Betreiber sowie Berater und MSPs mit mehreren Mandanten.',
-            'audience' => '250+ Mitarbeitende · KRITIS / Multi-Mandant',
+            'tagline' => 'Plattform für Berater, MSP und große Organisationen sowie KRITIS-Betreiber.',
+            'audience' => '250+ / KRITIS · Multi-Mandant · unbegrenzt',
             'monthly' => null,
             'yearly' => null,
             'cta' => 'Demo anfragen',
@@ -73,65 +100,83 @@
             'highlight' => false,
             'features' => [
                 'Alles aus Advanced',
-                'API + Webhooks (Zabbix, Prometheus, eigene)',
+                'Multi-Mandant & mandantenübergreifende Verwaltung',
                 'White-Label mit eigener Domain',
-                'Multi-Mandant für Berater / MSPs',
+                'API, Webhooks & erweiterte Integrationen',
                 'IP-Restriktion für Freigabelinks',
-                'Behörden-API für Meldepflichten',
-                'Mandanten-Archiv verschlüsselt offsite',
-                'Unbegrenzte App-User & Standorte',
+                'Verschlüsseltes Mandantenarchiv',
+                'Template-Verwaltung für mehrere Kunden',
+                'Unbegrenzte Nutzer & Standorte',
                 '24/7-Support + dedizierter Customer Success Manager',
-                'Implementierungs-Begleitung',
+                'Implementierungsbegleitung',
             ],
         ],
     ];
 
     // Vergleichstabelle: einheitliche Quelle, daraus rendern.
+    // Zeilenformat: [Label, Starter, Business, Advanced, Enterprise]
     $comparison = [
-        'Anwendung' => [
-            ['Stammdaten · Systeme · Wiederanlauf', true, true, true],
-            ['Sofortmittel · Notfallbetrieb', true, true, true],
-            ['PDF-Handbuch · Versionen · Lesebestätigungen', true, true, true],
-            ['Branchen-Templates', 'vorgefertigt', 'vorgefertigt', '+ eigene'],
-            ['App-User', '1', 'bis 5', 'unbegrenzt'],
-            ['Standorte', '1', 'bis 5', 'unbegrenzt'],
-            ['Freigabelinks (Auditor / Versicherung)', '1 aktiv', 'unbegrenzt', '+ IP-Restriktion'],
+        'Anwendung & Stammdaten' => [
+            ['Stammdaten · Standorte · Rollen · Dienstleister', true, true, true, true],
+            ['Systeme · Kritikalität · Wiederanlaufplan', true, true, true, true],
+            ['Systemabhängigkeiten', false, true, true, true],
+            ['Sofortmittel · Notfallbetrieb', true, true, true, true],
+            ['PDF-Handbuch · Versionen · Lesebestätigungen', true, true, true, true],
+            ['Branchen-Templates', 'vorgefertigt', 'erweitert', 'erweitert', '+ eigene'],
+        ],
+        'BCM & Business Impact' => [
+            ['RTO / RPO je System', true, true, true, true],
+            ['Geschäftsprozesse mit RTO / RPO / MTPD', false, true, true, true],
+            ['Wiederanlauf-Reihenfolge · Abhängigkeiten', false, true, true, true],
+            ['Ausfallkostenberechnung', false, 'einfach', 'erweitert', 'erweitert'],
+            ['Business Impact Analyse', false, 'BIA light', 'erweitert', 'erweitert'],
+        ],
+        'Risiko & Prävention' => [
+            ['Risiko-Register: Bewertung & Behandlung', false, true, true, true],
+            ['Prüfaufgaben · Wiederkehrende Prüfungen · Inbox', false, true, true, true],
+            ['Fälligkeiten · Verantwortliche zuweisen', false, true, true, true],
+            ['Restrisiko-Bewertung · Risiko-Reporting', false, false, true, true],
+            ['E-Mail-Benachrichtigungen · Kalendereinladungen', false, false, true, true],
         ],
         'Krise & Übung' => [
-            ['Tabletop-Übungen (manuell)', true, true, true],
-            ['Krisen-Cockpit (Live-Lagebild)', false, true, true],
-            ['Übungsmodus mit Reports', false, true, true],
-            ['Tabletop-Coaching durch Experten', false, false, true],
+            ['Tabletop-Übungen (manuell)', false, true, true, true],
+            ['Krisen-Cockpit · War-Room · Krisenprotokoll', false, false, true, true],
+            ['Statusverfolgung · Kommunikationslisten', false, false, true, true],
+            ['Lessons Learned mit Maßnahmen', false, false, true, true],
+            ['Übungsmodus mit Berichten', false, false, true, true],
         ],
         'Compliance' => [
-            ['2FA · Audit-Log', true, true, true],
-            ['Risiko-Register', false, true, true],
-            ['Lessons Learned', false, true, true],
-            ['Compliance-Score (BSI 200-4 / NIS2)', false, true, true],
-            ['Meldepflichten-Workflow + Fristen-Tracking', 'nur Vorlagen', true, true],
-            ['Behörden-API', false, false, true],
+            ['2FA · Audit-Log · Rollen-/Rechtekonzept', true, true, true, true],
+            ['BSI 200-4 / NIS2-Orientierung', false, true, true, true],
+            ['Compliance-Score / Reifegrad', false, false, true, true],
+            ['Meldepflichten-Workflow + Fristen-Tracking', false, false, true, true],
+            ['Nachweisführung · Freigabelinks (Auditor / Versicherung)', false, false, true, true],
+            ['IP-Restriktion für Freigabelinks', false, false, false, true],
         ],
-        'Kommunikation' => [
-            ['E-Mail-Versand', true, true, true],
-            ['SMS · Slack · Teams', false, true, true],
-            ['Massen-Versand', false, false, true],
+        'Dienstleister & Verträge' => [
+            ['Dienstleister · Ansprechpartner', true, true, true, true],
+            ['Verträge / SLA · Notfallnummern je Vertrag', false, true, true, true],
+            ['Unterschiedliche SLA je Dienstleister / System', false, true, true, true],
         ],
-        'Integration & Branding' => [
-            ['API + Webhooks (Zabbix, Prometheus)', false, false, true],
-            ['White-Label (Logo, Farbe, eigene Domain)', false, false, true],
-            ['Multi-Mandant für Berater / MSPs', false, false, true],
+        'Mandanten, Branding & Integration' => [
+            ['Ein Mandant', true, true, true, true],
+            ['Multi-Mandant für Berater / MSPs', false, false, false, true],
+            ['White-Label mit eigener Domain', false, false, false, true],
+            ['API · Webhooks · erweiterte Integrationen', false, false, false, true],
+            ['Verschlüsseltes Mandantenarchiv', false, false, false, true],
         ],
-        'Backup & Support' => [
-            ['Backup / Mandanten-Archiv', 'manuell', '+ Auto wöchentlich', '+ Offsite verschlüsselt'],
-            ['Support', 'E-Mail (48 h)', '+ Hotline 8/5', '+ 24/7 + CSM'],
-            ['Onboarding', 'self-service', '+ 2 h Workshop', '+ Implementierung'],
+        'Nutzer, Standorte & Support' => [
+            ['App-User', '1 Admin', 'bis 3', 'bis 10', 'unbegrenzt'],
+            ['Standorte', '1', 'bis 3', 'bis 5', 'unbegrenzt'],
+            ['Support', 'E-Mail', '+ priorisiert', '+ Hotline 8/5', '+ 24/7 & CSM'],
+            ['Onboarding', 'self-service', '1 h', '2 h', 'Implementierung'],
         ],
     ];
 
     $faq = [
         [
             'q' => 'Was ist im 14-Tage-Test enthalten?',
-            'a' => 'Voller Funktionsumfang des Advanced-Tarifs ohne Kreditkarten-Eingabe. Nach 14 Tagen entscheiden Sie, ob Sie auf Starter, Advanced oder Enterprise wechseln — sonst friert das Konto ein, Ihre Daten bleiben 30 Tage exportierbar.',
+            'a' => 'Voller Funktionsumfang des Advanced-Tarifs ohne Kreditkarten-Eingabe. Nach 14 Tagen entscheiden Sie, ob Sie auf Starter, Business, Advanced oder Enterprise wechseln — sonst friert das Konto ein, Ihre Daten bleiben 30 Tage exportierbar.',
         ],
         [
             'q' => 'Kann ich monatlich kündigen?',
@@ -235,7 +280,7 @@
             </div>
 
             {{-- Karten --}}
-            <div class="grid lg:grid-cols-3 gap-6 lg:gap-8">
+            <div class="grid sm:grid-cols-2 xl:grid-cols-4 gap-5 lg:gap-6">
                 @foreach ($plans as $plan)
                     @php
                         $cardClasses = $plan['highlight']
@@ -245,7 +290,7 @@
                             ? route('register').'?plan='.$plan['key']
                             : route('home').'#kontakt';
                     @endphp
-                    <div class="relative flex flex-col rounded-2xl bg-white p-8 {{ $cardClasses }}">
+                    <div class="relative flex flex-col rounded-2xl bg-white p-6 {{ $cardClasses }}">
                         @if ($plan['highlight'])
                             <div class="absolute -top-3 left-1/2 -translate-x-1/2">
                                 <span class="inline-flex items-center px-3 py-1 rounded-full bg-indigo-600 text-white text-xs font-semibold shadow-sm">
@@ -269,7 +314,7 @@
                                 {{-- Monatspreis --}}
                                 <div data-price-monthly hidden>
                                     <div class="flex items-baseline gap-1">
-                                        <span class="text-4xl font-semibold text-slate-900">{{ $plan['monthly'] }} €</span>
+                                        <span class="text-3xl font-semibold text-slate-900">{{ $plan['monthly'] }} €</span>
                                         <span class="text-sm text-slate-500">/Monat</span>
                                     </div>
                                     <div class="mt-1 text-sm text-slate-500">monatlich abgerechnet · jederzeit kündbar</div>
@@ -277,7 +322,7 @@
                                 {{-- Jahrespreis --}}
                                 <div data-price-yearly>
                                     <div class="flex items-baseline gap-1">
-                                        <span class="text-4xl font-semibold text-slate-900">{{ number_format($plan['yearly'] / 12, 0, ',', '.') }} €</span>
+                                        <span class="text-3xl font-semibold text-slate-900">{{ number_format($plan['yearly'] / 12, 0, ',', '.') }} €</span>
                                         <span class="text-sm text-slate-500">/Monat</span>
                                     </div>
                                     <div class="mt-1 text-sm text-slate-500">
@@ -336,24 +381,25 @@
                     <thead>
                         <tr class="border-b border-slate-200 bg-slate-50">
                             <th class="px-6 py-4 text-left font-semibold text-slate-900">Funktion</th>
-                            <th class="px-6 py-4 text-center font-semibold text-slate-900">Starter</th>
-                            <th class="px-6 py-4 text-center font-semibold text-indigo-700 bg-indigo-50/50">Advanced</th>
-                            <th class="px-6 py-4 text-center font-semibold text-slate-900">Enterprise</th>
+                            <th class="px-4 py-4 text-center font-semibold text-slate-900">Starter</th>
+                            <th class="px-4 py-4 text-center font-semibold text-slate-900">Business</th>
+                            <th class="px-4 py-4 text-center font-semibold text-indigo-700 bg-indigo-50/50">Advanced</th>
+                            <th class="px-4 py-4 text-center font-semibold text-slate-900">Enterprise</th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach ($comparison as $section => $rows)
                             <tr class="bg-slate-50 border-b border-slate-100">
-                                <td colspan="4" class="px-6 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500">{{ $section }}</td>
+                                <td colspan="5" class="px-6 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500">{{ $section }}</td>
                             </tr>
                             @foreach ($rows as $row)
                                 <tr class="border-b border-slate-100 last:border-b-0">
                                     <td class="px-6 py-3 text-slate-700">{{ $row[0] }}</td>
-                                    @foreach ([$row[1], $row[2], $row[3]] as $i => $val)
+                                    @foreach ([$row[1], $row[2], $row[3], $row[4]] as $i => $val)
                                         @php
-                                            $isHighlight = $i === 1; // Advanced-Spalte
+                                            $isHighlight = $i === 2; // Advanced-Spalte
                                         @endphp
-                                        <td class="px-6 py-3 text-center {{ $isHighlight ? 'bg-indigo-50/30' : '' }}">
+                                        <td class="px-4 py-3 text-center {{ $isHighlight ? 'bg-indigo-50/30' : '' }}">
                                             @if ($val === true)
                                                 <svg class="w-5 h-5 mx-auto text-emerald-600" viewBox="0 0 20 20" fill="currentColor">
                                                     <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
