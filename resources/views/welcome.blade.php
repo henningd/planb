@@ -318,7 +318,7 @@
                             <span class="w-2.5 h-2.5 rounded-full bg-slate-300"></span>
                             <span class="w-2.5 h-2.5 rounded-full bg-slate-300"></span>
                             <span class="w-2.5 h-2.5 rounded-full bg-slate-300"></span>
-                            <span class="ml-3 text-xs text-slate-500 font-medium">notfallhandbuch.eu</span>
+                            <span class="ml-3 text-xs text-slate-500 font-medium">{{ $productName }} / Notfallhandbuch</span>
                         </div>
 
                         <div class="p-6 space-y-5">
