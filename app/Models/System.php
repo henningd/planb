@@ -39,6 +39,14 @@ class System extends Model
     }
 
     /**
+     * @return BelongsToMany<Contract, $this>
+     */
+    public function contracts(): BelongsToMany
+    {
+        return $this->belongsToMany(Contract::class)->withTimestamps();
+    }
+
+    /**
      * @return BelongsToMany<ServiceProvider, $this>
      */
     public function serviceProviders(): BelongsToMany

@@ -4,6 +4,19 @@
         @include('partials.head')
     </head>
     <body class="min-h-screen bg-white dark:bg-zinc-800">
+        {{-- Gespeicherte Menübreite früh setzen, damit die Sidebar nicht in der Standardbreite aufblitzt. --}}
+        <script>
+            (function () {
+                try {
+                    var w = parseInt(localStorage.getItem('appSidebarWidth'), 10);
+                    if (!isNaN(w)) {
+                        w = Math.min(500, Math.max(200, w));
+                        document.documentElement.style.setProperty('--app-sidebar-width', w + 'px');
+                    }
+                } catch (e) {}
+            })();
+        </script>
+
         <flux:sidebar sticky collapsible="mobile" class="border-e border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900">
             <flux:sidebar.header>
                 <x-app-logo :sidebar="true" href="{{ route('dashboard') }}" wire:navigate />
@@ -18,6 +31,9 @@
                 <flux:sidebar.group :heading="__('Platform')" class="grid">
                     <flux:sidebar.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>
                         {{ __('Dashboard') }}
+                    </flux:sidebar.item>
+                    <flux:sidebar.item icon="inbox" :href="route('tasks-inbox.index')" :current="request()->routeIs('tasks-inbox.*')" wire:navigate>
+                        {{ __('Aufgaben-Inbox') }}
                     </flux:sidebar.item>
                     <flux:sidebar.item icon="rocket-launch" :href="route('onboarding.index')" :current="request()->routeIs('onboarding.*')" wire:navigate>
                         {{ __('Einrichtung') }}
@@ -63,6 +79,11 @@
                     <flux:sidebar.item icon="wrench-screwdriver" :href="route('service-providers.index')" :current="request()->routeIs('service-providers.*')" wire:navigate>
                         {{ __('Dienstleister') }}
                     </flux:sidebar.item>
+                    @if (config('features.contracts') && \Illuminate\Support\Facades\Route::has('contracts.index'))
+                        <flux:sidebar.item icon="document-text" :href="route('contracts.index')" :current="request()->routeIs('contracts.*')" wire:navigate>
+                            {{ __('Verträge') }}
+                        </flux:sidebar.item>
+                    @endif
                     @if (auth()->user()->isAtLeastConsultant())
                         <flux:sidebar.item icon="shield-check" :href="route('insurance-policies.index')" :current="request()->routeIs('insurance-policies.*')" wire:navigate>
                             {{ __('Versicherungen') }}
@@ -99,9 +120,6 @@
                             {{ __('Prävention') }}
                         </flux:sidebar.item>
                     @endif
-                    <flux:sidebar.item icon="inbox" :href="route('tasks-inbox.index')" :current="request()->routeIs('tasks-inbox.*')" wire:navigate>
-                        {{ __('Aufgaben-Inbox') }}
-                    </flux:sidebar.item>
                     <flux:sidebar.item icon="chart-bar-square" :href="route('recovery-gantt.index')" :current="request()->routeIs('recovery-gantt.*')" wire:navigate>
                         {{ __('Recovery-Zeitplan') }}
                     </flux:sidebar.item>
@@ -295,6 +313,61 @@
 
             <x-desktop-user-menu class="hidden lg:block" :name="auth()->user()->name" />
         </flux:sidebar>
+
+        {{-- Ziehgriff, um die Menübreite anzupassen (nur Desktop). Doppelklick setzt zurück. --}}
+        <div
+            x-data="{
+                dragging: false,
+                min: 200,
+                max: 500,
+                current() {
+                    var v = getComputedStyle(document.documentElement).getPropertyValue('--app-sidebar-width').trim();
+                    var px = parseFloat(v);
+                    return isNaN(px) ? 256 : px;
+                },
+                start(e) {
+                    this.dragging = true;
+                    var startX = e.clientX;
+                    var startW = this.current();
+                    var self = this;
+                    var move = function (ev) {
+                        var w = Math.min(self.max, Math.max(self.min, startW + (ev.clientX - startX)));
+                        document.documentElement.style.setProperty('--app-sidebar-width', w + 'px');
+                    };
+                    var up = function () {
+                        self.dragging = false;
+                        document.body.style.userSelect = '';
+                        document.body.style.cursor = '';
+                        window.removeEventListener('mousemove', move);
+                        window.removeEventListener('mouseup', up);
+                        try { localStorage.setItem('appSidebarWidth', self.current()); } catch (e) {}
+                    };
+                    document.body.style.userSelect = 'none';
+                    document.body.style.cursor = 'col-resize';
+                    window.addEventListener('mousemove', move);
+                    window.addEventListener('mouseup', up);
+                },
+                reset() {
+                    document.documentElement.style.setProperty('--app-sidebar-width', '16rem');
+                    try { localStorage.removeItem('appSidebarWidth'); } catch (e) {}
+                },
+            }"
+            @mousedown.prevent="start($event)"
+            @dblclick="reset()"
+            :style="{ left: 'var(--app-sidebar-width, 16rem)' }"
+            class="group/resizer fixed inset-y-0 z-30 hidden w-2 -translate-x-1/2 cursor-col-resize lg:block"
+            role="separator"
+            aria-orientation="vertical"
+            :aria-valuenow="Math.round(current())"
+            aria-valuemin="200"
+            aria-valuemax="500"
+            title="{{ __('Menübreite ziehen · Doppelklick setzt zurück') }}"
+        >
+            <div
+                class="mx-auto h-full w-px transition-colors group-hover/resizer:bg-sky-400 dark:group-hover/resizer:bg-sky-500"
+                :class="dragging ? 'bg-sky-500' : 'bg-transparent'"
+            ></div>
+        </div>
 
         <!-- Mobile User Menu -->
         <flux:header class="lg:hidden">

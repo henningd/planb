@@ -27,6 +27,7 @@ new #[Title('Dienstleister')] class extends Component {
         $provider->load([
             'systems' => fn ($q) => $q->orderBy('name'),
             'tasks.system' => fn ($q) => $q->orderBy('name'),
+            'contracts' => fn ($q) => $q->orderBy('title'),
         ]);
 
         $this->provider = $provider;
@@ -190,6 +191,46 @@ new #[Title('Dienstleister')] class extends Component {
                 @endif
             </dl>
         </div>
+
+        @if (config('features.contracts'))
+            <div class="rounded-xl border border-zinc-200 bg-white p-6 dark:border-zinc-700 dark:bg-zinc-900 lg:col-span-2">
+                <div class="flex items-center justify-between">
+                    <flux:heading size="lg">{{ __('Verträge & SLA') }}</flux:heading>
+                    <flux:button size="sm" variant="ghost" icon="plus" :href="route('contracts.create')" wire:navigate>
+                        {{ __('Vertrag anlegen') }}
+                    </flux:button>
+                </div>
+                @if ($provider->contracts->isEmpty())
+                    <flux:text class="mt-3 text-sm text-zinc-500">
+                        {{ __('Noch keine Verträge für diesen Dienstleister erfasst.') }}
+                    </flux:text>
+                @else
+                    <div class="mt-4 divide-y divide-zinc-100 dark:divide-zinc-800">
+                        @foreach ($provider->contracts as $contract)
+                            <a href="{{ route('contracts.show', $contract) }}" wire:navigate class="flex flex-wrap items-center justify-between gap-2 py-3 hover:opacity-80">
+                                <div>
+                                    <div class="font-medium">{{ $contract->title }}</div>
+                                    <div class="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-zinc-500 dark:text-zinc-400">
+                                        @if ($contract->response_time_minutes)
+                                            <span>{{ __('Reaktion:') }} {{ \App\Support\Duration::format($contract->response_time_minutes) }}</span>
+                                        @endif
+                                        @if ($contract->emergency_hotline)
+                                            <span>{{ __('Hotline:') }} {{ $contract->emergency_hotline }}</span>
+                                        @endif
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    @if ($contract->coverage)
+                                        <flux:badge :color="$contract->coverage->badgeColor()" size="sm">{{ $contract->coverage->label() }}</flux:badge>
+                                    @endif
+                                    <flux:badge :color="$contract->statusColor()" size="sm">{{ $contract->statusLabel() }}</flux:badge>
+                                </div>
+                            </a>
+                        @endforeach
+                    </div>
+                @endif
+            </div>
+        @endif
 
         <div class="rounded-xl border border-zinc-200 bg-white p-6 dark:border-zinc-700 dark:bg-zinc-900 lg:col-span-2">
             <flux:heading size="lg">{{ __('Zugeordnete Systeme') }}</flux:heading>

@@ -45,7 +45,13 @@ new #[Title('Standorte')] class extends Component {
     #[Computed]
     public function locations(): Collection
     {
-        return Location::orderByDesc('is_headquarters')->orderBy('sort')->orderBy('name')->get();
+        $with = config('features.contracts') ? ['contracts.serviceProvider'] : [];
+
+        return Location::with($with)
+            ->orderByDesc('is_headquarters')
+            ->orderBy('sort')
+            ->orderBy('name')
+            ->get();
     }
 
     public function openCreate(): void
@@ -201,6 +207,27 @@ new #[Title('Standorte')] class extends Component {
                     <flux:text class="mt-4 border-t border-zinc-100 pt-3 text-sm text-zinc-600 dark:border-zinc-800 dark:text-zinc-400">
                         {{ $location->notes }}
                     </flux:text>
+                @endif
+
+                @if (config('features.contracts') && $location->contracts->isNotEmpty())
+                    <div class="mt-4 border-t border-zinc-100 pt-3 dark:border-zinc-800">
+                        <div class="mb-2 text-xs font-semibold uppercase text-zinc-500 dark:text-zinc-400">{{ __('Verträge & SLA') }}</div>
+                        <div class="space-y-2">
+                            @foreach ($location->contracts as $contract)
+                                <a href="{{ route('contracts.show', $contract) }}" wire:navigate class="block rounded-lg border border-zinc-200 px-3 py-2 text-sm hover:border-zinc-300 dark:border-zinc-700 dark:hover:border-zinc-600">
+                                    <div class="flex items-center justify-between gap-2">
+                                        <span class="min-w-0 truncate font-medium">{{ $contract->title }}</span>
+                                        <flux:badge :color="$contract->statusColor()" size="sm">{{ $contract->statusLabel() }}</flux:badge>
+                                    </div>
+                                    <div class="mt-0.5 flex flex-wrap items-center gap-x-3 text-xs text-zinc-500 dark:text-zinc-400">
+                                        @if ($contract->serviceProvider)<span>{{ $contract->serviceProvider->name }}</span>@endif
+                                        @if ($contract->response_time_minutes)<span>{{ __('Reaktion:') }} {{ \App\Support\Duration::format($contract->response_time_minutes) }}</span>@endif
+                                        @if ($contract->emergency_hotline ?: $contract->serviceProvider?->hotline)<span>{{ __('Hotline:') }} {{ $contract->emergency_hotline ?: $contract->serviceProvider?->hotline }}</span>@endif
+                                    </div>
+                                </a>
+                            @endforeach
+                        </div>
+                    </div>
                 @endif
             </div>
         @empty

@@ -22,11 +22,11 @@ new #[Title('Geschäftsprozesse')] class extends Component {
 
     public string $criticality = '';
 
-    public ?string $mtpd_minutes = null;
+    public ?string $mtpd_hours = null;
 
-    public ?string $rto_minutes = null;
+    public ?string $rto_hours = null;
 
-    public ?string $rpo_minutes = null;
+    public ?string $rpo_hours = null;
 
     public string $peak_times = '';
 
@@ -112,9 +112,9 @@ new #[Title('Geschäftsprozesse')] class extends Component {
         $this->name = (string) $process->name;
         $this->description = (string) $process->description;
         $this->criticality = $process->criticality->value;
-        $this->mtpd_minutes = $process->mtpd_minutes !== null ? (string) $process->mtpd_minutes : null;
-        $this->rto_minutes = $process->rto_minutes !== null ? (string) $process->rto_minutes : null;
-        $this->rpo_minutes = $process->rpo_minutes !== null ? (string) $process->rpo_minutes : null;
+        $this->mtpd_hours = $this->minutesToHoursField($process->mtpd_minutes);
+        $this->rto_hours = $this->minutesToHoursField($process->rto_minutes);
+        $this->rpo_hours = $this->minutesToHoursField($process->rpo_minutes);
         $this->peak_times = (string) $process->peak_times;
         $this->responsible_employee_id = (string) ($process->responsible_employee_id ?? '');
         $this->responsible_role_id = (string) ($process->responsible_role_id ?? '');
@@ -137,9 +137,9 @@ new #[Title('Geschäftsprozesse')] class extends Component {
             'name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:2000'],
             'criticality' => ['required', Rule::in(collect(ProcessCriticality::cases())->pluck('value'))],
-            'mtpd_minutes' => ['nullable', 'integer', 'min:0'],
-            'rto_minutes' => ['nullable', 'integer', 'min:0'],
-            'rpo_minutes' => ['nullable', 'integer', 'min:0'],
+            'mtpd_hours' => ['nullable', 'numeric', 'min:0'],
+            'rto_hours' => ['nullable', 'numeric', 'min:0'],
+            'rpo_hours' => ['nullable', 'numeric', 'min:0'],
             'peak_times' => ['nullable', 'string', 'max:255'],
             'responsible_employee_id' => ['nullable', 'string', Rule::exists('employees', 'id')],
             'responsible_role_id' => ['nullable', 'string', Rule::exists('roles', 'id')],
@@ -152,7 +152,15 @@ new #[Title('Geschäftsprozesse')] class extends Component {
         $systemIds = $validated['selectedSystems'] ?? [];
         unset($validated['selectedSystems']);
 
+        $mtpdMinutes = $this->hoursFieldToMinutes($validated['mtpd_hours'] ?? null);
+        $rtoMinutes = $this->hoursFieldToMinutes($validated['rto_hours'] ?? null);
+        $rpoMinutes = $this->hoursFieldToMinutes($validated['rpo_hours'] ?? null);
+        unset($validated['mtpd_hours'], $validated['rto_hours'], $validated['rpo_hours']);
+
         $payload = collect($validated)->map(fn ($v) => $v === '' ? null : $v)->toArray();
+        $payload['mtpd_minutes'] = $mtpdMinutes;
+        $payload['rto_minutes'] = $rtoMinutes;
+        $payload['rpo_minutes'] = $rpoMinutes;
 
         if ($this->editingId) {
             $process = BusinessProcess::findOrFail($this->editingId);
@@ -189,8 +197,32 @@ new #[Title('Geschäftsprozesse')] class extends Component {
 
     protected function resetForm(): void
     {
-        $this->reset(['editingId', 'name', 'description', 'mtpd_minutes', 'rto_minutes', 'rpo_minutes', 'peak_times', 'responsible_employee_id', 'responsible_role_id', 'notes', 'sort', 'selectedSystems']);
+        $this->reset(['editingId', 'name', 'description', 'mtpd_hours', 'rto_hours', 'rpo_hours', 'peak_times', 'responsible_employee_id', 'responsible_role_id', 'notes', 'sort', 'selectedSystems']);
         $this->criticality = ProcessCriticality::Mittel->value;
+    }
+
+    /**
+     * Stored minutes → hours for the number input ("240" → "4", "90" → "1.5").
+     */
+    protected function minutesToHoursField(?int $minutes): ?string
+    {
+        if ($minutes === null) {
+            return null;
+        }
+
+        return rtrim(rtrim(number_format($minutes / 60, 2, '.', ''), '0'), '.');
+    }
+
+    /**
+     * Entered hours → stored minutes (null when left empty).
+     */
+    protected function hoursFieldToMinutes(int|string|null $hours): ?int
+    {
+        if ($hours === null || $hours === '') {
+            return null;
+        }
+
+        return (int) round(((float) $hours) * 60);
     }
 }; ?>
 
@@ -257,13 +289,13 @@ new #[Title('Geschäftsprozesse')] class extends Component {
                     @if ($process->mtpd_minutes !== null || $process->rto_minutes !== null || $process->rpo_minutes !== null)
                         <div class="flex flex-wrap items-center gap-1.5">
                             @if ($process->mtpd_minutes !== null)
-                                <flux:badge color="zinc" size="sm">{{ __('MTPD') }}: {{ $process->mtpd_minutes }} {{ __('Min') }}</flux:badge>
+                                <flux:badge color="zinc" size="sm">{{ __('MTPD') }}: {{ \App\Support\Duration::inHours($process->mtpd_minutes) }}</flux:badge>
                             @endif
                             @if ($process->rto_minutes !== null)
-                                <flux:badge color="zinc" size="sm">{{ __('RTO') }}: {{ $process->rto_minutes }} {{ __('Min') }}</flux:badge>
+                                <flux:badge color="zinc" size="sm">{{ __('RTO') }}: {{ \App\Support\Duration::inHours($process->rto_minutes) }}</flux:badge>
                             @endif
                             @if ($process->rpo_minutes !== null)
-                                <flux:badge color="zinc" size="sm">{{ __('RPO') }}: {{ $process->rpo_minutes }} {{ __('Min') }}</flux:badge>
+                                <flux:badge color="zinc" size="sm">{{ __('RPO') }}: {{ \App\Support\Duration::inHours($process->rpo_minutes) }}</flux:badge>
                             @endif
                         </div>
                     @endif
@@ -328,9 +360,9 @@ new #[Title('Geschäftsprozesse')] class extends Component {
             </div>
 
             <div class="grid gap-4 sm:grid-cols-3">
-                <flux:input wire:model="mtpd_minutes" :label="__('MTPD (Min)')" type="number" min="0" :description="__('Max. tolerierbare Ausfallzeit')" />
-                <flux:input wire:model="rto_minutes" :label="__('RTO (Min)')" type="number" min="0" :description="__('Wiederanlaufzeit')" />
-                <flux:input wire:model="rpo_minutes" :label="__('RPO (Min)')" type="number" min="0" :description="__('Max. Datenverlust')" />
+                <flux:input wire:model="mtpd_hours" :label="__('MTPD (Std.)')" type="number" min="0" step="0.5" :description="__('Max. tolerierbare Ausfallzeit')" />
+                <flux:input wire:model="rto_hours" :label="__('RTO (Std.)')" type="number" min="0" step="0.5" :description="__('Wiederanlaufzeit')" />
+                <flux:input wire:model="rpo_hours" :label="__('RPO (Std.)')" type="number" min="0" step="0.5" :description="__('Max. Datenverlust')" />
             </div>
 
             <div class="grid gap-4 sm:grid-cols-2">

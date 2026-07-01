@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
 #[Fillable([
@@ -29,6 +30,14 @@ class ServiceProvider extends Model
 {
     /** @use HasFactory<ServiceProviderFactory> */
     use BelongsToCurrentCompany, HasFactory, HasUuids, LogsAudit;
+
+    /**
+     * @return HasMany<Contract, $this>
+     */
+    public function contracts(): HasMany
+    {
+        return $this->hasMany(Contract::class)->orderBy('title');
+    }
 
     /**
      * @return BelongsToMany<System, $this>

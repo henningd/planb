@@ -111,6 +111,48 @@ it('creates a risk via the create page', function () {
     expect($risk->mitigations->first()->title)->toBe('USV-Anlage prüfen');
 });
 
+it('assesses residual risk via sliders once activated', function () {
+    $user = User::factory()->create();
+    Company::factory()->for($user->currentTeam)->create();
+
+    $component = Livewire\Livewire::actingAs($user->fresh())
+        ->test('pages::risks.create')
+        ->set('title', 'Mit Restrisiko')
+        ->set('probability', 4)
+        ->set('impact', 5)
+        ->set('assessResidual', true);
+
+    $component->assertSet('residual_probability', 4)
+        ->assertSet('residual_impact', 5);
+
+    $component->set('residual_probability', 2)
+        ->set('residual_impact', 1)
+        ->call('save');
+
+    $risk = Risk::first();
+    expect($risk->residual_probability)->toBe(2);
+    expect($risk->residual_impact)->toBe(1);
+    expect($risk->residualScore())->toBe(2);
+});
+
+it('keeps residual null when assessment stays off', function () {
+    $user = User::factory()->create();
+    Company::factory()->for($user->currentTeam)->create();
+
+    Livewire\Livewire::actingAs($user->fresh())
+        ->test('pages::risks.create')
+        ->set('title', 'Ohne Restrisiko')
+        ->set('probability', 3)
+        ->set('impact', 3)
+        ->set('assessResidual', true)
+        ->set('assessResidual', false)
+        ->call('save');
+
+    $risk = Risk::first();
+    expect($risk->residual_probability)->toBeNull();
+    expect($risk->residual_impact)->toBeNull();
+});
+
 it('skips empty mitigations on create', function () {
     $user = User::factory()->create();
     Company::factory()->for($user->currentTeam)->create();

@@ -956,6 +956,54 @@
             </table>
         @endif
 
+        @if (! empty($contracts) && $contracts->isNotEmpty())
+            <p style="margin-top: 12px;"><strong>Verträge &amp; SLA-Zeiten</strong></p>
+            <table class="role-table">
+                <thead>
+                    <tr>
+                        <th style="width: 24%;">Vertrag</th>
+                        <th style="width: 20%;">Dienstleister</th>
+                        <th>SLA</th>
+                        <th style="width: 20%;">Störungs-Hotline</th>
+                        <th>Gilt für</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach ($contracts as $contract)
+                        @php($cHotline = $contract->emergency_hotline ?: $contract->serviceProvider?->hotline)
+                        <tr>
+                            <td>
+                                <strong>{{ $contract->title }}</strong>
+                                @if ($contract->contract_number)<div class="small">{{ $contract->contract_number }}</div>@endif
+                            </td>
+                            <td>{{ $contract->serviceProvider?->name ?? '—' }}</td>
+                            <td>
+                                @if ($contract->coverage)<div>{{ $contract->coverage->label() }}</div>@endif
+                                @if ($contract->response_time_minutes)
+                                    <div class="small">Reaktion: {{ \App\Support\Duration::format($contract->response_time_minutes) }}</div>
+                                @endif
+                                @if ($contract->resolution_time_minutes)
+                                    <div class="small">Wiederherstellung: {{ \App\Support\Duration::format($contract->resolution_time_minutes) }}</div>
+                                @endif
+                                @if (! $contract->coverage && ! $contract->response_time_minutes && ! $contract->resolution_time_minutes)—@endif
+                            </td>
+                            <td>
+                                @if ($cHotline)
+                                    <div class="contact-value">{{ $cHotline }}</div>
+                                @else
+                                    —
+                                @endif
+                            </td>
+                            <td class="small">
+                                @php($targets = $contract->systems->pluck('name')->merge($contract->locations->pluck('name')))
+                                {{ $targets->isNotEmpty() ? $targets->join(', ') : '—' }}
+                            </td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        @endif
+
         <h3>5.3 Behörden und Meldestellen</h3>
         @if ($authorities->isEmpty())
             <p><em>Keine Behördenkontakte hinterlegt.</em></p>

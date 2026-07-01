@@ -69,3 +69,18 @@ select:focus[data-flux-control] {
 /* \[:where(&)\]:size-4 {
     @apply size-4;
 } */
+
+/* Vom Benutzer zieh­bare Breite der linken Menüspalte (nur Desktop). Flux setzt
+   die Breite über `[:where(&)]:w-64` (Spezifität 0) — dieses Attribut-Selektor
+   überschreibt das ohne !important. Auf Mobil (Overlay) bleibt die Standardbreite. */
+@media (min-width: 1024px) {
+    [data-flux-sidebar] {
+        width: var(--app-sidebar-width, 16rem);
+    }
+
+    /* Grid-Spalte der Sidebar exakt an die Variable koppeln (Flux nutzt sonst
+       `min-content`, was beim Verkleinern an der Textbreite hängen bliebe). */
+    body:has(> [data-flux-main]) {
+        grid-template-columns: var(--app-sidebar-width, 16rem) minmax(0, 1fr) min-content;
+    }
+}

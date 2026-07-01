@@ -27,6 +27,11 @@ return [
 
     'risk_register' => filter_var(env('FEATURE_RISK_REGISTER_ENABLED', true), FILTER_VALIDATE_BOOLEAN),
 
+    // Verträge / SLA: eigener Bereich für Service-/Wartungsverträge, verknüpft
+    // mit Dienstleistern, Systemen und Standorten. Reaktions-/Wiederherstellungs-
+    // zeiten und Störungs-Hotline sind im Notfall direkt abrufbar. Default an.
+    'contracts' => filter_var(env('FEATURE_CONTRACTS_ENABLED', true), FILTER_VALIDATE_BOOLEAN),
+
     // Präventivmaßnahmen je System (vorbeugende Kontrollen gegen Ausfall):
     // eigener Menüpunkt, Verwaltungsseite, System-Karteikarte, Aufgaben-Inbox
     // und Reminder-Cron. Default an.

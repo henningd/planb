@@ -3,6 +3,7 @@
 namespace App\Support;
 
 use App\Models\Company;
+use App\Models\Contract;
 use App\Models\HandbookShare;
 use App\Models\ServiceProvider;
 use App\Models\System;
@@ -26,6 +27,7 @@ class HandbookData
             'systems.priority',
             'systems.emergencyLevel',
             'systems.serviceProviders',
+            'systems.contracts.serviceProvider',
             'systems.dependencies',
             'systems.employees',
             'systems.roles.employees',
@@ -53,8 +55,13 @@ class HandbookData
             ->where('company_id', $company->id)
             ->orderBy('name');
 
+        $contractsQuery = Contract::with(['serviceProvider', 'systems', 'locations'])
+            ->where('company_id', $company->id)
+            ->orderBy('title');
+
         if ($share !== null) {
             $providersQuery->withoutGlobalScope(CurrentCompanyScope::class);
+            $contractsQuery->withoutGlobalScope(CurrentCompanyScope::class);
         }
 
         $systemsDetail = self::buildSystemsDetail($company);
@@ -62,6 +69,7 @@ class HandbookData
         return [
             'company' => $company,
             'providers' => $providersQuery->get(),
+            'contracts' => config('features.contracts') ? $contractsQuery->get() : collect(),
             'recoveryPlan' => RecoveryOrder::compute($company->systems),
             'systemsDetail' => $systemsDetail,
             'share' => $share,

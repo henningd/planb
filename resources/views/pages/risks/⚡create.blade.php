@@ -29,6 +29,8 @@ new #[Title('Neues Risiko')] class extends Component {
 
     public ?int $residual_impact = null;
 
+    public bool $assessResidual = false;
+
     public string $status = 'identified';
 
     public ?string $treatment_strategy = null;
@@ -88,6 +90,17 @@ new #[Title('Neues Risiko')] class extends Component {
     {
         unset($this->mitigations[$index]);
         $this->mitigations = array_values($this->mitigations);
+    }
+
+    public function updatedAssessResidual(bool $value): void
+    {
+        if ($value) {
+            $this->residual_probability ??= $this->probability;
+            $this->residual_impact ??= $this->impact;
+        } else {
+            $this->residual_probability = null;
+            $this->residual_impact = null;
+        }
     }
 
     public function save(): void
@@ -212,19 +225,46 @@ new #[Title('Neues Risiko')] class extends Component {
                 </flux:text>
             </div>
 
-            <div class="mt-6 grid gap-4 md:grid-cols-2">
-                <flux:select wire:model="residual_probability" :label="__('Restwahrscheinlichkeit (nach Maßnahmen)')">
-                    <flux:select.option value="">{{ __('— offen —') }}</flux:select.option>
-                    @foreach (range(1, 5) as $val)
-                        <flux:select.option value="{{ $val }}">{{ $val }}</flux:select.option>
-                    @endforeach
-                </flux:select>
-                <flux:select wire:model="residual_impact" :label="__('Restschaden (nach Maßnahmen)')">
-                    <flux:select.option value="">{{ __('— offen —') }}</flux:select.option>
-                    @foreach (range(1, 5) as $val)
-                        <flux:select.option value="{{ $val }}">{{ $val }}</flux:select.option>
-                    @endforeach
-                </flux:select>
+            <div class="mt-6 border-t border-zinc-100 pt-6 dark:border-zinc-800">
+                <div class="flex items-start justify-between gap-4">
+                    <div>
+                        <flux:heading size="sm">{{ __('Restrisiko nach Maßnahmen') }}</flux:heading>
+                        <flux:text class="text-sm text-zinc-500">
+                            {{ __('Erst bewerten, wenn die Maßnahmen wirken.') }}
+                        </flux:text>
+                    </div>
+                    <flux:switch wire:model.live="assessResidual" :label="__('Bewerten')" />
+                </div>
+
+                @if ($assessResidual)
+                    <div class="mt-4 grid gap-4 md:grid-cols-2">
+                        <div>
+                            <flux:label>{{ __('Restwahrscheinlichkeit (1–5)') }}</flux:label>
+                            <input type="range" min="1" max="5" wire:model.live="residual_probability" class="w-full" />
+                            <flux:text class="text-sm text-zinc-500">{{ __('Wert:') }} {{ $residual_probability }}</flux:text>
+                        </div>
+                        <div>
+                            <flux:label>{{ __('Restschaden (1–5)') }}</flux:label>
+                            <input type="range" min="1" max="5" wire:model.live="residual_impact" class="w-full" />
+                            <flux:text class="text-sm text-zinc-500">{{ __('Wert:') }} {{ $residual_impact }}</flux:text>
+                        </div>
+                    </div>
+
+                    @if ($residual_probability && $residual_impact)
+                        @php($residualScore = $residual_probability * $residual_impact)
+                        @php($delta = $probability * $impact - $residualScore)
+                        <div class="mt-4 rounded-lg bg-zinc-50 p-3 dark:bg-zinc-800">
+                            <flux:text class="text-sm">
+                                {{ __('Rest-Score:') }} <span class="font-semibold">{{ $residualScore }}</span>
+                                @if ($delta > 0)
+                                    <span class="ml-1 text-emerald-600 dark:text-emerald-400">
+                                        {{ __('(−:d gegenüber Ausgangswert)', ['d' => $delta]) }}
+                                    </span>
+                                @endif
+                            </flux:text>
+                        </div>
+                    @endif
+                @endif
             </div>
 
             <div class="mt-6 grid gap-4 md:grid-cols-2">

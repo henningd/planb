@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 #[Fillable([
     'company_id',
@@ -30,6 +31,14 @@ class Location extends Model
     public function auditLabel(): string
     {
         return $this->name;
+    }
+
+    /**
+     * @return BelongsToMany<Contract, $this>
+     */
+    public function contracts(): BelongsToMany
+    {
+        return $this->belongsToMany(Contract::class)->withTimestamps();
     }
 
     /**

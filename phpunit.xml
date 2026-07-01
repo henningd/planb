@@ -41,6 +41,7 @@
         <env name="FEATURE_INCIDENT_MODE_ENABLED" value="true" force="true"/>
         <env name="FEATURE_LESSONS_LEARNED_ENABLED" value="true" force="true"/>
         <env name="FEATURE_RISK_REGISTER_ENABLED" value="true" force="true"/>
+        <env name="FEATURE_CONTRACTS_ENABLED" value="true" force="true"/>
         <env name="FEATURE_ROLES_ENABLED" value="true" force="true"/>
         <env name="FEATURE_MONITORING_API_ENABLED" value="true" force="true"/>
         <env name="FEATURE_PREVENTIVE_MEASURES_ENABLED" value="true" force="true"/>

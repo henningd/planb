@@ -292,6 +292,16 @@ Route::prefix('{current_team}')
         Route::livewire('service-providers/{provider}', 'pages::service-providers.show')
             ->where('provider', '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}')
             ->name('service-providers.show');
+        if (config('features.contracts')) {
+            Route::livewire('contracts', 'pages::contracts.index')->name('contracts.index');
+            Route::livewire('contracts/create', 'pages::contracts.edit')->name('contracts.create');
+            Route::livewire('contracts/{contract}/edit', 'pages::contracts.edit')
+                ->where('contract', '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}')
+                ->name('contracts.edit');
+            Route::livewire('contracts/{contract}', 'pages::contracts.show')
+                ->where('contract', '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}')
+                ->name('contracts.show');
+        }
         Route::livewire('emergency-resources', 'pages::emergency-resources.index')->name('emergency-resources.index');
         Route::livewire('fallback-processes', 'pages::fallback-processes.index')->name('fallback-processes.index');
         if (config('features.preventive_measures')) {
