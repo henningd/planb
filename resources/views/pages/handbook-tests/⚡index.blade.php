@@ -4,6 +4,7 @@ use App\Enums\HandbookTestInterval;
 use App\Enums\HandbookTestType;
 use App\Models\Employee;
 use App\Models\HandbookTest;
+use App\Support\TaskNotifier;
 use Flux\Flux;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Auth;
@@ -30,6 +31,8 @@ new #[Title('Testplan')] class extends Component {
     public ?string $responsible_employee_id = null;
 
     public ?string $responsible_role_id = null;
+
+    public bool $notifyResponsible = true;
 
     public string $result_notes = '';
 
@@ -130,16 +133,29 @@ new #[Title('Testplan')] class extends Component {
         $payload = collect($validated)->map(fn ($v) => $v === '' ? null : $v)->toArray();
 
         if ($this->editingId) {
-            HandbookTest::findOrFail($this->editingId)->update($payload);
+            $test = HandbookTest::findOrFail($this->editingId);
+            $test->update($payload);
         } else {
-            HandbookTest::create($payload);
+            $test = HandbookTest::create($payload);
         }
+
+        $notify = $this->notifyResponsible;
 
         Flux::modal('test-form')->close();
         $this->resetForm();
         unset($this->tests);
 
         Flux::toast(variant: 'success', text: __('Test gespeichert.'));
+
+        if ($notify) {
+            $result = TaskNotifier::notifyTest($test);
+
+            if (! $result->isEmpty()) {
+                Flux::toast(variant: 'success', text: __('Benachrichtigung an :names gesendet.', ['names' => $result->names()]));
+            } elseif ($test->responsible_employee_id !== null) {
+                Flux::toast(variant: 'warning', text: __('Keine E-Mail verschickt: verantwortliche Person hat keine E-Mail-Adresse hinterlegt.'));
+            }
+        }
     }
 
     public function confirmExecute(string $id): void
@@ -178,7 +194,7 @@ new #[Title('Testplan')] class extends Component {
 
     protected function resetForm(): void
     {
-        $this->reset(['editingId', 'name', 'description', 'last_executed_at', 'next_due_at', 'responsible_employee_id', 'responsible_role_id', 'result_notes', 'sort']);
+        $this->reset(['editingId', 'name', 'description', 'last_executed_at', 'next_due_at', 'responsible_employee_id', 'responsible_role_id', 'notifyResponsible', 'result_notes', 'sort']);
         $this->type = HandbookTestType::ContactCheck->value;
         $this->interval = HandbookTestInterval::Yearly->value;
     }
@@ -347,6 +363,12 @@ new #[Title('Testplan')] class extends Component {
             <flux:description>
                 {{ __('Person, Rolle/Gruppe oder beides. Eine Rolle kann mehrere Mitglieder umfassen — die werden auf dieser Seite und im PDF mit ausgewiesen.') }}
             </flux:description>
+
+            <flux:checkbox
+                wire:model="notifyResponsible"
+                :label="__('Verantwortliche Person per E-Mail benachrichtigen')"
+                :description="__('Sendet beim Speichern eine E-Mail an die verantwortliche Person – mit Kalender-Einladung (.ics), sofern eine Fälligkeit hinterlegt ist.')"
+            />
 
             <flux:textarea wire:model="result_notes" :label="__('Ergebnis-Notizen')" rows="2" />
 

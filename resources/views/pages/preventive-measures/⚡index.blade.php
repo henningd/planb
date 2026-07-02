@@ -10,6 +10,7 @@ use App\Models\Risk;
 use App\Models\Role;
 use App\Models\System;
 use App\Support\Prevention\PreventiveMeasureCatalog;
+use App\Support\TaskNotifier;
 use Carbon\CarbonImmutable;
 use Flux\Flux;
 use Illuminate\Database\Eloquent\Collection;
@@ -46,6 +47,8 @@ new #[Title('Präventivmaßnahmen')] class extends Component {
     public string $responsible_employee_id = '';
 
     public string $responsible_role_id = '';
+
+    public bool $notifyResponsible = true;
 
     public string $risk_id = '';
 
@@ -202,16 +205,29 @@ new #[Title('Präventivmaßnahmen')] class extends Component {
         }
 
         if ($this->editingId) {
-            PreventiveMeasure::findOrFail($this->editingId)->update($payload);
+            $measure = PreventiveMeasure::findOrFail($this->editingId);
+            $measure->update($payload);
         } else {
-            PreventiveMeasure::create($payload);
+            $measure = PreventiveMeasure::create($payload);
         }
+
+        $notify = $this->notifyResponsible;
 
         Flux::modal('measure-form')->close();
         $this->resetForm();
         unset($this->measures);
 
         Flux::toast(variant: 'success', text: __('Präventivmaßnahme gespeichert.'));
+
+        if ($notify) {
+            $result = TaskNotifier::notifyMeasure($measure);
+
+            if (! $result->isEmpty()) {
+                Flux::toast(variant: 'success', text: __('Benachrichtigung an :names gesendet.', ['names' => $result->names()]));
+            } elseif ($measure->responsible_employee_id !== null) {
+                Flux::toast(variant: 'warning', text: __('Keine E-Mail verschickt: verantwortliche Person hat keine E-Mail-Adresse hinterlegt.'));
+            }
+        }
     }
 
     public function markExecuted(string $id): void
@@ -272,7 +288,7 @@ new #[Title('Präventivmaßnahmen')] class extends Component {
 
     protected function resetForm(): void
     {
-        $this->reset(['editingId', 'system_id', 'title', 'description', 'interval', 'target_date', 'last_executed_at', 'next_due_at', 'responsible_employee_id', 'responsible_role_id', 'risk_id', 'result_notes', 'sort']);
+        $this->reset(['editingId', 'system_id', 'title', 'description', 'interval', 'target_date', 'last_executed_at', 'next_due_at', 'responsible_employee_id', 'responsible_role_id', 'notifyResponsible', 'risk_id', 'result_notes', 'sort']);
         $this->category = PreventiveMeasureCategory::Backup->value;
         $this->status = PreventiveMeasureStatus::Planned->value;
         $this->effectiveness = PreventiveMeasureEffectiveness::NotAssessed->value;
@@ -499,6 +515,12 @@ new #[Title('Präventivmaßnahmen')] class extends Component {
                     @endforeach
                 </flux:select>
             </div>
+
+            <flux:checkbox
+                wire:model="notifyResponsible"
+                :label="__('Verantwortliche Person per E-Mail benachrichtigen')"
+                :description="__('Sendet beim Speichern eine E-Mail an die verantwortliche Person – mit Kalender-Einladung (.ics), sofern eine Fälligkeit hinterlegt ist.')"
+            />
 
             <div class="grid gap-4 sm:grid-cols-2">
                 <flux:select wire:model="effectiveness" :label="__('Wirksamkeit')">

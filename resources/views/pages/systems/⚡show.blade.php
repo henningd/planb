@@ -13,6 +13,7 @@ use App\Support\AssignmentHistory;
 use App\Support\AssignmentSync;
 use App\Support\Duration;
 use App\Support\Prevention\PreventiveMeasureCatalog;
+use App\Support\TaskNotifier;
 use Flux\Flux;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Auth;
@@ -33,6 +34,8 @@ new #[Title('System')] class extends Component {
     public string $newTaskDescription = '';
 
     public ?string $newTaskDueDate = null;
+
+    public bool $notifyTaskResponsible = true;
 
     /** @var array<int, array{employee_id: string, raci_role: string, is_deputy: bool}> */
     public array $newTaskAssignees = [];
@@ -409,12 +412,24 @@ new #[Title('System')] class extends Component {
         $this->syncProviderAssignees($task, $validated['newTaskProviders'] ?? []);
         $this->syncRoleAssignees($task, $validated['newTaskRoles'] ?? []);
 
-        $this->reset(['newTaskTitle', 'newTaskDescription', 'newTaskDueDate', 'newTaskAssignees', 'newTaskProviders', 'newTaskRoles']);
+        $notify = $this->notifyTaskResponsible;
+
+        $this->reset(['newTaskTitle', 'newTaskDescription', 'newTaskDueDate', 'notifyTaskResponsible', 'newTaskAssignees', 'newTaskProviders', 'newTaskRoles']);
         unset($this->tasks);
 
         $this->dispatch('task-saved');
 
         Flux::toast(variant: 'success', text: __('Aufgabe hinzugefügt.'));
+
+        if ($notify) {
+            $result = TaskNotifier::notifyTask($task);
+
+            if (! $result->isEmpty()) {
+                Flux::toast(variant: 'success', text: __('Benachrichtigung an :names gesendet.', ['names' => $result->names()]));
+            } elseif ($task->assignees()->exists()) {
+                Flux::toast(variant: 'warning', text: __('Keine E-Mail verschickt: zugewiesene Person(en) haben keine E-Mail-Adresse hinterlegt.'));
+            }
+        }
     }
 
     public function toggleTask(string $id): void
@@ -1754,6 +1769,12 @@ new #[Title('System')] class extends Component {
                         </div>
                     @endif
                 </div>
+
+                <flux:checkbox
+                    wire:model="notifyTaskResponsible"
+                    :label="__('Zuständige Person(en) per E-Mail benachrichtigen')"
+                    :description="__('Sendet beim Speichern eine E-Mail an die zuständigen Personen (RACI „Durchführend“) – mit Kalender-Einladung (.ics), sofern ein Fälligkeitsdatum gesetzt ist.')"
+                />
 
                 <div class="flex justify-end gap-2 border-t border-zinc-200 pt-3 dark:border-zinc-700">
                     <flux:button type="button" variant="filled" @click="showTaskForm = false">
