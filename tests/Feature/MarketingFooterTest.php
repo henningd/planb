@@ -58,3 +58,11 @@ test('footer anchor links point to the home page so they work on subpages', func
         ->assertSee(route('home').'#features', false)
         ->assertSee(route('home').'#kontakt', false);
 });
+
+test('footer links to the company social profiles', function () {
+    $this->get(route('home'))
+        ->assertOk()
+        ->assertSee('Folgen')
+        ->assertSee('https://www.linkedin.com/company/arento-ai-gmbh', false)
+        ->assertSee('https://www.reddit.com/user/ArentoAI', false);
+});
