@@ -221,6 +221,14 @@
                     'applicationCategory' => 'BusinessApplication',
                     'operatingSystem' => 'Web',
                     'inLanguage' => 'de',
+                    'featureList' => [
+                        'Geführte Erstellung des Notfallhandbuchs ohne IT-Vorwissen',
+                        'Wiederanlaufplanung (RTO/RPO) und Recovery-Zeitplan',
+                        'Vorfallmodus und War-Room für das akute Krisenmanagement',
+                        'Compliance-Dashboard für NIS2 und BSI 200-4',
+                        'Mehr-Mandanten-Verwaltung für Berater: ein Login, Wechsel per Team-Switcher',
+                        'SMS-Alarmierung und QR-Notfallaushang',
+                    ],
                     'offers' => [
                         '@type' => 'Offer',
                         'url' => route('pricing.show'),
@@ -1398,6 +1406,10 @@
         [
             'q' => 'Wie schnell ist das Notfallhandbuch einsatzbereit?',
             'a' => 'Die geführte Struktur ist auf kleine und mittelständische Unternehmen ohne eigene Stabsstelle zugeschnitten: Mit vorhandenen Informationen entsteht in wenigen Arbeitssitzungen eine erste belastbare Version, die danach kontinuierlich gepflegt und durch Tests überprüft wird.',
+        ],
+        [
+            'q' => 'Kann ein Berater mehrere Mandanten mit einem Login verwalten?',
+            'a' => 'Ja. In '.$productName.' wird eine Person mit einer E-Mail-Adresse als „Berater" in beliebig viele Mandanten eingeladen und wechselt per Team-Switcher zwischen den Betrieben – ein Login für alle betreuten Kunden, ohne zweites Konto. Die Daten der Mandanten bleiben strikt getrennt (DSGVO-konform); die Rolle „Berater" pflegt die Inhalte, während Abrechnung und Audit beim jeweiligen Kunden bleiben. Ideal für IT-Dienstleister, Steuerberater und BCM-Berater, die mehrere Unternehmen betreuen.',
         ],
     ])
     <section id="faq" class="py-20 lg:py-28 bg-slate-50">
