@@ -64,6 +64,7 @@ class ManualCatalog
 
             // Team & Freigaben
             ['category' => 'Team & Freigaben', 'slug' => 'benutzer', 'title' => 'Benutzer einladen', 'summary' => 'App-Benutzer und Rollen (Owner, Admin, Member).'],
+            ['category' => 'Team & Freigaben', 'slug' => 'berater-mehrere-teams', 'title' => 'Berater in mehrere Teams einladen', 'summary' => 'Eine Person mit einer E-Mail-Adresse als Berater in mehrere Mandanten einladen — ein Login, Wechsel über den Team-Switcher.'],
             ['category' => 'Team & Freigaben', 'slug' => 'freigabelinks', 'title' => 'Freigabelinks', 'summary' => 'Read-only-Links mit Ablauf, z. B. für Auditor oder Versicherung.'],
             ['category' => 'Team & Freigaben', 'slug' => 'zwei-faktor', 'title' => 'Zwei-Faktor-Authentifizierung', 'summary' => 'TOTP-App, Recovery-Codes, 2FA-Pflicht für Admins.'],
 
