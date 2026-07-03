@@ -52,4 +52,11 @@ return [
         'endpoint' => env('SEVENIO_ENDPOINT', 'https://gateway.seven.io/api/sms'),
     ],
 
+    'mobile' => [
+        // Optionaler App-Key für die Notfall-App (Header X-App-Key). Leer =
+        // kein Key erzwungen (offen). Muss mit dem in der App hinterlegten Key
+        // übereinstimmen, sobald gesetzt.
+        'app_key' => env('MOBILE_APP_KEY', ''),
+    ],
+
 ];
