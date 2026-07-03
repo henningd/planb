@@ -176,7 +176,7 @@
     </section>
 
     {{-- ============ NIS2 QUICK-CHECK ============ --}}
-    <section class="pb-4">
+    <section class="pt-12 lg:pt-16 pb-4">
         <div class="max-w-3xl mx-auto px-6 lg:px-8">
             <a href="{{ route('nis2-quick-check') }}" class="group flex flex-wrap items-center justify-between gap-4 rounded-2xl ring-1 ring-indigo-200 bg-indigo-50/60 px-6 py-5 hover:ring-indigo-300 hover:bg-indigo-50 transition">
                 <div>
