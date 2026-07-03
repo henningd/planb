@@ -36,14 +36,14 @@
     {{-- ============ HERO ============ --}}
     <section class="relative overflow-hidden">
         <div class="absolute inset-0 -z-10 bg-gradient-to-b from-slate-50 via-white to-white"></div>
-        <div class="max-w-4xl mx-auto px-6 lg:px-8 pt-16 lg:pt-20 pb-6">
+        <div class="max-w-3xl mx-auto px-6 lg:px-8 pt-16 lg:pt-20 pb-6 text-center">
             <div class="inline-flex items-center gap-2 rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700 ring-1 ring-indigo-100">
                 Kostenlos · ca. 5 Minuten · keine Anmeldung nötig
             </div>
             <h1 class="mt-4 text-4xl sm:text-5xl font-semibold tracking-tight text-slate-900 leading-tight">
                 NIS2 Quick-Check
             </h1>
-            <p class="mt-6 text-lg text-slate-700 leading-relaxed max-w-2xl">
+            <p class="mt-6 text-lg text-slate-700 leading-relaxed">
                 Wie gut ist Ihr Unternehmen auf die NIS2-Anforderungen vorbereitet? Beantworten Sie
                 10 kurze Fragen und erhalten Sie sofort Ihren Reifegrad — mit konkreten
                 Handlungsempfehlungen als PDF.
@@ -53,7 +53,7 @@
 
     {{-- ============ QUICK-CHECK ============ --}}
     <section class="pb-16 lg:pb-20">
-        <div class="max-w-4xl mx-auto px-6 lg:px-8">
+        <div class="max-w-3xl mx-auto px-6 lg:px-8">
             <livewire:nis2-quick-check />
         </div>
     </section>
