@@ -63,6 +63,12 @@ new #[Title('Admin · Übersicht')] class extends Component {
                 {{ __('Szenarien und Schritte pflegen, die allen neuen Firmen als Vorlage kopiert werden.') }}
             </flux:text>
         </a>
+        <a href="{{ route('admin.leads.index') }}" wire:navigate class="rounded-xl border border-zinc-200 bg-white p-5 no-underline hover:border-zinc-300 hover:shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
+            <flux:heading size="base">{{ __('NIS2 Quick-Check Leads') }}</flux:heading>
+            <flux:text class="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+                {{ __('Über den öffentlichen Quick-Check eingesammelte Interessenten einsehen und verwalten.') }}
+            </flux:text>
+        </a>
         <a href="{{ route('admin.data-protection-authorities.index') }}" wire:navigate class="rounded-xl border border-zinc-200 bg-white p-5 no-underline hover:border-zinc-300 hover:shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
             <flux:heading size="base">{{ __('Datenschutz-Aufsichtsbehörden') }}</flux:heading>
             <flux:text class="mt-1 text-sm text-zinc-600 dark:text-zinc-400">

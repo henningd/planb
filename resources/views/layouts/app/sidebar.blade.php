@@ -281,6 +281,9 @@
                         <flux:sidebar.item icon="building-office" :href="route('admin.companies.index')" :current="request()->routeIs('admin.companies.*')" wire:navigate>
                             {{ __('Kunden') }}
                         </flux:sidebar.item>
+                        <flux:sidebar.item icon="user-plus" :href="route('admin.leads.index')" :current="request()->routeIs('admin.leads.*')" wire:navigate>
+                            {{ __('Leads') }}
+                        </flux:sidebar.item>
                         <flux:sidebar.item icon="document-duplicate" :href="route('admin.scenarios.index')" :current="request()->routeIs('admin.scenarios.*')" wire:navigate>
                             {{ __('Globale Szenarien') }}
                         </flux:sidebar.item>

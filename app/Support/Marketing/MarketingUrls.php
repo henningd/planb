@@ -16,6 +16,7 @@ class MarketingUrls
         return [
             ['loc' => route('home'), 'priority' => '1.0'],
             ['loc' => route('pricing.show'), 'priority' => '0.8'],
+            ['loc' => route('nis2-quick-check'), 'priority' => '0.9'],
             ['loc' => route('guides.index'), 'priority' => '0.8'],
             ...array_map(fn (array $guide) => [
                 'loc' => route('guides.show', $guide['slug']),

@@ -175,6 +175,22 @@
         </div>
     </section>
 
+    {{-- ============ NIS2 QUICK-CHECK ============ --}}
+    <section class="pb-4">
+        <div class="max-w-3xl mx-auto px-6 lg:px-8">
+            <a href="{{ route('nis2-quick-check') }}" class="group flex flex-wrap items-center justify-between gap-4 rounded-2xl ring-1 ring-indigo-200 bg-indigo-50/60 px-6 py-5 hover:ring-indigo-300 hover:bg-indigo-50 transition">
+                <div>
+                    <div class="font-semibold text-slate-900">Wie NIS2-fest ist Ihr Unternehmen?</div>
+                    <p class="mt-1 text-sm text-slate-600 leading-relaxed">Machen Sie den kostenlosen NIS2 Quick-Check – 10 Fragen, sofortiger Reifegrad, PDF-Auswertung.</p>
+                </div>
+                <span class="inline-flex items-center gap-2 shrink-0 rounded-lg bg-indigo-600 px-5 py-3 font-medium text-white group-hover:bg-indigo-700 transition">
+                    Quick-Check starten
+                    <svg class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+                </span>
+            </a>
+        </div>
+    </section>
+
     {{-- ============ WEITERLESEN ============ --}}
     <section class="py-12 lg:py-16">
         <div class="max-w-3xl mx-auto px-6 lg:px-8">

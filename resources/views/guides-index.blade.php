@@ -61,6 +61,23 @@
         </div>
     </section>
 
+    {{-- ============ NIS2 QUICK-CHECK ============ --}}
+    <section class="pt-2 pb-4">
+        <div class="max-w-4xl mx-auto px-6 lg:px-8">
+            <a href="{{ route('nis2-quick-check') }}" class="group flex flex-wrap items-center justify-between gap-4 rounded-2xl bg-gradient-to-br from-indigo-600 to-indigo-800 px-6 py-6 lg:px-8 text-white ring-1 ring-indigo-700 hover:from-indigo-600 hover:to-indigo-700 transition">
+                <div>
+                    <div class="text-xs font-semibold uppercase tracking-wide text-indigo-200">Kostenlos · ca. 5 Minuten</div>
+                    <h2 class="mt-1 text-xl font-semibold">NIS2 Quick-Check: Wie gut sind Sie vorbereitet?</h2>
+                    <p class="mt-1 text-indigo-100 leading-relaxed max-w-xl">10 kurze Fragen, sofortiger Reifegrad und individuelle Handlungsempfehlungen als PDF.</p>
+                </div>
+                <span class="inline-flex items-center gap-2 shrink-0 rounded-lg bg-white px-5 py-3 font-medium text-indigo-800 group-hover:bg-indigo-50 transition">
+                    Jetzt prüfen
+                    <svg class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+                </span>
+            </a>
+        </div>
+    </section>
+
     {{-- ============ RATGEBER-LISTE ============ --}}
     <section class="py-12 lg:py-16">
         <div class="max-w-4xl mx-auto px-6 lg:px-8 grid gap-6">

@@ -6,6 +6,7 @@ use App\Http\Controllers\BackupController;
 use App\Http\Controllers\CrisisLogExportController;
 use App\Http\Controllers\EmergencyCardController;
 use App\Http\Controllers\HandbookVersionPdfController;
+use App\Http\Controllers\LeadConfirmationController;
 use App\Http\Controllers\PreferenceController;
 use App\Http\Middleware\EnforceBillingState;
 use App\Http\Middleware\EnsureSuperAdmin;
@@ -42,6 +43,16 @@ Route::get('/ratgeber', function () {
             && SystemSetting::get('registration_enabled', true),
     ]);
 })->name('guides.index');
+
+Route::get('/nis2-quick-check', function () {
+    return view('nis2-quick-check', [
+        'productName' => SystemSetting::get('platform_name') ?: config('app.name', 'PlanB'),
+    ]);
+})->name('nis2-quick-check');
+
+Route::get('/nis2-quick-check/bestaetigen/{lead}', LeadConfirmationController::class)
+    ->middleware('signed')
+    ->name('nis2-quick-check.confirm');
 
 Route::get('/{slug}', function (string $slug) {
     $guide = GuideCatalog::find($slug);
@@ -533,6 +544,7 @@ Route::prefix('admin')
     ->group(function () {
         Route::livewire('/', 'pages::admin.index')->name('index');
         Route::livewire('companies', 'pages::admin.companies.index')->name('companies.index');
+        Route::livewire('leads', 'pages::admin.leads.index')->name('leads.index');
         Route::livewire('scenarios', 'pages::admin.scenarios.index')->name('scenarios.index');
         Route::livewire('scenarios/{globalScenario}', 'pages::admin.scenarios.show')->name('scenarios.show');
         Route::livewire('demo', 'pages::admin.demo.index')->name('demo.index');
