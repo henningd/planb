@@ -31,7 +31,8 @@ test('generating a code binds it to the user and their company', function () {
 
     Livewire::actingAs($user)->test('pages::settings.mobile-access')
         ->call('generate')
-        ->assertSet('generatedCode', fn ($code) => is_string($code) && strlen($code) === 8);
+        ->assertSet('generatedCode', fn ($code) => is_string($code) && strlen($code) === 8)
+        ->assertSeeHtml('data:image/svg+xml');
 
     $code = MobileAccessCode::query()->first();
 

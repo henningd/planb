@@ -2,6 +2,7 @@
 
 use App\Models\Company;
 use App\Models\MobileAccessCode;
+use App\Support\Mobile\OnboardingQrCode;
 use Flux\Flux;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
@@ -57,6 +58,17 @@ new #[Title('Notfall-App')] class extends Component {
             'email' => Auth::user()->email,
             'code' => $this->generatedCode,
         ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+    }
+
+    /**
+     * Onboarding-QR-Code als Data-URI (nur nach dem Erzeugen eines Codes).
+     */
+    #[Computed]
+    public function qrDataUri(): ?string
+    {
+        $payload = $this->onboardingPayload;
+
+        return $payload === null ? null : OnboardingQrCode::dataUri($payload);
     }
 
     public function generate(): void
@@ -136,11 +148,14 @@ new #[Title('Notfall-App')] class extends Component {
                                 {{ $generatedCode }}
                             </div>
                             <flux:text size="sm" class="mt-3 text-emerald-800 dark:text-emerald-200">
-                                {{ __('In der App eingeben:') }} <strong>{{ __('E-Mail') }}</strong> {{ Auth::user()->email }} · <strong>{{ __('Code') }}</strong> {{ $generatedCode }}
+                                {{ __('In der App scannen — oder manuell eingeben:') }} <strong>{{ __('E-Mail') }}</strong> {{ Auth::user()->email }} · <strong>{{ __('Code') }}</strong> {{ $generatedCode }}
                             </flux:text>
-                            <div class="mt-4">
-                                <flux:text size="sm" class="text-emerald-800 dark:text-emerald-200">{{ __('QR-Inhalt (zum Erzeugen eines QR-Codes):') }}</flux:text>
-                                <pre class="mt-1 overflow-x-auto rounded-lg bg-emerald-100/60 p-3 text-xs text-emerald-900 dark:bg-emerald-900/40 dark:text-emerald-100">{{ $this->onboardingPayload }}</pre>
+                            <div class="mt-4 flex flex-col items-center gap-3 sm:flex-row sm:items-start">
+                                <img src="{{ $this->qrDataUri }}" alt="{{ __('Onboarding-QR-Code') }}" width="200" height="200"
+                                     class="rounded-xl border border-emerald-200 bg-white p-2 dark:border-emerald-800" />
+                                <flux:text size="sm" class="text-emerald-800 dark:text-emerald-200">
+                                    {{ __('Öffnen Sie die PlanB-Notfall-App auf Ihrem Smartphone, tippen Sie auf „QR scannen" und richten Sie den Code ein. Die App verbindet sich damit fest mit diesem Mandanten.') }}
+                                </flux:text>
                             </div>
                         </div>
                     @endif
