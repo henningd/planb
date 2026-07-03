@@ -1043,13 +1043,16 @@
 
             <div class="mt-12 flex flex-col gap-4 rounded-2xl bg-slate-900 px-8 py-7 text-white sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                    <div class="text-lg font-semibold">Tiefer einsteigen?</div>
-                    <div class="mt-1 text-sm text-slate-300">Die vollständige NIS2-Checkliste: wer betroffen ist, welche Pflichten gelten und wie Sie sie umsetzen.</div>
+                    <div class="text-lg font-semibold">Wo stehen Sie bei NIS2?</div>
+                    <div class="mt-1 text-sm text-slate-300">Machen Sie den kostenlosen Quick-Check und erhalten Sie in rund 5 Minuten Ihren Reifegrad — oder steigen Sie mit der vollständigen NIS2-Checkliste tiefer ein.</div>
                 </div>
                 <div class="flex shrink-0 flex-wrap gap-3">
-                    <a href="{{ route('guides.show', 'nis2-checkliste') }}" class="inline-flex items-center gap-2 rounded-lg bg-white px-5 py-3 font-medium text-slate-900 transition hover:bg-slate-100">
-                        NIS2-Checkliste lesen
+                    <a href="{{ route('nis2-quick-check') }}" class="inline-flex items-center gap-2 rounded-lg bg-white px-5 py-3 font-medium text-slate-900 transition hover:bg-slate-100">
+                        NIS2 Quick-Check
                         <svg class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+                    </a>
+                    <a href="{{ route('guides.show', 'nis2-checkliste') }}" class="inline-flex items-center gap-2 rounded-lg bg-white/10 px-5 py-3 font-medium text-white ring-1 ring-white/20 transition hover:bg-white/15">
+                        NIS2-Checkliste lesen
                     </a>
                     @if ($canRegister)
                         <a href="{{ route('register') }}" class="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-5 py-3 font-medium text-white transition hover:bg-indigo-500">
