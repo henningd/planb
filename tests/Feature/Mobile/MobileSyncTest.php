@@ -67,6 +67,57 @@ test('sync requires a bearer token', function () {
     test()->getJson('/api/mobile/sync')->assertStatus(401);
 });
 
+test('an unchanged sync short-circuits via the version fingerprint', function () {
+    [$user, $company, $token] = syncSession();
+    Scenario::factory()->for($company)->create(['name' => 'Stromausfall']);
+
+    $first = test()->withToken($token)->getJson('/api/mobile/sync')->assertOk();
+    $version = $first->json('data.version');
+    expect($version)->toBeString()
+        ->and($first->json('data.unchanged'))->toBeFalse();
+
+    $second = test()->withToken($token)
+        ->getJson('/api/mobile/sync?version='.urlencode($version))
+        ->assertOk()
+        ->assertJsonPath('data.unchanged', true)
+        ->assertJsonPath('data.version', $version);
+
+    // Kompakte Antwort: keine Inhaltsdaten.
+    expect($second->json('data'))->not->toHaveKey('scenarios');
+});
+
+test('a change yields a new version and the full bundle', function () {
+    [$user, $company, $token] = syncSession();
+    Scenario::factory()->for($company)->create(['name' => 'Stromausfall']);
+    $version = test()->withToken($token)->getJson('/api/mobile/sync')->json('data.version');
+
+    Scenario::factory()->for($company)->create(['name' => 'Cyberangriff']);
+
+    $res = test()->withToken($token)
+        ->getJson('/api/mobile/sync?version='.urlencode($version))
+        ->assertOk()
+        ->assertJsonPath('data.unchanged', false)
+        ->assertJsonFragment(['title' => 'Cyberangriff']);
+
+    expect($res->json('data.version'))->not->toBe($version);
+});
+
+test('a deletion also changes the version so it propagates offline', function () {
+    [$user, $company, $token] = syncSession();
+    $scenario = Scenario::factory()->for($company)->create(['name' => 'Stromausfall']);
+    $version = test()->withToken($token)->getJson('/api/mobile/sync')->json('data.version');
+
+    $scenario->delete();
+
+    $res = test()->withToken($token)
+        ->getJson('/api/mobile/sync?version='.urlencode($version))
+        ->assertOk()
+        ->assertJsonPath('data.unchanged', false)
+        ->assertJsonMissing(['title' => 'Stromausfall']);
+
+    expect($res->json('data.version'))->not->toBe($version);
+});
+
 test('the handbook pdf endpoint rejects a foreign or unknown version', function () {
     [$user, $company, $token] = syncSession();
 

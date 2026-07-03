@@ -3,6 +3,7 @@
 namespace App\Support\Mobile;
 
 use App\Enums\CrisisRole;
+use App\Http\Controllers\Api\MobileSyncController;
 use App\Models\Company;
 use App\Models\EmergencyResource;
 use App\Models\Employee;
@@ -11,12 +12,15 @@ use App\Models\ServiceProvider;
 use App\Models\System;
 use App\Scopes\CurrentCompanyScope;
 use App\Support\Incident\Cockpit;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 
 /**
  * Stellt das Offline-Datenpaket für die Notfall-App eines Mandanten zusammen
  * (siehe app/MOBILE-APP-BRIEF.md, Abschnitt 5/6).
+ *
+ * Liefert bewusst KEIN `synced_at`/`version` — diese (nicht inhaltlichen)
+ * Felder ergänzt der {@see MobileSyncController}, der
+ * über einen Fingerprint dieses Bundles den Delta-Sync steuert.
  *
  * WICHTIG (Mandanten-Isolation): Im Mobile-API-Kontext gibt es keinen
  * angemeldeten Web-Nutzer, wodurch der {@see CurrentCompanyScope}
@@ -36,7 +40,6 @@ class MobileSyncBundle
         $version = $company->currentHandbookVersion();
 
         return [
-            'synced_at' => Carbon::now()->toIso8601String(),
             'handbook' => ($version !== null && $version->hasPdf()) ? [
                 'version_id' => $version->id,
                 'version' => $version->version,
