@@ -1085,6 +1085,101 @@
     </section>
 
     {{-- ============ ANBIETER-PORTAL ============ --}}
+    {{-- ============ FÜR BERATER: EIN LOGIN, ALLE MANDANTEN ============ --}}
+    <section id="berater" class="py-20 lg:py-28">
+        <div class="max-w-7xl mx-auto px-6 lg:px-8">
+            <div class="grid lg:grid-cols-2 gap-12 items-center">
+                <div>
+                    <span class="text-sm font-semibold uppercase tracking-wide text-indigo-600">Für Berater &amp; Partner</span>
+                    <h2 class="mt-3 text-3xl sm:text-4xl font-semibold tracking-tight text-slate-900">
+                        Ein Login. Alle Mandanten.
+                    </h2>
+                    <p class="mt-4 text-lg text-slate-600">
+                        Sie betreuen als Berater, Steuerberater oder IT-Dienstleister mehrere Betriebe? In PlanB verwalten Sie
+                        alle Mandanten mit <span class="font-medium text-slate-900">einer</span> E-Mail-Adresse und
+                        <span class="font-medium text-slate-900">einem</span> Zugang – und wechseln per Klick zwischen ihnen.
+                    </p>
+                    <ul class="mt-6 space-y-3 text-sm text-slate-600">
+                        <li class="flex items-start gap-3">
+                            <svg class="w-5 h-5 mt-0.5 shrink-0 text-indigo-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                            <span><span class="font-medium text-slate-900">Ein Zugang für alle Mandanten</span> – kein Passwort-Zettel, kein zweites Konto.</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <svg class="w-5 h-5 mt-0.5 shrink-0 text-indigo-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                            <span><span class="font-medium text-slate-900">Wechsel per Klick</span> zwischen den Betrieben über den Team-Switcher.</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <svg class="w-5 h-5 mt-0.5 shrink-0 text-indigo-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                            <span><span class="font-medium text-slate-900">Strikte Datentrennung:</span> jeder Mandant sieht nur seine eigenen Daten – DSGVO-konform.</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <svg class="w-5 h-5 mt-0.5 shrink-0 text-indigo-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                            <span><span class="font-medium text-slate-900">Klare Rollen:</span> Als „Berater" pflegen Sie die Inhalte – Abrechnung und Audit bleiben beim Kunden.</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <svg class="w-5 h-5 mt-0.5 shrink-0 text-indigo-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                            <span><span class="font-medium text-slate-900">In Sekunden eingeladen:</span> Der Kunde lädt Ihre E-Mail ein, Sie nehmen an – sofort startklar.</span>
+                        </li>
+                    </ul>
+                    <div class="mt-8 flex flex-col sm:flex-row gap-3">
+                        @if ($canRegister)
+                            <a href="{{ route('register') }}" class="inline-flex items-center justify-center px-5 py-3 text-sm font-medium rounded-lg bg-slate-900 text-white hover:bg-slate-800 transition shadow-sm">
+                                Kostenlos testen
+                            </a>
+                        @endif
+                        <a href="{{ route('manual.show', 'berater-mehrere-teams') }}" class="inline-flex items-center justify-center px-5 py-3 text-sm font-medium rounded-lg ring-1 ring-slate-300 text-slate-700 hover:bg-white hover:text-slate-900 transition">
+                            So funktioniert’s
+                        </a>
+                    </div>
+                </div>
+                {{-- Diagramm: mehrere Mandanten ↔ ein Berater ↔ Team-Switcher --}}
+                <div class="rounded-xl bg-white ring-1 ring-slate-200 shadow-sm p-6 lg:p-8">
+                    <svg viewBox="0 0 480 348" class="w-full h-auto" role="img" aria-labelledby="berater-diagram-title">
+                        <title id="berater-diagram-title">Ein Berater betreut mehrere Mandanten mit einem Login und wechselt über den Team-Switcher</title>
+
+                        {{-- Mandanten-Karten --}}
+                        <rect x="6" y="6" width="148" height="64" rx="12" fill="#ffffff" stroke="#e2e8f0" stroke-width="1.5"/>
+                        <text x="80" y="34" text-anchor="middle" font-size="13" font-weight="600" fill="#0f172a">Mandant A</text>
+                        <text x="80" y="52" text-anchor="middle" font-size="10.5" fill="#64748b">lädt Berater ein</text>
+
+                        <rect x="166" y="6" width="148" height="64" rx="12" fill="#ffffff" stroke="#e2e8f0" stroke-width="1.5"/>
+                        <text x="240" y="34" text-anchor="middle" font-size="13" font-weight="600" fill="#0f172a">Mandant B</text>
+                        <text x="240" y="52" text-anchor="middle" font-size="10.5" fill="#64748b">lädt Berater ein</text>
+
+                        <rect x="326" y="6" width="148" height="64" rx="12" fill="#ffffff" stroke="#e2e8f0" stroke-width="1.5"/>
+                        <text x="400" y="34" text-anchor="middle" font-size="13" font-weight="600" fill="#0f172a">Mandant C</text>
+                        <text x="400" y="52" text-anchor="middle" font-size="10.5" fill="#64748b">lädt Berater ein</text>
+
+                        {{-- Verbindungen zum Berater --}}
+                        <line x1="80" y1="70" x2="175" y2="150" stroke="#cbd5e1" stroke-width="1.5"/>
+                        <line x1="240" y1="70" x2="240" y2="150" stroke="#cbd5e1" stroke-width="1.5"/>
+                        <line x1="400" y1="70" x2="305" y2="150" stroke="#cbd5e1" stroke-width="1.5"/>
+                        <circle cx="80" cy="70" r="3.5" fill="#4f46e5"/>
+                        <circle cx="240" cy="70" r="3.5" fill="#4f46e5"/>
+                        <circle cx="400" cy="70" r="3.5" fill="#4f46e5"/>
+
+                        {{-- Berater (ein Konto) --}}
+                        <rect x="100" y="150" width="280" height="96" rx="16" fill="#4f46e5"/>
+                        <text x="240" y="182" text-anchor="middle" font-size="17" font-weight="700" fill="#ffffff">Berater</text>
+                        <text x="240" y="206" text-anchor="middle" font-size="12" fill="#c7d2fe">eine E-Mail · ein Login</text>
+                        <text x="240" y="226" text-anchor="middle" font-size="12" fill="#c7d2fe">Mitglied in allen Mandanten</text>
+
+                        {{-- Verbindung zum Team-Switcher --}}
+                        <line x1="240" y1="246" x2="240" y2="280" stroke="#cbd5e1" stroke-width="1.5"/>
+
+                        {{-- Team-Switcher --}}
+                        <rect x="96" y="280" width="288" height="44" rx="12" fill="#ffffff" stroke="#e2e8f0" stroke-width="1.5"/>
+                        <rect x="100" y="284" width="92" height="36" rx="8" fill="#4f46e5"/>
+                        <text x="146" y="307" text-anchor="middle" font-size="12.5" font-weight="600" fill="#ffffff">Mandant A</text>
+                        <text x="240" y="307" text-anchor="middle" font-size="12.5" font-weight="600" fill="#475569">Mandant B</text>
+                        <text x="336" y="307" text-anchor="middle" font-size="12.5" font-weight="600" fill="#475569">Mandant C</text>
+                        <text x="240" y="341" text-anchor="middle" font-size="11" fill="#94a3b8">Team-Switcher · Wechsel per Klick</text>
+                    </svg>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <section id="portal" class="py-20 lg:py-28 bg-slate-50 border-y border-slate-100">
         <div class="max-w-7xl mx-auto px-6 lg:px-8">
             <div class="grid lg:grid-cols-2 gap-12 items-center">
