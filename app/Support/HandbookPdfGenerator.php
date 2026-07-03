@@ -2,6 +2,7 @@
 
 namespace App\Support;
 
+use App\Models\Company;
 use App\Models\HandbookVersion;
 use App\Scopes\CurrentCompanyScope;
 use App\Support\Settings\CompanySetting;
@@ -58,5 +59,27 @@ class HandbookPdfGenerator
         ])->save();
 
         return $version;
+    }
+
+    /**
+     * Rendert das AKTUELLE Handbuch der Firma live als PDF (ohne Speicherung).
+     * Fallback für die Notfall-App, wenn (noch) keine freigegebene, PDF-behaftete
+     * HandbookVersion existiert – so ist das vorhandene Handbuch trotzdem mobil
+     * verfügbar. Nicht revisionssicher; es spiegelt den momentanen Datenstand.
+     */
+    public static function renderLive(Company $company): string
+    {
+        $settings = CompanySetting::for($company);
+
+        $data = HandbookData::forCompany($company);
+        $data['version'] = $company->currentHandbookVersion();
+        $data['showPdfHashFooter'] = false;
+
+        $paper = (string) $settings->get('pdf_paper_size', 'a4');
+
+        return Pdf::loadView('handbook-print', $data)
+            ->setPaper($paper)
+            ->setOption(['isRemoteEnabled' => false, 'isHtml5ParserEnabled' => true])
+            ->output();
     }
 }

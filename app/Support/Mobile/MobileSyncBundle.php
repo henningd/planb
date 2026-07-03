@@ -5,8 +5,16 @@ namespace App\Support\Mobile;
 use App\Enums\CrisisRole;
 use App\Http\Controllers\Api\MobileSyncController;
 use App\Models\Company;
+use App\Models\Contract;
+use App\Models\Department;
+use App\Models\EmergencyLevel;
 use App\Models\EmergencyResource;
 use App\Models\Employee;
+use App\Models\FallbackProcess;
+use App\Models\HandbookVersion;
+use App\Models\InsurancePolicy;
+use App\Models\Location;
+use App\Models\Role;
 use App\Models\Scenario;
 use App\Models\ServiceProvider;
 use App\Models\System;
@@ -40,13 +48,7 @@ class MobileSyncBundle
         $version = $company->currentHandbookVersion();
 
         return [
-            'handbook' => ($version !== null && $version->hasPdf()) ? [
-                'version_id' => $version->id,
-                'version' => $version->version,
-                'hash' => $version->pdf_hash,
-                'approved_at' => $version->approved_at?->toIso8601String(),
-                'pdf_url' => route('api.mobile.handbook.pdf', ['version' => $version->id]),
-            ] : null,
+            'handbook' => self::handbook($company, $version),
             'company' => [
                 'id' => $company->id,
                 'name' => $company->name,
@@ -59,6 +61,74 @@ class MobileSyncBundle
             'scenarios' => self::scenarios($company),
             'aushang_codes' => self::aushangCodes($company),
         ];
+    }
+
+    /**
+     * Handbuch-Eintrag: bevorzugt die freigegebene, revisionssichere PDF-Version;
+     * sonst ein Live-Fallback auf das aktuelle Handbuch (Route-Marker `current`),
+     * damit das vorhandene Handbuch auch ohne formale Freigabe mobil verfügbar ist.
+     *
+     * @return array<string, mixed>
+     */
+    private static function handbook(Company $company, ?HandbookVersion $version): array
+    {
+        if ($version !== null && $version->hasPdf()) {
+            return [
+                'version_id' => $version->id,
+                'version' => $version->version,
+                'hash' => $version->pdf_hash,
+                'approved_at' => $version->approved_at?->toIso8601String(),
+                'pdf_url' => route('api.mobile.handbook.pdf', ['version' => $version->id]),
+            ];
+        }
+
+        return [
+            'version_id' => 'current',
+            'version' => $version?->version ?? 'aktuell',
+            'hash' => self::liveHandbookSignature($company),
+            'approved_at' => $version?->approved_at?->toIso8601String(),
+            'pdf_url' => route('api.mobile.handbook.pdf', ['version' => 'current']),
+        ];
+    }
+
+    /**
+     * Günstiger Inhalts-Fingerprint des Live-Handbuchs (Count + max(updated_at)
+     * über handbuchrelevante, firmengebundene Tabellen), damit die App das PDF
+     * nur bei Änderungen neu lädt. Bewusst breit, aber nicht erschöpfend.
+     */
+    private static function liveHandbookSignature(Company $company): string
+    {
+        $models = [
+            Location::class,
+            Department::class,
+            Employee::class,
+            Role::class,
+            System::class,
+            Scenario::class,
+            ServiceProvider::class,
+            Contract::class,
+            InsurancePolicy::class,
+            EmergencyResource::class,
+            EmergencyLevel::class,
+            FallbackProcess::class,
+        ];
+
+        $parts = ['company:'.$company->id.':'.($company->updated_at?->getTimestamp() ?? 0)];
+
+        foreach ($models as $model) {
+            try {
+                $row = $model::query()
+                    ->withoutGlobalScope(CurrentCompanyScope::class)
+                    ->where('company_id', $company->id)
+                    ->selectRaw('COUNT(*) as c, MAX(updated_at) as u')
+                    ->first();
+                $parts[] = class_basename($model).':'.($row->c ?? 0).':'.($row->u ?? '');
+            } catch (\Throwable) {
+                // Modell ohne company_id/updated_at → überspringen.
+            }
+        }
+
+        return 'live:'.substr(hash('sha256', implode('|', $parts)), 0, 32);
     }
 
     /**

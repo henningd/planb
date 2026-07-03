@@ -118,6 +118,24 @@ test('a deletion also changes the version so it propagates offline', function ()
     expect($res->json('data.version'))->not->toBe($version);
 });
 
+test('the handbook falls back to a live current version when none is approved', function () {
+    [$user, $company, $token] = syncSession();
+
+    $res = test()->withToken($token)->getJson('/api/mobile/sync')->assertOk();
+
+    expect($res->json('data.handbook.version_id'))->toBe('current')
+        ->and($res->json('data.handbook.pdf_url'))->toContain('/handbook/current/pdf')
+        ->and($res->json('data.handbook.hash'))->toBeString();
+});
+
+test('the current handbook renders a live pdf', function () {
+    [$user, $company, $token] = syncSession();
+
+    $res = test()->withToken($token)->get('/api/mobile/handbook/current/pdf')->assertOk();
+
+    expect(substr((string) $res->getContent(), 0, 4))->toBe('%PDF');
+});
+
 test('the handbook pdf endpoint rejects a foreign or unknown version', function () {
     [$user, $company, $token] = syncSession();
 
