@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\Api\MobileAuthController;
 use App\Http\Controllers\Api\MobileDeviceController;
+use App\Http\Controllers\Api\MobileHandbookPdfController;
+use App\Http\Controllers\Api\MobileSyncController;
 use App\Http\Controllers\Api\MonitoringWebhookController;
 use App\Http\Controllers\Api\PortalProfileController;
 use App\Http\Middleware\AuthenticateApiToken;
@@ -33,6 +35,8 @@ Route::prefix('mobile')
 
         Route::middleware([AuthenticateApiToken::class.':mobile'])->group(function () {
             Route::post('logout', [MobileAuthController::class, 'logout'])->name('api.mobile.logout');
+            Route::get('sync', MobileSyncController::class)->name('api.mobile.sync');
+            Route::get('handbook/{version}/pdf', MobileHandbookPdfController::class)->name('api.mobile.handbook.pdf');
             Route::post('devices/register', [MobileDeviceController::class, 'register'])->name('api.mobile.devices.register');
             Route::post('devices/unregister', [MobileDeviceController::class, 'unregister'])->name('api.mobile.devices.unregister');
         });
