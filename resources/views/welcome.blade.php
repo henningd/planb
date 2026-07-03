@@ -252,7 +252,7 @@
     @include('partials.marketing-header')
 
     {{-- ============ HERO ============ --}}
-    <section class="relative overflow-hidden">
+    <section id="start" class="relative overflow-hidden">
         <div class="absolute inset-0 -z-10 bg-gradient-to-b from-slate-50 via-white to-white"></div>
         <div class="absolute inset-x-0 top-0 -z-10 h-96 bg-[radial-gradient(ellipse_at_top,rgba(79,70,229,0.08),transparent_60%)]"></div>
 
@@ -1321,7 +1321,7 @@
     </section>
 
     {{-- ============ WARUM DIESES PRODUKT ============ --}}
-    <section class="py-20 lg:py-28">
+    <section id="warum" class="py-20 lg:py-28">
         <div class="max-w-7xl mx-auto px-6 lg:px-8">
             <div class="max-w-3xl">
                 <span class="text-sm font-semibold uppercase tracking-wide text-indigo-600">Warum {{ $productName }}</span>
@@ -1350,7 +1350,7 @@
     </section>
 
     {{-- ============ VERTRAUEN / COMPLIANCE ============ --}}
-    <section class="py-20 lg:py-28 bg-slate-50 border-y border-slate-100">
+    <section id="nachweise" class="py-20 lg:py-28 bg-slate-50 border-y border-slate-100">
         <div class="max-w-5xl mx-auto px-6 lg:px-8">
             <div class="grid lg:grid-cols-[auto_1fr] gap-8 lg:gap-12 items-start">
                 <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-white ring-1 ring-slate-200 shadow-sm text-indigo-600 shrink-0">

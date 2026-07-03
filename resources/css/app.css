@@ -66,6 +66,20 @@ select:focus[data-flux-control] {
     display: none !important;
 }
 
+/* Deep-Links auf Seiten-Abschnitte: Anker-Ziele landen unterhalb des sticky
+   Headers (statt die Überschrift dahinter zu verstecken). Gilt für jede
+   Section mit id, z. B. /#berater, /#preise, /#faq. */
+section[id] {
+    scroll-margin-top: 5.5rem;
+}
+
+/* Sanftes Scrollen zu In-Page-Ankern — respektiert reduzierte Bewegung. */
+@media (prefers-reduced-motion: no-preference) {
+    html {
+        scroll-behavior: smooth;
+    }
+}
+
 /* \[:where(&)\]:size-4 {
     @apply size-4;
 } */
