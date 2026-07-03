@@ -22,13 +22,10 @@
             <span class="font-semibold text-slate-900 tracking-tight">{{ $navProductName }}</span>
         </a>
 
-        <nav class="hidden md:flex items-center gap-8 text-sm text-slate-600">
-            <a href="{{ route('home') }}#problem" class="hover:text-slate-900 transition">Problem</a>
-            <a href="{{ route('home') }}#loesung" class="hover:text-slate-900 transition">Lösung</a>
+        <nav class="hidden lg:flex items-center gap-5 xl:gap-7 text-sm text-slate-600">
             <a href="{{ route('home') }}#features" class="hover:text-slate-900 transition">Funktionen</a>
             <a href="{{ route('home') }}#compliance" class="hover:text-slate-900 transition">Compliance</a>
             <a href="{{ route('pricing.show') }}" @class(['text-slate-900 font-medium' => request()->routeIs('pricing.*'), 'hover:text-slate-900 transition' => ! request()->routeIs('pricing.*')])>Preise</a>
-            <a href="{{ route('home') }}#zielgruppen" class="hover:text-slate-900 transition">Zielgruppen</a>
             <a href="{{ route('guides.index') }}" @class(['text-slate-900 font-medium' => request()->routeIs('guides.*'), 'hover:text-slate-900 transition' => ! request()->routeIs('guides.*')])>Ratgeber</a>
             <a href="{{ $navPortalUrl }}" class="hover:text-slate-900 transition">Anbieter-Portal</a>
             <a href="{{ route('home') }}#faq" class="hover:text-slate-900 transition">FAQ</a>

@@ -46,8 +46,8 @@ test('every public marketing page shows the shared top navigation', function () 
     foreach ($urls as $url) {
         $this->get($url)
             ->assertOk()
-            ->assertSee(route('home').'#problem', false)
-            ->assertSee(route('home').'#loesung', false)
+            ->assertSee(route('home').'#features', false)
+            ->assertSee(route('home').'#compliance', false)
             ->assertSee(route('pricing.show'), false)
             ->assertSee('Anmelden');
     }
