@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\MobileAuthController;
 use App\Http\Controllers\Api\MobileDeviceController;
 use App\Http\Controllers\Api\MobileHandbookPdfController;
 use App\Http\Controllers\Api\MobileIncidentController;
+use App\Http\Controllers\Api\MobileRunController;
 use App\Http\Controllers\Api\MobileSyncController;
 use App\Http\Controllers\Api\MonitoringWebhookController;
 use App\Http\Controllers\Api\PortalProfileController;
@@ -41,5 +42,6 @@ Route::prefix('mobile')
             Route::post('devices/register', [MobileDeviceController::class, 'register'])->name('api.mobile.devices.register');
             Route::post('devices/unregister', [MobileDeviceController::class, 'unregister'])->name('api.mobile.devices.unregister');
             Route::post('incidents', [MobileIncidentController::class, 'store'])->middleware('throttle:20,1')->name('api.mobile.incidents.store');
+            Route::post('runs/{run}/steps/{step}', [MobileRunController::class, 'toggleStep'])->middleware('throttle:120,1')->name('api.mobile.runs.steps.toggle');
         });
     });

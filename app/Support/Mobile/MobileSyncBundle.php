@@ -16,6 +16,8 @@ use App\Models\InsurancePolicy;
 use App\Models\Location;
 use App\Models\Role;
 use App\Models\Scenario;
+use App\Models\ScenarioRun;
+use App\Models\ScenarioRunStep;
 use App\Models\ServiceProvider;
 use App\Models\System;
 use App\Scopes\CurrentCompanyScope;
@@ -59,8 +61,51 @@ class MobileSyncBundle
             'emergency_resources' => self::emergencyResources($company),
             'recovery_order' => self::recoveryOrder($cockpit->recoveryOrder),
             'scenarios' => self::scenarios($company),
+            'active_runs' => self::activeRuns($company),
             'aushang_codes' => self::aushangCodes($company),
         ];
+    }
+
+    /**
+     * Laufende Notfall-Abläufe (weder beendet noch abgebrochen) inkl. ihrer
+     * Schritte mit geteiltem Erledigt-Status. Grundlage für die „aktiver
+     * Notfall"-Anzeige und den geteilten Fortschritt in der App.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private static function activeRuns(Company $company): array
+    {
+        return ScenarioRun::query()
+            ->withoutGlobalScope(CurrentCompanyScope::class)
+            ->where('company_id', $company->id)
+            ->whereNull('ended_at')
+            ->whereNull('aborted_at')
+            ->with([
+                'startedBy',
+                'steps' => fn ($q) => $q->orderBy('sort'),
+                'steps.checkedBy',
+            ])
+            ->orderByDesc('started_at')
+            ->get()
+            ->map(fn (ScenarioRun $run) => [
+                'id' => $run->id,
+                'scenario_id' => $run->scenario_id,
+                'title' => $run->title,
+                'mode' => $run->mode->value,
+                'started_at' => $run->started_at?->toIso8601String(),
+                'started_by' => $run->startedBy?->name,
+                'steps' => $run->steps->map(fn (ScenarioRunStep $step) => [
+                    'id' => $step->id,
+                    'position' => $step->sort,
+                    'text' => trim($step->title.($step->description ? ' — '.$step->description : '')),
+                    'role' => $step->responsible,
+                    'checked' => $step->checked_at !== null,
+                    'checked_at' => $step->checked_at?->toIso8601String(),
+                    'checked_by' => $step->checkedBy?->name,
+                    'note' => $step->note,
+                ])->all(),
+            ])
+            ->all();
     }
 
     /**
