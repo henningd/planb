@@ -39,12 +39,13 @@ class HandbookPdfGenerator
         $data = HandbookData::forCompany($company);
         $data['version'] = $version;
         $data['showPdfHashFooter'] = (bool) $settings->get('pdf_footer_show_hash', true);
+        $data['isPdf'] = true;
 
         $paper = (string) $settings->get('pdf_paper_size', 'a4');
 
         $pdf = Pdf::loadView('handbook-print', $data)
             ->setPaper($paper)
-            ->setOption(['isRemoteEnabled' => false, 'isHtml5ParserEnabled' => true]);
+            ->setOption(['isRemoteEnabled' => false, 'isHtml5ParserEnabled' => true, 'defaultMediaType' => 'print']);
 
         $binary = $pdf->output();
         $relativePath = "{$company->id}/{$version->id}.pdf";
@@ -74,12 +75,13 @@ class HandbookPdfGenerator
         $data = HandbookData::forCompany($company);
         $data['version'] = $company->currentHandbookVersion();
         $data['showPdfHashFooter'] = false;
+        $data['isPdf'] = true;
 
         $paper = (string) $settings->get('pdf_paper_size', 'a4');
 
         return Pdf::loadView('handbook-print', $data)
             ->setPaper($paper)
-            ->setOption(['isRemoteEnabled' => false, 'isHtml5ParserEnabled' => true])
+            ->setOption(['isRemoteEnabled' => false, 'isHtml5ParserEnabled' => true, 'defaultMediaType' => 'print'])
             ->output();
     }
 }

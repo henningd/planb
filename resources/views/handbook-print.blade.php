@@ -43,6 +43,9 @@
         $externalProviders = $providers->reject(fn ($p) => $p->type?->isAuthority() ?? false);
         $emblemPathPublic = public_path('wappen.png');
         $emblemUrl = asset('wappen.png').(is_file($emblemPathPublic) ? '?v='.filemtime($emblemPathPublic) : '');
+        // Im PDF (dompdf, isRemoteEnabled=false) kann keine http-URL geladen werden
+        // → lokalen Dateipfad verwenden; im Browser die asset()-URL.
+        $emblemSrc = (($isPdf ?? false) && is_file($emblemPathPublic)) ? $emblemPathPublic : $emblemUrl;
         $pageTopCenter = sprintf('%s — Notfall- und Krisenhandbuch', $company->name);
 
         // Für die @page Margin-Box brauchen wir die PNG mit fester Pixelgröße,
@@ -475,6 +478,7 @@
     </style>
 </head>
 <body>
+    @unless ($isPdf ?? false)
     <div class="toolbar">
         <div>
             <strong>Notfall- und Krisenhandbuch</strong>
@@ -490,8 +494,9 @@
             <button class="primary" onclick="window.print()">Als PDF speichern / Drucken</button>
         </div>
     </div>
+    @endunless
 
-    @if (! empty($share))
+    @if (! empty($share) && ! ($isPdf ?? false))
         <div class="share-banner">
             <strong>Read-only-Zugriff ohne Login.</strong>
             Freigegeben für: {{ $share->label }}.
@@ -501,7 +506,7 @@
 
     {{-- ============ DECKBLATT ============ --}}
     <div class="sheet cover-sheet">
-        <img class="emblem-cover" src="{{ $emblemUrl }}" alt="">
+        <img class="emblem-cover" src="{{ $emblemSrc }}" alt="">
 
         <div class="cover-block" style="text-align:center;">
             <div class="kicker">Notfall- und Krisenhandbuch</div>
@@ -599,7 +604,7 @@
     {{-- ============ KAPITEL 1: VERSIONSHISTORIE ============ --}}
     <div class="sheet page-break">
         <div class="doc-header">
-            <img class="emblem-mark" src="{{ $emblemUrl }}" alt="">
+            <img class="emblem-mark" src="{{ $emblemSrc }}" alt="">
             <div class="org">{{ $company->name }} &mdash; Notfall- und Krisenhandbuch</div>
             <div class="ref">{{ $aktenzeichen }}</div>
         </div>
@@ -677,7 +682,7 @@
     {{-- ============ KAPITEL 2: DEFINITIONEN ============ --}}
     <div class="sheet page-break">
         <div class="doc-header">
-            <img class="emblem-mark" src="{{ $emblemUrl }}" alt="">
+            <img class="emblem-mark" src="{{ $emblemSrc }}" alt="">
             <div class="org">{{ $company->name }} &mdash; Notfall- und Krisenhandbuch</div>
             <div class="ref">{{ $aktenzeichen }}</div>
         </div>
@@ -706,7 +711,7 @@
     {{-- ============ KAPITEL 3: GELTUNGSBEREICH ============ --}}
     <div class="sheet page-break">
         <div class="doc-header">
-            <img class="emblem-mark" src="{{ $emblemUrl }}" alt="">
+            <img class="emblem-mark" src="{{ $emblemSrc }}" alt="">
             <div class="org">{{ $company->name }} &mdash; Notfall- und Krisenhandbuch</div>
             <div class="ref">{{ $aktenzeichen }}</div>
         </div>
@@ -794,7 +799,7 @@
     {{-- ============ KAPITEL 4: KRISENORGANISATION ============ --}}
     <div class="sheet page-break">
         <div class="doc-header">
-            <img class="emblem-mark" src="{{ $emblemUrl }}" alt="">
+            <img class="emblem-mark" src="{{ $emblemSrc }}" alt="">
             <div class="org">{{ $company->name }} &mdash; Notfall- und Krisenhandbuch</div>
             <div class="ref">{{ $aktenzeichen }}</div>
         </div>
@@ -862,7 +867,7 @@
     {{-- ============ KAPITEL 5: KONTAKTE & ESKALATIONSKETTE ============ --}}
     <div class="sheet page-break">
         <div class="doc-header">
-            <img class="emblem-mark" src="{{ $emblemUrl }}" alt="">
+            <img class="emblem-mark" src="{{ $emblemSrc }}" alt="">
             <div class="org">{{ $company->name }} &mdash; Notfall- und Krisenhandbuch</div>
             <div class="ref">{{ $aktenzeichen }}</div>
         </div>
@@ -1055,7 +1060,7 @@
     {{-- ============ KAPITEL 6: NOTFALL-LEVEL ============ --}}
     <div class="sheet page-break">
         <div class="doc-header">
-            <img class="emblem-mark" src="{{ $emblemUrl }}" alt="">
+            <img class="emblem-mark" src="{{ $emblemSrc }}" alt="">
             <div class="org">{{ $company->name }} &mdash; Notfall- und Krisenhandbuch</div>
             <div class="ref">{{ $aktenzeichen }}</div>
         </div>
@@ -1075,7 +1080,7 @@
     {{-- ============ KAPITEL 7: VERHALTENSKODEX ============ --}}
     <div class="sheet page-break">
         <div class="doc-header">
-            <img class="emblem-mark" src="{{ $emblemUrl }}" alt="">
+            <img class="emblem-mark" src="{{ $emblemSrc }}" alt="">
             <div class="org">{{ $company->name }} &mdash; Notfall- und Krisenhandbuch</div>
             <div class="ref">{{ $aktenzeichen }}</div>
         </div>
@@ -1117,7 +1122,7 @@
     {{-- ============ KAPITEL 8: MITTEL & BEFUGNISSE ============ --}}
     <div class="sheet page-break">
         <div class="doc-header">
-            <img class="emblem-mark" src="{{ $emblemUrl }}" alt="">
+            <img class="emblem-mark" src="{{ $emblemSrc }}" alt="">
             <div class="org">{{ $company->name }} &mdash; Notfall- und Krisenhandbuch</div>
             <div class="ref">{{ $aktenzeichen }}</div>
         </div>
@@ -1312,7 +1317,7 @@
     {{-- ============ KAPITEL 9: SYSTEME & BETRIEBSKONTINUITÄT ============ --}}
     <div class="sheet page-break">
         <div class="doc-header">
-            <img class="emblem-mark" src="{{ $emblemUrl }}" alt="">
+            <img class="emblem-mark" src="{{ $emblemSrc }}" alt="">
             <div class="org">{{ $company->name }} &mdash; Notfall- und Krisenhandbuch</div>
             <div class="ref">{{ $aktenzeichen }}</div>
         </div>
@@ -1477,7 +1482,7 @@
     {{-- ============ KAPITEL 10: SZENARIEN & PLAYBOOKS ============ --}}
     <div class="sheet page-break">
         <div class="doc-header">
-            <img class="emblem-mark" src="{{ $emblemUrl }}" alt="">
+            <img class="emblem-mark" src="{{ $emblemSrc }}" alt="">
             <div class="org">{{ $company->name }} &mdash; Notfall- und Krisenhandbuch</div>
             <div class="ref">{{ $aktenzeichen }}</div>
         </div>
@@ -1523,7 +1528,7 @@
     @if ($company->communicationTemplates->isNotEmpty())
         <div class="sheet page-break">
             <div class="doc-header">
-                <img class="emblem-mark" src="{{ $emblemUrl }}" alt="">
+                <img class="emblem-mark" src="{{ $emblemSrc }}" alt="">
                 <div class="org">{{ $company->name }} &mdash; Notfall- und Krisenhandbuch</div>
                 <div class="ref">{{ $aktenzeichen }}</div>
             </div>
@@ -1567,7 +1572,7 @@
     {{-- ============ KAPITEL 12: MELDEPFLICHTEN ============ --}}
     <div class="sheet page-break">
         <div class="doc-header">
-            <img class="emblem-mark" src="{{ $emblemUrl }}" alt="">
+            <img class="emblem-mark" src="{{ $emblemSrc }}" alt="">
             <div class="org">{{ $company->name }} &mdash; Notfall- und Krisenhandbuch</div>
             <div class="ref">{{ $aktenzeichen }}</div>
         </div>
@@ -1642,7 +1647,7 @@
     {{-- ============ KAPITEL 13: PFLEGE & TESTPLAN ============ --}}
     <div class="sheet page-break">
         <div class="doc-header">
-            <img class="emblem-mark" src="{{ $emblemUrl }}" alt="">
+            <img class="emblem-mark" src="{{ $emblemSrc }}" alt="">
             <div class="org">{{ $company->name }} &mdash; Notfall- und Krisenhandbuch</div>
             <div class="ref">{{ $aktenzeichen }}</div>
         </div>
