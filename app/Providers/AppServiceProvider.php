@@ -6,6 +6,9 @@ use App\Models\Team;
 use App\Services\Sms\NullSmsGateway;
 use App\Services\Sms\SevenIoGateway;
 use App\Services\Sms\SmsGatewayContract;
+use App\Support\Push\FcmPushSender;
+use App\Support\Push\LogPushSender;
+use App\Support\Push\PushSender;
 use App\Support\Settings\SystemSetting;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
@@ -34,6 +37,22 @@ class AppServiceProvider extends ServiceProvider
                 defaultSender: config('services.sevenio.sender'),
                 endpoint: (string) config('services.sevenio.endpoint', 'https://gateway.seven.io/api/sms'),
             );
+        });
+
+        $this->app->singleton(PushSender::class, function () {
+            $projectId = (string) config('services.firebase.project_id');
+            $credentialsPath = (string) config('services.firebase.credentials');
+
+            if ($projectId === '' || $credentialsPath === '' || ! is_file($credentialsPath)) {
+                return new LogPushSender;
+            }
+
+            $credentials = json_decode((string) file_get_contents($credentialsPath), true);
+            if (! is_array($credentials) || empty($credentials['client_email']) || empty($credentials['private_key'])) {
+                return new LogPushSender;
+            }
+
+            return new FcmPushSender($projectId, $credentials);
         });
     }
 

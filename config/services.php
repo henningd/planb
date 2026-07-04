@@ -59,4 +59,11 @@ return [
         'app_key' => env('MOBILE_APP_KEY', ''),
     ],
 
+    'firebase' => [
+        // Firebase-Projekt-ID und Pfad zur Service-Account-JSON für den
+        // Push-Versand (FCM HTTP v1). Leer = keine Zustellung (nur Log).
+        'project_id' => env('FIREBASE_PROJECT_ID', ''),
+        'credentials' => env('FIREBASE_CREDENTIALS', ''),
+    ],
+
 ];

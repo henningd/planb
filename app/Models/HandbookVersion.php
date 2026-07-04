@@ -6,6 +6,7 @@ use App\Concerns\BelongsToCurrentCompany;
 use App\Concerns\LogsAudit;
 use App\Scopes\CurrentCompanyScope;
 use App\Support\HandbookPdfGenerator;
+use App\Support\Push\PushNotifier;
 use App\Support\Settings\CompanySetting;
 use Database\Factories\HandbookVersionFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -152,6 +153,32 @@ class HandbookVersion extends Model
                 HandbookPdfGenerator::generate($version);
             } catch (Throwable) {
                 // best-effort; manuelle Freigabe bleibt möglich
+            }
+        });
+
+        // Freigabe (approved_at neu gesetzt) → Geräte des Mandanten sofort zum
+        // Neu-Sync anstoßen, statt sie aufs nächste Intervall warten zu lassen.
+        static::saved(function (self $version) {
+            if ($version->approved_at === null) {
+                return;
+            }
+            // Nur bei frischer Freigabe: neu angelegt-und-freigegeben oder
+            // approved_at gerade gesetzt (nicht bei jedem späteren Speichern).
+            if (! $version->wasRecentlyCreated && ! $version->wasChanged('approved_at')) {
+                return;
+            }
+
+            $company = $version->company()
+                ->withoutGlobalScope(CurrentCompanyScope::class)
+                ->first();
+            if ($company === null) {
+                return;
+            }
+
+            try {
+                app(PushNotifier::class)->syncCompany($company);
+            } catch (Throwable) {
+                // best-effort; Push darf die Freigabe nie blockieren
             }
         });
     }
