@@ -370,7 +370,7 @@ new #[Title('Notfallbetrieb')] class extends Component {
                 <flux:select wire:model="responsible_employee_id" :label="__('Verantwortliche Person')" placeholder="—">
                     <flux:select.option value="">—</flux:select.option>
                     @foreach ($this->employees as $employee)
-                        <flux:select.option value="{{ $employee->id }}">{{ $employee->first_name }} {{ $employee->last_name }}</flux:select.option>
+                        <flux:select.option value="{{ $employee->id }}">{{ $employee->nameLastFirst() }}</flux:select.option>
                     @endforeach
                 </flux:select>
             </div>

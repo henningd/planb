@@ -1660,7 +1660,7 @@ new #[Title('System')] class extends Component {
                                         <flux:select.option value="">{{ __('Mitarbeiter wählen') }}</flux:select.option>
                                         @foreach ($this->employeesForSelect as $e)
                                             <flux:select.option value="{{ $e->id }}">
-                                                {{ $e->fullName() }}@if ($e->position) · {{ $e->position }}@endif
+                                                {{ $e->nameLastFirst() }}@if ($e->position) · {{ $e->position }}@endif
                                             </flux:select.option>
                                         @endforeach
                                     </flux:select>
@@ -2015,7 +2015,7 @@ new #[Title('System')] class extends Component {
                                     <flux:select.option value="">{{ __('Mitarbeiter wählen') }}</flux:select.option>
                                     @foreach ($this->employeesForSelect as $e)
                                         <flux:select.option value="{{ $e->id }}">
-                                            {{ $e->fullName() }}@if ($e->position) · {{ $e->position }}@endif
+                                            {{ $e->nameLastFirst() }}@if ($e->position) · {{ $e->position }}@endif
                                         </flux:select.option>
                                     @endforeach
                                 </flux:select>

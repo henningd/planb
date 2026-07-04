@@ -350,7 +350,7 @@ new #[Title('Testplan')] class extends Component {
                 <flux:select wire:model="responsible_employee_id" :label="__('Verantwortlich (Person)')">
                     <flux:select.option value="">{{ __('— keine Person —') }}</flux:select.option>
                     @foreach ($this->employeeOptions as $emp)
-                        <flux:select.option value="{{ $emp->id }}">{{ $emp->fullName() }}</flux:select.option>
+                        <flux:select.option value="{{ $emp->id }}">{{ $emp->nameLastFirst() }}</flux:select.option>
                     @endforeach
                 </flux:select>
                 <flux:select wire:model="responsible_role_id" :label="__('Verantwortlich (Rolle / Gruppe)')">

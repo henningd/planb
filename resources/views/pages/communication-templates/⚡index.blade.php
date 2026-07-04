@@ -878,7 +878,7 @@ new #[Title('Kommunikations-Vorlagen')] class extends Component {
                                 class="rounded border-zinc-300 dark:border-zinc-600"
                             >
                             <div>
-                                <div class="text-sm font-medium">{{ $candidate->fullName() }}</div>
+                                <div class="text-sm font-medium">{{ $candidate->nameLastFirst() }}</div>
                                 <div class="text-xs text-zinc-500 dark:text-zinc-400">{{ \App\Support\PhoneFormat::display($candidate->mobile_phone) }}</div>
                             </div>
                         </div>
@@ -969,7 +969,7 @@ new #[Title('Kommunikations-Vorlagen')] class extends Component {
                             <flux:checkbox
                                 wire:model="emailRecipients"
                                 value="{{ $employee->id }}"
-                                :label="$employee->fullName().' · '.$employee->email"
+                                :label="$employee->nameLastFirst().' · '.$employee->email"
                             />
                         @endforeach
                     </div>

@@ -334,7 +334,7 @@ new #[Title('Neues Risiko')] class extends Component {
                             <flux:select.option value="">{{ __('— optional —') }}</flux:select.option>
                             @foreach ($this->employees as $employee)
                                 <flux:select.option value="{{ $employee->id }}">
-                                    {{ $employee->first_name }} {{ $employee->last_name }}
+                                    {{ $employee->nameLastFirst() }}
                                 </flux:select.option>
                             @endforeach
                         </flux:select>

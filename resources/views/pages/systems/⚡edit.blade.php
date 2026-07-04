@@ -1102,7 +1102,7 @@ new #[Title('System bearbeiten')] class extends Component {
                                             >
                                                 <flux:icon.user class="h-4 w-4 text-zinc-400" />
                                                 <div class="min-w-0 flex-1">
-                                                    <div class="truncate font-medium">{{ $employee->fullName() }}</div>
+                                                    <div class="truncate font-medium">{{ $employee->nameLastFirst() }}</div>
                                                     @if ($employee->position || $employee->department?->name)
                                                         <div class="truncate text-xs text-zinc-500 dark:text-zinc-400">
                                                             {{ $employee->position }}@if ($employee->position && $employee->department?->name) · @endif{{ $employee->department?->name }}
@@ -1122,7 +1122,7 @@ new #[Title('System bearbeiten')] class extends Component {
 
                             @php($employeeLookup = $this->employees->mapWithKeys(fn ($e) => [
                                 $e->id => [
-                                    'name' => $e->fullName(),
+                                    'name' => $e->nameLastFirst(),
                                     'position' => (string) $e->position,
                                     'mobile' => (string) $e->mobile_phone,
                                 ],

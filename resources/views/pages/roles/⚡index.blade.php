@@ -440,7 +440,7 @@ new #[Title('Rollen')] class extends Component {
                                     <flux:badge size="sm" color="zinc">—</flux:badge>
                                 @endif
                                 <span class="flex-1">
-                                    <span class="font-medium">{{ $emp->fullName() }}</span>
+                                    <span class="font-medium">{{ $emp->nameLastFirst() }}</span>
                                     @if ($emp->position)
                                         <span class="text-xs text-zinc-500 dark:text-zinc-400">· {{ $emp->position }}</span>
                                     @endif

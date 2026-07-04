@@ -205,7 +205,7 @@ new #[Title('Schulungen')] class extends Component {
             <flux:select wire:model.live="filterEmployee" class="max-w-xs">
                 <flux:select.option value="">{{ __('Alle Mitarbeiter') }}</flux:select.option>
                 @foreach ($this->employees as $employee)
-                    <flux:select.option value="{{ $employee->id }}">{{ $employee->fullName() }}</flux:select.option>
+                    <flux:select.option value="{{ $employee->id }}">{{ $employee->nameLastFirst() }}</flux:select.option>
                 @endforeach
             </flux:select>
         </div>
@@ -303,7 +303,7 @@ new #[Title('Schulungen')] class extends Component {
             <flux:select wire:model="employee_id" :label="__('Mitarbeiter')" required>
                 <flux:select.option value="">{{ __('Bitte wählen') }}</flux:select.option>
                 @foreach ($this->employees as $employee)
-                    <flux:select.option value="{{ $employee->id }}">{{ $employee->fullName() }}</flux:select.option>
+                    <flux:select.option value="{{ $employee->id }}">{{ $employee->nameLastFirst() }}</flux:select.option>
                 @endforeach
             </flux:select>
 

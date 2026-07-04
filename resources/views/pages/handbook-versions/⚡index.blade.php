@@ -414,7 +414,7 @@ new #[Title('Versionshistorie')] class extends Component {
             <flux:select wire:model="changed_by_employee_id" :label="__('Geändert von')">
                 <flux:select.option value="">{{ __('— nicht angegeben —') }}</flux:select.option>
                 @foreach ($this->employeeOptions as $emp)
-                    <flux:select.option value="{{ $emp->id }}">{{ $emp->fullName() }}</flux:select.option>
+                    <flux:select.option value="{{ $emp->id }}">{{ $emp->nameLastFirst() }}</flux:select.option>
                 @endforeach
             </flux:select>
 
@@ -429,7 +429,7 @@ new #[Title('Versionshistorie')] class extends Component {
                 <flux:select wire:model="approved_by_employee_id" :label="__('Freigegeben durch (Mitarbeiter)')">
                     <flux:select.option value="">{{ __('— nicht angegeben —') }}</flux:select.option>
                     @foreach ($this->employeeOptions as $emp)
-                        <flux:select.option value="{{ $emp->id }}">{{ $emp->fullName() }}</flux:select.option>
+                        <flux:select.option value="{{ $emp->id }}">{{ $emp->nameLastFirst() }}</flux:select.option>
                     @endforeach
                 </flux:select>
                 <flux:input wire:model="approved_by_name" :label="__('Freigegeben durch (Name, freier Text)')" type="text" placeholder="z. B. Max Mustermann, GF" />
@@ -493,7 +493,7 @@ new #[Title('Versionshistorie')] class extends Component {
                         <flux:select wire:model="ackEmployeeId" :label="__('Mitarbeiter')">
                             <flux:select.option value="">{{ __('— bitte wählen —') }}</flux:select.option>
                             @foreach ($pending as $emp)
-                                <flux:select.option value="{{ $emp->id }}">{{ $emp->fullName() }}</flux:select.option>
+                                <flux:select.option value="{{ $emp->id }}">{{ $emp->nameLastFirst() }}</flux:select.option>
                             @endforeach
                         </flux:select>
                         <flux:textarea wire:model="ackNotes" :label="__('Notiz (optional)')" rows="2" />

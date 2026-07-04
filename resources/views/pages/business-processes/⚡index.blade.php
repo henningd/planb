@@ -369,7 +369,7 @@ new #[Title('Geschäftsprozesse')] class extends Component {
                 <flux:select wire:model="responsible_employee_id" :label="__('Verantwortliche/r (Person)')">
                     <flux:select.option value="">{{ __('—') }}</flux:select.option>
                     @foreach ($this->employees as $employee)
-                        <flux:select.option value="{{ $employee->id }}">{{ $employee->fullName() }}</flux:select.option>
+                        <flux:select.option value="{{ $employee->id }}">{{ $employee->nameLastFirst() }}</flux:select.option>
                     @endforeach
                 </flux:select>
 
