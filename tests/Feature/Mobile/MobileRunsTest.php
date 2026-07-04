@@ -163,3 +163,65 @@ test('a step of an ended run cannot be toggled', function () {
         ->postJson("/api/mobile/runs/{$run->id}/steps/{$step->id}", ['checked' => true])
         ->assertStatus(409);
 });
+
+test('completing a run ends it, removes it from the bundle and alarms devices', function () {
+    [$user, $company, $token] = runSession();
+    MobileDevice::create(['fcm_token' => 'tok-end', 'user_id' => $user->id, 'company_id' => $company->id]);
+    $run = activeRun($company, $user);
+
+    $sender = Mockery::spy(PushSender::class);
+    app()->instance(PushSender::class, $sender);
+
+    test()->withToken($token)
+        ->postJson("/api/mobile/runs/{$run->id}/close", ['outcome' => 'completed'])
+        ->assertOk()
+        ->assertJson(['outcome' => 'completed', 'active' => false]);
+
+    $fresh = ScenarioRun::withoutGlobalScope(CurrentCompanyScope::class)->find($run->id);
+    expect($fresh->ended_at)->not->toBeNull()
+        ->and($fresh->aborted_at)->toBeNull();
+
+    // Nicht mehr im Sync-Bundle.
+    $data = test()->withToken($token)->getJson('/api/mobile/sync')->json('data');
+    expect($data['active_runs'])->toHaveCount(0);
+
+    $sender->shouldHaveReceived('send')->withArgs(
+        fn ($tokens, $data) => in_array('tok-end', $tokens, true) && ($data['type'] ?? null) === 'sync',
+    );
+});
+
+test('aborting a run sets aborted_at', function () {
+    [$user, $company, $token] = runSession();
+    $run = activeRun($company, $user);
+
+    test()->withToken($token)
+        ->postJson("/api/mobile/runs/{$run->id}/close", ['outcome' => 'aborted'])
+        ->assertOk()
+        ->assertJson(['outcome' => 'aborted']);
+
+    $fresh = ScenarioRun::withoutGlobalScope(CurrentCompanyScope::class)->find($run->id);
+    expect($fresh->aborted_at)->not->toBeNull()
+        ->and($fresh->ended_at)->toBeNull();
+});
+
+test('an already closed run cannot be closed again', function () {
+    [$user, $company, $token] = runSession();
+    $run = activeRun($company, $user, ended: true);
+
+    test()->withToken($token)
+        ->postJson("/api/mobile/runs/{$run->id}/close", ['outcome' => 'completed'])
+        ->assertStatus(409);
+});
+
+test('a run from another company cannot be closed', function () {
+    [$user, $company, $token] = runSession();
+    $otherUser = User::factory()->create();
+    $otherCompany = Company::factory()->for($otherUser->currentTeam)->create();
+    $run = activeRun($otherCompany, $otherUser->fresh());
+
+    test()->withToken($token)
+        ->postJson("/api/mobile/runs/{$run->id}/close", ['outcome' => 'completed'])
+        ->assertNotFound();
+
+    expect(ScenarioRun::withoutGlobalScope(CurrentCompanyScope::class)->find($run->id)->isActive())->toBeTrue();
+});

@@ -94,4 +94,52 @@ class MobileRunController extends Controller
             'checked_by' => $userName,
         ]);
     }
+
+    /**
+     * Beendet („completed" → ended_at) oder bricht ab („aborted" → aborted_at)
+     * einen laufenden Notfall-Ablauf. Danach fällt er aus dem Sync-Bundle und
+     * die übrigen Geräte werden per Push zum Neu-Sync angestoßen, sodass ihre
+     * „Aktiver Notfall"-Karte sofort verschwindet.
+     */
+    public function close(Request $request, string $run): JsonResponse
+    {
+        $token = $request->attributes->get('api_token');
+        abort_unless($token instanceof ApiToken, 401);
+        abort_if($token->created_by_user_id === null, 403, 'Kein Bearbeiter hinterlegt.');
+
+        $validated = $request->validate([
+            'outcome' => ['required', 'in:completed,aborted'],
+        ]);
+
+        $scenarioRun = ScenarioRun::query()
+            ->withoutGlobalScope(CurrentCompanyScope::class)
+            ->where('company_id', $token->company_id)
+            ->whereKey($run)
+            ->firstOrFail();
+
+        abort_unless($scenarioRun->isActive(), 409, 'Ablauf ist bereits abgeschlossen.');
+
+        $scenarioRun->forceFill(
+            $validated['outcome'] === 'completed'
+                ? ['ended_at' => now()]
+                : ['aborted_at' => now()],
+        )->save();
+
+        try {
+            $company = Company::query()
+                ->withoutGlobalScope(CurrentCompanyScope::class)
+                ->find($token->company_id);
+            if ($company !== null) {
+                app(PushNotifier::class)->syncCompany($company);
+            }
+        } catch (Throwable) {
+            // best-effort
+        }
+
+        return response()->json([
+            'run_id' => $scenarioRun->id,
+            'outcome' => $validated['outcome'],
+            'active' => false,
+        ]);
+    }
 }
