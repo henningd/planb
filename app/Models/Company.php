@@ -190,10 +190,15 @@ class Company extends Model
 
     public function currentHandbookVersion(): ?HandbookVersion
     {
+        // approved_at/changed_at sind reine Datumsfelder (ohne Uhrzeit). Werden
+        // mehrere Versionen am selben Tag freigegeben, entsteht ein Gleichstand;
+        // created_at (Zeitstempel) als Tiebreaker sichert, dass die zuletzt
+        // angelegte – also neueste – freigegebene Version gewinnt.
         return $this->handbookVersions()
             ->whereNotNull('approved_at')
             ->orderByDesc('approved_at')
             ->orderByDesc('changed_at')
+            ->orderByDesc('created_at')
             ->first();
     }
 
