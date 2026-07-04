@@ -57,7 +57,9 @@ new #[Title("Durchlauf")] class extends Component {
             $step->update(["checked_at" => null, "checked_by_user_id" => null]);
             $step->refresh();
 
-            event(new ScenarioRunStepReopened($step, Auth::user()->name));
+            // Live-Broadcast ans Cockpit ist optional – ein nicht erreichbarer
+            // Broadcast-Server (Reverb) darf das Abhaken im Ernstfall NIE blockieren.
+            rescue(fn () => event(new ScenarioRunStepReopened($step, Auth::user()->name)), report: false);
         } else {
             $step->update([
                 "checked_at" => now(),
@@ -65,11 +67,11 @@ new #[Title("Durchlauf")] class extends Component {
             ]);
             $step->refresh();
 
-            event(new ScenarioRunStepCompleted(
+            rescue(fn () => event(new ScenarioRunStepCompleted(
                 $step,
                 Auth::user()->name,
                 $step->checked_at?->toIso8601String(),
-            ));
+            )), report: false);
         }
 
         $this->run->load("steps");
@@ -84,7 +86,7 @@ new #[Title("Durchlauf")] class extends Component {
         $note = $this->notes[$stepId] ?? null;
         $step->update(["note" => $note]);
 
-        event(new ScenarioRunNoteUpdated($step, Auth::user()->name, $note));
+        rescue(fn () => event(new ScenarioRunNoteUpdated($step, Auth::user()->name, $note)), report: false);
 
         Flux::toast(text: __("Notiz gespeichert."));
     }

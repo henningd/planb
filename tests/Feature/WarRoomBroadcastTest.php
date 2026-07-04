@@ -75,6 +75,32 @@ it('broadcasts a note updated event when a note is saved', function () {
     });
 });
 
+it('still checks a step when the broadcast server is unreachable', function () {
+    $user = User::factory()->create();
+    $company = Company::factory()->for($user->currentTeam)->create();
+    $run = ScenarioRun::factory()->create(['company_id' => $company->id]);
+    $step = ScenarioRunStep::factory()->create(['scenario_run_id' => $run->id]);
+
+    // Reverb/Pusher unerreichbar simulieren → ShouldBroadcastNow würde werfen.
+    config([
+        'broadcasting.default' => 'pusher',
+        'broadcasting.connections.pusher' => [
+            'driver' => 'pusher',
+            'key' => 'k',
+            'secret' => 's',
+            'app_id' => '1',
+            'options' => ['host' => '127.0.0.1', 'port' => 1, 'scheme' => 'http', 'useTLS' => false],
+        ],
+    ]);
+
+    Livewire\Livewire::actingAs($user->fresh())
+        ->test('pages::scenario-runs.show', ['run' => $run])
+        ->call('toggleStep', $step->id)
+        ->assertHasNoErrors();
+
+    expect($step->fresh()->checked_at)->not->toBeNull();
+});
+
 /**
  * Helper: extract a registered channel-auth closure by pattern from the
  * default broadcaster, so we can test routes/channels.php authorization
