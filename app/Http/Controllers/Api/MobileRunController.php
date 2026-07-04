@@ -62,10 +62,16 @@ class MobileRunController extends Controller
             ->find($token->created_by_user_id)?->name ?? 'App';
 
         // Live an das Web-Cockpit broadcasten (gleiche Events wie im Dashboard).
-        if ($runStep->checked_at !== null) {
-            event(new ScenarioRunStepCompleted($runStep, $userName, $runStep->checked_at->toIso8601String()));
-        } else {
-            event(new ScenarioRunStepReopened($runStep, $userName));
+        // Best-effort: ein nicht erreichbarer Broadcast-Server (Reverb/Pusher)
+        // darf das bereits gespeicherte Abhaken NICHT zum Fehler machen.
+        try {
+            if ($runStep->checked_at !== null) {
+                event(new ScenarioRunStepCompleted($runStep, $userName, $runStep->checked_at->toIso8601String()));
+            } else {
+                event(new ScenarioRunStepReopened($runStep, $userName));
+            }
+        } catch (Throwable) {
+            // Broadcast optional – der Schreibvorgang ist bereits persistiert.
         }
 
         // Übrige Geräte der Firma zum Neu-Sync anstoßen (geteilter Fortschritt).

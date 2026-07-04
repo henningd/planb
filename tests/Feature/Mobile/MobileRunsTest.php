@@ -100,6 +100,32 @@ test('checking a run step writes it back with the user and alarms other devices'
     );
 });
 
+test('a broadcast outage does not fail the step write-back', function () {
+    [$user, $company, $token] = runSession();
+    $run = activeRun($company, $user);
+    $step = $run->steps()->orderBy('sort')->first();
+
+    // Broadcast-Server unerreichbar simulieren (Reverb/Pusher down) → das
+    // ShouldBroadcastNow-Event würde werfen; der Schreibvorgang muss trotzdem gelingen.
+    config([
+        'broadcasting.default' => 'pusher',
+        'broadcasting.connections.pusher' => [
+            'driver' => 'pusher',
+            'key' => 'k',
+            'secret' => 's',
+            'app_id' => '1',
+            'options' => ['host' => '127.0.0.1', 'port' => 1, 'scheme' => 'http', 'useTLS' => false],
+        ],
+    ]);
+
+    test()->withToken($token)
+        ->postJson("/api/mobile/runs/{$run->id}/steps/{$step->id}", ['checked' => true])
+        ->assertOk()
+        ->assertJson(['checked' => true]);
+
+    expect(ScenarioRunStep::find($step->id)->checked_at)->not->toBeNull();
+});
+
 test('unchecking a run step clears it', function () {
     [$user, $company, $token] = runSession();
     $run = activeRun($company, $user);
