@@ -96,6 +96,12 @@ class MobileSyncBundle
      * über handbuchrelevante, firmengebundene Tabellen), damit die App das PDF
      * nur bei Änderungen neu lädt. Bewusst breit, aber nicht erschöpfend.
      */
+    /**
+     * Erhöhen, wenn sich das PDF-*Layout* (nicht die Daten) ändert — damit die
+     * Apps das Live-Handbuch trotz unveränderter Inhalte neu laden.
+     */
+    private const HANDBOOK_RENDER_VERSION = 2;
+
     private static function liveHandbookSignature(Company $company): string
     {
         $models = [
@@ -113,7 +119,10 @@ class MobileSyncBundle
             FallbackProcess::class,
         ];
 
-        $parts = ['company:'.$company->id.':'.($company->updated_at?->getTimestamp() ?? 0)];
+        $parts = [
+            'render:'.self::HANDBOOK_RENDER_VERSION,
+            'company:'.$company->id.':'.($company->updated_at?->getTimestamp() ?? 0),
+        ];
 
         foreach ($models as $model) {
             try {
