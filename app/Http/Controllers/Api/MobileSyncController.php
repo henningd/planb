@@ -36,6 +36,11 @@ class MobileSyncController extends Controller
 
         abort_if($company === null, 404);
 
+        // Zeitpunkt des letzten App-Syncs am Gerät-Token festhalten (fürs Frontend).
+        if ($token instanceof ApiToken) {
+            $token->forceFill(['last_synced_at' => now()])->save();
+        }
+
         $bundle = MobileSyncBundle::for($company);
         $version = self::fingerprint($bundle);
         $syncedAt = Carbon::now()->toIso8601String();

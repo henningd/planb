@@ -130,6 +130,26 @@ new class extends Component
             'is_personal' => $team->is_personal,
         ];
 
+        // Letzter App-Sync je User: neuester nicht widerrufener Mobile-Token der Firma.
+        $companyId = $team->company?->id;
+        $mobileSyncByUser = [];
+        if ($companyId !== null) {
+            foreach (\App\Models\ApiToken::query()
+                ->withoutGlobalScope(\App\Scopes\CurrentCompanyScope::class)
+                ->where('company_id', $companyId)
+                ->whereNull('revoked_at')
+                ->whereNotNull('created_by_user_id')
+                ->get() as $apiToken) {
+                if (! $apiToken->hasScope('mobile') || $apiToken->last_synced_at === null) {
+                    continue;
+                }
+                $uid = $apiToken->created_by_user_id;
+                if (! isset($mobileSyncByUser[$uid]) || $apiToken->last_synced_at->gt($mobileSyncByUser[$uid])) {
+                    $mobileSyncByUser[$uid] = $apiToken->last_synced_at;
+                }
+            }
+        }
+
         $this->members = $team->members()->get()->map(fn ($member) => [
             'id' => $member->id,
             'name' => $member->name,
@@ -141,6 +161,7 @@ new class extends Component
             'is_disabled' => $member->pivot->isDisabled(),
             'is_disable_scheduled' => $member->pivot->isDisableScheduled(),
             'has_activity' => $member->hasActivity(),
+            'last_synced_at' => isset($mobileSyncByUser[$member->id]) ? $mobileSyncByUser[$member->id]->toIso8601String() : null,
         ])->toArray();
 
         $this->invitations = $team->invitations()
@@ -248,6 +269,15 @@ new class extends Component
                                         @endif
                                     </div>
                                     <flux:text class="text-sm text-zinc-500 dark:text-zinc-400">{{ $member['email'] }}</flux:text>
+                                    @if (! empty($member['last_synced_at']))
+                                        @php($lastSync = \Illuminate\Support\Carbon::parse($member['last_synced_at'])->setTimezone(config('app.timezone')))
+                                        <flux:text class="mt-0.5 text-xs text-emerald-700 dark:text-emerald-400">
+                                            <flux:icon.device-phone-mobile class="mr-1 inline h-3 w-3" />
+                                            {{ __('App-Sync') }}: {{ $lastSync->format('d.m.Y H:i:s') }} · {{ $lastSync->diffForHumans() }}
+                                        </flux:text>
+                                    @else
+                                        <flux:text class="mt-0.5 text-xs text-zinc-400 dark:text-zinc-500">{{ __('App nicht verbunden') }}</flux:text>
+                                    @endif
                                 </div>
                             </div>
 

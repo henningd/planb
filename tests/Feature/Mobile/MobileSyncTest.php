@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\ApiToken;
 use App\Models\Company;
 use App\Models\Location;
 use App\Models\MobileAccessCode;
@@ -65,6 +66,16 @@ test('the sync bundle is strictly scoped to the token mandant', function () {
 
 test('sync requires a bearer token', function () {
     test()->getJson('/api/mobile/sync')->assertStatus(401);
+});
+
+test('sync records the last-synced timestamp on the device token', function () {
+    [$user, $company, $token] = syncSession();
+
+    expect(ApiToken::findActiveByPlainToken($token)?->last_synced_at)->toBeNull();
+
+    test()->withToken($token)->getJson('/api/mobile/sync')->assertOk();
+
+    expect(ApiToken::findActiveByPlainToken($token)?->last_synced_at)->not->toBeNull();
 });
 
 test('an unchanged sync short-circuits via the version fingerprint', function () {

@@ -19,6 +19,7 @@ use Illuminate\Support\Str;
     'scopes',
     'created_by_user_id',
     'last_used_at',
+    'last_synced_at',
     'revoked_at',
 ])]
 class ApiToken extends Model
@@ -100,6 +101,7 @@ class ApiToken extends Model
         return [
             'scopes' => 'array',
             'last_used_at' => 'datetime',
+            'last_synced_at' => 'datetime',
             'revoked_at' => 'datetime',
         ];
     }
