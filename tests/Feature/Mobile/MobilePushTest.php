@@ -4,7 +4,10 @@ use App\Models\Company;
 use App\Models\HandbookVersion;
 use App\Models\MobileAccessCode;
 use App\Models\MobileDevice;
+use App\Models\Scenario;
+use App\Models\ScenarioRun;
 use App\Models\User;
+use App\Scopes\CurrentCompanyScope;
 use App\Support\Push\PushNotifier;
 use App\Support\Push\PushSender;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -99,4 +102,61 @@ test('approving a handbook version pushes a sync signal to the devices', functio
     $sender->shouldHaveReceived('send')->withArgs(
         fn ($tokens, $data) => in_array('tok-2', $tokens, true) && ($data['type'] ?? null) === 'sync',
     );
+});
+
+test('triggering an incident from the app starts a run and alarms the devices', function () {
+    [$user, $company, $token] = pushSession();
+    MobileDevice::create(['fcm_token' => 'tok-3', 'user_id' => $user->id, 'company_id' => $company->id]);
+
+    $scenario = Scenario::factory()->for($company)->create(['name' => 'Stromausfall']);
+    $scenario->steps()->create(['sort' => 1, 'title' => 'Notstrom prüfen', 'responsible' => 'IT']);
+
+    $sender = Mockery::spy(PushSender::class);
+    app()->instance(PushSender::class, $sender);
+
+    $response = test()->withToken($token)->postJson('/api/mobile/incidents', [
+        'scenario_id' => $scenario->id,
+    ])->assertCreated();
+
+    $run = ScenarioRun::withoutGlobalScope(CurrentCompanyScope::class)->firstOrFail();
+
+    expect($run->scenario_id)->toBe($scenario->id)
+        ->and($run->company_id)->toBe($company->id)
+        ->and($run->started_by_user_id)->toBe($user->id)
+        ->and($run->steps()->count())->toBe(1)
+        ->and($response->json('run_id'))->toBe($run->id);
+
+    $sender->shouldHaveReceived('send')->withArgs(
+        fn ($tokens, $data) => in_array('tok-3', $tokens, true) && ($data['type'] ?? null) === 'incident',
+    );
+});
+
+test('a drill run does not alarm the devices', function () {
+    [$user, $company, $token] = pushSession();
+    MobileDevice::create(['fcm_token' => 'tok-4', 'user_id' => $user->id, 'company_id' => $company->id]);
+
+    $scenario = Scenario::factory()->for($company)->create();
+
+    $sender = Mockery::spy(PushSender::class);
+    app()->instance(PushSender::class, $sender);
+
+    test()->withToken($token)->postJson('/api/mobile/incidents', [
+        'scenario_id' => $scenario->id,
+        'mode' => 'drill',
+    ])->assertCreated();
+
+    $sender->shouldNotHaveReceived('send');
+});
+
+test('a scenario from another company cannot be triggered', function () {
+    [$user, $company, $token] = pushSession();
+    $otherScenario = Scenario::factory()
+        ->for(Company::factory()->for(User::factory()->create()->currentTeam))
+        ->create();
+
+    test()->withToken($token)->postJson('/api/mobile/incidents', [
+        'scenario_id' => $otherScenario->id,
+    ])->assertNotFound();
+
+    expect(ScenarioRun::withoutGlobalScope(CurrentCompanyScope::class)->count())->toBe(0);
 });

@@ -2,10 +2,9 @@
 
 use App\Enums\ScenarioRunMode;
 use App\Models\Scenario;
-use App\Models\ScenarioRun;
+use App\Support\Scenarios\StartScenarioRun;
 use Flux\Flux;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
 
@@ -74,30 +73,12 @@ new class extends Component {
 
         $scenario = Scenario::with('steps')->findOrFail($validated['scenarioId']);
 
-        $title = filled($validated['titleOverride'])
-            ? $validated['titleOverride']
-            : $scenario->name.' · '.now()->format('d.m.Y H:i');
-
-        $run = DB::transaction(function () use ($scenario, $validated, $title) {
-            $run = ScenarioRun::create([
-                'scenario_id' => $scenario->id,
-                'started_by_user_id' => Auth::id(),
-                'title' => $title,
-                'mode' => $validated['mode'],
-                'started_at' => now(),
-            ]);
-
-            foreach ($scenario->steps as $step) {
-                $run->steps()->create([
-                    'sort' => $step->sort,
-                    'title' => $step->title,
-                    'description' => $step->description,
-                    'responsible' => $step->responsible,
-                ]);
-            }
-
-            return $run;
-        });
+        $run = app(StartScenarioRun::class)->handle(
+            scenario: $scenario,
+            startedByUserId: (int) Auth::id(),
+            mode: $validated['mode'],
+            title: $validated['titleOverride'],
+        );
 
         Flux::modal('incident-launcher')->close();
         $this->reset(['scenarioId', 'titleOverride']);

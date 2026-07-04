@@ -3,7 +3,7 @@
 use App\Enums\ScenarioRunMode;
 use App\Models\GlobalScenario;
 use App\Models\Scenario;
-use App\Models\ScenarioRun;
+use App\Support\Scenarios\StartScenarioRun;
 use Flux\Flux;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -157,26 +157,12 @@ new #[Title('Szenarien')] class extends Component {
 
         $scenario = Scenario::with('steps')->findOrFail($this->startingScenarioId);
 
-        $run = DB::transaction(function () use ($scenario, $validated) {
-            $run = ScenarioRun::create([
-                'scenario_id' => $scenario->id,
-                'started_by_user_id' => Auth::id(),
-                'title' => $validated['runTitle'],
-                'mode' => $validated['runMode'],
-                'started_at' => now(),
-            ]);
-
-            foreach ($scenario->steps as $step) {
-                $run->steps()->create([
-                    'sort' => $step->sort,
-                    'title' => $step->title,
-                    'description' => $step->description,
-                    'responsible' => $step->responsible,
-                ]);
-            }
-
-            return $run;
-        });
+        $run = app(StartScenarioRun::class)->handle(
+            scenario: $scenario,
+            startedByUserId: (int) Auth::id(),
+            mode: $validated['runMode'],
+            title: $validated['runTitle'],
+        );
 
         Flux::modal('scenario-start')->close();
         $this->reset(['startingScenarioId', 'runTitle', 'runMode']);

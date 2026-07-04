@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\MobileAuthController;
 use App\Http\Controllers\Api\MobileDeviceController;
 use App\Http\Controllers\Api\MobileHandbookPdfController;
+use App\Http\Controllers\Api\MobileIncidentController;
 use App\Http\Controllers\Api\MobileSyncController;
 use App\Http\Controllers\Api\MonitoringWebhookController;
 use App\Http\Controllers\Api\PortalProfileController;
@@ -39,5 +40,6 @@ Route::prefix('mobile')
             Route::get('handbook/{version}/pdf', MobileHandbookPdfController::class)->name('api.mobile.handbook.pdf');
             Route::post('devices/register', [MobileDeviceController::class, 'register'])->name('api.mobile.devices.register');
             Route::post('devices/unregister', [MobileDeviceController::class, 'unregister'])->name('api.mobile.devices.unregister');
+            Route::post('incidents', [MobileIncidentController::class, 'store'])->middleware('throttle:20,1')->name('api.mobile.incidents.store');
         });
     });
