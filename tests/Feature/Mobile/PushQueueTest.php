@@ -103,6 +103,36 @@ test('a 401 refreshes the OAuth token and retries the send once', function () {
     Http::assertSentCount(4);
 });
 
+test('a silent sync push is sent as an iOS background push with high android priority', function () {
+    $keyResource = openssl_pkey_new(['private_key_bits' => 2048, 'private_key_type' => OPENSSL_KEYTYPE_RSA]);
+    openssl_pkey_export($keyResource, $privateKeyPem);
+
+    Http::fake([
+        'oauth2.googleapis.com/*' => Http::response(['access_token' => 'fake-access-token']),
+        'fcm.googleapis.com/*' => Http::response(['name' => 'ok']),
+    ]);
+
+    $sender = new FcmPushSender('demo-project', [
+        'client_email' => 'svc@example.com',
+        'private_key' => $privateKeyPem,
+    ]);
+
+    // Data-only Push (kein Titel/Text) = stiller Sync-Anstoß.
+    $sender->send(['tok-1'], ['type' => 'sync']);
+
+    Http::assertSent(function ($request) {
+        if (! str_contains($request->url(), 'fcm.googleapis.com')) {
+            return false;
+        }
+        $message = $request->data()['message'] ?? [];
+
+        return ($message['android']['priority'] ?? null) === 'high'
+            && ($message['apns']['headers']['apns-push-type'] ?? null) === 'background'
+            && ($message['apns']['payload']['aps']['content-available'] ?? null) === 1
+            && ! isset($message['notification']);
+    });
+});
+
 test('the job exits early and never calls the sender when the company has no devices', function () {
     [$user, $company] = queuePushSession();
 

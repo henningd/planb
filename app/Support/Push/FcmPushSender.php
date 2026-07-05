@@ -39,11 +39,28 @@ class FcmPushSender implements PushSender
 
         foreach ($tokens as $token) {
             $message = ['token' => $token, 'data' => $data];
+
+            // Android: hohe Priorität, sonst hält Doze Data-Messages zurück.
+            $message['android'] = ['priority' => 'high'];
+
             if ($title !== null || $body !== null) {
                 $message['notification'] = array_filter(
                     ['title' => $title, 'body' => $body],
                     fn ($value) => $value !== null,
                 );
+                // Sichtbare Alarmierung: sofort zustellen.
+                $message['apns'] = ['headers' => ['apns-priority' => '10']];
+            } else {
+                // Stiller Sync-Push: iOS liefert Data-only-Nachrichten NUR aus,
+                // wenn sie als Background-Push mit content-available markiert sind –
+                // sonst kommt der „sync"-Anstoß auf iPhones gar nicht an.
+                $message['apns'] = [
+                    'headers' => [
+                        'apns-push-type' => 'background',
+                        'apns-priority' => '5',
+                    ],
+                    'payload' => ['aps' => ['content-available' => 1]],
+                ];
             }
 
             try {
