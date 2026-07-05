@@ -1,5 +1,6 @@
 <?php
 
+use App\Jobs\SendCompanyPush;
 use App\Models\AppNotification;
 use App\Models\Company;
 use App\Models\HandbookVersion;
@@ -14,6 +15,7 @@ use App\Support\Push\PushNotifier;
 use App\Support\Push\PushSender;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Queue;
 
 uses(RefreshDatabase::class);
 
@@ -110,11 +112,9 @@ test('approving a handbook version pushes a sync signal to the devices', functio
 });
 
 test('approving a handbook version records a handbook_released feed notification', function () {
-    [$user, $company] = pushSession();
+    Queue::fake();
 
-    $sender = Mockery::spy(PushSender::class);
-    $sender->shouldReceive('send')->andReturn([]);
-    app()->instance(PushSender::class, $sender);
+    [$user, $company] = pushSession();
 
     HandbookVersion::factory()->for($company)->create([
         'version' => '2.0',
@@ -130,9 +130,7 @@ test('approving a handbook version records a handbook_released feed notification
         ->and($notification->body)->toBe('Version 2.0')
         ->and($notification->severity)->toBe('info');
 
-    $sender->shouldHaveReceived('send')->withArgs(
-        fn ($tokens, $data) => ($data['type'] ?? null) === 'handbook_released',
-    );
+    Queue::assertPushed(SendCompanyPush::class, fn (SendCompanyPush $job) => true);
 });
 
 test('triggering an incident from the app starts a run and alarms the other devices', function () {

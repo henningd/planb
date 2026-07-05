@@ -2,17 +2,17 @@
 
 namespace App\Support\Push;
 
+use App\Jobs\SendCompanyPush;
 use App\Models\Company;
-use App\Models\MobileDevice;
 
 /**
- * Fachliche Push-Auslöser der Notfall-App. Löst je Firma die passenden
- * Geräte-Tokens auf und übergibt die Nachricht an den {@see PushSender}.
+ * Fachliche Push-Auslöser der Notfall-App. Löst je Firma die passende Nachricht
+ * aus und übergibt den eigentlichen Versand an einen queuebaren
+ * {@see SendCompanyPush}-Job, damit das Auslösen nicht auf die FCM-HTTP-Calls
+ * wartet. Token-Auflösung und Aufräumen toter Tokens passieren im Job.
  */
 class PushNotifier
 {
-    public function __construct(private readonly PushSender $sender) {}
-
     /**
      * Stiller „bitte jetzt synchronisieren"-Push an alle Geräte der Firma.
      * Dadurch aktualisieren sich die Apps sofort, statt erst beim nächsten
@@ -20,8 +20,7 @@ class PushNotifier
      */
     public function syncCompany(Company $company): void
     {
-        $dead = $this->sender->send($this->tokensFor($company), ['type' => 'sync']);
-        $this->pruneDeadTokens($dead);
+        SendCompanyPush::dispatch($company->id, ['type' => 'sync']);
     }
 
     /**
@@ -31,13 +30,13 @@ class PushNotifier
      */
     public function incident(Company $company, string $scenarioId, string $scenarioTitle, ?int $excludeUserId = null): void
     {
-        $dead = $this->sender->send(
-            $this->tokensFor($company, $excludeUserId),
+        SendCompanyPush::dispatch(
+            $company->id,
             ['type' => 'incident', 'scenario_id' => $scenarioId],
             'Notfall gemeldet',
             $scenarioTitle,
+            $excludeUserId,
         );
-        $this->pruneDeadTokens($dead);
     }
 
     /**
@@ -49,13 +48,13 @@ class PushNotifier
     {
         $heading = $outcome === 'aborted' ? 'Notfall abgebrochen' : 'Notfall beendet';
 
-        $dead = $this->sender->send(
-            $this->tokensFor($company, $excludeUserId),
+        SendCompanyPush::dispatch(
+            $company->id,
             ['type' => 'incident_ended'],
             $heading,
             $title,
+            $excludeUserId,
         );
-        $this->pruneDeadTokens($dead);
     }
 
     /**
@@ -65,40 +64,11 @@ class PushNotifier
      */
     public function handbookReleased(Company $company, string $version): void
     {
-        $dead = $this->sender->send(
-            $this->tokensFor($company),
+        SendCompanyPush::dispatch(
+            $company->id,
             ['type' => 'handbook_released'],
             'Neues Notfallhandbuch',
             $version,
         );
-        $this->pruneDeadTokens($dead);
-    }
-
-    /**
-     * @param  int|null  $excludeUserId  Geräte dieses Users ausschließen (z. B. der Auslöser
-     *                                   eines sichtbaren Alarms). Nur für sichtbare Pushes.
-     * @return list<string>
-     */
-    private function tokensFor(Company $company, ?int $excludeUserId = null): array
-    {
-        return MobileDevice::query()
-            ->where('company_id', $company->id)
-            ->when($excludeUserId !== null, fn ($query) => $query->where('user_id', '!=', $excludeUserId))
-            ->pluck('fcm_token')
-            ->all();
-    }
-
-    /**
-     * Räumt Geräte mit von FCM als ungültig gemeldeten Tokens auf.
-     *
-     * @param  list<string>  $dead
-     */
-    private function pruneDeadTokens(array $dead): void
-    {
-        if ($dead === []) {
-            return;
-        }
-
-        MobileDevice::query()->whereIn('fcm_token', $dead)->delete();
     }
 }
