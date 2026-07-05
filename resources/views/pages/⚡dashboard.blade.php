@@ -10,11 +10,24 @@ use App\Support\Onboarding\OnboardingService;
 use Flux\Flux;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Computed;
+use Livewire\Attributes\On;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 
 new #[Title('Dashboard')] class extends Component
 {
+    /**
+     * Reagiert auf das interne „incident-changed"-Event (von der
+     * incident-alert-Komponente, die die Reverb-Broadcasts empfängt) und lädt
+     * „Aktive Lage" in „Was muss ich heute tun?" live neu, statt die Meldung bis
+     * zum nächsten Reload stehen zu lassen.
+     */
+    #[On('incident-changed')]
+    public function refreshIncidentState(): void
+    {
+        unset($this->dueItems);
+    }
+
     #[Computed]
     public function company(): ?Company
     {

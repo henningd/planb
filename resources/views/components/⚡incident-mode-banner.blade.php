@@ -4,9 +4,17 @@ use App\Models\ScenarioRun;
 use App\Support\Incident\Cockpit;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Computed;
+use Livewire\Attributes\On;
 use Livewire\Component;
 
 new class extends Component {
+    /** Reagiert auf „incident-changed" (von incident-alert) und aktualisiert den Banner live. */
+    #[On('incident-changed')]
+    public function refreshBanner(): void
+    {
+        unset($this->activeRun);
+    }
+
     #[Computed]
     public function activeRun(): ?ScenarioRun
     {

@@ -37,6 +37,7 @@ new class extends Component {
         ];
 
         $this->dispatch('incident-alert', heading: __('Notfall gemeldet'), title: $this->alert['title'], by: $this->alert['by']);
+        $this->dispatch('incident-changed'); // Dashboard/Banner live aktualisieren
     }
 
     /**
@@ -55,6 +56,7 @@ new class extends Component {
         ];
 
         $this->dispatch('incident-alert', heading: $heading, title: $this->alert['title'], by: $this->alert['by']);
+        $this->dispatch('incident-changed'); // Dashboard/Banner live aktualisieren
     }
 
     public function dismiss(): void
