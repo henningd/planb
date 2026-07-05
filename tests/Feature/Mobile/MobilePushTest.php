@@ -8,9 +8,11 @@ use App\Models\Scenario;
 use App\Models\ScenarioRun;
 use App\Models\User;
 use App\Scopes\CurrentCompanyScope;
+use App\Support\Push\FcmPushSender;
 use App\Support\Push\PushNotifier;
 use App\Support\Push\PushSender;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Http;
 
 uses(RefreshDatabase::class);
 
@@ -78,6 +80,7 @@ test('the notifier sends a sync signal to the company devices', function () {
     MobileDevice::create(['fcm_token' => 'tok-1', 'user_id' => $user->id, 'company_id' => $company->id]);
 
     $sender = Mockery::spy(PushSender::class);
+    $sender->shouldReceive('send')->andReturn([]);
     app()->instance(PushSender::class, $sender);
 
     app(PushNotifier::class)->syncCompany($company->fresh());
@@ -92,6 +95,7 @@ test('approving a handbook version pushes a sync signal to the devices', functio
     MobileDevice::create(['fcm_token' => 'tok-2', 'user_id' => $user->id, 'company_id' => $company->id]);
 
     $sender = Mockery::spy(PushSender::class);
+    $sender->shouldReceive('send')->andReturn([]);
     app()->instance(PushSender::class, $sender);
 
     HandbookVersion::factory()->for($company)->create([
@@ -112,6 +116,7 @@ test('triggering an incident from the app starts a run and alarms the devices', 
     $scenario->steps()->create(['sort' => 1, 'title' => 'Notstrom prüfen', 'responsible' => 'IT']);
 
     $sender = Mockery::spy(PushSender::class);
+    $sender->shouldReceive('send')->andReturn([]);
     app()->instance(PushSender::class, $sender);
 
     $response = test()->withToken($token)->postJson('/api/mobile/incidents', [
@@ -146,6 +151,37 @@ test('a drill run does not alarm the devices', function () {
     ])->assertCreated();
 
     $sender->shouldNotHaveReceived('send');
+});
+
+test('an UNREGISTERED token reported by FCM deletes the device', function () {
+    [$user, $company] = pushSession();
+    MobileDevice::create(['fcm_token' => 'tok-dead', 'user_id' => $user->id, 'company_id' => $company->id]);
+    MobileDevice::create(['fcm_token' => 'tok-live', 'user_id' => $user->id, 'company_id' => $company->id]);
+
+    $keyResource = openssl_pkey_new(['private_key_bits' => 2048, 'private_key_type' => OPENSSL_KEYTYPE_RSA]);
+    openssl_pkey_export($keyResource, $privateKeyPem);
+
+    Http::fake([
+        'oauth2.googleapis.com/*' => Http::response(['access_token' => 'fake-access-token']),
+        'fcm.googleapis.com/*' => function ($request) {
+            $token = $request->data()['message']['token'] ?? null;
+
+            return $token === 'tok-dead'
+                ? Http::response(['error' => ['status' => 'UNREGISTERED']], 404)
+                : Http::response(['name' => 'ok']);
+        },
+    ]);
+
+    $sender = new FcmPushSender('demo-project', [
+        'client_email' => 'svc@example.com',
+        'private_key' => $privateKeyPem,
+    ]);
+    app()->instance(PushSender::class, $sender);
+
+    app(PushNotifier::class)->incident($company->fresh(), 'scn-1', 'Stromausfall');
+
+    expect(MobileDevice::where('fcm_token', 'tok-dead')->exists())->toBeFalse()
+        ->and(MobileDevice::where('fcm_token', 'tok-live')->exists())->toBeTrue();
 });
 
 test('a scenario from another company cannot be triggered', function () {

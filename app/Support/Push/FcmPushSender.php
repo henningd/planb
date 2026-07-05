@@ -21,18 +21,19 @@ class FcmPushSender implements PushSender
         private readonly array $credentials,
     ) {}
 
-    public function send(array $tokens, array $data, ?string $title = null, ?string $body = null): void
+    public function send(array $tokens, array $data, ?string $title = null, ?string $body = null): array
     {
         if ($tokens === []) {
-            return;
+            return [];
         }
 
         $accessToken = $this->accessToken();
         if ($accessToken === null) {
-            return;
+            return [];
         }
 
         $endpoint = "https://fcm.googleapis.com/v1/projects/{$this->projectId}/messages:send";
+        $dead = [];
 
         foreach ($tokens as $token) {
             $message = ['token' => $token, 'data' => $data];
@@ -53,11 +54,18 @@ class FcmPushSender implements PushSender
                         'status' => $response->status(),
                         'body' => $response->body(),
                     ]);
+
+                    if ($response->json('error.status') === 'UNREGISTERED'
+                        || in_array($response->status(), [400, 404], true)) {
+                        $dead[] = $token;
+                    }
                 }
             } catch (\Throwable $e) {
                 Log::warning('FCM-Push fehlgeschlagen: '.$e->getMessage());
             }
         }
+
+        return $dead;
     }
 
     /**

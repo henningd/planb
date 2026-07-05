@@ -12,10 +12,10 @@ use Illuminate\Support\Facades\Log;
  */
 class LogPushSender implements PushSender
 {
-    public function send(array $tokens, array $data, ?string $title = null, ?string $body = null): void
+    public function send(array $tokens, array $data, ?string $title = null, ?string $body = null): array
     {
         if ($tokens === []) {
-            return;
+            return [];
         }
 
         Log::info('Push (nicht zugestellt – kein Firebase konfiguriert)', [
@@ -23,5 +23,7 @@ class LogPushSender implements PushSender
             'data' => $data,
             'title' => $title,
         ]);
+
+        return [];
     }
 }

@@ -84,6 +84,7 @@ test('checking a run step writes it back with the user and alarms other devices'
     $step = $run->steps()->orderBy('sort')->first();
 
     $sender = Mockery::spy(PushSender::class);
+    $sender->shouldReceive('send')->andReturn([]);
     app()->instance(PushSender::class, $sender);
 
     test()->withToken($token)
@@ -170,6 +171,7 @@ test('completing a run ends it, removes it from the bundle and alarms devices', 
     $run = activeRun($company, $user);
 
     $sender = Mockery::spy(PushSender::class);
+    $sender->shouldReceive('send')->andReturn([]);
     app()->instance(PushSender::class, $sender);
 
     test()->withToken($token)

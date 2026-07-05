@@ -16,6 +16,7 @@ interface PushSender
      * @param  array<string, string>  $data  Data-Payload (z. B. ['type' => 'sync']).
      * @param  string|null  $title  Optionaler Benachrichtigungstitel (sichtbare Alarmierung).
      * @param  string|null  $body  Optionaler Benachrichtigungstext.
+     * @return list<string> Ungültige (z. B. abgemeldete) Tokens, die aufgeräumt werden sollten.
      */
-    public function send(array $tokens, array $data, ?string $title = null, ?string $body = null): void;
+    public function send(array $tokens, array $data, ?string $title = null, ?string $body = null): array;
 }
