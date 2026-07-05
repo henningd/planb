@@ -37,6 +37,23 @@ class PushNotifier
     }
 
     /**
+     * Sichtbare Benachrichtigung, dass ein Notfall beendet/abgebrochen wurde.
+     * Das `type=incident_ended` veranlasst die Apps zusätzlich zum Neu-Sync, damit
+     * die „Aktiver Notfall"-Karte verschwindet.
+     */
+    public function incidentEnded(Company $company, string $title, string $outcome): void
+    {
+        $heading = $outcome === 'aborted' ? 'Notfall abgebrochen' : 'Notfall beendet';
+
+        $this->sender->send(
+            $this->tokensFor($company),
+            ['type' => 'incident_ended'],
+            $heading,
+            $title,
+        );
+    }
+
+    /**
      * @return list<string>
      */
     private function tokensFor(Company $company): array

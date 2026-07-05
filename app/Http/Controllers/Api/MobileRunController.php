@@ -11,6 +11,7 @@ use App\Models\ScenarioRun;
 use App\Models\User;
 use App\Scopes\CurrentCompanyScope;
 use App\Support\Push\PushNotifier;
+use App\Support\Scenarios\CloseScenarioRun;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Throwable;
@@ -119,22 +120,7 @@ class MobileRunController extends Controller
 
         abort_unless($scenarioRun->isActive(), 409, 'Ablauf ist bereits abgeschlossen.');
 
-        $scenarioRun->forceFill(
-            $validated['outcome'] === 'completed'
-                ? ['ended_at' => now()]
-                : ['aborted_at' => now()],
-        )->save();
-
-        try {
-            $company = Company::query()
-                ->withoutGlobalScope(CurrentCompanyScope::class)
-                ->find($token->company_id);
-            if ($company !== null) {
-                app(PushNotifier::class)->syncCompany($company);
-            }
-        } catch (Throwable) {
-            // best-effort
-        }
+        app(CloseScenarioRun::class)->handle($scenarioRun, $validated['outcome'], $token->created_by_user_id);
 
         return response()->json([
             'run_id' => $scenarioRun->id,

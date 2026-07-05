@@ -186,7 +186,7 @@ test('completing a run ends it, removes it from the bundle and alarms devices', 
     expect($data['active_runs'])->toHaveCount(0);
 
     $sender->shouldHaveReceived('send')->withArgs(
-        fn ($tokens, $data) => in_array('tok-end', $tokens, true) && ($data['type'] ?? null) === 'sync',
+        fn ($tokens, $data) => in_array('tok-end', $tokens, true) && ($data['type'] ?? null) === 'incident_ended',
     );
 });
 

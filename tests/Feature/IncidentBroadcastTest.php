@@ -1,10 +1,13 @@
 <?php
 
 use App\Enums\ScenarioRunMode;
+use App\Events\IncidentEnded;
 use App\Events\IncidentStarted;
 use App\Models\Company;
 use App\Models\Scenario;
+use App\Models\ScenarioRun;
 use App\Models\User;
+use App\Support\Scenarios\CloseScenarioRun;
 use App\Support\Scenarios\StartScenarioRun;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
@@ -59,6 +62,62 @@ it('shows a banner in the dashboard when an incident is broadcast', function () 
         ->assertSee('Max')
         ->call('dismiss')
         ->assertSet('alert', null);
+});
+
+it('broadcasts IncidentEnded and alarms devices when a run is closed', function () {
+    Event::fake([IncidentEnded::class]);
+
+    $user = User::factory()->create();
+    $company = Company::factory()->for($user->currentTeam)->create();
+    $scenario = Scenario::factory()->for($company)->create();
+    $run = ScenarioRun::factory()->for($company)->create([
+        'scenario_id' => $scenario->id,
+        'title' => 'Stromausfall · Übung',
+        'started_at' => now(),
+    ]);
+
+    app(CloseScenarioRun::class)->handle($run, 'completed', (int) $user->id);
+
+    expect($run->fresh()->ended_at)->not->toBeNull();
+
+    Event::assertDispatched(IncidentEnded::class, function (IncidentEnded $e) use ($company, $run, $user) {
+        return $e->companyId === $company->id
+            && $e->runId === $run->id
+            && $e->outcome === 'completed'
+            && $e->title === 'Stromausfall · Übung'
+            && $e->endedBy === $user->name;
+    });
+});
+
+it('marks a run as aborted with outcome aborted', function () {
+    Event::fake([IncidentEnded::class]);
+
+    $user = User::factory()->create();
+    $company = Company::factory()->for($user->currentTeam)->create();
+    $scenario = Scenario::factory()->for($company)->create();
+    $run = ScenarioRun::factory()->for($company)->create(['scenario_id' => $scenario->id, 'started_at' => now()]);
+
+    app(CloseScenarioRun::class)->handle($run, 'aborted', (int) $user->id);
+
+    expect($run->fresh()->aborted_at)->not->toBeNull();
+    Event::assertDispatched(IncidentEnded::class, fn (IncidentEnded $e) => $e->outcome === 'aborted');
+});
+
+it('shows an ended banner in the dashboard when an incident is closed', function () {
+    $user = User::factory()->create();
+    Company::factory()->for($user->currentTeam)->create();
+
+    Livewire\Livewire::actingAs($user->fresh())
+        ->test('incident-alert')
+        ->call('onIncidentEnded', [
+            'run_id' => 'run-9',
+            'scenario_title' => 'Stromausfall',
+            'outcome' => 'completed',
+            'ended_by' => 'Max',
+        ])
+        ->assertSet('alert.kind', 'ended')
+        ->assertSee('Notfall beendet')
+        ->assertSee('Stromausfall');
 });
 
 it('broadcasts on the private company channel with the incident payload', function () {

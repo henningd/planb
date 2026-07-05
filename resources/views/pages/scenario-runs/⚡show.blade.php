@@ -4,6 +4,7 @@ use App\Events\ScenarioRunNoteUpdated;
 use App\Events\ScenarioRunStepCompleted;
 use App\Events\ScenarioRunStepReopened;
 use App\Models\ScenarioRun;
+use App\Support\Scenarios\CloseScenarioRun;
 use Flux\Flux;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Computed;
@@ -97,7 +98,7 @@ new #[Title("Durchlauf")] class extends Component {
             return;
         }
 
-        $this->run->update(["ended_at" => now()]);
+        app(CloseScenarioRun::class)->handle($this->run, "completed", Auth::id());
         $this->run->refresh();
 
         Flux::toast(variant: "success", text: __("Durchlauf abgeschlossen."));
@@ -109,7 +110,7 @@ new #[Title("Durchlauf")] class extends Component {
             return;
         }
 
-        $this->run->update(["aborted_at" => now()]);
+        app(CloseScenarioRun::class)->handle($this->run, "aborted", Auth::id());
         $this->run->refresh();
 
         Flux::modal("run-abort")->close();
