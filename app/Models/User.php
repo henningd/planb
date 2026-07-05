@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 
-#[Fillable(['name', 'email', 'password', 'current_team_id', 'is_super_admin'])]
+#[Fillable(['name', 'email', 'password', 'current_team_id', 'is_super_admin', 'notifications_seen_at'])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
 class User extends Authenticatable implements MustVerifyEmail
 {
@@ -37,6 +37,7 @@ class User extends Authenticatable implements MustVerifyEmail
             'two_factor_required' => 'boolean',
             'is_super_admin' => 'boolean',
             'preferences' => 'array',
+            'notifications_seen_at' => 'datetime',
         ];
     }
 

@@ -314,6 +314,14 @@
                 </div>
             @endif
 
+            @auth
+                @if (auth()->user()?->currentCompany())
+                    <div class="hidden px-1 lg:block">
+                        <livewire:notification-bell />
+                    </div>
+                @endif
+            @endauth
+
             <x-desktop-user-menu class="hidden lg:block" :name="auth()->user()->name" />
         </flux:sidebar>
 
@@ -377,6 +385,12 @@
             <flux:sidebar.toggle class="lg:hidden" icon="bars-2" inset="left" />
 
             <flux:spacer />
+
+            @auth
+                @if (auth()->user()?->currentCompany())
+                    <livewire:notification-bell />
+                @endif
+            @endauth
 
             <flux:dropdown position="top" align="end">
                 <flux:profile
