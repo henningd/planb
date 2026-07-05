@@ -59,6 +59,22 @@ class PushNotifier
     }
 
     /**
+     * Sichtbare Benachrichtigung, dass ein neues Notfallhandbuch freigegeben wurde.
+     * Das `type=handbook_released` erlaubt den Apps, gezielt auf das Handbuch zu
+     * verweisen.
+     */
+    public function handbookReleased(Company $company, string $version): void
+    {
+        $dead = $this->sender->send(
+            $this->tokensFor($company),
+            ['type' => 'handbook_released'],
+            'Neues Notfallhandbuch',
+            $version,
+        );
+        $this->pruneDeadTokens($dead);
+    }
+
+    /**
      * @param  int|null  $excludeUserId  Geräte dieses Users ausschließen (z. B. der Auslöser
      *                                   eines sichtbaren Alarms). Nur für sichtbare Pushes.
      * @return list<string>

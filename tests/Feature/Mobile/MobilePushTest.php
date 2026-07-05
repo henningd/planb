@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\AppNotification;
 use App\Models\Company;
 use App\Models\HandbookVersion;
 use App\Models\MobileAccessCode;
@@ -105,6 +106,32 @@ test('approving a handbook version pushes a sync signal to the devices', functio
 
     $sender->shouldHaveReceived('send')->withArgs(
         fn ($tokens, $data) => in_array('tok-2', $tokens, true) && ($data['type'] ?? null) === 'sync',
+    );
+});
+
+test('approving a handbook version records a handbook_released feed notification', function () {
+    [$user, $company] = pushSession();
+
+    $sender = Mockery::spy(PushSender::class);
+    $sender->shouldReceive('send')->andReturn([]);
+    app()->instance(PushSender::class, $sender);
+
+    HandbookVersion::factory()->for($company)->create([
+        'version' => '2.0',
+        'approved_at' => '2026-07-05',
+    ]);
+
+    $notification = AppNotification::where('company_id', $company->id)
+        ->where('type', 'handbook_released')
+        ->first();
+
+    expect($notification)->not->toBeNull()
+        ->and($notification->title)->toBe('Neues Notfallhandbuch freigegeben')
+        ->and($notification->body)->toBe('Version 2.0')
+        ->and($notification->severity)->toBe('info');
+
+    $sender->shouldHaveReceived('send')->withArgs(
+        fn ($tokens, $data) => ($data['type'] ?? null) === 'handbook_released',
     );
 });
 

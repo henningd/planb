@@ -175,8 +175,18 @@ class HandbookVersion extends Model
                 return;
             }
 
+            AppNotification::create([
+                'company_id' => $company->id,
+                'type' => 'handbook_released',
+                'title' => 'Neues Notfallhandbuch freigegeben',
+                'body' => 'Version '.$version->version,
+                'severity' => 'info',
+            ]);
+
             try {
-                app(PushNotifier::class)->syncCompany($company);
+                $push = app(PushNotifier::class);
+                $push->syncCompany($company);
+                $push->handbookReleased($company, $version->version);
             } catch (Throwable) {
                 // best-effort; Push darf die Freigabe nie blockieren
             }
