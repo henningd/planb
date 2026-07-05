@@ -2,6 +2,8 @@
 
 use App\Concerns\SendsCommunicationTemplates;
 use App\Enums\CommunicationChannel;
+use App\Events\ScenarioRunStepCompleted;
+use App\Events\ScenarioRunStepReopened;
 use App\Models\Company;
 use App\Models\CrisisLogEntry;
 use App\Models\ScenarioRun;
@@ -10,10 +12,12 @@ use App\Services\Sms\SmsGatewayContract;
 use App\Support\BibleVerses;
 use App\Support\Incident\Cockpit;
 use App\Support\Incident\CockpitData;
+use App\Support\Push\PushNotifier;
 use Flux\Flux;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Computed;
+use Livewire\Attributes\On;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 
@@ -47,10 +51,21 @@ new #[Title('Krisen-Cockpit')] class extends Component {
      */
     public ?array $crisisVerse = null;
 
+    /**
+     * Firmen-ID (für den Alarmierungs-Kanal) und ID des aktiven Laufs (für den
+     * Schritt-Fortschritts-Kanal). Werden für die Echtzeit-Listener gebraucht,
+     * damit ein Abhaken aus der App oder einem anderen Browser sofort ankommt.
+     */
+    public ?string $companyId = null;
+
+    public ?string $activeRunId = null;
+
     public function mount(): void
     {
         $this->peaceVerse = BibleVerses::random('peace');
         $this->crisisVerse = BibleVerses::random('crisis');
+        $this->companyId = $this->company?->id;
+        $this->activeRunId = $this->cockpit?->activeRun?->id;
     }
 
     #[Computed]
@@ -120,16 +135,56 @@ new #[Title('Krisen-Cockpit')] class extends Component {
                 'checked_at' => now(),
                 'checked_by_user_id' => Auth::id(),
             ]);
+            $step->refresh();
             $this->writeLogEntry($run, 'step', __('Schritt erledigt: :title', ['title' => $step->title]));
+
+            // Live an alle anderen Browser broadcasten (Reverb) – best-effort,
+            // ein nicht erreichbarer Broadcast-Server darf das Abhaken NIE blockieren.
+            rescue(fn () => event(new ScenarioRunStepCompleted(
+                $step,
+                Auth::user()->name,
+                $step->checked_at?->toIso8601String(),
+            )), report: false);
         } else {
             $step->update([
                 'checked_at' => null,
                 'checked_by_user_id' => null,
             ]);
+            $step->refresh();
             $this->writeLogEntry($run, 'step', __('Schritt zurückgesetzt: :title', ['title' => $step->title]));
+
+            rescue(fn () => event(new ScenarioRunStepReopened($step, Auth::user()->name)), report: false);
         }
 
+        // Übrige Geräte der Firma zum Neu-Sync anstoßen (geteilter Fortschritt in den Apps).
+        rescue(fn () => app(PushNotifier::class)->syncCompany($run->company), report: false);
+
         unset($this->cockpit);
+    }
+
+    /**
+     * Ein Schritt wurde extern (App oder anderer Browser) an-/abgehakt →
+     * Cockpit neu berechnen, damit die Ansicht sofort mitzieht.
+     */
+    #[On('echo-private:scenario-run.{activeRunId},.step.completed')]
+    #[On('echo-private:scenario-run.{activeRunId},.step.reopened')]
+    public function onStepChangedRemotely(): void
+    {
+        unset($this->cockpit);
+        unset($this->logEntries);
+    }
+
+    /**
+     * Ein Notfall wurde firmenweit gestartet oder beendet (z. B. aus der App) →
+     * Cockpit auf-/zumachen und den Lauf-Kanal neu binden.
+     */
+    #[On('echo-private:company.{companyId},.incident.started')]
+    #[On('echo-private:company.{companyId},.incident.ended')]
+    public function onIncidentChangedRemotely(): void
+    {
+        unset($this->cockpit);
+        unset($this->logEntries);
+        $this->activeRunId = $this->cockpit?->activeRun?->id;
     }
 
     /**

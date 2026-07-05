@@ -1,6 +1,9 @@
 <?php
 
 use App\Enums\CrisisRole;
+use App\Events\ScenarioRunStepCompleted;
+use App\Events\ScenarioRunStepReopened;
+use App\Jobs\SendCompanyPush;
 use App\Models\Company;
 use App\Models\CrisisLogEntry;
 use App\Models\Employee;
@@ -11,6 +14,8 @@ use App\Services\Sms\SmsGatewayContract;
 use App\Services\Sms\SmsResult;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Queue;
 use Livewire\Livewire;
 
 uses(RefreshDatabase::class);
@@ -93,6 +98,33 @@ test('toggleStep writes a step log entry', function () {
     expect($entry)->not->toBeNull()
         ->and($entry->message)->toContain('Server isolieren')
         ->and($entry->user_id)->toBe($user->id);
+});
+
+test('toggleStep broadcasts the step change and nudges the apps to re-sync', function () {
+    Event::fake([ScenarioRunStepCompleted::class, ScenarioRunStepReopened::class]);
+    Queue::fake();
+
+    [, $company] = crisisCockpitActor();
+    $run = crisisCockpitActiveRun($company);
+
+    $step = ScenarioRunStep::create([
+        'scenario_run_id' => $run->id,
+        'sort' => 0,
+        'title' => 'Server isolieren',
+    ]);
+
+    // Abhaken → Live-Broadcast an andere Browser + Sync-Push an die Apps.
+    Livewire::test('pages::incident-mode.index')
+        ->call('toggleStep', $step->id);
+
+    Event::assertDispatched(ScenarioRunStepCompleted::class, fn ($e) => $e->step->id === $step->id);
+    Queue::assertPushed(SendCompanyPush::class);
+
+    // Wieder öffnen → reopened-Broadcast.
+    Livewire::test('pages::incident-mode.index')
+        ->call('toggleStep', $step->id);
+
+    Event::assertDispatched(ScenarioRunStepReopened::class, fn ($e) => $e->step->id === $step->id);
 });
 
 test('endRun writes a system log entry', function () {
