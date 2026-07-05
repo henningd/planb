@@ -97,7 +97,8 @@ test('toggleStep writes a step log entry', function () {
 
     expect($entry)->not->toBeNull()
         ->and($entry->message)->toContain('Server isolieren')
-        ->and($entry->user_id)->toBe($user->id);
+        ->and($entry->user_id)->toBe($user->id)
+        ->and($entry->source)->toBe('web');
 });
 
 test('toggleStep broadcasts the step change and nudges the apps to re-sync', function () {

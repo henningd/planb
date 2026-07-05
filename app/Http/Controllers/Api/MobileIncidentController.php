@@ -43,6 +43,7 @@ class MobileIncidentController extends Controller
             startedByUserId: $token->created_by_user_id,
             mode: $validated['mode'] ?? ScenarioRunMode::Real->value,
             title: $validated['title'] ?? null,
+            source: 'app',
         );
 
         return response()->json([

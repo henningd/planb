@@ -7,6 +7,7 @@ use App\Events\ScenarioRunStepReopened;
 use App\Http\Controllers\Controller;
 use App\Models\ApiToken;
 use App\Models\Company;
+use App\Models\CrisisLogEntry;
 use App\Models\ScenarioRun;
 use App\Models\User;
 use App\Scopes\CurrentCompanyScope;
@@ -61,6 +62,20 @@ class MobileRunController extends Controller
         $userName = User::query()
             ->withoutGlobalScope(CurrentCompanyScope::class)
             ->find($token->created_by_user_id)?->name ?? 'App';
+
+        // Revisionssicher ins Krisen-Logbuch schreiben – mit Quelle „app", damit
+        // im Nachhinein nachvollziehbar ist, wer wann worüber (App/Web) gehandelt hat.
+        CrisisLogEntry::create([
+            'company_id' => $scenarioRun->company_id,
+            'scenario_run_id' => $scenarioRun->id,
+            'user_id' => $token->created_by_user_id,
+            'type' => 'step',
+            'source' => 'app',
+            'message' => $runStep->checked_at !== null
+                ? 'Schritt erledigt: '.$runStep->title
+                : 'Schritt zurückgesetzt: '.$runStep->title,
+            'occurred_at' => now(),
+        ]);
 
         // Live an das Web-Cockpit broadcasten (gleiche Events wie im Dashboard).
         // Best-effort: ein nicht erreichbarer Broadcast-Server (Reverb/Pusher)
@@ -120,7 +135,7 @@ class MobileRunController extends Controller
 
         abort_unless($scenarioRun->isActive(), 409, 'Ablauf ist bereits abgeschlossen.');
 
-        app(CloseScenarioRun::class)->handle($scenarioRun, $validated['outcome'], $token->created_by_user_id);
+        app(CloseScenarioRun::class)->handle($scenarioRun, $validated['outcome'], $token->created_by_user_id, 'app');
 
         return response()->json([
             'run_id' => $scenarioRun->id,

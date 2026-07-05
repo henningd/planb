@@ -56,16 +56,18 @@ new #[Title('Krisen-Cockpit')] class extends Component {
      * Schritt-Fortschritts-Kanal). Werden für die Echtzeit-Listener gebraucht,
      * damit ein Abhaken aus der App oder einem anderen Browser sofort ankommt.
      */
-    public ?string $companyId = null;
+    // Leerer String statt null: Livewire wertet einen null-Property in einem
+    // dynamischen Echo-Kanalnamen (`{activeRunId}`) als „fehlt" und wirft sonst.
+    public string $companyId = '';
 
-    public ?string $activeRunId = null;
+    public string $activeRunId = '';
 
     public function mount(): void
     {
         $this->peaceVerse = BibleVerses::random('peace');
         $this->crisisVerse = BibleVerses::random('crisis');
-        $this->companyId = $this->company?->id;
-        $this->activeRunId = $this->cockpit?->activeRun?->id;
+        $this->companyId = $this->company?->id ?? '';
+        $this->activeRunId = $this->cockpit?->activeRun?->id ?? '';
     }
 
     #[Computed]
@@ -184,7 +186,7 @@ new #[Title('Krisen-Cockpit')] class extends Component {
     {
         unset($this->cockpit);
         unset($this->logEntries);
-        $this->activeRunId = $this->cockpit?->activeRun?->id;
+        $this->activeRunId = $this->cockpit?->activeRun?->id ?? '';
     }
 
     /**
@@ -320,6 +322,7 @@ new #[Title('Krisen-Cockpit')] class extends Component {
             'scenario_run_id' => $run->id,
             'user_id' => Auth::id(),
             'type' => $type,
+            'source' => 'web',
             'message' => $message,
             'occurred_at' => now(),
         ]);
@@ -353,6 +356,19 @@ new #[Title('Krisen-Cockpit')] class extends Component {
             'alert' => __('Alarmierung'),
             'system' => __('System'),
             default => $type,
+        };
+    }
+
+    /**
+     * Anzeige-Label der Quelle eines Logbuch-Eintrags (App/Web/System).
+     */
+    public function logSourceLabel(?string $source): string
+    {
+        return match ($source) {
+            'app' => __('App'),
+            'web' => __('Web'),
+            'system' => __('System'),
+            default => (string) $source,
         };
     }
 
@@ -509,6 +525,14 @@ new #[Title('Krisen-Cockpit')] class extends Component {
                                     {{ $trigger }}
                                 </p>
                             @endif
+                            <p class="mt-1 text-sm text-rose-900/80 dark:text-rose-100/80">
+                                <span class="font-semibold">{{ __('Ausgelöst von:') }}</span>
+                                {{ $run->startedBy?->name ?? __('Unbekannt') }}
+                                @if ($run->started_at)
+                                    <span class="text-rose-900/80 dark:text-rose-100/80">·</span>
+                                    {{ $run->started_at->isoFormat('DD.MM.YYYY HH:mm') }}
+                                @endif
+                            </p>
                             <p class="mt-2 flex items-center gap-2 text-sm">
                                 <flux:icon.clock class="h-4 w-4" />
                                 <span>{{ __('Laufzeit:') }}</span>
@@ -866,7 +890,9 @@ new #[Title('Krisen-Cockpit')] class extends Component {
                                         @endif
                                         @if ($checked && $step->checked_at)
                                             <div class="mt-1 text-xs text-zinc-400">
-                                                {{ __('Erledigt') }}: {{ $step->checked_at->isoFormat('DD.MM.YYYY HH:mm') }}
+                                                {{ __('Erledigt von') }}
+                                                <span class="font-medium text-zinc-500 dark:text-zinc-300">{{ $step->checkedBy?->name ?? __('Unbekannt') }}</span>
+                                                · {{ $step->checked_at->isoFormat('DD.MM.YYYY HH:mm') }}
                                             </div>
                                         @endif
                                     </div>
@@ -1071,6 +1097,9 @@ new #[Title('Krisen-Cockpit')] class extends Component {
                                             {{ $entry->occurred_at?->isoFormat('DD.MM.YYYY HH:mm') }}
                                             @if ($entry->user)
                                                 · {{ $entry->user->name }}
+                                            @endif
+                                            @if ($entry->source)
+                                                · <span class="font-medium">{{ $this->logSourceLabel($entry->source) }}</span>
                                             @endif
                                         </div>
                                     </div>

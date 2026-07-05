@@ -5,6 +5,7 @@ namespace App\Support\Scenarios;
 use App\Events\IncidentEnded;
 use App\Models\AppNotification;
 use App\Models\Company;
+use App\Models\CrisisLogEntry;
 use App\Models\ScenarioRun;
 use App\Models\User;
 use App\Scopes\CurrentCompanyScope;
@@ -21,7 +22,7 @@ class CloseScenarioRun
 {
     public function __construct(private readonly PushNotifier $push) {}
 
-    public function handle(ScenarioRun $run, string $outcome, ?int $byUserId = null): void
+    public function handle(ScenarioRun $run, string $outcome, ?int $byUserId = null, string $source = 'web'): void
     {
         $run->forceFill(
             $outcome === 'completed' ? ['ended_at' => now()] : ['aborted_at' => now()],
@@ -29,6 +30,17 @@ class CloseScenarioRun
 
         $title = $run->title ?: 'Notfall';
         $heading = $outcome === 'aborted' ? 'Notfall abgebrochen' : 'Notfall beendet';
+
+        // Krisen-Logbuch: Abschluss/Abbruch revisionssicher festhalten (Quelle App/Web).
+        CrisisLogEntry::create([
+            'company_id' => $run->company_id,
+            'scenario_run_id' => $run->id,
+            'user_id' => $byUserId,
+            'type' => 'system',
+            'source' => $source,
+            'message' => $heading,
+            'occurred_at' => now(),
+        ]);
 
         $endedBy = $byUserId !== null
             ? User::query()->withoutGlobalScope(CurrentCompanyScope::class)->find($byUserId)?->name

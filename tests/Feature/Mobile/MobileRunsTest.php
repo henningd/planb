@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Company;
+use App\Models\CrisisLogEntry;
 use App\Models\MobileAccessCode;
 use App\Models\MobileDevice;
 use App\Models\Scenario;
@@ -95,6 +96,16 @@ test('checking a run step writes it back with the user and alarms other devices'
     $step = ScenarioRunStep::find($step->id);
     expect($step->checked_at)->not->toBeNull()
         ->and($step->checked_by_user_id)->toBe($user->id);
+
+    // Krisen-Logbuch hält die App-Aktion mit Quelle „app" fest.
+    $log = CrisisLogEntry::where('scenario_run_id', $run->id)
+        ->where('type', 'step')
+        ->latest('occurred_at')
+        ->first();
+    expect($log)->not->toBeNull()
+        ->and($log->source)->toBe('app')
+        ->and($log->user_id)->toBe($user->id)
+        ->and($log->message)->toContain($step->title);
 
     $sender->shouldHaveReceived('send')->withArgs(
         fn ($tokens, $data) => in_array('tok-run', $tokens, true) && ($data['type'] ?? null) === 'sync',

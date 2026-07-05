@@ -6,6 +6,7 @@ use App\Enums\ScenarioRunMode;
 use App\Events\IncidentStarted;
 use App\Models\AppNotification;
 use App\Models\Company;
+use App\Models\CrisisLogEntry;
 use App\Models\Scenario;
 use App\Models\ScenarioRun;
 use App\Models\User;
@@ -35,6 +36,7 @@ class StartScenarioRun
         int $startedByUserId,
         ScenarioRunMode|string $mode = ScenarioRunMode::Real,
         ?string $title = null,
+        string $source = 'web',
     ): ScenarioRun {
         $mode = $mode instanceof ScenarioRunMode ? $mode : ScenarioRunMode::from($mode);
         $scenario->loadMissing('steps');
@@ -64,6 +66,17 @@ class StartScenarioRun
 
             return $run;
         });
+
+        // Krisen-Logbuch: Auslösung revisionssicher festhalten (mit Quelle App/Web).
+        CrisisLogEntry::create([
+            'company_id' => $run->company_id,
+            'scenario_run_id' => $run->id,
+            'user_id' => $startedByUserId,
+            'type' => 'system',
+            'source' => $source,
+            'message' => 'Notfall ausgelöst: '.$scenario->name,
+            'occurred_at' => now(),
+        ]);
 
         if ($mode === ScenarioRunMode::Real) {
             $this->alarm($scenario, $run, $startedByUserId);

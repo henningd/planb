@@ -35,7 +35,7 @@ class Cockpit
             activeRun: $activeRun,
             crisisStaff: self::crisisStaff($company),
             recoveryOrder: self::recoveryOrder($company, $activeRun),
-            steps: $activeRun ? $activeRun->steps()->orderBy('sort')->get() : collect(),
+            steps: $activeRun ? $activeRun->steps()->with('checkedBy')->orderBy('sort')->get() : collect(),
             communicationTemplates: self::communicationTemplates($company, $activeRun),
             obligations: self::obligations($company, $activeRun),
             damageRatePerHourEur: $damage['total'],
@@ -61,7 +61,7 @@ class Cockpit
             ->where('company_id', $company->id)
             ->whereNull('ended_at')
             ->whereNull('aborted_at')
-            ->with('scenario')
+            ->with(['scenario', 'startedBy'])
             ->orderByDesc('started_at')
             ->first();
     }

@@ -18,6 +18,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'scenario_run_id',
     'user_id',
     'type',
+    'source',
     'message',
     'occurred_at',
 ])]
