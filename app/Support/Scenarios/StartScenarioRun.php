@@ -93,7 +93,7 @@ class StartScenarioRun
                 ->find($scenario->company_id);
 
             if ($company !== null) {
-                $this->push->incident($company, $scenario->id, $scenario->name);
+                $this->push->incident($company, $scenario->id, $scenario->name, $startedByUserId);
             }
         } catch (Throwable) {
             // best-effort

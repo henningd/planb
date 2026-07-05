@@ -168,6 +168,9 @@ test('a step of an ended run cannot be toggled', function () {
 test('completing a run ends it, removes it from the bundle and alarms devices', function () {
     [$user, $company, $token] = runSession();
     MobileDevice::create(['fcm_token' => 'tok-end', 'user_id' => $user->id, 'company_id' => $company->id]);
+    // Gerät eines anderen Nutzers – dieses soll die Beendet-Meldung erhalten.
+    $colleague = User::factory()->create();
+    MobileDevice::create(['fcm_token' => 'tok-end-colleague', 'user_id' => $colleague->id, 'company_id' => $company->id]);
     $run = activeRun($company, $user);
 
     $sender = Mockery::spy(PushSender::class);
@@ -187,8 +190,11 @@ test('completing a run ends it, removes it from the bundle and alarms devices', 
     $data = test()->withToken($token)->getJson('/api/mobile/sync')->json('data');
     expect($data['active_runs'])->toHaveCount(0);
 
+    // Das Gerät des Beendenden wird ausgeschlossen, das des Kollegen benachrichtigt.
     $sender->shouldHaveReceived('send')->withArgs(
-        fn ($tokens, $data) => in_array('tok-end', $tokens, true) && ($data['type'] ?? null) === 'incident_ended',
+        fn ($tokens, $data) => ($data['type'] ?? null) === 'incident_ended'
+            && in_array('tok-end-colleague', $tokens, true)
+            && ! in_array('tok-end', $tokens, true),
     );
 });
 

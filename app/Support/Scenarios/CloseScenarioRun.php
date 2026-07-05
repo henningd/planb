@@ -44,7 +44,7 @@ class CloseScenarioRun
                 ->find($run->company_id);
 
             if ($company !== null) {
-                $this->push->incidentEnded($company, $title, $outcome);
+                $this->push->incidentEnded($company, $title, $outcome, $byUserId);
             }
         } catch (Throwable) {
             // best-effort

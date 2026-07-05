@@ -108,9 +108,13 @@ test('approving a handbook version pushes a sync signal to the devices', functio
     );
 });
 
-test('triggering an incident from the app starts a run and alarms the devices', function () {
+test('triggering an incident from the app starts a run and alarms the other devices', function () {
     [$user, $company, $token] = pushSession();
     MobileDevice::create(['fcm_token' => 'tok-3', 'user_id' => $user->id, 'company_id' => $company->id]);
+
+    // Gerät eines anderen Nutzers derselben Firma – dieses soll den Alarm erhalten.
+    $colleague = User::factory()->create();
+    MobileDevice::create(['fcm_token' => 'tok-colleague', 'user_id' => $colleague->id, 'company_id' => $company->id]);
 
     $scenario = Scenario::factory()->for($company)->create(['name' => 'Stromausfall']);
     $scenario->steps()->create(['sort' => 1, 'title' => 'Notstrom prüfen', 'responsible' => 'IT']);
@@ -131,8 +135,11 @@ test('triggering an incident from the app starts a run and alarms the devices', 
         ->and($run->steps()->count())->toBe(1)
         ->and($response->json('run_id'))->toBe($run->id);
 
+    // Das Gerät des Auslösers wird ausgeschlossen, das des Kollegen alarmiert.
     $sender->shouldHaveReceived('send')->withArgs(
-        fn ($tokens, $data) => in_array('tok-3', $tokens, true) && ($data['type'] ?? null) === 'incident',
+        fn ($tokens, $data) => ($data['type'] ?? null) === 'incident'
+            && in_array('tok-colleague', $tokens, true)
+            && ! in_array('tok-3', $tokens, true),
     );
 });
 
