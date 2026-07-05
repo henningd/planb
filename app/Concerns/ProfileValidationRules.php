@@ -18,7 +18,20 @@ trait ProfileValidationRules
         return [
             'name' => $this->nameRules(),
             'email' => $this->emailRules($userId),
+            'mobile_phone' => $this->phoneRules(),
+            'phone' => $this->phoneRules(),
+            'emergency_phone' => $this->phoneRules(),
         ];
+    }
+
+    /**
+     * Get the validation rules used to validate a phone number.
+     *
+     * @return array<int, ValidationRule|array<mixed>|string>
+     */
+    protected function phoneRules(): array
+    {
+        return ['nullable', 'string', 'max:40'];
     }
 
     /**

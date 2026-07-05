@@ -14,14 +14,21 @@ new #[Title('Profile settings')] class extends Component {
 
     public string $name = '';
     public string $email = '';
+    public string $mobile_phone = '';
+    public string $phone = '';
+    public string $emergency_phone = '';
 
     /**
      * Mount the component.
      */
     public function mount(): void
     {
-        $this->name = Auth::user()->name;
-        $this->email = Auth::user()->email;
+        $user = Auth::user();
+        $this->name = $user->name;
+        $this->email = $user->email;
+        $this->mobile_phone = (string) ($user->mobile_phone ?? '');
+        $this->phone = (string) ($user->phone ?? '');
+        $this->emergency_phone = (string) ($user->emergency_phone ?? '');
     }
 
     /**
@@ -119,6 +126,13 @@ new #[Title('Profile settings')] class extends Component {
                     </div>
                 @endif
             </div>
+
+            <flux:input wire:model="mobile_phone" :label="__('Mobilnummer')" type="tel" autocomplete="tel"
+                :placeholder="__('z. B. +49 170 1234567')" />
+            <flux:input wire:model="phone" :label="__('Telefon (Festnetz)')" type="tel" autocomplete="tel"
+                :placeholder="__('z. B. +49 30 1234567')" />
+            <flux:input wire:model="emergency_phone" :label="__('Notrufnummer')" type="tel"
+                :placeholder="__('Nummer für den Notfall')" />
 
             <div class="flex items-center gap-4">
                 <flux:button variant="primary" type="submit" data-test="update-profile-button">

@@ -2,7 +2,6 @@
 
 use App\Models\Company;
 use App\Models\CrisisLogEntry;
-use App\Models\Employee;
 use App\Models\MobileAccessCode;
 use App\Models\MobileDevice;
 use App\Models\Scenario;
@@ -84,12 +83,12 @@ test('the sync bundle includes the crisis log of an active run', function () {
         'occurred_at' => now(),
     ]);
 
-    // Gleichnamiger Mitarbeiter mit Mobilnummer → im Verlauf anrufbar.
-    Employee::factory()->for($company)->create([
-        'first_name' => $user->name,
-        'last_name' => '',
-        'mobile_phone' => '+49 170 9999999',
-    ]);
+    // Telefonnummern aus dem Nutzerprofil → im Verlauf anrufbar.
+    $user->forceFill([
+        'mobile_phone' => '+49 170 1111111',
+        'phone' => '+49 30 2222222',
+        'emergency_phone' => '112',
+    ])->save();
 
     $data = test()->withToken($token)->getJson('/api/mobile/sync')->json('data');
     $log = $data['active_runs'][0]['log'];
@@ -98,7 +97,9 @@ test('the sync bundle includes the crisis log of an active run', function () {
         ->and($log[0]['message'])->toContain('Notstrom prüfen')
         ->and($log[0]['source'])->toBe('app')
         ->and($log[0]['user_name'])->toBe($user->name)
-        ->and($log[0]['user_phone'])->toBe('+49 170 9999999');
+        ->and($log[0]['user_mobile'])->toBe('+49 170 1111111')
+        ->and($log[0]['user_phone'])->toBe('+49 30 2222222')
+        ->and($log[0]['user_emergency'])->toBe('112');
 });
 
 test('an ended run is not part of the bundle', function () {

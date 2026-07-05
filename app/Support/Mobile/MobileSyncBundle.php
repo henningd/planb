@@ -151,9 +151,12 @@ class MobileSyncBundle
                     'source' => $entry->source,
                     'message' => $entry->message,
                     'user_name' => $entry->user?->name,
-                    'user_phone' => $entry->user?->name
-                        ? ($phoneByName[mb_strtolower(trim($entry->user->name))] ?? null)
-                        : null,
+                    // Nutzer-Telefonnummern (aus dem Profil), Mobil ersatzweise über
+                    // Mitarbeiter-Namensabgleich – zum Kontaktieren aus dem Verlauf.
+                    'user_mobile' => $entry->user?->mobile_phone
+                        ?: ($entry->user?->name ? ($phoneByName[mb_strtolower(trim($entry->user->name))] ?? null) : null),
+                    'user_phone' => $entry->user?->phone,
+                    'user_emergency' => $entry->user?->emergency_phone,
                     'occurred_at' => $entry->occurred_at?->toIso8601String(),
                 ])->all(),
             ])
