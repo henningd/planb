@@ -2,6 +2,7 @@
 
 namespace App\Support\Push;
 
+use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -34,6 +35,7 @@ class FcmPushSender implements PushSender
 
         $endpoint = "https://fcm.googleapis.com/v1/projects/{$this->projectId}/messages:send";
         $dead = [];
+        $refreshed = false;
 
         foreach ($tokens as $token) {
             $message = ['token' => $token, 'data' => $data];
@@ -45,9 +47,19 @@ class FcmPushSender implements PushSender
             }
 
             try {
-                $response = Http::withToken($accessToken)
-                    ->acceptJson()
-                    ->post($endpoint, ['message' => $message]);
+                $response = $this->postMessage($accessToken, $endpoint, $message);
+
+                // 401 = OAuth-Token abgelaufen/rotiert → Cache einmal leeren,
+                // frisch holen und die Nachricht erneut senden.
+                if ($response->status() === 401 && ! $refreshed) {
+                    $refreshed = true;
+                    Cache::forget('fcm_access_token');
+                    $fresh = $this->accessToken();
+                    if ($fresh !== null) {
+                        $accessToken = $fresh;
+                        $response = $this->postMessage($accessToken, $endpoint, $message);
+                    }
+                }
 
                 if ($response->failed()) {
                     Log::warning('FCM-Push abgelehnt', [
@@ -66,6 +78,16 @@ class FcmPushSender implements PushSender
         }
 
         return $dead;
+    }
+
+    /**
+     * @param  array<string, mixed>  $message
+     */
+    private function postMessage(string $accessToken, string $endpoint, array $message): Response
+    {
+        return Http::withToken($accessToken)
+            ->acceptJson()
+            ->post($endpoint, ['message' => $message]);
     }
 
     /**

@@ -79,6 +79,30 @@ test('the job resolves company tokens, sends and prunes UNREGISTERED tokens', fu
         ->and(MobileDevice::where('fcm_token', 'tok-live')->exists())->toBeTrue();
 });
 
+test('a 401 refreshes the OAuth token and retries the send once', function () {
+    $keyResource = openssl_pkey_new(['private_key_bits' => 2048, 'private_key_type' => OPENSSL_KEYTYPE_RSA]);
+    openssl_pkey_export($keyResource, $privateKeyPem);
+
+    Http::fake([
+        'oauth2.googleapis.com/*' => Http::response(['access_token' => 'fresh-token']),
+        'fcm.googleapis.com/*' => Http::sequence()
+            ->push(['error' => ['status' => 'UNAUTHENTICATED']], 401)
+            ->push(['name' => 'ok'], 200),
+    ]);
+
+    $sender = new FcmPushSender('demo-project', [
+        'client_email' => 'svc@example.com',
+        'private_key' => $privateKeyPem,
+    ]);
+
+    $dead = $sender->send(['tok-1'], ['type' => 'sync']);
+
+    // 401 → Token neu geholt → erneuter Versand 200 → Token nicht als tot markiert.
+    expect($dead)->toBe([]);
+    // 2× OAuth (initial + Refresh) + 2× FCM (401 + Retry).
+    Http::assertSentCount(4);
+});
+
 test('the job exits early and never calls the sender when the company has no devices', function () {
     [$user, $company] = queuePushSession();
 
