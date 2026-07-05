@@ -105,6 +105,15 @@ class MobileSyncBundle
      */
     private static function activeRuns(Company $company): array
     {
+        // Name → Mobilnummer der Firmen-Mitarbeiter, um im Verlauf den handelnden
+        // Nutzer direkt anrufbar zu machen (User selbst hat keine Telefonnummer).
+        $phoneByName = Employee::query()
+            ->withoutGlobalScope(CurrentCompanyScope::class)
+            ->where('company_id', $company->id)
+            ->get()
+            ->filter(fn (Employee $e) => filled($e->mobile_phone))
+            ->mapWithKeys(fn (Employee $e) => [mb_strtolower(trim($e->fullName())) => $e->mobile_phone]);
+
         return ScenarioRun::query()
             ->withoutGlobalScope(CurrentCompanyScope::class)
             ->where('company_id', $company->id)
@@ -142,6 +151,9 @@ class MobileSyncBundle
                     'source' => $entry->source,
                     'message' => $entry->message,
                     'user_name' => $entry->user?->name,
+                    'user_phone' => $entry->user?->name
+                        ? ($phoneByName[mb_strtolower(trim($entry->user->name))] ?? null)
+                        : null,
                     'occurred_at' => $entry->occurred_at?->toIso8601String(),
                 ])->all(),
             ])
