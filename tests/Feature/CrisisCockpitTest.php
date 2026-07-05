@@ -101,6 +101,31 @@ test('toggleStep writes a step log entry', function () {
         ->and($entry->source)->toBe('web');
 });
 
+test('the cockpit reflects a remote step reopen live', function () {
+    [$user, $company] = crisisCockpitActor();
+    $run = crisisCockpitActiveRun($company);
+    ScenarioRunStep::create([
+        'scenario_run_id' => $run->id,
+        'sort' => 0,
+        'title' => 'Server isolieren',
+        'checked_at' => now(),
+        'checked_by_user_id' => $user->id,
+    ]);
+
+    $component = Livewire::test('pages::incident-mode.index');
+    $component->assertSee('Erledigt von');
+
+    // Extern (App/anderer Browser) das Häkchen wieder entfernt:
+    ScenarioRunStep::where('scenario_run_id', $run->id)
+        ->update(['checked_at' => null, 'checked_by_user_id' => null]);
+
+    // Der reopened-Listener muss das Cockpit live auffrischen (eigene Methode,
+    // damit der Echo-Listener zuverlässig registriert wird).
+    $component->call('onStepReopenedRemotely')
+        ->assertOk()
+        ->assertDontSee('Erledigt von');
+});
+
 test('toggleStep broadcasts the step change and nudges the apps to re-sync', function () {
     Event::fake([ScenarioRunStepCompleted::class, ScenarioRunStepReopened::class]);
     Queue::fake();

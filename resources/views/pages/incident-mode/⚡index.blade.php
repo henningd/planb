@@ -164,29 +164,46 @@ new #[Title('Krisen-Cockpit')] class extends Component {
         unset($this->cockpit);
     }
 
-    /**
-     * Ein Schritt wurde extern (App oder anderer Browser) an-/abgehakt →
-     * Cockpit neu berechnen, damit die Ansicht sofort mitzieht.
-     */
+    // Ein Schritt wurde extern (App oder anderer Browser) an- bzw. abgehakt →
+    // Cockpit neu berechnen. WICHTIG: pro Echo-Event eine eigene Methode mit
+    // genau einem #[On] — mehrere gestapelte #[On] mit dynamischem Kanal
+    // registrieren sich nicht zuverlässig alle (nur „completed" käme an,
+    // „reopened"/Abhaken-Entfernen nicht).
+
     #[On('echo-private:scenario-run.{activeRunId},.step.completed')]
-    #[On('echo-private:scenario-run.{activeRunId},.step.reopened')]
-    public function onStepChangedRemotely(): void
+    public function onStepCompletedRemotely(): void
     {
-        unset($this->cockpit);
-        unset($this->logEntries);
+        $this->refreshCockpitLive();
+    }
+
+    #[On('echo-private:scenario-run.{activeRunId},.step.reopened')]
+    public function onStepReopenedRemotely(): void
+    {
+        $this->refreshCockpitLive();
+    }
+
+    #[On('echo-private:company.{companyId},.incident.started')]
+    public function onIncidentStartedRemotely(): void
+    {
+        $this->refreshCockpitLive();
+        $this->activeRunId = $this->cockpit?->activeRun?->id ?? '';
+    }
+
+    #[On('echo-private:company.{companyId},.incident.ended')]
+    public function onIncidentEndedRemotely(): void
+    {
+        $this->refreshCockpitLive();
+        $this->activeRunId = $this->cockpit?->activeRun?->id ?? '';
     }
 
     /**
-     * Ein Notfall wurde firmenweit gestartet oder beendet (z. B. aus der App) →
-     * Cockpit auf-/zumachen und den Lauf-Kanal neu binden.
+     * Verwirft die berechneten Cockpit-Daten, sodass sie beim nächsten Zugriff
+     * frisch aus der DB geladen werden (Live-Aktualisierung).
      */
-    #[On('echo-private:company.{companyId},.incident.started')]
-    #[On('echo-private:company.{companyId},.incident.ended')]
-    public function onIncidentChangedRemotely(): void
+    private function refreshCockpitLive(): void
     {
         unset($this->cockpit);
         unset($this->logEntries);
-        $this->activeRunId = $this->cockpit?->activeRun?->id ?? '';
     }
 
     /**
