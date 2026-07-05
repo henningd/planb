@@ -52,6 +52,14 @@ class ScenarioRun extends Model
         return $this->hasMany(ScenarioRunStep::class)->orderBy('sort');
     }
 
+    /**
+     * @return HasMany<CrisisLogEntry, $this>
+     */
+    public function crisisLogEntries(): HasMany
+    {
+        return $this->hasMany(CrisisLogEntry::class)->orderByDesc('occurred_at');
+    }
+
     public function isActive(): bool
     {
         return $this->ended_at === null && $this->aborted_at === null;

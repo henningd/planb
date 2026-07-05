@@ -69,6 +69,29 @@ test('the sync bundle exposes active runs with their shared step state', functio
         ->and($bundleRun['steps'][1]['checked'])->toBeFalse();
 });
 
+test('the sync bundle includes the crisis log of an active run', function () {
+    [$user, $company, $token] = runSession();
+    $run = activeRun($company, $user);
+
+    CrisisLogEntry::create([
+        'company_id' => $company->id,
+        'scenario_run_id' => $run->id,
+        'user_id' => $user->id,
+        'type' => 'step',
+        'source' => 'app',
+        'message' => 'Schritt erledigt: Notstrom prüfen',
+        'occurred_at' => now(),
+    ]);
+
+    $data = test()->withToken($token)->getJson('/api/mobile/sync')->json('data');
+    $log = $data['active_runs'][0]['log'];
+
+    expect($log)->toHaveCount(1)
+        ->and($log[0]['message'])->toContain('Notstrom prüfen')
+        ->and($log[0]['source'])->toBe('app')
+        ->and($log[0]['user_name'])->toBe($user->name);
+});
+
 test('an ended run is not part of the bundle', function () {
     [$user, $company, $token] = runSession();
     activeRun($company, $user, ended: true);

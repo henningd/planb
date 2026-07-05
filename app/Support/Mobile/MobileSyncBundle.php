@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\MobileSyncController;
 use App\Models\AppNotification;
 use App\Models\Company;
 use App\Models\Contract;
+use App\Models\CrisisLogEntry;
 use App\Models\Department;
 use App\Models\EmergencyLevel;
 use App\Models\EmergencyResource;
@@ -113,6 +114,7 @@ class MobileSyncBundle
                 'startedBy',
                 'steps' => fn ($q) => $q->orderBy('sort'),
                 'steps.checkedBy',
+                'crisisLogEntries.user',
             ])
             ->orderByDesc('started_at')
             ->get()
@@ -132,6 +134,15 @@ class MobileSyncBundle
                     'checked_at' => $step->checked_at?->toIso8601String(),
                     'checked_by' => $step->checkedBy?->name,
                     'note' => $step->note,
+                ])->all(),
+                // Verlauf/Historie des Laufs (wer wann was, App/Web) für die App.
+                'log' => $run->crisisLogEntries->take(200)->map(fn (CrisisLogEntry $entry) => [
+                    'id' => $entry->id,
+                    'type' => $entry->type,
+                    'source' => $entry->source,
+                    'message' => $entry->message,
+                    'user_name' => $entry->user?->name,
+                    'occurred_at' => $entry->occurred_at?->toIso8601String(),
                 ])->all(),
             ])
             ->all();
