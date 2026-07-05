@@ -30,11 +30,17 @@ class CloseScenarioRun
         $title = $run->title ?: 'Notfall';
         $heading = $outcome === 'aborted' ? 'Notfall abgebrochen' : 'Notfall beendet';
 
+        $endedBy = $byUserId !== null
+            ? User::query()->withoutGlobalScope(CurrentCompanyScope::class)->find($byUserId)?->name
+            : null;
+
         AppNotification::create([
             'company_id' => $run->company_id,
             'type' => $outcome === 'aborted' ? 'incident_aborted' : 'incident_ended',
             'title' => $heading,
             'body' => $title,
+            'triggered_by_name' => $endedBy,
+            'severity' => 'info',
             'scenario_run_id' => $run->id,
         ]);
 
@@ -51,10 +57,6 @@ class CloseScenarioRun
         }
 
         try {
-            $endedBy = $byUserId !== null
-                ? User::query()->withoutGlobalScope(CurrentCompanyScope::class)->find($byUserId)?->name
-                : null;
-
             event(new IncidentEnded(
                 companyId: $run->company_id,
                 runId: $run->id,

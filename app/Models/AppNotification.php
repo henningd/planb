@@ -23,6 +23,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'type',
     'title',
     'body',
+    'triggered_by_name',
+    'severity',
     'scenario_run_id',
 ])]
 class AppNotification extends Model

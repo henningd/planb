@@ -79,11 +79,17 @@ class StartScenarioRun
      */
     private function alarm(Scenario $scenario, ScenarioRun $run, int $startedByUserId): void
     {
+        $startedBy = User::query()
+            ->withoutGlobalScope(CurrentCompanyScope::class)
+            ->find($startedByUserId)?->name;
+
         AppNotification::create([
             'company_id' => $scenario->company_id,
             'type' => 'incident_started',
             'title' => 'Notfall gemeldet',
             'body' => $scenario->name,
+            'triggered_by_name' => $startedBy,
+            'severity' => 'critical',
             'scenario_run_id' => $run->id,
         ]);
 
@@ -100,10 +106,6 @@ class StartScenarioRun
         }
 
         try {
-            $startedBy = User::query()
-                ->withoutGlobalScope(CurrentCompanyScope::class)
-                ->find($startedByUserId)?->name;
-
             event(new IncidentStarted(
                 companyId: $scenario->company_id,
                 runId: $run->id,

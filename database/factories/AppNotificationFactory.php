@@ -18,6 +18,8 @@ class AppNotificationFactory extends Factory
             'type' => 'incident_started',
             'title' => 'Notfall gemeldet',
             'body' => fake()->sentence(3),
+            'triggered_by_name' => fake()->name(),
+            'severity' => 'info',
             'scenario_run_id' => null,
         ];
     }

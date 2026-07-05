@@ -87,6 +87,9 @@ class MobileSyncBundle
                 'type' => $n->type,
                 'title' => $n->title,
                 'body' => $n->body,
+                'scenario_run_id' => $n->scenario_run_id,
+                'triggered_by_name' => $n->triggered_by_name,
+                'severity' => $n->severity,
                 'created_at' => $n->created_at?->toIso8601String(),
             ])
             ->all();

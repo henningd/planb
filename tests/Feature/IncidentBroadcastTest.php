@@ -28,11 +28,16 @@ it('records a feed notification when a real incident starts and exposes it in th
     $notification = AppNotification::where('company_id', $company->id)->first();
     expect($notification)->not->toBeNull()
         ->and($notification->type)->toBe('incident_started')
-        ->and($notification->body)->toBe('Brand im Serverraum');
+        ->and($notification->body)->toBe('Brand im Serverraum')
+        ->and($notification->severity)->toBe('critical')
+        ->and($notification->triggered_by_name)->toBe($user->name);
 
     $bundle = MobileSyncBundle::for($company->fresh());
     expect($bundle['notifications'])->toHaveCount(1)
-        ->and($bundle['notifications'][0]['title'])->toBe('Notfall gemeldet');
+        ->and($bundle['notifications'][0]['title'])->toBe('Notfall gemeldet')
+        ->and($bundle['notifications'][0]['severity'])->toBe('critical')
+        ->and($bundle['notifications'][0]['triggered_by_name'])->toBe($user->name)
+        ->and($bundle['notifications'][0])->toHaveKey('scenario_run_id');
 });
 
 it('records a feed notification when a run is aborted', function () {
@@ -54,7 +59,9 @@ it('records a feed notification when a run is aborted', function () {
         ->first();
     expect($notification)->not->toBeNull()
         ->and($notification->title)->toBe('Notfall abgebrochen')
-        ->and($notification->body)->toBe('Brand · Übung');
+        ->and($notification->body)->toBe('Brand · Übung')
+        ->and($notification->severity)->toBe('info')
+        ->and($notification->triggered_by_name)->toBe($user->name);
 });
 
 it('broadcasts IncidentStarted when a real incident is triggered', function () {
