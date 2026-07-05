@@ -3,16 +3,59 @@
 use App\Enums\ScenarioRunMode;
 use App\Events\IncidentEnded;
 use App\Events\IncidentStarted;
+use App\Models\AppNotification;
 use App\Models\Company;
 use App\Models\Scenario;
 use App\Models\ScenarioRun;
 use App\Models\User;
+use App\Support\Mobile\MobileSyncBundle;
 use App\Support\Scenarios\CloseScenarioRun;
 use App\Support\Scenarios\StartScenarioRun;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
 
 uses(RefreshDatabase::class);
+
+it('records a feed notification when a real incident starts and exposes it in the bundle', function () {
+    Event::fake([IncidentStarted::class]);
+
+    $user = User::factory()->create();
+    $company = Company::factory()->for($user->currentTeam)->create();
+    $scenario = Scenario::factory()->for($company)->create(['name' => 'Brand im Serverraum']);
+
+    app(StartScenarioRun::class)->handle($scenario, (int) $user->id, ScenarioRunMode::Real);
+
+    $notification = AppNotification::where('company_id', $company->id)->first();
+    expect($notification)->not->toBeNull()
+        ->and($notification->type)->toBe('incident_started')
+        ->and($notification->body)->toBe('Brand im Serverraum');
+
+    $bundle = MobileSyncBundle::for($company->fresh());
+    expect($bundle['notifications'])->toHaveCount(1)
+        ->and($bundle['notifications'][0]['title'])->toBe('Notfall gemeldet');
+});
+
+it('records a feed notification when a run is aborted', function () {
+    Event::fake([IncidentEnded::class]);
+
+    $user = User::factory()->create();
+    $company = Company::factory()->for($user->currentTeam)->create();
+    $scenario = Scenario::factory()->for($company)->create();
+    $run = ScenarioRun::factory()->for($company)->create([
+        'scenario_id' => $scenario->id,
+        'title' => 'Brand · Übung',
+        'started_at' => now(),
+    ]);
+
+    app(CloseScenarioRun::class)->handle($run, 'aborted', (int) $user->id);
+
+    $notification = AppNotification::where('company_id', $company->id)
+        ->where('type', 'incident_aborted')
+        ->first();
+    expect($notification)->not->toBeNull()
+        ->and($notification->title)->toBe('Notfall abgebrochen')
+        ->and($notification->body)->toBe('Brand · Übung');
+});
 
 it('broadcasts IncidentStarted when a real incident is triggered', function () {
     Event::fake([IncidentStarted::class]);

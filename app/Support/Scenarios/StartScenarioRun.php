@@ -4,6 +4,7 @@ namespace App\Support\Scenarios;
 
 use App\Enums\ScenarioRunMode;
 use App\Events\IncidentStarted;
+use App\Models\AppNotification;
 use App\Models\Company;
 use App\Models\Scenario;
 use App\Models\ScenarioRun;
@@ -78,6 +79,14 @@ class StartScenarioRun
      */
     private function alarm(Scenario $scenario, ScenarioRun $run, int $startedByUserId): void
     {
+        AppNotification::create([
+            'company_id' => $scenario->company_id,
+            'type' => 'incident_started',
+            'title' => 'Notfall gemeldet',
+            'body' => $scenario->name,
+            'scenario_run_id' => $run->id,
+        ]);
+
         try {
             $company = Company::query()
                 ->withoutGlobalScope(CurrentCompanyScope::class)

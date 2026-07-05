@@ -3,6 +3,7 @@
 namespace App\Support\Scenarios;
 
 use App\Events\IncidentEnded;
+use App\Models\AppNotification;
 use App\Models\Company;
 use App\Models\ScenarioRun;
 use App\Models\User;
@@ -27,6 +28,15 @@ class CloseScenarioRun
         )->save();
 
         $title = $run->title ?: 'Notfall';
+        $heading = $outcome === 'aborted' ? 'Notfall abgebrochen' : 'Notfall beendet';
+
+        AppNotification::create([
+            'company_id' => $run->company_id,
+            'type' => $outcome === 'aborted' ? 'incident_aborted' : 'incident_ended',
+            'title' => $heading,
+            'body' => $title,
+            'scenario_run_id' => $run->id,
+        ]);
 
         try {
             $company = Company::query()

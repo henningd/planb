@@ -4,6 +4,7 @@ namespace App\Support\Mobile;
 
 use App\Enums\CrisisRole;
 use App\Http\Controllers\Api\MobileSyncController;
+use App\Models\AppNotification;
 use App\Models\Company;
 use App\Models\Contract;
 use App\Models\Department;
@@ -62,8 +63,33 @@ class MobileSyncBundle
             'recovery_order' => self::recoveryOrder($cockpit->recoveryOrder),
             'scenarios' => self::scenarios($company),
             'active_runs' => self::activeRuns($company),
+            'notifications' => self::notifications($company),
             'aushang_codes' => self::aushangCodes($company),
         ];
+    }
+
+    /**
+     * Firmenweiter Benachrichtigungs-Feed (jüngste zuerst, begrenzt) für den
+     * „Benachrichtigungen"-Verlauf in der App. Der Gelesen-Status wird lokal
+     * je Gerät geführt, nicht hier.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private static function notifications(Company $company): array
+    {
+        return AppNotification::query()
+            ->where('company_id', $company->id)
+            ->orderByDesc('created_at')
+            ->limit(50)
+            ->get()
+            ->map(fn (AppNotification $n) => [
+                'id' => $n->id,
+                'type' => $n->type,
+                'title' => $n->title,
+                'body' => $n->body,
+                'created_at' => $n->created_at?->toIso8601String(),
+            ])
+            ->all();
     }
 
     /**
