@@ -3,9 +3,11 @@
 namespace App\Support\Scenarios;
 
 use App\Enums\ScenarioRunMode;
+use App\Events\IncidentStarted;
 use App\Models\Company;
 use App\Models\Scenario;
 use App\Models\ScenarioRun;
+use App\Models\User;
 use App\Scopes\CurrentCompanyScope;
 use App\Support\Push\PushNotifier;
 use Illuminate\Support\Facades\DB;
@@ -63,7 +65,7 @@ class StartScenarioRun
         });
 
         if ($mode === ScenarioRunMode::Real) {
-            $this->alarm($scenario);
+            $this->alarm($scenario, $run, $startedByUserId);
         }
 
         return $run;
@@ -71,8 +73,10 @@ class StartScenarioRun
 
     /**
      * Alarmierung darf das Auslösen nie blockieren – Fehler werden geschluckt.
+     * Zwei Kanäle: Push an die Geräte (Apps) und ein firmenweiter Broadcast fürs
+     * Web-Dashboard ({@see IncidentStarted}).
      */
-    private function alarm(Scenario $scenario): void
+    private function alarm(Scenario $scenario, ScenarioRun $run, int $startedByUserId): void
     {
         try {
             $company = Company::query()
@@ -84,6 +88,22 @@ class StartScenarioRun
             }
         } catch (Throwable) {
             // best-effort
+        }
+
+        try {
+            $startedBy = User::query()
+                ->withoutGlobalScope(CurrentCompanyScope::class)
+                ->find($startedByUserId)?->name;
+
+            event(new IncidentStarted(
+                companyId: $scenario->company_id,
+                runId: $run->id,
+                scenarioId: $scenario->id,
+                scenarioTitle: $scenario->name,
+                startedBy: $startedBy,
+            ));
+        } catch (Throwable) {
+            // best-effort; Broadcast darf das Auslösen nie blockieren
         }
     }
 }
