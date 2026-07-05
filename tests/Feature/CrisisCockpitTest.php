@@ -153,6 +153,23 @@ test('toggleStep broadcasts the step change and nudges the apps to re-sync', fun
     Event::assertDispatched(ScenarioRunStepReopened::class, fn ($e) => $e->step->id === $step->id);
 });
 
+test('resolveResponsible maps a step responsible role to the assigned person', function () {
+    [, $company] = crisisCockpitActor();
+    crisisCockpitActiveRun($company);
+
+    Employee::factory()->for($company)
+        ->withCrisisRole(CrisisRole::EmergencyOfficer, deputy: false)
+        ->create(['first_name' => 'Erika', 'last_name' => 'Mustermann']);
+
+    $component = Livewire::test('pages::incident-mode.index')->instance();
+
+    // Freitext „Notfallbeauftragter" trifft die Rolle „Notfallbeauftragte/r".
+    expect($component->resolveResponsible('Notfallbeauftragter'))->toBe('Erika Mustermann')
+        // Unbekanntes bleibt null → kein falscher Name im Ernstfall.
+        ->and($component->resolveResponsible('Hausmeister'))->toBeNull()
+        ->and($component->resolveResponsible(null))->toBeNull();
+});
+
 test('endRun writes a system log entry', function () {
     [, $company] = crisisCockpitActor();
     $run = crisisCockpitActiveRun($company);

@@ -8,6 +8,7 @@ use App\Models\Company;
 use App\Models\CrisisLogEntry;
 use App\Models\ScenarioRun;
 use App\Models\ScenarioRunStep;
+use App\Models\ServiceProvider as ServiceProviderModel;
 use App\Services\Sms\SmsGatewayContract;
 use App\Support\BibleVerses;
 use App\Support\Incident\Cockpit;
@@ -406,6 +407,85 @@ new #[Title('Krisen-Cockpit')] class extends Component {
         }
 
         return $this->cockpit?->communicationTemplates->firstWhere('id', $this->previewTemplateId);
+    }
+
+    /**
+     * Dienstleister der Firma (für die Auflösung von „Verantwortlich"-Angaben).
+     *
+     * @return Collection<int, ServiceProviderModel>
+     */
+    #[Computed]
+    public function serviceProviders(): Collection
+    {
+        $company = $this->company;
+
+        return $company
+            ? ServiceProviderModel::where('company_id', $company->id)->get()
+            : collect();
+    }
+
+    /**
+     * Löst eine freie „Verantwortlich"-Angabe eines Schritts (z. B.
+     * „Notfallbeauftragter") auf einen konkreten Namen auf: zuerst über die
+     * Krisenstab-Rollen (→ Hauptperson), sonst über die Dienstleister
+     * (Name/Typ/Ansprechpartner). Bewusst konservativ – nur bei einem sicheren
+     * Treffer wird ein Name zurückgegeben, sonst null (kein falscher Name im Ernstfall).
+     */
+    public function resolveResponsible(?string $responsible): ?string
+    {
+        $needle = self::normalizeRole($responsible);
+        if ($needle === '') {
+            return null;
+        }
+
+        foreach ($this->cockpit?->crisisStaff ?? [] as $member) {
+            $main = $member['main'] ?? null;
+            if ($main !== null && self::normalizeRole($member['role_label']) === $needle) {
+                return $main->fullName();
+            }
+        }
+
+        foreach ($this->serviceProviders as $provider) {
+            $candidates = array_filter([
+                $provider->name,
+                $provider->type?->label(),
+                $provider->contact_name,
+            ]);
+            foreach ($candidates as $candidate) {
+                if (self::normalizeRole($candidate) === $needle) {
+                    return $provider->contact_name
+                        ? $provider->name.' · '.$provider->contact_name
+                        : $provider->name;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Normalisiert eine Rollen-/Verantwortlich-Bezeichnung auf einen Stamm:
+     * Kleinbuchstaben, Gender-Suffix nach „/" entfernt, nur Buchstaben/Ziffern,
+     * gängige Endungen (er/in/e/r) abgeschnitten – damit „Notfallbeauftragter"
+     * und „Notfallbeauftragte/r" zusammenfinden.
+     */
+    private static function normalizeRole(?string $value): string
+    {
+        if ($value === null) {
+            return '';
+        }
+
+        $s = mb_strtolower(trim($value));
+        $s = (string) preg_replace('#/.*$#u', '', $s);
+        $s = (string) preg_replace('/[^a-z0-9äöüß]/u', '', $s);
+
+        foreach (['erin', 'er', 'in', 'e', 'r'] as $suffix) {
+            if (str_ends_with($s, $suffix) && mb_strlen($s) - mb_strlen($suffix) >= 5) {
+                return mb_substr($s, 0, mb_strlen($s) - mb_strlen($suffix));
+            }
+        }
+
+        return $s;
     }
 
     /**
@@ -895,8 +975,16 @@ new #[Title('Krisen-Cockpit')] class extends Component {
                                                 {{ $step->title }}
                                             </div>
                                             @if ($step->responsible)
-                                                <div class="shrink-0 text-xs text-zinc-500 dark:text-zinc-400">
-                                                    {{ $step->responsible }}
+                                                @php $responsibleName = $this->resolveResponsible($step->responsible); @endphp
+                                                <div class="shrink-0 text-right">
+                                                    <div class="text-xs text-zinc-500 dark:text-zinc-400">
+                                                        {{ $step->responsible }}
+                                                    </div>
+                                                    @if ($responsibleName)
+                                                        <div class="text-xs font-medium text-zinc-700 dark:text-zinc-200">
+                                                            {{ $responsibleName }}
+                                                        </div>
+                                                    @endif
                                                 </div>
                                             @endif
                                         </div>
