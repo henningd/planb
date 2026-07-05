@@ -4,6 +4,7 @@ use App\Enums\TeamRole;
 use App\Models\Team;
 use App\Models\TeamInvitation;
 use App\Models\User;
+use App\Notifications\Teams\TeamInvitation as TeamInvitationNotification;
 use Illuminate\Support\Facades\Notification;
 use Livewire\Livewire;
 
@@ -45,6 +46,52 @@ test('team invitations cannot be created by members', function () {
         ->set('inviteRole', TeamRole::Member->value)
         ->call('createInvitation')
         ->assertForbidden();
+});
+
+test('a pending invitation can be resent by the owner', function () {
+    Notification::fake();
+
+    $owner = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($owner, ['role' => TeamRole::Owner->value]);
+
+    $invitation = TeamInvitation::factory()->create([
+        'team_id' => $team->id,
+        'email' => 'invited@example.com',
+        'invited_by' => $owner->id,
+    ]);
+
+    $this->actingAs($owner);
+
+    Livewire::test('pages::teams.edit', ['team' => $team])
+        ->call('resendInvitation', $invitation->code)
+        ->assertHasNoErrors();
+
+    Notification::assertSentOnDemand(TeamInvitationNotification::class);
+});
+
+test('a pending invitation cannot be resent by a member', function () {
+    Notification::fake();
+
+    $owner = User::factory()->create();
+    $member = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($owner, ['role' => TeamRole::Owner->value]);
+    $team->members()->attach($member, ['role' => TeamRole::Member->value]);
+
+    $invitation = TeamInvitation::factory()->create([
+        'team_id' => $team->id,
+        'email' => 'invited@example.com',
+        'invited_by' => $owner->id,
+    ]);
+
+    $this->actingAs($member);
+
+    Livewire::test('pages::teams.edit', ['team' => $team])
+        ->call('resendInvitation', $invitation->code)
+        ->assertForbidden();
+
+    Notification::assertNothingSent();
 });
 
 test('team invitations can be cancelled by owner', function () {

@@ -2,6 +2,7 @@
 
 use App\Enums\TeamRole;
 use App\Models\Team;
+use App\Notifications\Teams\TeamInvitation as TeamInvitationNotification;
 use App\Rules\TeamName;
 use App\Support\Audit\AccountAudit;
 use App\Support\TeamPermissions;
@@ -9,6 +10,7 @@ use Flux\Flux;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Computed;
@@ -92,6 +94,29 @@ new class extends Component
         $this->populateTeamData();
 
         Flux::toast(variant: 'success', text: __('Member role updated.'));
+    }
+
+    public function resendInvitation(string $code): void
+    {
+        Gate::authorize('inviteMember', $this->teamModel);
+
+        $invitation = $this->teamModel->invitations()
+            ->whereNull('accepted_at')
+            ->where('code', $code)
+            ->firstOrFail();
+
+        Notification::route('mail', $invitation->email)
+            ->notify(new TeamInvitationNotification($invitation));
+
+        AccountAudit::record(
+            action: 'invitation.resent',
+            entityType: 'TeamInvitation',
+            entityId: $invitation->id,
+            entityLabel: $invitation->email,
+            companyId: $this->teamModel->company?->id,
+        );
+
+        Flux::toast(variant: 'success', text: __('Invitation resent.'));
     }
 
     public function reactivateMember(int $userId): void
@@ -422,18 +447,34 @@ new class extends Component
                                     </div>
                                 </div>
 
-                                @if ($this->permissions->canCancelInvitation)
-                                    <flux:modal.trigger name="cancel-invitation-{{ $invitation['code'] }}">
-                                        <flux:tooltip :content="__('Cancel invitation')">
+                                <div class="flex items-center gap-1">
+                                    @if ($this->permissions->canCreateInvitation)
+                                        <flux:tooltip :content="__('Resend invitation')">
                                             <flux:button
                                                 variant="ghost"
                                                 size="sm"
-                                                icon="x-mark"
-                                                data-test="invitation-cancel-button"
+                                                icon="paper-airplane"
+                                                wire:click="resendInvitation('{{ $invitation['code'] }}')"
+                                                wire:loading.attr="disabled"
+                                                wire:target="resendInvitation('{{ $invitation['code'] }}')"
+                                                data-test="invitation-resend-button"
                                             />
                                         </flux:tooltip>
-                                    </flux:modal.trigger>
-                                @endif
+                                    @endif
+
+                                    @if ($this->permissions->canCancelInvitation)
+                                        <flux:modal.trigger name="cancel-invitation-{{ $invitation['code'] }}">
+                                            <flux:tooltip :content="__('Cancel invitation')">
+                                                <flux:button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    icon="x-mark"
+                                                    data-test="invitation-cancel-button"
+                                                />
+                                            </flux:tooltip>
+                                        </flux:modal.trigger>
+                                    @endif
+                                </div>
                             </div>
                             @if ($this->permissions->canCancelInvitation)
                                 <livewire:pages::teams.cancel-invitation-modal
