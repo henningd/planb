@@ -2,7 +2,7 @@
 
 Eine **Handbuch-Version** ist ein **eingefrorener Schnappschuss** aller Stammdaten zu einem bestimmten Zeitpunkt. Wenn Sie heute eine Version 1.0 anlegen und später Mitarbeiter ändern, bleibt die 1.0 unverändert — sie ist und bleibt der Stand vom Anlage-Tag.
 
-Erreichbar über die Sidebar **„Team & Freigaben → Versionshistorie"** (Admin only).
+Erreichbar über den Sidebar-Menüpunkt **„Notfallhandbuch"** (Admin only) — prominent im Platform-Bereich der Navigation, denn das Notfallhandbuch ist das zentrale Ergebnis der gepflegten Stammdaten.
 
 ## Eine Version anlegen
 

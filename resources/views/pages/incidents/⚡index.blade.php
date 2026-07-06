@@ -60,7 +60,7 @@ new #[Title('Meldepflichten')] class extends Component {
         $report = DB::transaction(function () use ($validated) {
             $report = IncidentReport::create($validated);
 
-            $obligations = ReportingObligation::applicableFor($validated['type']);
+            $obligations = ReportingObligation::applicableFor($validated['type'], Auth::user()->currentCompany()?->industry);
             foreach ($obligations as $obligation) {
                 $report->obligations()->create(['obligation' => $obligation->value]);
             }

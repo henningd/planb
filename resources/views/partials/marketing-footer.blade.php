@@ -51,6 +51,7 @@
                 <ul class="mt-4 space-y-3 text-sm text-slate-600">
                     <li><a href="{{ route('home') }}#features" class="hover:text-slate-900 transition">Funktionen</a></li>
                     <li><a href="{{ route('pricing.show') }}" class="hover:text-slate-900 transition">Preise</a></li>
+                    <li><a href="{{ route('kommunen.show') }}" class="hover:text-slate-900 transition">Für Kommunen</a></li>
                     <li><a href="{{ route('home') }}#zielgruppen" class="hover:text-slate-900 transition">Zielgruppen</a></li>
                     <li><a href="{{ route('home') }}#ablauf" class="hover:text-slate-900 transition">So funktioniert es</a></li>
                     <li><a href="{{ route('home') }}#kontakt" class="hover:text-slate-900 transition">Demo anfragen</a></li>

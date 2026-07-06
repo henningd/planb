@@ -13,7 +13,7 @@ use App\Enums\SystemCategory;
 class IndustryTemplates
 {
     /**
-     * @var array<string, array{label: string, hint: string, systems: array<int, array{name: string, description: string, category: string, priority: ?string, rto_minutes: ?int, rpo_minutes: ?int}>}>
+     * @var array<string, array{label: string, hint: string, systems: array<int, array{name: string, description: string, category: string, priority: ?string, rto_minutes: ?int, rpo_minutes: ?int}>, scenarios?: array<int, array{name: string, description: string, trigger: string, steps: array<int, array{title: string, description: string, responsible: string}>}>}>
      */
     public const TEMPLATES = [
         Industry::Handwerk->value => [
@@ -136,6 +136,85 @@ class IndustryTemplates
                 ['name' => 'Website / CMS', 'description' => 'Amtliche Bekanntmachungen, Informationen.', 'category' => 'unterstuetzend', 'priority' => 'Normal', 'rto_minutes' => 1440, 'rpo_minutes' => 4320],
                 ['name' => 'Zutritts- / Alarmanlage', 'description' => 'Zugangskontrolle und Objektsicherung der Liegenschaften.', 'category' => 'unterstuetzend', 'priority' => 'Normal', 'rto_minutes' => 1440, 'rpo_minutes' => 1440],
             ],
+            'scenarios' => [
+                [
+                    'name' => 'Ransomware / Cyberangriff auf die Verwaltung',
+                    'description' => 'Verschlüsselte Rechner, gesperrte Fachverfahren oder eine Lösegeldforderung — der Verwaltungsbetrieb ist akut bedroht.',
+                    'trigger' => 'Lösegeldforderung auf dem Bildschirm, Fachverfahren oder E-Akte plötzlich nicht mehr erreichbar, Warnung aus dem Monitoring oder vom Rechenzentrum.',
+                    'steps' => [
+                        ['title' => 'Betroffene Rechner vom Netz trennen', 'description' => 'Netzwerkkabel ziehen bzw. WLAN deaktivieren, betroffene Segmente isolieren. Geräte NICHT ausschalten — Beweise und Spuren erhalten.', 'responsible' => 'IT'],
+                        ['title' => 'Leitung informieren und Krisenstab einberufen', 'description' => 'Kurze Lagemeldung an Bürgermeister/in bzw. Amtsleitung: Zeitpunkt, betroffene Systeme, was bereits getan wurde. Krisenstab zusammenrufen.', 'responsible' => 'IT'],
+                        ['title' => 'IT-Dienstleister / kommunales Rechenzentrum alarmieren', 'description' => 'Notfall-Hotline anrufen, Vorfall schildern, gemeinsame Sofortmaßnahmen abstimmen (Zugänge sperren, Backups prüfen).', 'responsible' => 'IT'],
+                        ['title' => 'Backups sichern und Umfang feststellen', 'description' => 'Backup-Systeme sofort vom Netz nehmen bzw. schreibgeschützt stellen. Klären: Welche Fachverfahren, Postfächer und Ablagen sind betroffen?', 'responsible' => 'IT'],
+                        ['title' => 'Meldewege starten: Landes-CERT und Datenschutz', 'description' => 'Vorfall an das CERT des Bundeslandes melden (empfohlen: unverzüglich). Datenschutzbeauftragte/n einbinden — bei personenbezogenen Daten läuft die 72-Stunden-Frist (DSGVO). Anzeige bei der Polizei (ZAC) prüfen.', 'responsible' => 'Leitung'],
+                        ['title' => 'Kommunalaufsicht und Versicherung informieren', 'description' => 'Rechts-/Kommunalaufsicht zeitnah über Lage und Maßnahmen informieren. Cyberversicherung mit Policennummer und Zeitstempel benachrichtigen.', 'responsible' => 'Leitung'],
+                        ['title' => 'Beschäftigte informieren', 'description' => 'Klare Verhaltensregeln: keine Anmeldungen an betroffenen Systemen, keine Auskünfte nach außen, Sprachregelung beachten. Notfalls per Telefonkette oder Aushang, falls E-Mail ausgefallen ist.', 'responsible' => 'Kommunikation'],
+                        ['title' => 'Bürgerinnen und Bürger informieren', 'description' => 'Hinweis auf Website und am Eingang: eingeschränkter Service, alternative Erreichbarkeit, Terminverschiebungen. Presseanfragen nur über eine abgestimmte Sprachregelung beantworten.', 'responsible' => 'Kommunikation'],
+                        ['title' => 'Alle Schritte dokumentieren', 'description' => 'Zeitpunkte, Entscheidungen, Meldungen und Ansprechpartner fortlaufend protokollieren — Grundlage für Meldepflichten, Versicherung und die spätere Auswertung.', 'responsible' => 'Leitung'],
+                    ],
+                ],
+                [
+                    'name' => 'Stromausfall im Rathaus',
+                    'description' => 'Das Verwaltungsgebäude ist ohne Strom — Arbeitsplätze, Server, Telefonie und Publikumsverkehr sind betroffen.',
+                    'trigger' => 'Beleuchtung und Rechner fallen aus, USV meldet Batteriebetrieb, Störungsmeldung des Netzbetreibers.',
+                    'steps' => [
+                        ['title' => 'Umfang und voraussichtliche Dauer klären', 'description' => 'Nur das Gebäude oder der ganze Ortsteil? Netzbetreiber bzw. Stadtwerke kontaktieren, Störungskarte prüfen.', 'responsible' => 'IT'],
+                        ['title' => 'USV-Laufzeit prüfen und Server geordnet herunterfahren', 'description' => 'Restlaufzeit der USV feststellen. Reicht sie nicht: Server und Fachverfahren kontrolliert herunterfahren, um Datenverlust zu vermeiden.', 'responsible' => 'IT'],
+                        ['title' => 'Leitung informieren und Lagebild erstellen', 'description' => 'Kurzmeldung an die Verwaltungsleitung: Umfang, erwartete Dauer, betroffene Bereiche. Entscheidung über die nächsten Schritte vorbereiten.', 'responsible' => 'Leitung'],
+                        ['title' => 'Gebäude- und Personensicherheit herstellen', 'description' => 'Aufzüge kontrollieren (eingeschlossene Personen?), Fluchtwege und Notbeleuchtung prüfen, elektrische Türen und Schranken in Handbetrieb nehmen.', 'responsible' => 'Facility Management'],
+                        ['title' => 'Über Publikumsverkehr entscheiden', 'description' => 'Bürgerbüro offen lassen (Notbetrieb mit Papier) oder schließen? Termine des Tages sichten und priorisieren.', 'responsible' => 'Leitung'],
+                        ['title' => 'Bürgerinnen und Bürger informieren', 'description' => 'Aushang am Eingang, Hinweis auf der Website (über Mobilfunk pflegbar), Ansage/Umleitung der Telefonzentrale, ggf. Social-Media-Kanäle.', 'responsible' => 'Kommunikation'],
+                        ['title' => 'Kritische Außenstellen prüfen', 'description' => 'Sind angeschlossene Einrichtungen betroffen (z. B. Kitas, Bauhof, Feuerwehrhaus)? Rückmeldungen einsammeln und Unterstützung koordinieren.', 'responsible' => 'Leitung'],
+                        ['title' => 'Wiederanlauf nach Stromrückkehr', 'description' => 'Systeme in der definierten Reihenfolge (Recovery-Zeitplan) hochfahren, Funktionstest der Fachverfahren, Vorfall und Ausfallzeit dokumentieren.', 'responsible' => 'IT'],
+                    ],
+                ],
+                [
+                    'name' => 'Ausfall Fachverfahren / Notbetrieb Bürgerbüro',
+                    'description' => 'Ein zentrales Fachverfahren (z. B. Einwohnerwesen, Kfz-Zulassung) fällt aus — das Bürgerbüro muss in den Notbetrieb.',
+                    'trigger' => 'Fachverfahren startet nicht oder meldet Fehler, Störungsmeldung des Verfahrensherstellers oder des Rechenzentrums, Mitarbeitende können Anliegen nicht bearbeiten.',
+                    'steps' => [
+                        ['title' => 'Störung eingrenzen', 'description' => 'Welches Verfahren ist betroffen, seit wann, welche Fehlermeldung? Liegt es am Verfahren selbst, am Netz oder am Rechenzentrum?', 'responsible' => 'IT'],
+                        ['title' => 'Hersteller bzw. Rechenzentrum kontaktieren', 'description' => 'Störungsticket mit Priorität eröffnen, Fehlerbild und Zeitstempel übermitteln, Rückrufzeit vereinbaren.', 'responsible' => 'IT'],
+                        ['title' => 'Leitung und betroffene Bereiche informieren', 'description' => 'Bürgerbüro und Fachämter wissen lassen: Was geht nicht, was geht weiter, voraussichtliche Dauer (sofern bekannt).', 'responsible' => 'Leitung'],
+                        ['title' => 'Notbetrieb im Bürgerbüro starten', 'description' => 'Auf Papierformulare und Ersatzprozesse umstellen, nicht dringende Anliegen auf neue Termine verschieben, dringende Fälle priorisieren.', 'responsible' => 'Leitung'],
+                        ['title' => 'Wartende und Online-Kanäle informieren', 'description' => 'Hinweis im Wartebereich und auf der Website: welche Dienstleistungen aktuell nicht verfügbar sind und welche Alternativen es gibt.', 'responsible' => 'Kommunikation'],
+                        ['title' => 'Fristenrelevante Vorgänge sichern', 'description' => 'Anliegen mit gesetzlichen Fristen (z. B. Meldefristen, Anträge) handschriftlich bzw. formulargestützt aufnehmen und mit Eingangsdatum dokumentieren.', 'responsible' => 'Leitung'],
+                        ['title' => 'Nacherfassung vorbereiten', 'description' => 'Gesammelte Papiervorgänge strukturiert ablegen, damit sie nach Rückkehr des Verfahrens zügig und vollständig nachgetragen werden können.', 'responsible' => 'IT'],
+                        ['title' => 'Ausfall dokumentieren und auswerten', 'description' => 'Ausfallzeit, Ursache und Auswirkungen festhalten. Bei längerem oder wiederholtem Ausfall: Gespräch mit dem Hersteller bzw. Rechenzentrum über Konsequenzen.', 'responsible' => 'Leitung'],
+                    ],
+                ],
+                [
+                    'name' => 'Hochwasser / Unwetter am Verwaltungsstandort',
+                    'description' => 'Starkregen, Hochwasser oder Sturm bedrohen das Verwaltungsgebäude — Menschen, Technik und Akten müssen geschützt werden.',
+                    'trigger' => 'Amtliche Unwetterwarnung, steigende Pegel, Wassereintritt im Gebäude, Sturmschäden am Standort.',
+                    'steps' => [
+                        ['title' => 'Personen in Sicherheit bringen', 'description' => 'Gefährdete Bereiche (Keller, Erdgeschoss) räumen, Beschäftigte und Besucher warnen. Personenschutz geht vor Sachschutz.', 'responsible' => 'Leitung'],
+                        ['title' => 'Lage mit Feuerwehr und Katastrophenschutz abstimmen', 'description' => 'Kontakt zur Einsatzleitung halten, Prognose einholen, eigene Maßnahmen mit den Einsatzkräften koordinieren.', 'responsible' => 'Leitung'],
+                        ['title' => 'IT-Technik schützen', 'description' => 'Server und Netzwerktechnik aus gefährdeten Räumen entfernen oder höher lagern, Strom in bedrohten Bereichen gezielt abschalten, laufende Systeme geordnet herunterfahren.', 'responsible' => 'IT'],
+                        ['title' => 'Akten und Wertgegenstände sichern', 'description' => 'Papierakten, Siegel, Kassenbestände und wichtige Unterlagen aus Keller und Erdgeschoss in obere Stockwerke bringen.', 'responsible' => 'Facility Management'],
+                        ['title' => 'Gebäude sichern', 'description' => 'Fenster und Türen schließen, mobile Hochwassersperren bzw. Sandsäcke setzen, Außenanlagen sichern (lose Gegenstände, Baustellen).', 'responsible' => 'Facility Management'],
+                        ['title' => 'Ausweich-Arbeitsplätze organisieren', 'description' => 'Homeoffice ermöglichen, Ausweichstandort (z. B. anderes städtisches Gebäude) vorbereiten, Umleitung von Telefon und Post veranlassen.', 'responsible' => 'IT'],
+                        ['title' => 'Beschäftigte informieren', 'description' => 'Wer arbeitet wo, wer bleibt zu Hause, wer wird vor Ort gebraucht? Erreichbarkeiten und Ansprechpartner klar kommunizieren.', 'responsible' => 'Kommunikation'],
+                        ['title' => 'Bürgerinnen und Bürger informieren', 'description' => 'Geschlossene Dienststellen, alternative Erreichbarkeit und Notfallkontakte über Website, Presse und Aushänge bekanntgeben.', 'responsible' => 'Kommunikation'],
+                        ['title' => 'Schäden dokumentieren und Wiederanlauf planen', 'description' => 'Fotos und Schadenslisten für die Versicherung erstellen, Trocknung und Instandsetzung beauftragen, Rückkehr in den Normalbetrieb planen.', 'responsible' => 'Leitung'],
+                    ],
+                ],
+                [
+                    'name' => 'Evakuierung eines Verwaltungsgebäudes',
+                    'description' => 'Das Gebäude muss geräumt werden — etwa wegen Brandalarm, Bombendrohung, Gasgeruch oder eines Gefahrstoffaustritts.',
+                    'trigger' => 'Brandmeldeanlage löst aus, Anordnung der Einsatzkräfte, Drohung oder wahrnehmbare Gefahr (Rauch, Gasgeruch).',
+                    'steps' => [
+                        ['title' => 'Alarm auslösen und Räumung starten', 'description' => 'Hausalarm betätigen, Räumung über die festgelegten Fluchtwege einleiten, Notruf 112 absetzen (falls noch nicht geschehen).', 'responsible' => 'Leitung'],
+                        ['title' => 'Sammelplatz ansteuern und Vollzähligkeit prüfen', 'description' => 'Etagen-/Räumungsverantwortliche melden ihre Bereiche als geräumt. Anwesenheit am Sammelplatz mit Besucher- und Anwesenheitslisten abgleichen, Vermisste sofort den Einsatzkräften melden.', 'responsible' => 'Leitung'],
+                        ['title' => 'Besucher und mobilitätseingeschränkte Personen unterstützen', 'description' => 'Publikum aus Wartebereichen mitnehmen, Personen mit Einschränkungen über die vorgesehenen Rettungswege begleiten bzw. den Einsatzkräften melden.', 'responsible' => 'Facility Management'],
+                        ['title' => 'Einsatzkräfte einweisen', 'description' => 'Feuerwehr am Zugang empfangen: Lagepläne, Schlüssel, Gefahrstoffliste und Informationen zu vermissten Personen übergeben.', 'responsible' => 'Facility Management'],
+                        ['title' => 'Telefon- und Erreichbarkeitsumleitung aktivieren', 'description' => 'Zentrale Rufnummern auf Mobiltelefone oder einen Ausweichstandort umleiten, damit die Verwaltung erreichbar bleibt.', 'responsible' => 'IT'],
+                        ['title' => 'Beschäftigte über das weitere Vorgehen informieren', 'description' => 'Am Sammelplatz und über Messenger/Telefonkette: Wartezeit, Heimweg oder Ausweichstandort — klare Anweisungen geben.', 'responsible' => 'Kommunikation'],
+                        ['title' => 'Bürgerinnen und Bürger informieren', 'description' => 'Schließung und Terminausfälle über Website, Telefonansage und Aushang kommunizieren, Ausweichtermine anbieten.', 'responsible' => 'Kommunikation'],
+                        ['title' => 'Rückkehr erst nach Freigabe und Dokumentation', 'description' => 'Gebäude erst nach Freigabe durch die Einsatzkräfte wieder betreten. Ablauf, Zeiten und Erkenntnisse dokumentieren und in die Nachbereitung (Lessons Learned) übernehmen.', 'responsible' => 'Leitung'],
+                    ],
+                ],
+            ],
         ],
 
         Industry::Sonstiges->value => [
@@ -163,7 +242,7 @@ class IndustryTemplates
     ];
 
     /**
-     * @return array<string, array{label: string, hint: string, count: int}>
+     * @return array<string, array{label: string, hint: string, count: int, scenario_count: int}>
      */
     public static function catalog(): array
     {
@@ -173,6 +252,7 @@ class IndustryTemplates
                 'label' => $tpl['label'],
                 'hint' => $tpl['hint'],
                 'count' => count($tpl['systems']),
+                'scenario_count' => count($tpl['scenarios'] ?? []),
             ];
         }
 
@@ -185,6 +265,18 @@ class IndustryTemplates
     public static function systemsFor(string $industryValue): ?array
     {
         return self::TEMPLATES[$industryValue]['systems'] ?? null;
+    }
+
+    /**
+     * Szenario-Vorlagen des Templates (z. B. kommunale Notfall-Playbooks
+     * beim Verwaltungs-Template). Leeres Array, wenn das Template keine
+     * eigenen Szenarien mitbringt.
+     *
+     * @return array<int, array{name: string, description: string, trigger: string, steps: array<int, array{title: string, description: string, responsible: string}>}>
+     */
+    public static function scenariosFor(string $industryValue): array
+    {
+        return self::TEMPLATES[$industryValue]['scenarios'] ?? [];
     }
 
     public static function has(string $industryValue): bool

@@ -43,9 +43,10 @@ class ManualCatalog
 
             // Ernstfall
             ['category' => 'Ernstfall', 'slug' => 'krisen-cockpit', 'title' => 'Krisen-Cockpit', 'summary' => 'Das reduzierte Live-Cockpit für den Ernstfall.'],
-            ['category' => 'Ernstfall', 'slug' => 'szenarien', 'title' => 'Szenarien', 'summary' => 'Vorgefertigte Playbooks für typische Notlagen.'],
+            ['category' => 'Ernstfall', 'slug' => 'notfall-app', 'title' => 'Notfall-App fürs Smartphone', 'summary' => 'Handbuch, Kontakte und Checklisten offline auf dem Handy — mit Alarm-Quittierung, Übungsmodus und App-Sperre.'],
+            ['category' => 'Ernstfall', 'slug' => 'szenarien', 'title' => 'Szenarien', 'summary' => 'Vorgefertigte Playbooks für typische Notlagen — inklusive kommunaler Vorlagen für Verwaltungen.'],
             ['category' => 'Ernstfall', 'slug' => 'wiederanlauf', 'title' => 'Wiederanlauf', 'summary' => 'Reihenfolge der System-Wiederherstellung nach einem Ausfall.'],
-            ['category' => 'Ernstfall', 'slug' => 'meldepflichten', 'title' => 'Vorfälle und Meldepflichten', 'summary' => 'Vorfall melden, Fristen einhalten (DSGVO 72h, NIS2, Versicherung).'],
+            ['category' => 'Ernstfall', 'slug' => 'meldepflichten', 'title' => 'Vorfälle und Meldepflichten', 'summary' => 'Vorfall melden, Fristen einhalten (DSGVO 72h, NIS2, Versicherung, kommunale Meldewege).'],
             ['category' => 'Ernstfall', 'slug' => 'protokolle-uebungen', 'title' => 'Protokolle und Übungen', 'summary' => 'Szenario-Läufe als Tabletop-Übung oder echte Lage starten — der War-Room.'],
             ['category' => 'Ernstfall', 'slug' => 'lessons-learned', 'title' => 'Lessons Learned', 'summary' => 'Strukturierte After-Action-Auswertung mit Maßnahmen.'],
             ['category' => 'Ernstfall', 'slug' => 'risiken', 'title' => 'Risiko-Register', 'summary' => 'Risiken bewerten, behandeln, Restrisiko nachweisen.'],
@@ -53,7 +54,7 @@ class ManualCatalog
             ['category' => 'Ernstfall', 'slug' => 'testplan', 'title' => 'Testplan', 'summary' => 'Geplante Notfall-Tests mit Verantwortlichen und Fälligkeiten.'],
 
             // Notfallhandbuch & Versionen
-            ['category' => 'Notfallhandbuch', 'slug' => 'handbuch-erstellen', 'title' => 'Handbuch-Versionen', 'summary' => 'Versionen erstellen, freigeben, PDF erzeugen, Lesebestätigungen einholen.'],
+            ['category' => 'Notfallhandbuch', 'slug' => 'handbuch-erstellen', 'title' => 'Handbuch-Versionen', 'summary' => 'Versionen erstellen, freigeben, PDF erzeugen, Lesebestätigungen einholen — erreichbar über den Menüpunkt „Notfallhandbuch".'],
             ['category' => 'Notfallhandbuch', 'slug' => 'pdf-export', 'title' => 'PDF-Export', 'summary' => 'Revisionssichere PDFs mit SHA-256-Hash, Wappen und Footer.'],
             ['category' => 'Notfallhandbuch', 'slug' => 'qr-aushang', 'title' => 'QR-Aushang am Server', 'summary' => 'Druckbarer Sticker mit QR-Code, der zur System-Detailseite führt.'],
 
@@ -71,7 +72,7 @@ class ManualCatalog
             // Einstellungen
             ['category' => 'Einstellungen', 'slug' => 'system-settings', 'title' => 'System-Einstellungen', 'summary' => 'Mandanten-Defaults, Backup, Auto-PDF, Aufbewahrung.'],
             ['category' => 'Einstellungen', 'slug' => 'branding', 'title' => 'Branding', 'summary' => 'Eigenes Logo, Anzeigename, Primärfarbe pro Mandant.'],
-            ['category' => 'Einstellungen', 'slug' => 'api-webhooks', 'title' => 'API & Webhooks', 'summary' => 'Tokens, Zabbix, Prometheus-Anbindung, automatische Incidents.'],
+            ['category' => 'Einstellungen', 'slug' => 'api-webhooks', 'title' => 'API & Webhooks', 'summary' => 'Tokens, Zabbix, Prometheus-Anbindung, automatische Incidents und Alarmierung.'],
             ['category' => 'Einstellungen', 'slug' => 'abrechnung', 'title' => 'Abrechnung', 'summary' => 'Tarife, Test-Zeitraum, Zusatzleistungen, Rechnungen, Reverse-Charge.'],
 
             // Anhang

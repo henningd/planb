@@ -27,6 +27,15 @@ return [
             'monthly_amount' => 38900,
             'yearly_amount' => 389000,
         ],
+        // Kommunal: Advanced-Umfang + Notfall-App für Städte/Gemeinden/Eigenbetriebe.
+        // Angebot & Rechnung (vergabefreundlich), kein self-service Checkout.
+        'kommunal' => [
+            'name' => 'Kommunal',
+            'monthly_price_id' => null,
+            'yearly_price_id' => null,
+            'monthly_amount' => null,
+            'yearly_amount' => null,
+        ],
         // Enterprise: Vertrieb, kein self-service Checkout.
         'enterprise' => [
             'name' => 'Enterprise',

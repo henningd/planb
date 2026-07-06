@@ -1,8 +1,10 @@
 <?php
 
+use App\Enums\Industry;
 use App\Models\Company;
 use App\Models\EmergencyLevel;
 use App\Models\Employee;
+use App\Models\Scenario;
 use App\Models\ServiceProvider;
 use App\Models\System;
 use App\Models\SystemPriority;
@@ -82,6 +84,50 @@ test('re-running the template skips duplicates', function () {
         ->count();
 
     expect($count)->toBe(1);
+});
+
+test('the public-sector template also creates the municipal scenarios with steps', function () {
+    $user = User::factory()->create();
+    $company = Company::factory()->for($user->currentTeam)->create(['industry' => Industry::OeffentlicheEinrichtung]);
+
+    Livewire\Livewire::actingAs($user->fresh())
+        ->test('pages::systems.index')
+        ->set('templateKey', 'oeffentliche_einrichtung')
+        ->call('loadTemplate')
+        ->call('loadTemplate') // zweiter Lauf darf keine Duplikate anlegen
+        ->assertHasNoErrors();
+
+    $scenarios = Scenario::withoutGlobalScope(CurrentCompanyScope::class)
+        ->where('company_id', $company->id)
+        ->with('steps')
+        ->get();
+
+    expect($scenarios)->toHaveCount(5)
+        ->and($scenarios->pluck('name'))->toContain('Stromausfall im Rathaus')
+        ->and($scenarios->pluck('name'))->toContain('Evakuierung eines Verwaltungsgebäudes');
+
+    $ransomware = $scenarios->firstWhere('name', 'Ransomware / Cyberangriff auf die Verwaltung');
+    expect($ransomware)->not->toBeNull()
+        ->and($ransomware->steps->count())->toBeGreaterThanOrEqual(6)
+        ->and($ransomware->steps->pluck('responsible'))->toContain('Leitung')
+        ->and($ransomware->steps->first()->sort)->toBe(1);
+});
+
+test('templates without scenarios create none', function () {
+    $user = User::factory()->create();
+    $company = Company::factory()->for($user->currentTeam)->create();
+
+    Livewire\Livewire::actingAs($user->fresh())
+        ->test('pages::systems.index')
+        ->set('templateKey', 'handwerk')
+        ->call('loadTemplate')
+        ->assertHasNoErrors();
+
+    $count = Scenario::withoutGlobalScope(CurrentCompanyScope::class)
+        ->where('company_id', $company->id)
+        ->count();
+
+    expect($count)->toBe(0);
 });
 
 test('json import creates systems with validated data', function () {

@@ -27,6 +27,15 @@ Sie sparen damit die ersten 80 % der Tipparbeit und können sich aufs Anpassen k
 | IT-Dienstleister (MSP) | Ticket-System, RMM, Kunden-Mandanten |
 | Software-Unternehmen (SaaS) | Quellcode, CI/CD, Cloud-Hosting |
 
+## Vorlage für Kommunen und Verwaltungen
+
+Für die Branche **„Öffentliche Einrichtung"** (Kommunen, Behörden, Schulen, Eigenbetriebe) gibt es zusätzlich eine schlanke Branchen-Vorlage direkt auf der **Systeme-Seite** (Knopf **„Vorlage laden"**). Sie bringt mit:
+
+- typische **Verwaltungs-Systeme** — Fachverfahren, DMS/E-Akte, Haushalts-/Kassensystem, Bürgerportal (OZG), Ratsinformationssystem — mit sinnvollen Prioritäten und RTO/RPO-Werten;
+- **fünf kommunale Notfall-Szenarien** mit fertigen Schritt-für-Schritt-Checklisten: Ransomware-Angriff auf die Verwaltung, Stromausfall im Rathaus, Ausfall eines Fachverfahrens mit Notbetrieb im Bürgerbüro, Hochwasser/Unwetter am Standort und Evakuierung eines Verwaltungsgebäudes (Details im Kapitel „Szenarien").
+
+Bereits vorhandene Systeme und Szenarien mit gleichem Namen werden übersprungen — die Vorlage lässt sich also gefahrlos auch nachträglich laden.
+
 ## So wenden Sie ein Template an
 
 1. Im **Onboarding-Wizard** Schritt 2 erscheint die Liste der verfügbaren Templates.

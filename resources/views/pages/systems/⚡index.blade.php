@@ -120,7 +120,7 @@ new #[Title('Systeme')] class extends Component {
     }
 
     /**
-     * @return array<string, array{label: string, hint: string, count: int}>
+     * @return array<string, array{label: string, hint: string, count: int, scenario_count: int}>
      */
     public function templateCatalog(): array
     {
@@ -223,13 +223,16 @@ new #[Title('Systeme')] class extends Component {
 
         $company = Auth::user()->currentCompany();
         $systems = IndustryTemplates::systemsFor($this->templateKey) ?? [];
+        $scenarios = IndustryTemplates::scenariosFor($this->templateKey);
         $priorityIdByName = $company->systemPriorities()->pluck('id', 'name');
         $existingNames = System::pluck('name')->map(fn ($n) => mb_strtolower(trim($n)))->all();
+        $existingScenarioNames = $company->scenarios()->pluck('name')->map(fn ($n) => mb_strtolower(trim($n)))->all();
 
         $imported = 0;
         $skipped = 0;
+        $importedScenarios = 0;
 
-        DB::transaction(function () use ($systems, $priorityIdByName, $existingNames, &$imported, &$skipped) {
+        DB::transaction(function () use ($company, $systems, $scenarios, $priorityIdByName, $existingNames, $existingScenarioNames, &$imported, &$skipped, &$importedScenarios) {
             foreach ($systems as $entry) {
                 if (in_array(mb_strtolower(trim($entry['name'])), $existingNames, true)) {
                     $skipped++;
@@ -248,6 +251,30 @@ new #[Title('Systeme')] class extends Component {
 
                 $imported++;
             }
+
+            // Szenario-Vorlagen des Templates (z. B. kommunale Playbooks)
+            // anlegen — gleiches Muster wie beim Laden der Standard-Vorlagen
+            // auf der Szenarien-Seite, Duplikate per Name übersprungen.
+            foreach ($scenarios as $tplScenario) {
+                if (in_array(mb_strtolower(trim($tplScenario['name'])), $existingScenarioNames, true)) {
+                    continue;
+                }
+
+                $scenario = $company->scenarios()->create([
+                    'name' => $tplScenario['name'],
+                    'description' => $tplScenario['description'],
+                    'trigger' => $tplScenario['trigger'],
+                ]);
+
+                foreach ($tplScenario['steps'] as $stepIndex => $step) {
+                    $scenario->steps()->create([
+                        ...$step,
+                        'sort' => $stepIndex + 1,
+                    ]);
+                }
+
+                $importedScenarios++;
+            }
         });
 
         unset($this->systemsByCategory);
@@ -256,6 +283,9 @@ new #[Title('Systeme')] class extends Component {
         $message = __(':count Systeme aus Vorlage geladen.', ['count' => $imported]);
         if ($skipped > 0) {
             $message .= ' '.__(':count bereits vorhandene übersprungen.', ['count' => $skipped]);
+        }
+        if ($importedScenarios > 0) {
+            $message .= ' '.__(':count Notfall-Szenarien angelegt.', ['count' => $importedScenarios]);
         }
 
         Flux::toast(variant: 'success', text: $message);
@@ -615,7 +645,7 @@ new #[Title('Systeme')] class extends Component {
                 <flux:select wire:model.live="templateKey" required>
                     @foreach ($this->templateCatalog() as $key => $tpl)
                         <flux:select.option value="{{ $key }}">
-                            {{ $tpl['label'] }} ({{ $tpl['count'] }} {{ __('Systeme') }})
+                            {{ $tpl['label'] }} ({{ $tpl['count'] }} {{ __('Systeme') }}@if (($tpl['scenario_count'] ?? 0) > 0), {{ $tpl['scenario_count'] }} {{ __('Szenarien') }}@endif)
                         </flux:select.option>
                     @endforeach
                 </flux:select>

@@ -92,6 +92,10 @@
 
     $audiences = [
         [
+            'title' => 'Kommunen & Eigenbetriebe',
+            'text'  => 'Fachverfahren, Bürgerdienste (OZG) und E-Akte im Ernstfall absichern – mit Verwaltungs-Template, Krisenstab und Notfallaushängen je Liegenschaft, vom Rathaus bis zum Bauhof.',
+        ],
+        [
             'title' => 'Kleine Unternehmen',
             'text'  => 'Pragmatische Notfallplanung, ohne eigene IT-Abteilung aufzubauen oder komplexe Frameworks einzuführen.',
         ],
@@ -173,10 +177,10 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    @php($metaDescription = $productName.' – digitales Notfallhandbuch und Krisenmanagement für kleine und mittelständische Unternehmen. Strukturiert vorbereitet auf Cyberangriff, IT-Ausfall und Krise – inkl. NIS2- und BSI-200-4-Unterstützung.')
+    @php($metaDescription = $productName.' – digitales Notfallhandbuch und Krisenmanagement für kleine und mittelständische Unternehmen und Kommunen. Strukturiert vorbereitet auf Cyberangriff, IT-Ausfall und Krise – inkl. NIS2- und BSI-200-4-Unterstützung.')
     <meta name="description" content="{{ $metaDescription }}">
 
-    <title>{{ $productName }} – Digitales Notfallhandbuch &amp; Krisenmanagement für Unternehmen</title>
+    <title>{{ $productName }} – Digitales Notfallhandbuch &amp; Krisenmanagement für Unternehmen &amp; Kommunen</title>
 
     <link rel="canonical" href="{{ route('home') }}">
 
@@ -184,14 +188,14 @@
     <meta property="og:site_name" content="{{ $productName }}">
     <meta property="og:locale" content="de_DE">
     <meta property="og:url" content="{{ route('home') }}">
-    <meta property="og:title" content="{{ $productName }} – Digitales Notfallhandbuch &amp; Krisenmanagement für Unternehmen">
+    <meta property="og:title" content="{{ $productName }} – Digitales Notfallhandbuch &amp; Krisenmanagement für Unternehmen &amp; Kommunen">
     <meta property="og:description" content="{{ $metaDescription }}">
     <meta property="og:image" content="{{ url('/og-image.png') }}">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
     <meta name="author" content="{{ $productName }} – Arento AI GmbH">
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="{{ $productName }} – Digitales Notfallhandbuch &amp; Krisenmanagement für Unternehmen">
+    <meta name="twitter:title" content="{{ $productName }} – Digitales Notfallhandbuch &amp; Krisenmanagement für Unternehmen &amp; Kommunen">
     <meta name="twitter:description" content="{{ $metaDescription }}">
     <meta name="twitter:image" content="{{ url('/og-image.png') }}">
 
@@ -228,6 +232,7 @@
                         'Compliance-Dashboard für NIS2 und BSI 200-4',
                         'Mehr-Mandanten-Verwaltung für Berater: ein Login, Wechsel per Team-Switcher',
                         'SMS-Alarmierung und QR-Notfallaushang',
+                        'Verwaltungs-Template für Kommunen: Fachverfahren, Bürgerdienste (OZG), E-Akte',
                     ],
                     'offers' => [
                         '@type' => 'Offer',
@@ -263,7 +268,7 @@
                 <div>
                     <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 text-xs font-medium ring-1 ring-indigo-100">
                         <span class="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
-                        Digitales Notfallhandbuch für Unternehmen
+                        Digitales Notfallhandbuch für Unternehmen &amp; Kommunen
                     </span>
 
                     <h1 class="mt-6 text-4xl sm:text-5xl lg:text-6xl font-semibold tracking-tight text-slate-900 leading-[1.1]">
@@ -1070,7 +1075,7 @@
             <div class="max-w-3xl">
                 <span class="text-sm font-semibold uppercase tracking-wide text-indigo-600">Für wen</span>
                 <h2 class="mt-3 text-3xl sm:text-4xl font-semibold tracking-tight text-slate-900">
-                    Gemacht für Unternehmen, die im Ernstfall handlungsfähig bleiben wollen.
+                    Gemacht für Unternehmen und Kommunen, die im Ernstfall handlungsfähig bleiben wollen.
                 </h2>
                 <p class="mt-4 text-lg text-slate-600">
                     {{ $productName }} richtet sich an Organisationen, die keine eigene Stabsstelle für Krisenmanagement haben – aber trotzdem professionell vorbereitet sein wollen.
@@ -1091,6 +1096,47 @@
                         <p class="mt-4 text-sm text-slate-600 leading-relaxed">{{ $audience['text'] }}</p>
                     </div>
                 @endforeach
+            </div>
+        </div>
+    </section>
+
+    {{-- ============ FÜR KOMMUNEN ============ --}}
+    <section id="kommunen" class="py-20 lg:py-28 bg-slate-50 border-y border-slate-100">
+        <div class="max-w-7xl mx-auto px-6 lg:px-8">
+            <div class="relative rounded-2xl bg-slate-900 text-white ring-1 ring-slate-800 overflow-hidden">
+                <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(99,102,241,0.28),transparent_60%)]"></div>
+                <div class="relative p-8 lg:p-14 grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
+                    <div>
+                        <span class="text-sm font-semibold uppercase tracking-wide text-indigo-300">Für Kommunen</span>
+                        <h2 class="mt-3 text-3xl sm:text-4xl font-semibold tracking-tight">
+                            Wenn die Verwaltungs-IT steht, müssen Bürgerdienste weiterlaufen.
+                        </h2>
+                        <p class="mt-4 text-lg text-slate-300 leading-relaxed">
+                            Städte, Gemeinden und Eigenbetriebe sind bevorzugte Ziele für Ransomware – und haben selten
+                            einen eigenen Krisenstab. {{ $productName }} bringt die Struktur mit: vom Verwaltungs-Template
+                            über Krisenstab und Alarmierung bis zum Notfallhandbuch, das offline in der Notfall-App und
+                            am QR-Aushang verfügbar bleibt.
+                        </p>
+                        <a href="{{ route('kommunen.show') }}" class="mt-8 inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-white text-slate-900 font-medium hover:bg-slate-100 transition shadow-sm">
+                            Mehr für Kommunen
+                            <svg class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+                        </a>
+                    </div>
+                    <ul class="space-y-5">
+                        <li class="flex gap-3">
+                            <svg class="w-5 h-5 mt-0.5 shrink-0 text-indigo-300" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.704 5.29a1 1 0 010 1.42l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.42L8 12.59l7.29-7.3a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                            <p class="text-slate-200"><span class="font-semibold text-white">Fachverfahren &amp; E-Akte im Wiederanlauf:</span> Einwohnerwesen, Kfz-Zulassung, Haushalts-/Kassensystem und OZG-Dienste mit Prioritäten, Zuständigkeiten und Checklisten – auch offline greifbar.</p>
+                        </li>
+                        <li class="flex gap-3">
+                            <svg class="w-5 h-5 mt-0.5 shrink-0 text-indigo-300" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.704 5.29a1 1 0 010 1.42l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.42L8 12.59l7.29-7.3a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                            <p class="text-slate-200"><span class="font-semibold text-white">NIS2, KRITIS &amp; Nachweispflichten:</span> Compliance-Orientierung nach BSI 200-4, Meldepflichten-Workflow mit Fristen und revisionssicher versionierte Handbuch-Stände.</p>
+                        </li>
+                        <li class="flex gap-3">
+                            <svg class="w-5 h-5 mt-0.5 shrink-0 text-indigo-300" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.704 5.29a1 1 0 010 1.42l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.42L8 12.59l7.29-7.3a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                            <p class="text-slate-200"><span class="font-semibold text-white">Eine Struktur für alle Liegenschaften:</span> Rathaus, Bauhof, Stadtwerke und Schulen als Standorte mit eigenen Kontakten und QR-Notfallaushängen je Gebäude.</p>
+                        </li>
+                    </ul>
+                </div>
             </div>
         </div>
     </section>

@@ -1,7 +1,7 @@
 @php
     $contactEmail = (string) \App\Support\Settings\SystemSetting::get('platform_contact_email');
     $companyName = 'Arento AI GmbH';
-    $pricingDescription = 'Preise für '.$productName.' – Notfallhandbuch und BCM für Unternehmen. Starter, Business, Advanced, Enterprise. Monatlich oder jährlich.';
+    $pricingDescription = 'Preise für '.$productName.' – Notfallhandbuch und BCM für Unternehmen und Kommunen. Starter, Business, Advanced, Kommunal, Enterprise. Monatlich oder jährlich.';
 
     // Preis-Definitionen — eine Quelle für Karten und Vergleichstabelle.
     $monthlyPrices = [
@@ -60,6 +60,7 @@
                 'BSI 200-4 / NIS2-Orientierung',
                 'Verträge / SLA mit Notfallnummern',
                 'Tabletop-Übungen (manuell)',
+                'Notfall-App für iOS & Android – Handbuch, Kontakte & Checklisten offline',
                 'bis 3 Nutzer · bis 3 Standorte',
                 'Priorisierter E-Mail-Support · 1 h Onboarding',
             ],
@@ -122,6 +123,7 @@
             ['Systemabhängigkeiten', false, true, true, true],
             ['Sofortmittel · Notfallbetrieb', true, true, true, true],
             ['PDF-Handbuch · Versionen · Lesebestätigungen', true, true, true, true],
+            ['Notfall-App (iOS & Android) – offline & QR-Aushang-Scan', false, true, true, true],
             ['Branchen-Templates', 'vorgefertigt', 'erweitert', 'erweitert', '+ eigene'],
         ],
         'BCM & Business Impact' => [
@@ -199,6 +201,10 @@
             'a' => '30 Tage volle Rückerstattung auf das Jahresabonnement, ohne Begründung.',
         ],
         [
+            'q' => 'Wir sind eine Kommune — wie können wir bestellen?',
+            'a' => 'Für Städte, Gemeinden und Eigenbetriebe gibt es den Kommunal-Tarif: Funktionsumfang wie Advanced, inklusive Notfall-App und Verwaltungs-Template, auf Angebotsbasis mit Bestellung per Rechnung — vergabefreundlich, ohne Kreditkarte. Fragen Sie ein individuelles Angebot an.',
+        ],
+        [
             'q' => 'Ich habe mehrere Mandanten / Kunden — wie funktioniert das?',
             'a' => 'Im Enterprise-Tarif können Sie als Berater oder MSP beliebig viele Mandanten verwalten, mit eigenem Branding und konsolidierter Abrechnung. Sprechen Sie uns an.',
         ],
@@ -246,7 +252,7 @@
             </h1>
 
             <p class="mt-4 text-lg text-slate-600 leading-relaxed max-w-2xl mx-auto">
-                Vom kleinen Handwerksbetrieb bis zum NIS2-pflichtigen Mittelständler. Alle Pläne enthalten das vollständige Notfallhandbuch, PDF-Export, Audit-Log und 2FA.
+                Vom kleinen Handwerksbetrieb bis zum NIS2-pflichtigen Mittelständler — und mit eigenem <a href="#kommunal" class="font-medium text-indigo-600 hover:text-indigo-700">Kommunal-Tarif</a> für Städte, Gemeinden und Eigenbetriebe. Alle Pläne enthalten das vollständige Notfallhandbuch, PDF-Export, Audit-Log und 2FA.
             </p>
         </div>
     </section>
@@ -361,6 +367,53 @@
                 @endforeach
             </div>
 
+            {{-- ============ KOMMUNAL-TARIF ============ --}}
+            <div id="kommunal" class="mt-10 relative rounded-2xl bg-slate-900 text-white ring-1 ring-slate-800 overflow-hidden">
+                <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(99,102,241,0.28),transparent_60%)]"></div>
+                <div class="relative p-8 lg:p-10 grid lg:grid-cols-[1fr_auto] gap-8 items-center">
+                    <div>
+                        <div class="flex flex-wrap items-center gap-3">
+                            <h3 class="text-2xl font-semibold">Kommunal</h3>
+                            <span class="inline-flex items-center px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-200 text-xs font-semibold ring-1 ring-indigo-400/30">
+                                Für Städte, Gemeinden &amp; Eigenbetriebe
+                            </span>
+                        </div>
+                        <p class="mt-3 text-slate-300 leading-relaxed max-w-3xl">
+                            Voller Advanced-Funktionsumfang — Krisen-Cockpit, Meldepflichten-Workflow, Übungsmodus —
+                            plus Verwaltungs-Template (Fachverfahren, Bürgerdienste/OZG, E-Akte) und die
+                            <span class="font-semibold text-white">Notfall-App für iOS &amp; Android inklusive</span>:
+                            Handbuch, Krisenstab-Kontakte und Checklisten offline auf jedem Smartphone.
+                            Standorte und Nutzer nach Bedarf – vom Rathaus bis zum Bauhof.
+                        </p>
+                        <ul class="mt-4 flex flex-wrap gap-x-6 gap-y-2 text-sm text-slate-200">
+                            <li class="flex items-center gap-2">
+                                <svg class="w-4 h-4 text-indigo-300" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                                Notfall-App inklusive
+                            </li>
+                            <li class="flex items-center gap-2">
+                                <svg class="w-4 h-4 text-indigo-300" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                                Verwaltungs-Template
+                            </li>
+                            <li class="flex items-center gap-2">
+                                <svg class="w-4 h-4 text-indigo-300" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                                Bestellung per Rechnung — vergabefreundlich
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="lg:text-right">
+                        <div class="text-3xl font-semibold">individuell</div>
+                        <div class="mt-1 text-sm text-slate-400">Angebot auf Anfrage</div>
+                        <a href="{{ route('home') }}#kontakt" class="mt-5 inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-white text-slate-900 font-medium hover:bg-slate-100 transition shadow-sm">
+                            Angebot anfragen
+                            <svg class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+                        </a>
+                        <p class="mt-3 text-xs text-slate-400">
+                            Mehr dazu: <a href="{{ route('kommunen.show') }}" class="underline hover:text-white transition">PlanB für Kommunen</a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+
             <p class="mt-8 text-center text-sm text-slate-500">
                 Alle Preise netto zzgl. gesetzlicher Umsatzsteuer. EU-B2B-Reverse-Charge mit gültiger USt-IdNr.
             </p>
@@ -419,6 +472,11 @@
                     </tbody>
                 </table>
             </div>
+
+            <p class="mt-6 text-center text-sm text-slate-500">
+                <span class="font-medium text-slate-700">Kommunal-Tarif:</span> Funktionsumfang wie Advanced, zusätzlich Verwaltungs-Template und Notfall-App inklusive — Standorte und Nutzer nach Bedarf,
+                <a href="#kommunal" class="text-indigo-600 hover:text-indigo-700 font-medium">Angebot auf Anfrage</a>.
+            </p>
         </div>
     </section>
 

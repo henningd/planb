@@ -40,6 +40,11 @@ Monatspreisen — also rund 17 % Rabatt gegenüber der monatlichen Buchung.
   ab und stellt den neuen Tarif anteilig in Rechnung.
 - **Enterprise** hat keinen Self-Service-Checkout — Sie kontaktieren uns
   per Demo-Anfrage und bekommen ein Angebot.
+- **Kommunal** ist der Tarif für Städte, Gemeinden und Eigenbetriebe:
+  Funktionsumfang wie Advanced, inklusive **Notfall-App** und
+  Verwaltungs-Vorlage. Die Buchung läuft **vergabefreundlich** über
+  Angebot und Rechnung — ohne Kreditkarte und ohne
+  Self-Service-Checkout. Fragen Sie ein individuelles Angebot an.
 
 ## Zusatzleistungen
 

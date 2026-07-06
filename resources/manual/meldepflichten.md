@@ -35,6 +35,15 @@ Das System errechnet aus dem Vorfalls-Typ automatisch die zutreffenden **Pflicht
 
 Pro Pflicht zeigt der Countdown live, wieviel Zeit noch bleibt.
 
+## Kommunale Meldewege (Verwaltungen)
+
+Ist als Branche **„Öffentliche Einrichtung"** hinterlegt (Kommunen, Behörden, Schulen, Eigenbetriebe), legt das System bei passenden Vorfällen zusätzlich zwei kommunale Meldewege an:
+
+- **Meldung an Landes-CERT** — die Computer-Notfallteams der Bundesländer (z. B. CERT NRW, BayernCERT) nehmen IT-Sicherheitsvorfälle aus Kommunen entgegen und unterstützen bei der Bewältigung. Eine einheitliche gesetzliche Frist gibt es nicht — **empfohlen ist eine unverzügliche Meldung**. Halten Sie die Kontaktdaten Ihres Landes-CERT griffbereit (z. B. bei den Notfallkontakten).
+- **Kommunal-/Rechtsaufsicht informieren** — bei erheblichen Vorfällen sollte die zuständige Aufsicht **zeitnah** informiert werden, sobald ein belastbares Lagebild vorliegt. Kurz, sachlich, mit den bereits getroffenen Maßnahmen.
+
+Beide Einträge erscheinen wie die übrigen Pflichten in der Liste und werden auf demselben Weg abgehakt und dokumentiert. Der Landes-CERT-Eintrag wird bei sicherheitsrelevanten Vorfällen (Cyberangriff, Datenpanne, Sonstiges) angelegt — bei einem reinen Systemausfall nur die Information der Aufsicht.
+
 ## Eine Pflicht abhaken
 
 Klick auf den Eintrag öffnet das Modal. Sie tragen ein:

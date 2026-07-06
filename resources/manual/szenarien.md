@@ -8,6 +8,19 @@ Erreichbar über die Sidebar **„Ernstfall → Szenarien"**.
 
 - **Globale Szenarien** sind plattformweit hinterlegt und werden vom Plattform-Betreiber gepflegt. Ein typisches Set: Ransomware, Stromausfall, Datenpanne, Internet-/Telefon-Ausfall, Ausfall Dienstleister.
 - **Eigene Szenarien** legen Sie pro Mandant an, wenn Sie spezielle Lagen haben — z. B. „Maschinenausfall in Halle 2" für einen Fertigungsbetrieb.
+- **Branchen-Szenarien** bringen manche Branchen-Vorlagen mit — sie werden beim Laden der Vorlage als eigene Szenarien angelegt und lassen sich danach frei anpassen.
+
+## Kommunale Szenario-Vorlagen (Verwaltungen)
+
+Für die Branche **„Öffentliche Einrichtung"** enthält die Branchen-Vorlage (Systeme-Seite → **„Vorlage laden"**) fünf fertige Verwaltungs-Szenarien:
+
+1. **Ransomware / Cyberangriff auf die Verwaltung** — vom Netztrennen über Landes-CERT- und Datenschutz-Meldung bis zur Bürgerkommunikation.
+2. **Stromausfall im Rathaus** — USV, Gebäudesicherheit, Entscheidung über den Publikumsverkehr, Wiederanlauf.
+3. **Ausfall Fachverfahren / Notbetrieb Bürgerbüro** — Papier-Notbetrieb, fristenrelevante Vorgänge sichern, Nacherfassung.
+4. **Hochwasser / Unwetter am Verwaltungsstandort** — Personen schützen, Technik und Akten sichern, Ausweich-Arbeitsplätze.
+5. **Evakuierung eines Verwaltungsgebäudes** — Räumung, Sammelplatz, Einsatzkräfte einweisen, Erreichbarkeit umleiten.
+
+Jedes Szenario hat nummerierte Schritte mit klaren Zuständigkeiten (Leitung, IT, Kommunikation, Facility Management). Bereits vorhandene Szenarien mit gleichem Namen werden beim Laden übersprungen — es entstehen keine Duplikate.
 
 ## Ein Szenario aufbauen
 

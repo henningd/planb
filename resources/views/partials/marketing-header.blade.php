@@ -45,6 +45,7 @@
             </div>
 
             <a href="{{ route('home') }}#compliance" class="hover:text-slate-900 transition">Compliance</a>
+            <a href="{{ route('kommunen.show') }}" @class(['text-slate-900 font-medium' => request()->routeIs('kommunen.*'), 'hover:text-slate-900 transition' => ! request()->routeIs('kommunen.*')])>Für Kommunen</a>
             <a href="{{ route('pricing.show') }}" @class(['text-slate-900 font-medium' => request()->routeIs('pricing.*'), 'hover:text-slate-900 transition' => ! request()->routeIs('pricing.*')])>Preise</a>
             <a href="{{ route('guides.index') }}" @class(['text-slate-900 font-medium' => request()->routeIs('guides.*'), 'hover:text-slate-900 transition' => ! request()->routeIs('guides.*')])>Ratgeber</a>
             <a href="{{ $navPortalUrl }}" class="hover:text-slate-900 transition">Anbieter-Portal</a>
@@ -95,6 +96,7 @@
                 @endforeach
             </div>
             <a href="{{ route('home') }}#compliance" class="py-2 hover:text-slate-900 transition">Compliance</a>
+            <a href="{{ route('kommunen.show') }}" class="py-2 hover:text-slate-900 transition">Für Kommunen</a>
             <a href="{{ route('pricing.show') }}" class="py-2 hover:text-slate-900 transition">Preise</a>
             <a href="{{ route('guides.index') }}" class="py-2 hover:text-slate-900 transition">Ratgeber</a>
             <a href="{{ $navPortalUrl }}" class="py-2 hover:text-slate-900 transition">Anbieter-Portal</a>

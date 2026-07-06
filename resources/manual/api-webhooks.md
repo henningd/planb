@@ -10,11 +10,13 @@ Knopf **„Token erstellen"**. Pflichtangaben:
 
 - **Bezeichnung** — z. B. „Zabbix-Produktion" oder „Prometheus Frankfurt".
 
+Der Token erhält automatisch den Berechtigungsumfang (Scope) **`monitoring.write`** — er darf also ausschließlich Monitoring-Alarme einliefern und sonst nichts. Selbst wenn ein Token in falsche Hände gerät, kann damit niemand Daten lesen oder ändern.
+
 Nach Klick auf **„Erstellen"** wird der Token **einmalig im Klartext angezeigt**. Kopieren Sie ihn sofort — danach ist er nur noch als Hash gespeichert und nicht mehr rekonstruierbar. Wenn Sie ihn vergessen, müssen Sie einen neuen erstellen.
 
 ## Schritt 2 — System-Mapping pflegen
 
-Auf jedem System können Sie unter **„Monitoring-Hostnamen / Labels"** eine Liste von Bezeichnungen pflegen — z. B.:
+Auf jedem System können Sie unter **„Monitoring-Hostnamen / Labels"** (die Monitoring-Keys des Systems) eine Liste von Bezeichnungen pflegen — z. B.:
 
 ```
 srv-prod-01
@@ -60,6 +62,15 @@ Pro Alarm prüft die Plattform:
 4. **Severity-Filter**: ist die Severity high, disaster, critical oder page?
 
 Wenn alles passt: ein **IncidentReport** wird angelegt und die Eskalations-Kette greift.
+
+## Optional: automatische Alarmierung
+
+Zusätzlich zur automatischen Vorfallseröffnung können Sie pro System ein **Notfall-Szenario hinterlegen** (auf der System-Detailseite unter **„Automatische Alarmierung bei kritischem Monitoring-Alert"**):
+
+- Eröffnet ein kritischer Alert für dieses System einen neuen Vorfall, startet das gewählte Szenario **automatisch als echter Alarm** — inklusive Push-Benachrichtigung an alle gekoppelten Geräte der Notfall-App, Quittierung („Gesehen" / „Ich übernehme") und Eskalation, falls niemand reagiert.
+- Standard ist **keine automatische Alarmierung** — Sie entscheiden pro System, ob ein Monitoring-Alert nur einen Vorfall dokumentiert oder gleich die Mannschaft weckt.
+
+Sinnvoll für die wirklich kritischen Systeme (z. B. zentraler Server, Fachverfahren), bei denen im Ernstfall keine Minute verloren gehen soll.
 
 ## Verarbeitungs-Pfade
 

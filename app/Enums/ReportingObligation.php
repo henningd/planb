@@ -14,6 +14,8 @@ enum ReportingObligation: string
     case Nis2InitialReport = 'nis2_72h';
     case CyberInsurance = 'insurance';
     case EmployeeNotification = 'employees';
+    case CertLandNotification = 'cert_land';
+    case KommunalaufsichtNotification = 'kommunalaufsicht';
 
     public function label(): string
     {
@@ -23,6 +25,8 @@ enum ReportingObligation: string
             self::Nis2InitialReport => 'NIS2 Erstmeldung',
             self::CyberInsurance => 'Cyberversicherung benachrichtigen',
             self::EmployeeNotification => 'Mitarbeiter informieren',
+            self::CertLandNotification => 'Meldung an Landes-CERT (empfohlen: unverzüglich)',
+            self::KommunalaufsichtNotification => 'Kommunal-/Rechtsaufsicht informieren (empfohlen: zeitnah)',
         };
     }
 
@@ -37,6 +41,8 @@ enum ReportingObligation: string
             self::Nis2InitialReport => 72,
             self::CyberInsurance => null,
             self::EmployeeNotification => null,
+            self::CertLandNotification => null,
+            self::KommunalaufsichtNotification => null,
         };
     }
 
@@ -48,19 +54,51 @@ enum ReportingObligation: string
             self::Nis2InitialReport => 'Erstmeldung mit detaillierter Lagebeschreibung innerhalb von 72 Stunden.',
             self::CyberInsurance => 'Unverzügliche Meldung an die Cyberversicherung. Versicherungsnummer und Vorfallzeitpunkt bereithalten.',
             self::EmployeeNotification => 'Interne Kommunikation über Lage, Sprachregelung und Verhaltensregeln.',
+            self::CertLandNotification => 'Meldung des IT-Sicherheitsvorfalls an das CERT des Bundeslandes (z. B. CERT NRW, BayernCERT). Es gibt keine einheitliche gesetzliche Frist — empfohlen ist eine unverzügliche Meldung. Kontaktdaten des zuständigen Landes-CERT bereithalten.',
+            self::KommunalaufsichtNotification => 'Information der zuständigen Kommunal- bzw. Rechtsaufsicht über den Vorfall und die getroffenen Maßnahmen. Empfohlen: zeitnah, sobald ein belastbares Lagebild vorliegt.',
         };
     }
 
     /**
+     * True für Meldewege, die nur für Kommunen und andere öffentliche
+     * Einrichtungen relevant sind.
+     */
+    public function isMunicipal(): bool
+    {
+        return match ($this) {
+            self::CertLandNotification, self::KommunalaufsichtNotification => true,
+            default => false,
+        };
+    }
+
+    /**
+     * Obligations that apply for a given incident type. Municipal reporting
+     * channels (Landes-CERT, Kommunal-/Rechtsaufsicht) are only included
+     * when the company's industry is „Öffentliche Einrichtung".
+     *
      * @return array<self>
      */
-    public static function applicableFor(string $incidentType): array
+    public static function applicableFor(string $incidentType, ?Industry $industry = null): array
     {
-        return match ($incidentType) {
+        $obligations = match ($incidentType) {
             'data_breach' => [self::DsgvoNotification, self::CyberInsurance, self::EmployeeNotification],
             'cyber_attack' => [self::DsgvoNotification, self::Nis2EarlyWarning, self::Nis2InitialReport, self::CyberInsurance, self::EmployeeNotification],
             'outage' => [self::CyberInsurance, self::EmployeeNotification],
-            default => self::cases(),
+            default => [self::DsgvoNotification, self::Nis2EarlyWarning, self::Nis2InitialReport, self::CyberInsurance, self::EmployeeNotification],
         };
+
+        if ($industry !== Industry::OeffentlicheEinrichtung) {
+            return $obligations;
+        }
+
+        // Landes-CERT nur bei sicherheitsrelevanten Vorfällen — ein reiner
+        // Systemausfall ist nicht zwingend ein IT-Sicherheitsvorfall.
+        if ($incidentType !== 'outage') {
+            $obligations[] = self::CertLandNotification;
+        }
+
+        $obligations[] = self::KommunalaufsichtNotification;
+
+        return $obligations;
     }
 }

@@ -1,7 +1,7 @@
 <?php
 
 use App\Support\IndexNow;
-use App\Support\Marketing\GuideCatalog;
+use App\Support\Marketing\MarketingUrls;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 
@@ -19,8 +19,9 @@ test('the ping command submits every marketing url to indexnow', function () {
         return $request->url() === IndexNow::ENDPOINT
             && $request['key'] === 'test-key-1234567890'
             && in_array(route('home'), $urls, true)
+            && in_array(route('kommunen.show'), $urls, true)
             && in_array(route('guides.show', 'nis2-checkliste'), $urls, true)
-            && count($urls) === 3 + count(GuideCatalog::slugs()) + 6;
+            && count($urls) === count(MarketingUrls::all());
     });
 });
 

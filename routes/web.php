@@ -44,6 +44,15 @@ Route::get('/ratgeber', function () {
     ]);
 })->name('guides.index');
 
+// Zielgruppen-Seite: PlanB für Kommunen, Behörden und Eigenbetriebe.
+Route::get('/kommunen', function () {
+    return view('kommunen', [
+        'productName' => SystemSetting::get('platform_name') ?: config('app.name', 'PlanB'),
+        'canRegister' => Features::enabled(Features::registration())
+            && SystemSetting::get('registration_enabled', true),
+    ]);
+})->name('kommunen.show');
+
 Route::get('/nis2-quick-check', function () {
     return view('nis2-quick-check', [
         'productName' => SystemSetting::get('platform_name') ?: config('app.name', 'PlanB'),
