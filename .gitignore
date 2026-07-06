@@ -27,3 +27,4 @@ yarn-error.log
 *:Zone.Identifier
 Screenshot*.png
 Gemini_Generated*.png
+.DS_Store
