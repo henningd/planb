@@ -289,6 +289,10 @@ class MobileSyncBundle
                     $location->street,
                     trim(($location->postal_code ?? '').' '.($location->city ?? '')),
                 ])->filter()->implode(', ')),
+                // Koordinaten aus dem serverseitigen Geocoding (API v1.2);
+                // null, solange die Adresse (noch) nicht aufgelöst wurde.
+                'lat' => $location->lat,
+                'lng' => $location->lng,
                 'phone' => $location->phone,
             ])
             ->all();

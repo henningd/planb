@@ -1,5 +1,6 @@
 <?php
 
+use App\Jobs\GeocodeLocation;
 use App\Models\Location;
 use App\Support\PhoneFormat;
 use Flux\Flux;
@@ -98,7 +99,7 @@ new #[Title('Standorte')] class extends Component {
             'sort' => ['integer', 'min:0'],
         ]);
 
-        DB::transaction(function () use ($validated) {
+        $location = DB::transaction(function () use ($validated) {
             if ($validated['is_headquarters']) {
                 $query = Location::where('is_headquarters', true);
                 if ($this->editingId) {
@@ -108,11 +109,27 @@ new #[Title('Standorte')] class extends Component {
             }
 
             if ($this->editingId) {
-                Location::findOrFail($this->editingId)->update($validated);
-            } else {
-                Location::create($validated);
+                $location = Location::findOrFail($this->editingId);
+                $location->fill($validated);
+
+                // Adressänderung → alte Koordinaten verwerfen und neu geokodieren.
+                $addressChanged = $location->isDirty(Location::ADDRESS_FIELDS);
+                if ($addressChanged) {
+                    $location->lat = null;
+                    $location->lng = null;
+                }
+
+                $location->save();
+
+                return $addressChanged ? $location : null;
             }
+
+            return Location::create($validated);
         });
+
+        if ($location !== null) {
+            GeocodeLocation::dispatch($location->id);
+        }
 
         Flux::modal('location-form')->close();
         $this->resetForm();
@@ -136,6 +153,31 @@ new #[Title('Standorte')] class extends Component {
             Flux::modal('location-delete')->close();
             Flux::toast(variant: 'success', text: __('Standort gelöscht.'));
         }
+    }
+
+    /**
+     * Der gerade bearbeitete Standort (für die Read-only-Koordinatenanzeige).
+     */
+    #[Computed]
+    public function editingLocation(): ?Location
+    {
+        return $this->editingId ? Location::find($this->editingId) : null;
+    }
+
+    /**
+     * Stößt das Geocoding für den gerade bearbeiteten Standort erneut an
+     * (queued — die Koordinaten erscheinen nach dem nächsten Laden).
+     */
+    public function refreshCoordinates(): void
+    {
+        $location = $this->editingLocation;
+
+        if ($location === null) {
+            return;
+        }
+
+        GeocodeLocation::dispatch($location->id);
+        Flux::toast(variant: 'success', text: __('Koordinaten werden im Hintergrund neu ermittelt.'));
     }
 
     protected function resetForm(): void
@@ -262,6 +304,29 @@ new #[Title('Standorte')] class extends Component {
             </div>
 
             <flux:input wire:model="sort" :label="__('Sortierung')" type="number" min="0" />
+
+            @if ($editingId)
+                <div class="rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2.5 dark:border-zinc-700 dark:bg-zinc-800">
+                    <div class="flex items-center justify-between gap-3">
+                        <div class="min-w-0 text-sm">
+                            <span class="font-medium text-zinc-700 dark:text-zinc-200">{{ __('Koordinaten') }}</span>
+                            <span class="ml-2 text-zinc-500 dark:text-zinc-400">
+                                @if ($this->editingLocation?->hasCoordinates())
+                                    {{ number_format($this->editingLocation->lat, 5, ',', '') }}, {{ number_format($this->editingLocation->lng, 5, ',', '') }}
+                                @else
+                                    {{ __('noch nicht ermittelt') }}
+                                @endif
+                            </span>
+                        </div>
+                        <flux:button size="sm" variant="ghost" icon="map-pin" type="button" wire:click="refreshCoordinates">
+                            {{ __('Neu ermitteln') }}
+                        </flux:button>
+                    </div>
+                    <flux:text size="sm" class="mt-1 text-zinc-500 dark:text-zinc-400">
+                        {{ __('Wird automatisch aus der Adresse ermittelt (OpenStreetMap) und von der Notfall-App genutzt.') }}
+                    </flux:text>
+                </div>
+            @endif
 
             <flux:checkbox wire:model="is_headquarters" :label="__('Hauptsitz')" />
 

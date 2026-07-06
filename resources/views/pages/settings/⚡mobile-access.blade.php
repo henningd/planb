@@ -2,6 +2,8 @@
 
 use App\Models\Company;
 use App\Models\MobileAccessCode;
+use App\Models\User;
+use App\Support\Mobile\MobileRolloutPdf;
 use App\Support\Mobile\OnboardingQrCode;
 use Flux\Flux;
 use Illuminate\Support\Collection;
@@ -9,10 +11,21 @@ use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Title;
 use Livewire\Component;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 new #[Title('Notfall-App')] class extends Component {
     /** Der zuletzt erzeugte Klartext-Code (nur einmalig sichtbar). */
     public ?string $generatedCode = null;
+
+    /**
+     * Massen-Rollout: ausgewählte User-IDs.
+     *
+     * @var list<string>
+     */
+    public array $rolloutSelection = [];
+
+    /** Massen-Rollout: Namens-/E-Mail-Filter für die Mitgliederliste. */
+    public string $rolloutSearch = '';
 
     #[Computed]
     public function company(): ?Company
@@ -105,6 +118,98 @@ new #[Title('Notfall-App')] class extends Component {
     }
 
     /**
+     * Darf der aktuelle User den Massen-Rollout nutzen? Codes für andere
+     * Benutzer auszustellen ist eine Admin-Aktion.
+     */
+    #[Computed]
+    public function canRollout(): bool
+    {
+        return $this->company !== null && Auth::user()->isCurrentTeamAdmin();
+    }
+
+    /**
+     * Aktive Team-Mitglieder für den Massen-Rollout, optional gefiltert
+     * nach Name/E-Mail.
+     *
+     * @return Collection<int, User>
+     */
+    #[Computed]
+    public function rolloutMembers(): Collection
+    {
+        if (! $this->canRollout) {
+            return collect();
+        }
+
+        $team = $this->company->team;
+
+        if ($team === null) {
+            return collect();
+        }
+
+        $search = trim($this->rolloutSearch);
+
+        return $team->members()
+            ->wherePivotNull('disabled_at')
+            ->when($search !== '', fn ($query) => $query->where(function ($query) use ($search) {
+                $query->where('name', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%");
+            }))
+            ->orderBy('name')
+            ->get();
+    }
+
+    /** Wählt alle aktuell gefilterten Mitglieder aus. */
+    public function selectAllRolloutMembers(): void
+    {
+        $this->rolloutSelection = $this->rolloutMembers
+            ->pluck('id')
+            ->map(fn ($id) => (string) $id)
+            ->all();
+    }
+
+    public function clearRolloutSelection(): void
+    {
+        $this->rolloutSelection = [];
+    }
+
+    /**
+     * Erzeugt für alle ausgewählten Benutzer Kopplungs-Codes (Gültigkeit
+     * {@see MobileAccessCode::ROLLOUT_TTL_DAYS} Tage) und streamt das
+     * druckbare PDF — eine Seite pro Person.
+     */
+    public function downloadRolloutPdf(): ?StreamedResponse
+    {
+        abort_unless($this->canRollout, 403);
+
+        $ids = collect($this->rolloutSelection)->map(fn ($id) => (int) $id)->filter()->unique();
+
+        $users = $this->company->team->members()
+            ->wherePivotNull('disabled_at')
+            ->whereIn('users.id', $ids)
+            ->orderBy('name')
+            ->get();
+
+        if ($users->isEmpty()) {
+            Flux::toast(variant: 'warning', text: __('Bitte wählen Sie mindestens einen Benutzer aus.'));
+
+            return null;
+        }
+
+        $result = MobileRolloutPdf::generate($this->company, $users, Auth::user());
+
+        $this->rolloutSelection = [];
+        unset($this->codes);
+
+        Flux::toast(variant: 'success', text: __(':count Zugangscodes erzeugt — das PDF wird heruntergeladen.', ['count' => $users->count()]));
+
+        return response()->streamDownload(
+            fn () => print $result['binary'],
+            $result['filename'],
+            ['Content-Type' => 'application/pdf'],
+        );
+    }
+
+    /**
      * @return array<string, array{label: string, color: string}>
      */
     public function statusMeta(): array
@@ -160,6 +265,53 @@ new #[Title('Notfall-App')] class extends Component {
                         </div>
                     @endif
                 </div>
+
+                @if ($this->canRollout)
+                    <div class="rounded-xl border border-zinc-200 bg-white p-6 dark:border-zinc-700 dark:bg-zinc-900">
+                        <flux:heading size="base">{{ __('Massen-Rollout') }}</flux:heading>
+                        <flux:text class="mt-2 text-zinc-600 dark:text-zinc-300">
+                            {{ __('Erzeugen Sie Zugangscodes für mehrere Benutzer auf einmal und erhalten Sie ein druckbares PDF — eine Seite pro Person mit QR-Code und Anleitung. Diese Codes sind') }}
+                            <strong>{{ \App\Models\MobileAccessCode::ROLLOUT_TTL_DAYS }} {{ __('Tage') }}</strong>
+                            {{ __('gültig (statt :minutes Minuten), da die Blätter gedruckt verteilt werden — jeder Code bleibt nur einmal einlösbar.', ['minutes' => \App\Models\MobileAccessCode::TTL_MINUTES]) }}
+                        </flux:text>
+
+                        <div class="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
+                            <flux:input wire:model.live.debounce.300ms="rolloutSearch" icon="magnifying-glass" :placeholder="__('Nach Name oder E-Mail filtern …')" class="sm:max-w-xs" />
+                            <div class="flex items-center gap-2">
+                                <flux:button size="sm" variant="filled" wire:click="selectAllRolloutMembers">{{ __('Alle auswählen') }}</flux:button>
+                                @if ($rolloutSelection !== [])
+                                    <flux:button size="sm" variant="ghost" wire:click="clearRolloutSelection">{{ __('Auswahl aufheben') }}</flux:button>
+                                @endif
+                            </div>
+                        </div>
+
+                        <div class="mt-3 max-h-72 divide-y divide-zinc-100 overflow-y-auto rounded-lg border border-zinc-200 dark:divide-zinc-800 dark:border-zinc-700">
+                            @forelse ($this->rolloutMembers as $member)
+                                <label class="flex cursor-pointer items-center gap-3 px-4 py-2.5 hover:bg-zinc-50 dark:hover:bg-zinc-800" wire:key="rollout-{{ $member->id }}">
+                                    <input type="checkbox" value="{{ $member->id }}" wire:model="rolloutSelection"
+                                           class="size-4 rounded border-zinc-300 text-zinc-800 dark:border-zinc-600" />
+                                    <span class="min-w-0">
+                                        <span class="block truncate text-sm font-medium text-zinc-800 dark:text-zinc-100">{{ $member->name }}</span>
+                                        <span class="block truncate text-xs text-zinc-500 dark:text-zinc-400">{{ $member->email }}</span>
+                                    </span>
+                                </label>
+                            @empty
+                                <div class="px-4 py-6 text-center text-sm text-zinc-500 dark:text-zinc-400">
+                                    {{ __('Keine Benutzer gefunden.') }}
+                                </div>
+                            @endforelse
+                        </div>
+
+                        <div class="mt-4 flex items-center justify-between gap-3">
+                            <flux:text size="sm" class="text-zinc-500 dark:text-zinc-400">
+                                {{ count($rolloutSelection) }} {{ __('ausgewählt') }}
+                            </flux:text>
+                            <flux:button variant="primary" icon="printer" wire:click="downloadRolloutPdf" :disabled="$rolloutSelection === []">
+                                {{ __('Codes erzeugen & PDF herunterladen') }}
+                            </flux:button>
+                        </div>
+                    </div>
+                @endif
 
                 @if ($this->codes->isNotEmpty())
                     <div>

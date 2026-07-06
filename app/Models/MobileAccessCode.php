@@ -36,8 +36,16 @@ class MobileAccessCode extends Model
 {
     use HasUuids;
 
-    /** Gültigkeitsdauer eines frisch erzeugten Codes in Minuten. */
+    /** Gültigkeitsdauer eines frisch erzeugten Codes in Minuten (Einzel-Flow, Self-Service). */
     public const TTL_MINUTES = 60;
+
+    /**
+     * Gültigkeitsdauer für den Massen-Rollout in Tagen: Die Codes werden als
+     * gedruckte Blätter verteilt und müssen deshalb deutlich länger gültig
+     * sein als im Self-Service-Flow. Einmal-Verwendung und Widerrufbarkeit
+     * bleiben unverändert.
+     */
+    public const ROLLOUT_TTL_DAYS = 14;
 
     /** Alphabet ohne verwechselbare Zeichen (kein O/0, I/1). */
     private const ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -48,9 +56,13 @@ class MobileAccessCode extends Model
      * Erzeugt einen neuen Kopplungs-Code für den User in seiner Firma,
      * persistiert dessen Hash und gibt den Klartext-Code einmalig zurück.
      *
+     * `$expiresAt` erlaubt eine abweichende Gültigkeit (Massen-Rollout,
+     * {@see self::ROLLOUT_TTL_DAYS}); ohne Angabe gilt der kurze
+     * Self-Service-Standard ({@see self::TTL_MINUTES}).
+     *
      * @return array{code: string, model: MobileAccessCode}
      */
-    public static function issue(User $user, Company $company, ?int $createdByUserId = null): array
+    public static function issue(User $user, Company $company, ?int $createdByUserId = null, ?Carbon $expiresAt = null): array
     {
         $plain = self::generateCode();
 
@@ -59,7 +71,7 @@ class MobileAccessCode extends Model
             'company_id' => $company->id,
             'email' => $user->email,
             'code_hash' => hash('sha256', $plain),
-            'expires_at' => Carbon::now()->addMinutes(self::TTL_MINUTES),
+            'expires_at' => $expiresAt ?? Carbon::now()->addMinutes(self::TTL_MINUTES),
             'created_by_user_id' => $createdByUserId ?? $user->id,
         ]);
 
