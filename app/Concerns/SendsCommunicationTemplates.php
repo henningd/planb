@@ -107,6 +107,16 @@ trait SendsCommunicationTemplates
         );
     }
 
+    public function selectAllSmsRecipients(): void
+    {
+        $this->smsRecipients = $this->smsCandidates->pluck('id')->all();
+    }
+
+    public function deselectAllSmsRecipients(): void
+    {
+        $this->smsRecipients = [];
+    }
+
     /**
      * @return Collection<int, Employee>
      */

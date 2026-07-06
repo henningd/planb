@@ -224,3 +224,25 @@ test('simulated sends are badged as simulated instead of ok', function () {
         ->assertSee('Simuliert — kein Gateway')
         ->assertDontSee('>OK<', false);
 });
+
+test('select all and deselect all toggle the sms recipient list', function () {
+    [$user, $company, $template, $withMobile] = smsTestSetup();
+
+    $second = Employee::factory()->for($company)->create([
+        'first_name' => 'Clara',
+        'last_name' => 'Zweite',
+        'mobile_phone' => '+491709876543',
+    ]);
+
+    $component = Livewire\Livewire::actingAs($user)
+        ->test('pages::communication-templates.index')
+        ->call('openSmsSend', $template->id)
+        ->call('deselectAllSmsRecipients');
+
+    expect($component->get('smsRecipients'))->toBe([]);
+
+    $component->call('selectAllSmsRecipients');
+
+    expect(collect($component->get('smsRecipients'))->sort()->values()->all())
+        ->toEqual(collect([$withMobile->id, $second->id])->sort()->values()->all());
+});

@@ -338,6 +338,16 @@ new #[Title('Kommunikations-Vorlagen')] class extends Component {
             ->get();
     }
 
+    public function selectAllSmsRecipients(): void
+    {
+        $this->smsRecipients = $this->smsCandidates->pluck('id')->all();
+    }
+
+    public function deselectAllSmsRecipients(): void
+    {
+        $this->smsRecipients = [];
+    }
+
     public function sendChat(string $id, ChatWebhookSender $sender): void
     {
         $template = CommunicationTemplate::findOrFail($id);
@@ -875,6 +885,18 @@ new #[Title('Kommunikations-Vorlagen')] class extends Component {
                 <flux:text class="text-xs uppercase tracking-wide text-zinc-500 dark:text-zinc-400">{{ __('Nachricht') }}</flux:text>
                 <div class="mt-1 whitespace-pre-line">{{ $this->smsBodyPreview() }}</div>
             </div>
+
+            @if ($this->smsCandidates->isNotEmpty())
+                <div class="flex items-center justify-between">
+                    <flux:text class="text-xs text-zinc-500 dark:text-zinc-400">
+                        {{ __(':selected von :total ausgewählt', ['selected' => count($smsRecipients), 'total' => $this->smsCandidates->count()]) }}
+                    </flux:text>
+                    <div class="flex gap-2">
+                        <flux:button size="xs" variant="subtle" wire:click="selectAllSmsRecipients">{{ __('Alle auswählen') }}</flux:button>
+                        <flux:button size="xs" variant="subtle" wire:click="deselectAllSmsRecipients">{{ __('Alle abwählen') }}</flux:button>
+                    </div>
+                </div>
+            @endif
 
             <div class="max-h-72 overflow-y-auto rounded-lg border border-zinc-200 dark:border-zinc-700">
                 @forelse ($this->smsCandidates as $candidate)
