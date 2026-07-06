@@ -151,6 +151,10 @@ class MobileSyncBundle
                 'is_drill' => $run->isDrill(),
                 'started_at' => $run->started_at?->toIso8601String(),
                 'started_by' => $run->startedBy?->name,
+                // Eskalations-Zeitpunkt (planb:escalate-unacknowledged-runs):
+                // gesetzt, wenn ein echter Alarm nach Fristablauf ohne
+                // Quittierung eskaliert wurde — sonst null.
+                'escalated_at' => $run->escalated_at?->toIso8601String(),
                 // Alarm-Quittierungen (API v1.1): wer den Alarm gesehen hat bzw.
                 // übernimmt — max. eine je Nutzer, `taking_over` schlägt `seen`.
                 // `user_id` im selben Format wie `user.id` im Login-Response,

@@ -1,10 +1,12 @@
 <?php
 
+use App\Enums\ScenarioRunMode;
 use App\Models\ApiToken;
 use App\Models\Company;
 use App\Models\Location;
 use App\Models\MobileAccessCode;
 use App\Models\Scenario;
+use App\Models\ScenarioRun;
 use App\Models\ScenarioStep;
 use App\Models\ServiceProvider;
 use App\Models\User;
@@ -111,6 +113,30 @@ test('a change yields a new version and the full bundle', function () {
         ->assertJsonFragment(['title' => 'Cyberangriff']);
 
     expect($res->json('data.version'))->not->toBe($version);
+});
+
+test('an escalation changes the version and exposes escalated_at on the active run', function () {
+    [$user, $company, $token] = syncSession();
+
+    $run = ScenarioRun::factory()->create([
+        'company_id' => $company->id,
+        'mode' => ScenarioRunMode::Real,
+        'started_at' => now()->subMinutes(15),
+    ]);
+
+    $first = test()->withToken($token)->getJson('/api/mobile/sync')->assertOk();
+    $version = $first->json('data.version');
+
+    expect($first->json('data.active_runs.0.id'))->toBe($run->id)
+        ->and($first->json('data.active_runs.0.escalated_at'))->toBeNull();
+
+    $run->forceFill(['escalated_at' => now()])->save();
+
+    test()->withToken($token)
+        ->getJson('/api/mobile/sync?version='.urlencode($version))
+        ->assertOk()
+        ->assertJsonPath('data.unchanged', false)
+        ->assertJsonPath('data.active_runs.0.escalated_at', $run->refresh()->escalated_at->toIso8601String());
 });
 
 test('a deletion also changes the version so it propagates offline', function () {
