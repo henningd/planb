@@ -101,10 +101,12 @@ class StartScenarioRun
                 ->find($startedByUserId)?->name
             : null;
 
+        // Kein „ÜBUNG: "-Präfix im Feed-Titel: die Apps rendern bei is_drill ein
+        // eigenes Badge — das Präfix bleibt den System-Pushes vorbehalten.
         AppNotification::create([
             'company_id' => $scenario->company_id,
             'type' => 'incident_started',
-            'title' => ($isDrill ? 'ÜBUNG: ' : '').'Notfall gemeldet',
+            'title' => 'Notfall gemeldet',
             'body' => $scenario->name,
             'triggered_by_name' => $startedBy,
             'severity' => 'critical',

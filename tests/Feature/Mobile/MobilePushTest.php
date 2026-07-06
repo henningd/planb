@@ -269,7 +269,8 @@ test('a drill marks the feed notification and the active run as drill in the syn
     expect($data['active_runs'])->toHaveCount(1)
         ->and($data['active_runs'][0]['is_drill'])->toBeTrue()
         ->and($data['notifications'][0]['is_drill'])->toBeTrue()
-        ->and($data['notifications'][0]['title'])->toBe('ÜBUNG: Notfall gemeldet');
+        // Feed-Titel ohne Präfix — das ÜBUNG-Badge rendern die Apps aus is_drill.
+        ->and($data['notifications'][0]['title'])->toBe('Notfall gemeldet');
 });
 
 test('an UNREGISTERED token reported by FCM deletes the device', function () {

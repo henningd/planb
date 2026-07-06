@@ -30,7 +30,9 @@ class CloseScenarioRun
 
         $isDrill = $run->isDrill();
         $title = $run->title ?: 'Notfall';
-        $heading = ($isDrill ? 'ÜBUNG: ' : '').($outcome === 'aborted' ? 'Notfall abgebrochen' : 'Notfall beendet');
+        // Präfix nur für Logbuch und Push — der App-Feed rendert bei is_drill ein Badge.
+        $feedHeading = $outcome === 'aborted' ? 'Notfall abgebrochen' : 'Notfall beendet';
+        $heading = ($isDrill ? 'ÜBUNG: ' : '').$feedHeading;
 
         // Krisen-Logbuch: Abschluss/Abbruch revisionssicher festhalten (Quelle App/Web).
         CrisisLogEntry::create([
@@ -50,7 +52,7 @@ class CloseScenarioRun
         AppNotification::create([
             'company_id' => $run->company_id,
             'type' => $outcome === 'aborted' ? 'incident_aborted' : 'incident_ended',
-            'title' => $heading,
+            'title' => $feedHeading,
             'body' => $title,
             'triggered_by_name' => $endedBy,
             'severity' => 'info',
