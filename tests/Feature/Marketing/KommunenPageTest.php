@@ -14,6 +14,21 @@ test('kommunen page renders with reasons, modules and cta', function () {
         ->assertSee('Krisenstab');
 });
 
+test('kommunen page shows the app section with offline, alarm and sms messaging', function () {
+    $this->get(route('kommunen.show'))
+        ->assertOk()
+        ->assertSee('Die Notfall-App (iOS & Android)')
+        ->assertSee('Alle Daten offline auf dem Gerät')
+        ->assertSee('und Abhaken funktionieren ohne')
+        ->assertSee('Alarme, die wirklich ankommen')
+        ->assertSee('zeitkritisch')
+        ->assertSee('Nicht stören')
+        ->assertSee('Automatische SMS-Eskalation')
+        ->assertSee('SMS an den')
+        ->assertSee('Offline verfügbar')
+        ->assertSee('Stromausfall Rathaus');
+});
+
 test('landing page highlights kommunen and links to the kommunen page', function () {
     $this->get(route('home'))
         ->assertOk()
