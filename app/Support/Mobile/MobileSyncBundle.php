@@ -3,6 +3,7 @@
 namespace App\Support\Mobile;
 
 use App\Enums\CrisisRole;
+use App\Enums\ScenarioRunMode;
 use App\Http\Controllers\Api\MobileSyncController;
 use App\Models\AppNotification;
 use App\Models\Company;
@@ -19,6 +20,7 @@ use App\Models\Location;
 use App\Models\Role;
 use App\Models\Scenario;
 use App\Models\ScenarioRun;
+use App\Models\ScenarioRunAcknowledgement;
 use App\Models\ScenarioRunStep;
 use App\Models\ServiceProvider;
 use App\Models\System;
@@ -78,11 +80,23 @@ class MobileSyncBundle
      */
     private static function notifications(Company $company): array
     {
-        return AppNotification::query()
+        $notifications = AppNotification::query()
             ->where('company_id', $company->id)
             ->orderByDesc('created_at')
             ->limit(50)
-            ->get()
+            ->get();
+
+        // Übungs-Flag je referenziertem Run auflösen (API v1.1: `is_drill`),
+        // damit die App Übungs-Benachrichtigungen als solche kennzeichnen kann.
+        $drillRunIds = ScenarioRun::query()
+            ->withoutGlobalScope(CurrentCompanyScope::class)
+            ->where('company_id', $company->id)
+            ->whereIn('id', $notifications->pluck('scenario_run_id')->filter()->unique())
+            ->where('mode', ScenarioRunMode::Drill->value)
+            ->pluck('id')
+            ->all();
+
+        return $notifications
             ->map(fn (AppNotification $n) => [
                 'id' => $n->id,
                 'type' => $n->type,
@@ -91,6 +105,7 @@ class MobileSyncBundle
                 'scenario_run_id' => $n->scenario_run_id,
                 'triggered_by_name' => $n->triggered_by_name,
                 'severity' => $n->severity,
+                'is_drill' => $n->scenario_run_id !== null && in_array($n->scenario_run_id, $drillRunIds, true),
                 'created_at' => $n->created_at?->toIso8601String(),
             ])
             ->all();
@@ -124,6 +139,7 @@ class MobileSyncBundle
                 'steps' => fn ($q) => $q->orderBy('sort'),
                 'steps.checkedBy',
                 'crisisLogEntries.user',
+                'acknowledgements.user',
             ])
             ->orderByDesc('started_at')
             ->get()
@@ -132,8 +148,20 @@ class MobileSyncBundle
                 'scenario_id' => $run->scenario_id,
                 'title' => $run->title,
                 'mode' => $run->mode->value,
+                'is_drill' => $run->isDrill(),
                 'started_at' => $run->started_at?->toIso8601String(),
                 'started_by' => $run->startedBy?->name,
+                // Alarm-Quittierungen (API v1.1): wer den Alarm gesehen hat bzw.
+                // übernimmt — max. eine je Nutzer, `taking_over` schlägt `seen`.
+                // `user_id` im selben Format wie `user.id` im Login-Response,
+                // damit die App den eigenen Status eindeutig erkennt (statt
+                // unscharf per Namensvergleich).
+                'acknowledgements' => $run->acknowledgements->map(fn (ScenarioRunAcknowledgement $ack) => [
+                    'user_id' => (string) $ack->user_id,
+                    'person' => $ack->user?->name,
+                    'status' => $ack->status,
+                    'acknowledged_at' => $ack->acknowledged_at?->toIso8601String(),
+                ])->all(),
                 'steps' => $run->steps->map(fn (ScenarioRunStep $step) => [
                     'id' => $step->id,
                     'position' => $step->sort,

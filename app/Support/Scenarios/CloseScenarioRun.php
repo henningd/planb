@@ -28,8 +28,9 @@ class CloseScenarioRun
             $outcome === 'completed' ? ['ended_at' => now()] : ['aborted_at' => now()],
         )->save();
 
+        $isDrill = $run->isDrill();
         $title = $run->title ?: 'Notfall';
-        $heading = $outcome === 'aborted' ? 'Notfall abgebrochen' : 'Notfall beendet';
+        $heading = ($isDrill ? 'ÜBUNG: ' : '').($outcome === 'aborted' ? 'Notfall abgebrochen' : 'Notfall beendet');
 
         // Krisen-Logbuch: Abschluss/Abbruch revisionssicher festhalten (Quelle App/Web).
         CrisisLogEntry::create([
@@ -62,7 +63,7 @@ class CloseScenarioRun
                 ->find($run->company_id);
 
             if ($company !== null) {
-                $this->push->incidentEnded($company, $title, $outcome, $byUserId);
+                $this->push->incidentEnded($company, $title, $outcome, $byUserId, $isDrill);
             }
         } catch (Throwable) {
             // best-effort

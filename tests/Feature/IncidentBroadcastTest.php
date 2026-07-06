@@ -57,8 +57,9 @@ it('records a feed notification when a run is aborted', function () {
     $notification = AppNotification::where('company_id', $company->id)
         ->where('type', 'incident_aborted')
         ->first();
+    // Der Factory-Run ist eine Übung (mode=drill) → Titel trägt das ÜBUNG-Präfix.
     expect($notification)->not->toBeNull()
-        ->and($notification->title)->toBe('Notfall abgebrochen')
+        ->and($notification->title)->toBe('ÜBUNG: Notfall abgebrochen')
         ->and($notification->body)->toBe('Brand · Übung')
         ->and($notification->severity)->toBe('info')
         ->and($notification->triggered_by_name)->toBe($user->name);

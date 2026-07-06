@@ -15,6 +15,14 @@ use Illuminate\Support\Facades\Log;
 class FcmPushSender implements PushSender
 {
     /**
+     * Sichtbare Alarm-Typen, die iOS auch bei aktiven Fokus-Modi zustellen
+     * soll (APNs interruption-level: time-sensitive).
+     *
+     * @var list<string>
+     */
+    private const TIME_SENSITIVE_TYPES = ['incident', 'incident_ended', 'incident_escalation'];
+
+    /**
      * @param  array{client_email: string, private_key: string}  $credentials
      */
     public function __construct(
@@ -50,6 +58,14 @@ class FcmPushSender implements PushSender
                 );
                 // Sichtbare Alarmierung: sofort zustellen.
                 $message['apns'] = ['headers' => ['apns-priority' => '10']];
+
+                // Alarm-Pushes (Notfall gemeldet/beendet/eskaliert) durchbrechen
+                // iOS-Fokus-Modi als „time-sensitive" — das zugehörige Entitlement
+                // bringt die App mit. Andere sichtbare Pushes (z. B. Handbuch)
+                // bleiben normale Notifications.
+                if (in_array($data['type'] ?? null, self::TIME_SENSITIVE_TYPES, true)) {
+                    $message['apns']['payload'] = ['aps' => ['interruption-level' => 'time-sensitive']];
+                }
             } else {
                 // Stiller Sync-Push: iOS liefert Data-only-Nachrichten NUR aus,
                 // wenn sie als Background-Push mit content-available markiert sind –

@@ -9,6 +9,7 @@ use App\Models\ApiToken;
 use App\Models\Company;
 use App\Models\CrisisLogEntry;
 use App\Models\ScenarioRun;
+use App\Models\ScenarioRunAcknowledgement;
 use App\Models\User;
 use App\Scopes\CurrentCompanyScope;
 use App\Support\Push\PushNotifier;
@@ -109,6 +110,68 @@ class MobileRunController extends Controller
             'checked_at' => $runStep->checked_at?->toIso8601String(),
             'checked_by' => $userName,
         ]);
+    }
+
+    /**
+     * Alarm-Quittierung (API v1.1): „gesehen" oder „übernehme" — Upsert pro
+     * (User, Run). `taking_over` ersetzt `seen`; ein späteres `seen` downgraded
+     * NIE ein bestehendes `taking_over`. Die Antwort spiegelt immer den
+     * gespeicherten Stand wider.
+     */
+    public function acknowledge(Request $request, string $run): JsonResponse
+    {
+        $token = $request->attributes->get('api_token');
+        abort_unless($token instanceof ApiToken, 401);
+        abort_if($token->created_by_user_id === null, 403, 'Kein Bearbeiter hinterlegt.');
+
+        $validated = $request->validate([
+            'status' => ['required', 'in:seen,taking_over'],
+        ]);
+
+        $scenarioRun = ScenarioRun::query()
+            ->withoutGlobalScope(CurrentCompanyScope::class)
+            ->where('company_id', $token->company_id)
+            ->whereKey($run)
+            ->firstOrFail();
+
+        $acknowledgement = ScenarioRunAcknowledgement::query()->firstOrNew([
+            'scenario_run_id' => $scenarioRun->id,
+            'user_id' => $token->created_by_user_id,
+        ]);
+
+        $isDowngrade = $acknowledgement->exists
+            && $acknowledgement->status === ScenarioRunAcknowledgement::STATUS_TAKING_OVER
+            && $validated['status'] === ScenarioRunAcknowledgement::STATUS_SEEN;
+
+        $changed = false;
+
+        if (! $isDowngrade && $acknowledgement->status !== $validated['status']) {
+            $acknowledgement->status = $validated['status'];
+            $acknowledgement->acknowledged_at = now();
+            $acknowledgement->save();
+            $changed = true;
+        }
+
+        // Übrige Geräte zum Neu-Sync anstoßen, damit die Quittierungsliste
+        // überall aktuell ist (best-effort, wie beim Schritt-Abhaken).
+        if ($changed) {
+            try {
+                $company = Company::query()
+                    ->withoutGlobalScope(CurrentCompanyScope::class)
+                    ->find($token->company_id);
+                if ($company !== null) {
+                    app(PushNotifier::class)->syncCompany($company);
+                }
+            } catch (Throwable) {
+                // best-effort
+            }
+        }
+
+        return response()->json(['data' => [
+            'run_id' => $scenarioRun->id,
+            'status' => $acknowledgement->status,
+            'acknowledged_at' => $acknowledgement->acknowledged_at?->toIso8601String(),
+        ]]);
     }
 
     /**

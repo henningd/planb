@@ -6,6 +6,7 @@ use App\Enums\SystemType;
 use App\Models\Employee;
 use App\Models\EmergencyLevel;
 use App\Models\Role;
+use App\Models\Scenario;
 use App\Models\ServiceProvider;
 use App\Models\System;
 use App\Models\SystemPriority;
@@ -48,6 +49,9 @@ new #[Title('System bearbeiten')] class extends Component {
     public string $downtime_cost_mode = 'own';
 
     public string $monitoring_keys_text = '';
+
+    /** Szenario, das ein kritischer Monitoring-Alert automatisch als echten Alarm startet (null = keine). */
+    public ?string $emergency_scenario_id = null;
 
     /** @var array<int, array{provider_id: string, ownership_kind: string, is_deputy: bool, note: string}> */
     public array $providerAssignments = [];
@@ -98,6 +102,7 @@ new #[Title('System bearbeiten')] class extends Component {
             $this->monitoring_keys_text = is_array($system->monitoring_keys)
                 ? implode("\n", $system->monitoring_keys)
                 : '';
+            $this->emergency_scenario_id = $system->emergency_scenario_id;
             $this->providerAssignments = $system->serviceProviders
                 ->map(fn (ServiceProvider $p) => [
                     'provider_id' => $p->id,
@@ -196,6 +201,17 @@ new #[Title('System bearbeiten')] class extends Component {
     public function emergencyLevels(): Collection
     {
         return EmergencyLevel::orderBy('sort')->orderBy('name')->get();
+    }
+
+    /**
+     * Szenarien der Firma für die Auswahl „Automatische Alarmierung".
+     *
+     * @return Collection<int, Scenario>
+     */
+    #[Computed]
+    public function alarmScenarios(): Collection
+    {
+        return Scenario::orderBy('name')->get();
     }
 
     /**
@@ -657,6 +673,11 @@ new #[Title('System bearbeiten')] class extends Component {
         $validDurations = array_keys(Duration::OPTIONS);
         $ownershipValues = implode(',', array_column(\App\Enums\SystemOwnership::cases(), 'value'));
 
+        // Leere Select-Auswahl („Keine") kommt als '' an → als null behandeln.
+        if ($this->emergency_scenario_id === '') {
+            $this->emergency_scenario_id = null;
+        }
+
         $validated = $this->validate([
             'name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:2000'],
@@ -671,6 +692,12 @@ new #[Title('System bearbeiten')] class extends Component {
             'downtime_cost_per_hour' => ['nullable', 'integer', 'min:0', 'max:100000000'],
             'downtime_cost_mode' => ['required', 'in:'.collect(DowntimeCostMode::cases())->pluck('value')->implode(',')],
             'monitoring_keys_text' => ['nullable', 'string', 'max:2000'],
+            'emergency_scenario_id' => [
+                'nullable',
+                'uuid',
+                \Illuminate\Validation\Rule::exists('scenarios', 'id')
+                    ->where('company_id', Auth::user()->currentCompany()->id),
+            ],
             'providerAssignments' => ['array'],
             'providerAssignments.*.provider_id' => ['required', 'uuid', 'exists:service_providers,id'],
             'providerAssignments.*.ownership_kind' => ['nullable', 'in:'.$ownershipValues],
@@ -939,6 +966,19 @@ new #[Title('System bearbeiten')] class extends Component {
                         <flux:textarea wire:model="monitoring_keys_text" rows="3" placeholder="srv-prod-01&#10;warenwirtschaft.local" />
                     </flux:field>
                 </div>
+
+                <flux:field>
+                    <flux:label>{{ __('Automatische Alarmierung bei kritischem Monitoring-Alert') }}</flux:label>
+                    <flux:description>
+                        {{ __('Eröffnet ein kritischer Monitoring-Alert für dieses System einen neuen Vorfall, wird das gewählte Szenario automatisch als echter Alarm gestartet — inklusive Push an alle Geräte, Quittierung und Eskalation. Standard: keine automatische Alarmierung.') }}
+                    </flux:description>
+                    <flux:select wire:model="emergency_scenario_id">
+                        <flux:select.option value="">{{ __('Keine automatische Alarmierung') }}</flux:select.option>
+                        @foreach ($this->alarmScenarios as $scenario)
+                            <flux:select.option value="{{ $scenario->id }}">{{ $scenario->name }}</flux:select.option>
+                        @endforeach
+                    </flux:select>
+                </flux:field>
             @else
                 <flux:field>
                     <flux:label>{{ __('Ausfallkosten pro Stunde') }}</flux:label>

@@ -133,6 +133,76 @@ test('a silent sync push is sent as an iOS background push with high android pri
     });
 });
 
+test('visible alarm pushes carry the time-sensitive APNs interruption level', function (string $type) {
+    $keyResource = openssl_pkey_new(['private_key_bits' => 2048, 'private_key_type' => OPENSSL_KEYTYPE_RSA]);
+    openssl_pkey_export($keyResource, $privateKeyPem);
+
+    Http::fake([
+        'oauth2.googleapis.com/*' => Http::response(['access_token' => 'fake-access-token']),
+        'fcm.googleapis.com/*' => Http::response(['name' => 'ok']),
+    ]);
+
+    $sender = new FcmPushSender('demo-project', [
+        'client_email' => 'svc@example.com',
+        'private_key' => $privateKeyPem,
+    ]);
+
+    $sender->send(['tok-1'], ['type' => $type], 'Notfall', 'Stromausfall');
+
+    Http::assertSent(function ($request) {
+        if (! str_contains($request->url(), 'fcm.googleapis.com')) {
+            return false;
+        }
+        $message = $request->data()['message'] ?? [];
+
+        return ($message['apns']['headers']['apns-priority'] ?? null) === '10'
+            && ($message['apns']['payload']['aps']['interruption-level'] ?? null) === 'time-sensitive'
+            && isset($message['notification']);
+    });
+})->with(['incident', 'incident_ended', 'incident_escalation']);
+
+test('other visible pushes and silent sync pushes get no interruption level', function () {
+    $keyResource = openssl_pkey_new(['private_key_bits' => 2048, 'private_key_type' => OPENSSL_KEYTYPE_RSA]);
+    openssl_pkey_export($keyResource, $privateKeyPem);
+
+    Http::fake([
+        'oauth2.googleapis.com/*' => Http::response(['access_token' => 'fake-access-token']),
+        'fcm.googleapis.com/*' => Http::response(['name' => 'ok']),
+    ]);
+
+    $sender = new FcmPushSender('demo-project', [
+        'client_email' => 'svc@example.com',
+        'private_key' => $privateKeyPem,
+    ]);
+
+    // Sichtbarer, aber nicht zeitkritischer Push (Handbuch-Freigabe) …
+    $sender->send(['tok-1'], ['type' => 'handbook_released'], 'Neues Notfallhandbuch', '2.0');
+    // … und ein stiller Sync-Push: bestehende Background-Header bleiben unverändert.
+    $sender->send(['tok-1'], ['type' => 'sync']);
+
+    // Kein einziger Versand trägt ein interruption-level …
+    Http::assertNotSent(function ($request) {
+        $aps = $request->data()['message']['apns']['payload']['aps'] ?? [];
+
+        return isset($aps['interruption-level']);
+    });
+
+    // … und der Sync-Push behält seine Background-Header exakt bei.
+    Http::assertSent(function ($request) {
+        if (! str_contains($request->url(), 'fcm.googleapis.com')) {
+            return false;
+        }
+        $message = $request->data()['message'] ?? [];
+
+        if (isset($message['notification'])) {
+            return false;
+        }
+
+        return ($message['apns']['headers']['apns-push-type'] ?? null) === 'background'
+            && ($message['apns']['payload']['aps']['content-available'] ?? null) === 1;
+    });
+});
+
 test('the job exits early and never calls the sender when the company has no devices', function () {
     [$user, $company] = queuePushSession();
 

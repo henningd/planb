@@ -4,15 +4,23 @@ namespace App\Services\Monitoring;
 
 use App\Enums\IncidentType;
 use App\Enums\ReportingObligation;
+use App\Enums\ScenarioRunMode;
 use App\Models\ApiToken;
 use App\Models\IncidentReport;
 use App\Models\MonitoringAlert;
+use App\Models\Scenario;
+use App\Models\ScenarioRun;
 use App\Models\System;
 use App\Scopes\CurrentCompanyScope;
+use App\Support\Scenarios\StartScenarioRun;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Throwable;
 
 class AlertProcessor
 {
+    public function __construct(private readonly StartScenarioRun $startScenarioRun) {}
+
     /**
      * Severity-Werte (Zabbix + Prometheus zusammengezogen) ab denen ein
      * Incident automatisch angelegt wird. Alles darunter wird nur geloggt.
@@ -47,13 +55,14 @@ class AlertProcessor
 
         $system = $this->matchSystem($alert, $token->company_id);
 
-        return DB::transaction(function () use ($alert, $token, $system) {
+        [$record, $openedIncident] = DB::transaction(function () use ($alert, $token, $system) {
             $handling = $this->decideHandling($alert, $system);
             $incident = null;
             $note = null;
+            $openedIncident = false;
 
             if ($handling === 'created_incident') {
-                $incident = $this->openOrAttachIncident($alert, $system, $token->company_id);
+                [$incident, $openedIncident] = $this->openOrAttachIncident($alert, $system, $token->company_id);
             } elseif ($alert->isResolved() && $system) {
                 $incident = $this->findRecentOpenIncident($system, $token->company_id);
                 if ($incident) {
@@ -71,7 +80,7 @@ class AlertProcessor
                 }
             }
 
-            return MonitoringAlert::create([
+            $record = MonitoringAlert::create([
                 'company_id' => $token->company_id,
                 'api_token_id' => $token->id,
                 'system_id' => $system?->id,
@@ -87,7 +96,81 @@ class AlertProcessor
                 'note' => $note,
                 'received_at' => now(),
             ]);
+
+            return [$record, $openedIncident];
         });
+
+        // Automatische Alarmierung (Opt-in je System): nur der ERSTE Alert,
+        // der den Incident eröffnet, darf alarmieren — angehängte Folge-Alerts
+        // lösen keinen weiteren Alarm aus (Schutz gegen Alarm-Stürme).
+        if ($openedIncident && $system !== null && $system->emergency_scenario_id !== null) {
+            $this->autoAlarm($record, $system);
+        }
+
+        return $record;
+    }
+
+    /**
+     * Startet den mit dem System verknüpften Notfall als echten Alarm
+     * (mode=real) über die bestehende StartScenarioRun-Action — damit greifen
+     * Push, Quittierung und Eskalation automatisch. Läuft für das Szenario
+     * bereits ein offener Run, wird nicht erneut alarmiert. Fehler dürfen die
+     * Webhook-Verarbeitung nie abbrechen.
+     */
+    private function autoAlarm(MonitoringAlert $record, System $system): void
+    {
+        $scenario = Scenario::query()
+            ->withoutGlobalScope(CurrentCompanyScope::class)
+            ->where('company_id', $system->company_id)
+            ->find($system->emergency_scenario_id);
+
+        if ($scenario === null) {
+            return;
+        }
+
+        $hasOpenRun = ScenarioRun::query()
+            ->withoutGlobalScope(CurrentCompanyScope::class)
+            ->where('company_id', $system->company_id)
+            ->where('scenario_id', $scenario->id)
+            ->whereNull('ended_at')
+            ->whereNull('aborted_at')
+            ->exists();
+
+        if ($hasOpenRun) {
+            $this->appendNote($record, sprintf(
+                'Automatische Alarmierung übersprungen: für Szenario „%s" läuft bereits ein offener Alarm.',
+                $scenario->name,
+            ));
+
+            return;
+        }
+
+        try {
+            $run = $this->startScenarioRun->handle(
+                scenario: $scenario,
+                startedByUserId: null,
+                mode: ScenarioRunMode::Real,
+                title: null,
+                source: 'monitoring',
+            );
+        } catch (Throwable $e) {
+            Log::warning('Automatische Alarmierung aus Monitoring-Alert fehlgeschlagen: '.$e->getMessage());
+
+            return;
+        }
+
+        $this->appendNote($record, sprintf(
+            'Automatische Alarmierung: Szenario „%s" als Ernstfall gestartet (Run %s).',
+            $scenario->name,
+            $run->id,
+        ));
+    }
+
+    private function appendNote(MonitoringAlert $record, string $line): void
+    {
+        $record->forceFill([
+            'note' => trim((string) $record->note."\n".$line),
+        ])->save();
     }
 
     private function decideHandling(NormalizedAlert $alert, ?System $system): string
@@ -136,7 +219,10 @@ class AlertProcessor
         return null;
     }
 
-    private function openOrAttachIncident(NormalizedAlert $alert, System $system, string $companyId): IncidentReport
+    /**
+     * @return array{0: IncidentReport, 1: bool} Incident + true, wenn er von diesem Alert NEU eröffnet wurde
+     */
+    private function openOrAttachIncident(NormalizedAlert $alert, System $system, string $companyId): array
     {
         $existing = $this->findRecentOpenIncident($system, $companyId);
         if ($existing) {
@@ -150,7 +236,7 @@ class AlertProcessor
                 )),
             ])->save();
 
-            return $existing;
+            return [$existing, false];
         }
 
         $title = $alert->subject !== null && $alert->subject !== ''
@@ -175,7 +261,7 @@ class AlertProcessor
             $report->obligations()->create(['obligation' => $obligation->value]);
         }
 
-        return $report;
+        return [$report, true];
     }
 
     private function findRecentOpenIncident(System $system, string $companyId): ?IncidentReport

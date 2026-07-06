@@ -29,11 +29,12 @@ class StartScenarioRun
     public function __construct(private readonly PushNotifier $push) {}
 
     /**
+     * @param  int|null  $startedByUserId  NULL bei automatischer Auslösung (z. B. Monitoring-Alert)
      * @param  ScenarioRunMode|string  $mode  Enum oder dessen Wert ('real'/'drill')
      */
     public function handle(
         Scenario $scenario,
-        int $startedByUserId,
+        ?int $startedByUserId,
         ScenarioRunMode|string $mode = ScenarioRunMode::Real,
         ?string $title = null,
         string $source = 'web',
@@ -78,9 +79,7 @@ class StartScenarioRun
             'occurred_at' => now(),
         ]);
 
-        if ($mode === ScenarioRunMode::Real) {
-            $this->alarm($scenario, $run, $startedByUserId);
-        }
+        $this->alarm($scenario, $run, $startedByUserId);
 
         return $run;
     }
@@ -88,18 +87,24 @@ class StartScenarioRun
     /**
      * Alarmierung darf das Auslösen nie blockieren – Fehler werden geschluckt.
      * Zwei Kanäle: Push an die Geräte (Apps) und ein firmenweiter Broadcast fürs
-     * Web-Dashboard ({@see IncidentStarted}).
+     * Web-Dashboard ({@see IncidentStarted}). Übungen (API v1.1) alarmieren die
+     * Geräte ebenfalls — sichtbar mit Präfix „ÜBUNG: " und Data-Key `is_drill=1`;
+     * nur der Web-Broadcast (Dashboard-Banner) bleibt Ernstfällen vorbehalten.
      */
-    private function alarm(Scenario $scenario, ScenarioRun $run, int $startedByUserId): void
+    private function alarm(Scenario $scenario, ScenarioRun $run, ?int $startedByUserId): void
     {
-        $startedBy = User::query()
-            ->withoutGlobalScope(CurrentCompanyScope::class)
-            ->find($startedByUserId)?->name;
+        $isDrill = $run->isDrill();
+
+        $startedBy = $startedByUserId !== null
+            ? User::query()
+                ->withoutGlobalScope(CurrentCompanyScope::class)
+                ->find($startedByUserId)?->name
+            : null;
 
         AppNotification::create([
             'company_id' => $scenario->company_id,
             'type' => 'incident_started',
-            'title' => 'Notfall gemeldet',
+            'title' => ($isDrill ? 'ÜBUNG: ' : '').'Notfall gemeldet',
             'body' => $scenario->name,
             'triggered_by_name' => $startedBy,
             'severity' => 'critical',
@@ -112,10 +117,14 @@ class StartScenarioRun
                 ->find($scenario->company_id);
 
             if ($company !== null) {
-                $this->push->incident($company, $scenario->id, $scenario->name, $startedByUserId);
+                $this->push->incident($company, $scenario->id, $scenario->name, $startedByUserId, $isDrill);
             }
         } catch (Throwable) {
             // best-effort
+        }
+
+        if ($isDrill) {
+            return;
         }
 
         try {

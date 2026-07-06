@@ -28,8 +28,15 @@ class MobileIncidentController extends Controller
         $validated = $request->validate([
             'scenario_id' => ['required', 'string'],
             'mode' => ['nullable', 'in:real,drill'],
+            'is_drill' => ['nullable', 'boolean'],
             'title' => ['nullable', 'string', 'max:255'],
         ]);
+
+        // Übungsmodus (API v1.1): `is_drill` hat Vorrang vor dem älteren
+        // `mode`-Feld und wird auf den bestehenden Run-Modus abgebildet.
+        $mode = isset($validated['is_drill'])
+            ? ($validated['is_drill'] ? ScenarioRunMode::Drill->value : ScenarioRunMode::Real->value)
+            : ($validated['mode'] ?? ScenarioRunMode::Real->value);
 
         // Szenario streng auf die Firma des Tokens einschränken – Scope ist inert.
         $scenario = Scenario::query()
@@ -41,7 +48,7 @@ class MobileIncidentController extends Controller
         $run = $starter->handle(
             scenario: $scenario,
             startedByUserId: $token->created_by_user_id,
-            mode: $validated['mode'] ?? ScenarioRunMode::Real->value,
+            mode: $mode,
             title: $validated['title'] ?? null,
             source: 'app',
         );
@@ -50,6 +57,7 @@ class MobileIncidentController extends Controller
             'run_id' => $run->id,
             'title' => $run->title,
             'mode' => $run->mode->value,
+            'is_drill' => $run->isDrill(),
             'started_at' => $run->started_at?->toIso8601String(),
         ], 201);
     }

@@ -21,6 +21,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'started_at',
     'ended_at',
     'aborted_at',
+    'escalated_at',
     'summary',
 ])]
 class ScenarioRun extends Model
@@ -60,6 +61,21 @@ class ScenarioRun extends Model
         return $this->hasMany(CrisisLogEntry::class)->orderByDesc('occurred_at');
     }
 
+    /**
+     * Alarm-Quittierungen („gesehen"/„übernehme"), max. eine je Nutzer.
+     *
+     * @return HasMany<ScenarioRunAcknowledgement, $this>
+     */
+    public function acknowledgements(): HasMany
+    {
+        return $this->hasMany(ScenarioRunAcknowledgement::class)->orderBy('acknowledged_at');
+    }
+
+    public function isDrill(): bool
+    {
+        return $this->mode === ScenarioRunMode::Drill;
+    }
+
     public function isActive(): bool
     {
         return $this->ended_at === null && $this->aborted_at === null;
@@ -75,6 +91,7 @@ class ScenarioRun extends Model
             'started_at' => 'datetime',
             'ended_at' => 'datetime',
             'aborted_at' => 'datetime',
+            'escalated_at' => 'datetime',
         ];
     }
 }

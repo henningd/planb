@@ -1107,6 +1107,15 @@ class SettingsCatalog
                 'label' => 'Auto-PDF bei neuer Version',
                 'description' => 'Erzeugt automatisch ein revisionssicheres PDF, sobald eine HandbookVersion angelegt wird.',
             ],
+            'alarm_escalation_minutes' => [
+                'scope' => self::COMPANY,
+                'type' => 'int',
+                'default' => 10,
+                'min' => 0,
+                'max' => 1440,
+                'label' => 'Alarm-Eskalation (Minuten)',
+                'description' => 'Wird ein echter Alarm nach dieser Zeit von niemandem quittiert, folgt einmalig eine Eskalation: erneuter Push an alle Geräte plus SMS an den Krisenstab (sofern SMS konfiguriert). 0 = deaktiviert.',
+            ],
             'incident_mode_enabled' => [
                 'scope' => self::COMPANY,
                 'type' => 'bool',

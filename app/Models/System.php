@@ -16,7 +16,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['company_id', 'name', 'description', 'fallback_process', 'runbook_reference', 'emergency_level_id', 'category', 'system_type', 'system_priority_id', 'rto_minutes', 'rpo_minutes', 'downtime_cost_per_hour', 'downtime_cost_mode', 'monitoring_keys'])]
+#[Fillable(['company_id', 'name', 'description', 'fallback_process', 'runbook_reference', 'emergency_level_id', 'category', 'system_type', 'system_priority_id', 'rto_minutes', 'rpo_minutes', 'downtime_cost_per_hour', 'downtime_cost_mode', 'monitoring_keys', 'emergency_scenario_id'])]
 class System extends Model
 {
     /** @use HasFactory<SystemFactory> */
@@ -36,6 +36,17 @@ class System extends Model
     public function emergencyLevel(): BelongsTo
     {
         return $this->belongsTo(EmergencyLevel::class);
+    }
+
+    /**
+     * Szenario, das bei einem kritischen Monitoring-Alert automatisch als
+     * echter Alarm gestartet wird (Opt-in, NULL = keine Auto-Alarmierung).
+     *
+     * @return BelongsTo<Scenario, $this>
+     */
+    public function emergencyScenario(): BelongsTo
+    {
+        return $this->belongsTo(Scenario::class, 'emergency_scenario_id');
     }
 
     /**

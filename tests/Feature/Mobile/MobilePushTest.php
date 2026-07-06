@@ -168,21 +168,108 @@ test('triggering an incident from the app starts a run and alarms the other devi
     );
 });
 
-test('a drill run does not alarm the devices', function () {
+test('a drill run alarms the devices with the ÜBUNG prefix and is_drill flag', function () {
     [$user, $company, $token] = pushSession();
     MobileDevice::create(['fcm_token' => 'tok-4', 'user_id' => $user->id, 'company_id' => $company->id]);
+
+    // Gerät eines Kollegen – dieses soll den Übungs-Alarm erhalten.
+    $colleague = User::factory()->create();
+    MobileDevice::create(['fcm_token' => 'tok-4-colleague', 'user_id' => $colleague->id, 'company_id' => $company->id]);
+
+    $scenario = Scenario::factory()->for($company)->create(['name' => 'Stromausfall']);
+
+    $sender = Mockery::spy(PushSender::class);
+    $sender->shouldReceive('send')->andReturn([]);
+    app()->instance(PushSender::class, $sender);
+
+    $response = test()->withToken($token)->postJson('/api/mobile/incidents', [
+        'scenario_id' => $scenario->id,
+        'is_drill' => true,
+    ])->assertCreated();
+
+    expect($response->json('is_drill'))->toBeTrue()
+        ->and($response->json('mode'))->toBe('drill');
+
+    $run = ScenarioRun::withoutGlobalScope(CurrentCompanyScope::class)->firstOrFail();
+    expect($run->isDrill())->toBeTrue();
+
+    $sender->shouldHaveReceived('send')->withArgs(
+        fn ($tokens, $data, $title) => ($data['type'] ?? null) === 'incident'
+            && ($data['is_drill'] ?? null) === '1'
+            && $title === 'ÜBUNG: Notfall gemeldet'
+            && in_array('tok-4-colleague', $tokens, true)
+            && ! in_array('tok-4', $tokens, true),
+    );
+});
+
+test('a real incident carries neither the is_drill data key nor the ÜBUNG prefix', function () {
+    [$user, $company, $token] = pushSession();
+    $colleague = User::factory()->create();
+    MobileDevice::create(['fcm_token' => 'tok-real', 'user_id' => $colleague->id, 'company_id' => $company->id]);
 
     $scenario = Scenario::factory()->for($company)->create();
 
     $sender = Mockery::spy(PushSender::class);
+    $sender->shouldReceive('send')->andReturn([]);
     app()->instance(PushSender::class, $sender);
+
+    $response = test()->withToken($token)->postJson('/api/mobile/incidents', [
+        'scenario_id' => $scenario->id,
+        'is_drill' => false,
+    ])->assertCreated();
+
+    expect($response->json('is_drill'))->toBeFalse();
+
+    $sender->shouldHaveReceived('send')->withArgs(
+        fn ($tokens, $data, $title) => ($data['type'] ?? null) === 'incident'
+            && ! array_key_exists('is_drill', $data)
+            && $title === 'Notfall gemeldet',
+    );
+});
+
+test('closing a drill run pushes the ended notification with the ÜBUNG prefix', function () {
+    [$user, $company, $token] = pushSession();
+    $colleague = User::factory()->create();
+    MobileDevice::create(['fcm_token' => 'tok-drill-end', 'user_id' => $colleague->id, 'company_id' => $company->id]);
+
+    $scenario = Scenario::factory()->for($company)->create();
+    $run = ScenarioRun::factory()->for($company)->create([
+        'scenario_id' => $scenario->id,
+        'started_by_user_id' => $user->id,
+        'title' => 'Brandschutz-Übung',
+        'mode' => 'drill',
+        'started_at' => now(),
+    ]);
+
+    $sender = Mockery::spy(PushSender::class);
+    $sender->shouldReceive('send')->andReturn([]);
+    app()->instance(PushSender::class, $sender);
+
+    test()->withToken($token)
+        ->postJson("/api/mobile/runs/{$run->id}/close", ['outcome' => 'completed'])
+        ->assertOk();
+
+    $sender->shouldHaveReceived('send')->withArgs(
+        fn ($tokens, $data, $title) => ($data['type'] ?? null) === 'incident_ended'
+            && $title === 'ÜBUNG: Notfall beendet',
+    );
+});
+
+test('a drill marks the feed notification and the active run as drill in the sync bundle', function () {
+    [$user, $company, $token] = pushSession();
+    $scenario = Scenario::factory()->for($company)->create(['name' => 'Evakuierung']);
 
     test()->withToken($token)->postJson('/api/mobile/incidents', [
         'scenario_id' => $scenario->id,
-        'mode' => 'drill',
+        'is_drill' => true,
     ])->assertCreated();
 
-    $sender->shouldNotHaveReceived('send');
+    $data = test()->withToken($token)->getJson('/api/mobile/sync')->json('data');
+
+    expect($data['active_runs'])->toHaveCount(1)
+        ->and($data['active_runs'][0]['is_drill'])->toBeTrue()
+        ->and($data['notifications'][0]['is_drill'])->toBeTrue()
+        ->and($data['notifications'][0]['title'])->toBe('ÜBUNG: Notfall gemeldet');
 });
 
 test('an UNREGISTERED token reported by FCM deletes the device', function () {
