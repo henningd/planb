@@ -90,7 +90,9 @@ new class extends Component {
         $seenAt = Auth::user()?->notifications_seen_at;
     @endphp
     <flux:dropdown position="bottom" align="end">
-        <flux:button variant="ghost" class="relative" data-test="notification-bell-trigger">
+        {{-- `filled` statt `ghost`: dauerhaft als Schaltfläche erkennbar (die
+             frühere Hover-Optik), mit verstärktem Hover-Zustand aus dem Design-System. --}}
+        <flux:button variant="filled" class="relative" :aria-label="__('Benachrichtigungen')" data-test="notification-bell-trigger">
             <flux:icon name="bell" class="size-5" />
             @if ($this->unreadCount > 0)
                 <flux:badge

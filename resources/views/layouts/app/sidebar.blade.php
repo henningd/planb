@@ -27,6 +27,19 @@
 
             <livewire:team-switcher />
 
+            @php
+                // „Einrichtung" nur zeigen, solange das Onboarding NICHT komplett
+                // abgeschlossen ist — gleiche Abschluss-Definition wie im Wizard/
+                // Dashboard ({@see \App\Support\Onboarding\OnboardingProgress::isFullyDone()}),
+                // pro Firma (Mandant). Die Route bleibt direkt aufrufbar.
+                $sidebarCompany = auth()->user()?->currentCompany();
+                $onboardingCompleted = false;
+                if ($sidebarCompany !== null) {
+                    $onboardingCompleted = \App\Support\Onboarding\OnboardingService::ensureState($sidebarCompany)->isCompleted()
+                        || \App\Support\Onboarding\OnboardingService::progressFor($sidebarCompany)->isFullyDone();
+                }
+            @endphp
+
             <flux:sidebar.nav>
                 <flux:sidebar.group :heading="__('Platform')" class="grid">
                     <flux:sidebar.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>
@@ -35,9 +48,16 @@
                     <flux:sidebar.item icon="inbox" :href="route('tasks-inbox.index')" :current="request()->routeIs('tasks-inbox.*')" wire:navigate>
                         {{ __('Aufgaben-Inbox') }}
                     </flux:sidebar.item>
-                    <flux:sidebar.item icon="rocket-launch" :href="route('onboarding.index')" :current="request()->routeIs('onboarding.*')" wire:navigate>
-                        {{ __('Einrichtung') }}
-                    </flux:sidebar.item>
+                    @unless ($onboardingCompleted)
+                        <flux:sidebar.item icon="rocket-launch" :href="route('onboarding.index')" :current="request()->routeIs('onboarding.*')" wire:navigate>
+                            {{ __('Einrichtung') }}
+                        </flux:sidebar.item>
+                    @endunless
+                    @if (auth()->user()->isCurrentTeamAdmin())
+                        <flux:sidebar.item icon="book-open" :href="route('handbook-versions.index')" :current="request()->routeIs('handbook-versions.*')" wire:navigate>
+                            {{ __('Notfallhandbuch') }}
+                        </flux:sidebar.item>
+                    @endif
                     @if (config('features.compliance') && \Illuminate\Support\Facades\Route::has('compliance.index') && auth()->user()->isCurrentTeamAdmin())
                         <flux:sidebar.item icon="chart-bar" :href="route('compliance.index')" :current="request()->routeIs('compliance.*')" wire:navigate>
                             {{ __('Compliance') }}
@@ -234,9 +254,6 @@
                         <flux:sidebar.item icon="finger-print" :href="route('login-activity.index')" :current="request()->routeIs('login-activity.*')" wire:navigate>
                             {{ __('Anmeldungen') }}
                         </flux:sidebar.item>
-                        <flux:sidebar.item icon="document-text" :href="route('handbook-versions.index')" :current="request()->routeIs('handbook-versions.*')" wire:navigate>
-                            {{ __('Versionshistorie') }}
-                        </flux:sidebar.item>
                     @endif
                 </flux:sidebar.group>
 
@@ -299,12 +316,6 @@
 
             <flux:spacer />
 
-            <flux:sidebar.nav>
-                <flux:sidebar.item icon="book-open" :href="route('manual.index')" target="_blank">
-                    {{ __('Hilfe & Handbuch') }}
-                </flux:sidebar.item>
-            </flux:sidebar.nav>
-
             @php
                 $platformFooter = \App\Support\Settings\SystemSetting::get('platform_footer', '');
             @endphp
@@ -315,11 +326,22 @@
             @endif
 
             @auth
-                @if (auth()->user()?->currentCompany())
-                    <div class="hidden px-1 lg:block">
+                {{-- Glocke + Hilfe nebeneinander, beide dauerhaft in Button-Optik. --}}
+                <div class="hidden items-center gap-2 px-1 lg:flex">
+                    @if (auth()->user()?->currentCompany())
                         <livewire:notification-bell />
-                    </div>
-                @endif
+                    @endif
+                    <flux:tooltip :content="__('Hilfe & Handbuch')">
+                        <flux:button
+                            variant="filled"
+                            icon="question-mark-circle"
+                            :href="route('manual.index')"
+                            target="_blank"
+                            aria-label="{{ __('Hilfe & Handbuch') }}"
+                            data-test="sidebar-help-button"
+                        />
+                    </flux:tooltip>
+                </div>
             @endauth
 
             <x-desktop-user-menu class="hidden lg:block" :name="auth()->user()->name" />

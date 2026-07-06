@@ -11,7 +11,7 @@ use Livewire\Attributes\Computed;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 
-new #[Title('Versionshistorie')] class extends Component {
+new #[Title('Notfallhandbuch')] class extends Component {
     public ?string $editingId = null;
 
     public string $version = '';
@@ -45,6 +45,16 @@ new #[Title('Versionshistorie')] class extends Component {
     public function hasCompany(): bool
     {
         return Auth::user()->currentCompany() !== null;
+    }
+
+    /**
+     * Aktuell gültige (freigegebene) Handbuch-Version — dieselbe Auswahllogik
+     * wie Dashboard-Kachel und Mobile-Sync ({@see \App\Models\Company::currentHandbookVersion()}).
+     */
+    #[Computed]
+    public function currentVersion(): ?HandbookVersion
+    {
+        return Auth::user()->currentCompany()?->currentHandbookVersion();
     }
 
     /**
@@ -119,7 +129,7 @@ new #[Title('Versionshistorie')] class extends Component {
 
         Flux::modal('version-form')->close();
         $this->resetForm();
-        unset($this->versions);
+        unset($this->versions, $this->currentVersion);
 
         Flux::toast(variant: 'success', text: __('Version gespeichert.'));
     }
@@ -148,7 +158,7 @@ new #[Title('Versionshistorie')] class extends Component {
 
         $version->delete();
         $this->deletingId = null;
-        unset($this->versions);
+        unset($this->versions, $this->currentVersion);
         Flux::modal('version-delete')->close();
         Flux::toast(variant: 'success', text: __('Version gelöscht.'));
     }
@@ -180,7 +190,7 @@ new #[Title('Versionshistorie')] class extends Component {
             $version->forceFill(['approved_at' => now()->toDateString()])->save();
         }
 
-        unset($this->versions);
+        unset($this->versions, $this->currentVersion);
         Flux::toast(variant: 'success', text: __('Version freigegeben und PDF revisionssicher abgelegt.'));
     }
 
@@ -226,7 +236,7 @@ new #[Title('Versionshistorie')] class extends Component {
 
         $this->ackEmployeeId = null;
         $this->ackNotes = '';
-        unset($this->versions);
+        unset($this->versions, $this->currentVersion);
 
         Flux::toast(variant: 'success', text: __('Lesebestätigung gespeichert.'));
     }
@@ -251,9 +261,9 @@ new #[Title('Versionshistorie')] class extends Component {
 <section class="w-full">
     <div class="mb-6 flex items-start justify-between gap-4">
         <div>
-            <flux:heading size="xl">{{ __('Versionshistorie') }}</flux:heading>
+            <flux:heading size="xl">{{ __('Notfallhandbuch') }}</flux:heading>
             <flux:subheading>
-                {{ __('Jede Änderung am Notfallhandbuch wird hier dokumentiert. Neue Versionen müssen durch die Geschäftsführung freigegeben werden (Kap. 1).') }}
+                {{ __('Das aktuelle Handbuch Ihrer Firma — darunter die vollständige Versionshistorie.') }}
             </flux:subheading>
         </div>
 
@@ -267,6 +277,80 @@ new #[Title('Versionshistorie')] class extends Component {
             {{ __('Bitte legen Sie zuerst ein Firmenprofil an.') }}
         </div>
     @endunless
+
+    {{-- Aktuelles Handbuch prominent: das, was ein Nutzer im Alltag sucht. --}}
+    @if ($this->hasCompany)
+        <div class="mb-8 rounded-xl border border-zinc-200 bg-white p-6 dark:border-zinc-700 dark:bg-zinc-900" data-test="current-handbook">
+            @if ($this->currentVersion)
+                <div class="flex flex-wrap items-start justify-between gap-4">
+                    <div class="flex items-start gap-4">
+                        <div class="rounded-lg bg-sky-50 p-3 dark:bg-sky-500/10">
+                            <flux:icon name="book-open" class="size-8 text-sky-600 dark:text-sky-400" />
+                        </div>
+                        <div>
+                            <flux:heading size="lg">
+                                {{ __('Aktuelles Handbuch') }} — {{ __('Version') }} {{ $this->currentVersion->version }}
+                            </flux:heading>
+                            <div class="mt-1 flex flex-wrap items-center gap-2">
+                                <flux:badge color="emerald" size="sm">
+                                    {{ __('Freigegeben') }} {{ $this->currentVersion->approved_at->format('d.m.Y') }}
+                                </flux:badge>
+                                @if ($this->currentVersion->approvedBy || $this->currentVersion->approved_by_name)
+                                    <flux:text class="text-sm text-zinc-500 dark:text-zinc-400">
+                                        {{ __('durch') }} {{ $this->currentVersion->approvedBy?->fullName() ?? $this->currentVersion->approved_by_name }}
+                                    </flux:text>
+                                @endif
+                            </div>
+                            @if ($this->currentVersion->change_reason)
+                                <flux:text class="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
+                                    {{ $this->currentVersion->change_reason }}
+                                </flux:text>
+                            @endif
+                        </div>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <flux:button icon="eye" variant="filled" :href="route('handbook.print')" target="_blank">
+                            {{ __('Handbuch ansehen') }}
+                        </flux:button>
+                        @if ($this->currentVersion->hasPdf())
+                            <flux:button
+                                variant="primary"
+                                icon="arrow-down-tray"
+                                :href="route('handbook-versions.pdf', ['current_team' => auth()->user()->currentTeam->slug, 'version' => $this->currentVersion->id])"
+                            >
+                                {{ __('PDF herunterladen') }}
+                            </flux:button>
+                        @endif
+                    </div>
+                </div>
+            @else
+                <div class="flex flex-wrap items-center justify-between gap-4">
+                    <div class="flex items-start gap-4">
+                        <div class="rounded-lg bg-amber-50 p-3 dark:bg-amber-500/10">
+                            <flux:icon name="book-open" class="size-8 text-amber-600 dark:text-amber-400" />
+                        </div>
+                        <div>
+                            <flux:heading size="lg">{{ __('Noch keine freigegebene Handbuch-Version') }}</flux:heading>
+                            <flux:text class="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+                                {{ __('Legen Sie eine Version an und geben Sie sie frei — danach erscheint hier das aktuelle Handbuch mit PDF.') }}
+                            </flux:text>
+                        </div>
+                    </div>
+                    <flux:button icon="eye" variant="filled" :href="route('handbook.print')" target="_blank">
+                        {{ __('Live-Vorschau ansehen') }}
+                    </flux:button>
+                </div>
+            @endif
+        </div>
+    @endif
+
+    {{-- Versionshistorie (bisherige Ansicht) als Abschnitt darunter. --}}
+    <div class="mb-4">
+        <flux:heading size="lg">{{ __('Versionshistorie') }}</flux:heading>
+        <flux:subheading>
+            {{ __('Jede Änderung am Notfallhandbuch wird hier dokumentiert. Neue Versionen müssen durch die Geschäftsführung freigegeben werden (Kap. 1).') }}
+        </flux:subheading>
+    </div>
 
     <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         @forelse ($this->versions as $version)
