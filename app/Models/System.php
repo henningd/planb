@@ -16,7 +16,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['company_id', 'name', 'description', 'fallback_process', 'runbook_reference', 'emergency_level_id', 'category', 'system_type', 'system_priority_id', 'rto_minutes', 'rpo_minutes', 'downtime_cost_per_hour', 'downtime_cost_mode', 'monitoring_keys', 'emergency_scenario_id'])]
+#[Fillable(['company_id', 'name', 'description', 'fallback_process', 'runbook_reference', 'emergency_level_id', 'category', 'system_type', 'system_priority_id', 'rto_minutes', 'rpo_minutes', 'downtime_cost_per_hour', 'downtime_cost_mode', 'monitoring_keys', 'emergency_scenario_id', 'monitoring_muted_until'])]
 class System extends Model
 {
     /** @use HasFactory<SystemFactory> */
@@ -214,6 +214,18 @@ class System extends Model
             'downtime_cost_per_hour' => 'integer',
             'downtime_cost_mode' => DowntimeCostMode::class,
             'monitoring_keys' => 'array',
+            'monitoring_muted_until' => 'datetime',
         ];
+    }
+
+    /**
+     * Läuft für dieses System gerade ein Wartungsfenster? Dann werden
+     * Monitoring-Alerts nur protokolliert (handling=muted) — kein Incident,
+     * kein Auto-Alarm.
+     */
+    public function isMonitoringMuted(): bool
+    {
+        return $this->monitoring_muted_until !== null
+            && $this->monitoring_muted_until->isFuture();
     }
 }

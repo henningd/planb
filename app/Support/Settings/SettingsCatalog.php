@@ -1177,6 +1177,13 @@ class SettingsCatalog
                 'label' => 'Microsoft-Teams-Webhook-URL',
                 'description' => 'Incoming-Webhook-URL eines Teams-Channels. Vorlagen mit Kanal „Teams" werden hierhin gepostet.',
             ],
+            'chat_alarm_posts_enabled' => [
+                'scope' => self::COMPANY,
+                'type' => 'bool',
+                'default' => true,
+                'label' => 'Alarm-Posts in Slack/Teams',
+                'description' => 'Postet Notfall-Start, Eskalation und Entwarnung automatisch als Karte in die konfigurierten Chat-Kanäle (Slack- und/oder Teams-Webhook-URL). Ohne hinterlegte Webhook-URL wird nichts gesendet.',
+            ],
             'portal_link_enabled' => [
                 'scope' => self::COMPANY,
                 'type' => 'bool',

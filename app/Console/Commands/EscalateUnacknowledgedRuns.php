@@ -8,6 +8,7 @@ use App\Models\Company;
 use App\Models\CrisisLogEntry;
 use App\Models\ScenarioRun;
 use App\Scopes\CurrentCompanyScope;
+use App\Services\Chat\AlarmChatNotifier;
 use App\Services\Sms\SmsGatewayContract;
 use App\Support\Push\PushNotifier;
 use App\Support\Settings\CompanySetting;
@@ -20,7 +21,7 @@ use Throwable;
 #[Description('Eskaliert echte Alarme (mode=real), die nach Ablauf der firmenspezifischen Eskalationsfrist von niemandem quittiert wurden: erneuter Push an alle Geräte, SMS an den Krisenstab (falls konfiguriert), Vermerk im Krisen-Logbuch. Idempotent: escalated_at sperrt gegen Doppel-Eskalation.')]
 class EscalateUnacknowledgedRuns extends Command
 {
-    public function handle(PushNotifier $push, SmsGatewayContract $sms): int
+    public function handle(PushNotifier $push, SmsGatewayContract $sms, AlarmChatNotifier $chat): int
     {
         // Übungen (drill) werden NIE eskaliert. Läuft ein Alt-Run ohne
         // Acknowledgement-Einträge (vor Einführung der Quittierungen
@@ -55,7 +56,7 @@ class EscalateUnacknowledgedRuns extends Command
                     continue;
                 }
 
-                if ($this->escalate($company, $run, $minutes, $push, $sms)) {
+                if ($this->escalate($company, $run, $minutes, $push, $sms, $chat)) {
                     $escalated++;
                     $this->line("→ [{$run->title}] eskaliert nach {$minutes} Minuten ohne Quittierung.");
                 }
@@ -70,9 +71,9 @@ class EscalateUnacknowledgedRuns extends Command
     /**
      * Führt die einmalige Eskalation eines Runs aus. Das bedingte Update auf
      * `escalated_at` wirkt als Lock — bei parallelen Läufen eskaliert genau
-     * einer. Push/SMS sind best-effort und blockieren einander nicht.
+     * einer. Push/SMS/Chat-Post sind best-effort und blockieren einander nicht.
      */
-    private function escalate(Company $company, ScenarioRun $run, int $minutes, PushNotifier $push, SmsGatewayContract $sms): bool
+    private function escalate(Company $company, ScenarioRun $run, int $minutes, PushNotifier $push, SmsGatewayContract $sms, AlarmChatNotifier $chat): bool
     {
         $claimed = ScenarioRun::query()
             ->withoutGlobalScope(CurrentCompanyScope::class)
@@ -88,6 +89,12 @@ class EscalateUnacknowledgedRuns extends Command
             $push->incidentUnacknowledged($company, $run->id, $run->scenario_id, $run->title);
         } catch (Throwable) {
             // best-effort — SMS und Logbuch-Vermerk folgen trotzdem
+        }
+
+        try {
+            $chat->incidentUnacknowledged($company, $run->title);
+        } catch (Throwable) {
+            // best-effort — Chat-Post darf die Eskalation nie blockieren
         }
 
         $smsSent = 0;

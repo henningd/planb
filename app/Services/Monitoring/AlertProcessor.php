@@ -39,6 +39,9 @@ class AlertProcessor
      *    dasselbe System der letzten 24h an).
      *  - Wenn `resolved` → ergänzt eine Notiz am verlinkten Incident, aber
      *    schließt ihn NICHT (das tut ein Mensch).
+     *  - Läuft für das System ein Wartungsfenster (`systems.monitoring_muted_until`
+     *    in der Zukunft) → handling `muted`: Alert wird nur protokolliert,
+     *    kein Incident, kein Auto-Alarm. Entwarnungen laufen normal weiter.
      */
     public function process(NormalizedAlert $alert, ApiToken $token): MonitoringAlert
     {
@@ -61,7 +64,12 @@ class AlertProcessor
             $note = null;
             $openedIncident = false;
 
-            if ($handling === 'created_incident') {
+            if ($handling === 'muted') {
+                $note = sprintf(
+                    'Wartungsfenster aktiv: Monitoring-Alarme sind bis %s pausiert — kein Incident, kein Auto-Alarm.',
+                    $system->monitoring_muted_until->format('d.m.Y H:i'),
+                );
+            } elseif ($handling === 'created_incident') {
                 [$incident, $openedIncident] = $this->openOrAttachIncident($alert, $system, $token->company_id);
             } elseif ($alert->isResolved() && $system) {
                 $incident = $this->findRecentOpenIncident($system, $token->company_id);
@@ -183,6 +191,12 @@ class AlertProcessor
         }
         if ($alert->severity !== null && ! in_array($alert->severity, self::FIRING_THRESHOLD, true)) {
             return 'severity_below_threshold';
+        }
+        // Wartungsfenster: kritischer Alert wird nur protokolliert — kein
+        // Incident, kein Auto-Alarm. Entwarnungen (resolved) laufen normal,
+        // da decideHandling nur für firing-Alerts hierher kommt.
+        if ($system->isMonitoringMuted()) {
+            return 'muted';
         }
 
         return 'created_incident';

@@ -99,6 +99,7 @@ test('catalog scope filtering returns the right keys', function () {
             'pdf_footer_show_hash',
             'slack_webhook_url',
             'teams_webhook_url',
+            'chat_alarm_posts_enabled',
             'portal_link_enabled',
         ]);
 });

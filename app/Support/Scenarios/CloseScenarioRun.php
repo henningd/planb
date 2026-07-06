@@ -9,6 +9,7 @@ use App\Models\CrisisLogEntry;
 use App\Models\ScenarioRun;
 use App\Models\User;
 use App\Scopes\CurrentCompanyScope;
+use App\Services\Chat\AlarmChatNotifier;
 use App\Support\Push\PushNotifier;
 use Throwable;
 
@@ -20,7 +21,10 @@ use Throwable;
  */
 class CloseScenarioRun
 {
-    public function __construct(private readonly PushNotifier $push) {}
+    public function __construct(
+        private readonly PushNotifier $push,
+        private readonly AlarmChatNotifier $chat,
+    ) {}
 
     public function handle(ScenarioRun $run, string $outcome, ?int $byUserId = null, string $source = 'web'): void
     {
@@ -66,6 +70,7 @@ class CloseScenarioRun
 
             if ($company !== null) {
                 $this->push->incidentEnded($company, $title, $outcome, $byUserId, $isDrill);
+                $this->chat->incidentEnded($company, $title, $outcome, $isDrill);
             }
         } catch (Throwable) {
             // best-effort

@@ -11,6 +11,7 @@ use App\Models\Scenario;
 use App\Models\ScenarioRun;
 use App\Models\User;
 use App\Scopes\CurrentCompanyScope;
+use App\Services\Chat\AlarmChatNotifier;
 use App\Support\Push\PushNotifier;
 use Illuminate\Support\Facades\DB;
 use Throwable;
@@ -26,7 +27,10 @@ use Throwable;
  */
 class StartScenarioRun
 {
-    public function __construct(private readonly PushNotifier $push) {}
+    public function __construct(
+        private readonly PushNotifier $push,
+        private readonly AlarmChatNotifier $chat,
+    ) {}
 
     /**
      * @param  int|null  $startedByUserId  NULL bei automatischer Auslösung (z. B. Monitoring-Alert)
@@ -86,8 +90,9 @@ class StartScenarioRun
 
     /**
      * Alarmierung darf das Auslösen nie blockieren – Fehler werden geschluckt.
-     * Zwei Kanäle: Push an die Geräte (Apps) und ein firmenweiter Broadcast fürs
-     * Web-Dashboard ({@see IncidentStarted}). Übungen (API v1.1) alarmieren die
+     * Drei Kanäle: Push an die Geräte (Apps), Karte in die konfigurierten
+     * Slack-/Teams-Kanäle ({@see AlarmChatNotifier}) und ein firmenweiter
+     * Broadcast fürs Web-Dashboard ({@see IncidentStarted}). Übungen (API v1.1) alarmieren die
      * Geräte ebenfalls — sichtbar mit Präfix „ÜBUNG: " und Data-Key `is_drill=1`;
      * nur der Web-Broadcast (Dashboard-Banner) bleibt Ernstfällen vorbehalten.
      */
@@ -120,6 +125,7 @@ class StartScenarioRun
 
             if ($company !== null) {
                 $this->push->incident($company, $scenario->id, $scenario->name, $startedByUserId, $isDrill);
+                $this->chat->incidentStarted($company, $scenario->name, $startedBy, $isDrill);
             }
         } catch (Throwable) {
             // best-effort

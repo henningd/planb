@@ -53,6 +53,9 @@ new #[Title('System bearbeiten')] class extends Component {
     /** Szenario, das ein kritischer Monitoring-Alert automatisch als echten Alarm startet (null = keine). */
     public ?string $emergency_scenario_id = null;
 
+    /** Wartungsfenster: Bis zu diesem Zeitpunkt werden Monitoring-Alerts nur protokolliert (kein Incident, kein Auto-Alarm). */
+    public ?string $monitoring_muted_until = null;
+
     /** @var array<int, array{provider_id: string, ownership_kind: string, is_deputy: bool, note: string}> */
     public array $providerAssignments = [];
 
@@ -103,6 +106,7 @@ new #[Title('System bearbeiten')] class extends Component {
                 ? implode("\n", $system->monitoring_keys)
                 : '';
             $this->emergency_scenario_id = $system->emergency_scenario_id;
+            $this->monitoring_muted_until = $system->monitoring_muted_until?->format('Y-m-d\TH:i');
             $this->providerAssignments = $system->serviceProviders
                 ->map(fn (ServiceProvider $p) => [
                     'provider_id' => $p->id,
@@ -678,6 +682,11 @@ new #[Title('System bearbeiten')] class extends Component {
             $this->emergency_scenario_id = null;
         }
 
+        // Geleertes datetime-local-Feld kommt als '' an → als null behandeln.
+        if ($this->monitoring_muted_until === '') {
+            $this->monitoring_muted_until = null;
+        }
+
         $validated = $this->validate([
             'name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:2000'],
@@ -698,6 +707,7 @@ new #[Title('System bearbeiten')] class extends Component {
                 \Illuminate\Validation\Rule::exists('scenarios', 'id')
                     ->where('company_id', Auth::user()->currentCompany()->id),
             ],
+            'monitoring_muted_until' => ['nullable', 'date'],
             'providerAssignments' => ['array'],
             'providerAssignments.*.provider_id' => ['required', 'uuid', 'exists:service_providers,id'],
             'providerAssignments.*.ownership_kind' => ['nullable', 'in:'.$ownershipValues],
@@ -978,6 +988,22 @@ new #[Title('System bearbeiten')] class extends Component {
                             <flux:select.option value="{{ $scenario->id }}">{{ $scenario->name }}</flux:select.option>
                         @endforeach
                     </flux:select>
+                </flux:field>
+
+                <flux:field>
+                    <flux:label>{{ __('Monitoring-Alarme pausiert bis') }}</flux:label>
+                    <flux:description>
+                        {{ __('Wartungsfenster ohne Fehlalarm: Bis zu diesem Zeitpunkt werden eingehende Monitoring-Alerts für dieses System nur protokolliert — es wird kein Vorfall angelegt und kein automatischer Alarm gestartet. Entwarnungen werden weiterhin normal verarbeitet. Leer = Monitoring aktiv.') }}
+                    </flux:description>
+                    <flux:input type="datetime-local" wire:model="monitoring_muted_until" />
+                    @if ($system && $system->isMonitoringMuted())
+                        <div class="mt-2 flex items-center gap-2 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-300">
+                            <flux:icon.pause-circle class="h-4 w-4 shrink-0" />
+                            <span>
+                                {{ __('Aktuell pausiert bis :zeit Uhr — eingehende Alerts lösen bis dahin keinen Vorfall und keinen Alarm aus.', ['zeit' => $system->monitoring_muted_until->format('d.m.Y H:i')]) }}
+                            </span>
+                        </div>
+                    @endif
                 </flux:field>
             @else
                 <flux:field>
