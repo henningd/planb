@@ -211,6 +211,9 @@
                     <flux:sidebar.item icon="clipboard-document-check" :href="route('scenario-runs.index')" :current="request()->routeIs('scenario-runs.*')" wire:navigate>
                         {{ __('Protokolle & Übungen') }}
                     </flux:sidebar.item>
+                    <flux:sidebar.item icon="document-chart-bar" :href="route('drill-reports.index')" :current="request()->routeIs('drill-reports.*')" wire:navigate>
+                        {{ __('Übungsberichte') }}
+                    </flux:sidebar.item>
                     <flux:sidebar.item icon="identification" :href="route('emergency-card.pdf')" target="_blank">
                         {{ __('Notfallkarte (PDF)') }}
                     </flux:sidebar.item>

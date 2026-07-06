@@ -4,6 +4,7 @@ use App\Http\Controllers\AuditLogExportController;
 use App\Http\Controllers\AuthActivityExportController;
 use App\Http\Controllers\BackupController;
 use App\Http\Controllers\CrisisLogExportController;
+use App\Http\Controllers\DrillReportPdfController;
 use App\Http\Controllers\EmergencyCardController;
 use App\Http\Controllers\HandbookVersionPdfController;
 use App\Http\Controllers\LeadConfirmationController;
@@ -373,6 +374,15 @@ Route::prefix('{current_team}')
         Route::livewire('scenario-runs', 'pages::scenario-runs.index')->name('scenario-runs.index');
         Route::livewire('scenario-runs/{run}', 'pages::scenario-runs.show')->name('scenario-runs.show');
         Route::get('scenario-runs/{run}/protokoll.pdf', [CrisisLogExportController::class, 'pdf'])->name('scenario-runs.protocol.pdf');
+
+        // Übungsberichte: Auswertung abgeschlossener Drill-Läufe inkl. PDF-Nachweis.
+        Route::livewire('uebungsberichte', 'pages::drill-reports.index')->name('drill-reports.index');
+        Route::livewire('uebungsberichte/{run}', 'pages::drill-reports.show')
+            ->where('run', '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}')
+            ->name('drill-reports.show');
+        Route::get('uebungsberichte/{run}/bericht.pdf', DrillReportPdfController::class)
+            ->where('run', '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}')
+            ->name('drill-reports.pdf');
 
         Route::get('notfallkarte.pdf', [EmergencyCardController::class, 'pdf'])->name('emergency-card.pdf');
 
