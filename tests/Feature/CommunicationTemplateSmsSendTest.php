@@ -186,3 +186,41 @@ test('sendSms refuses non-sms templates', function () {
 
     Http::assertNothingSent();
 });
+
+test('the sms modal warns loudly when no gateway is configured (null gateway simulates)', function () {
+    [$user] = smsTestSetup();
+
+    config(['services.sevenio.key' => null]);
+    app()->forgetInstance(SmsGatewayContract::class);
+
+    Livewire\Livewire::actingAs($user)
+        ->test('pages::communication-templates.index')
+        ->assertSee('SMS-Gateway nicht konfiguriert')
+        ->assertSee('nur simuliert');
+});
+
+test('the sms modal shows no gateway warning when seven.io is configured', function () {
+    [$user] = smsTestSetup();
+
+    config(['services.sevenio.key' => 'key-test']);
+    app()->forgetInstance(SmsGatewayContract::class);
+
+    Livewire\Livewire::actingAs($user)
+        ->test('pages::communication-templates.index')
+        ->assertDontSee('SMS-Gateway nicht konfiguriert');
+});
+
+test('simulated sends are badged as simulated instead of ok', function () {
+    [$user, , $template] = smsTestSetup();
+
+    config(['services.sevenio.key' => null]);
+    app()->forgetInstance(SmsGatewayContract::class);
+
+    Livewire\Livewire::actingAs($user)
+        ->test('pages::communication-templates.index')
+        ->call('openSmsSend', $template->id)
+        ->call('confirmSendSms')
+        ->call('sendSms')
+        ->assertSee('Simuliert — kein Gateway')
+        ->assertDontSee('>OK<', false);
+});

@@ -862,6 +862,15 @@ new #[Title('Kommunikations-Vorlagen')] class extends Component {
                 </flux:subheading>
             </div>
 
+            @unless (app(\App\Services\Sms\SmsGatewayContract::class)->isConfigured())
+                <flux:callout variant="warning" icon="exclamation-triangle">
+                    <flux:callout.heading>{{ __('SMS-Gateway nicht konfiguriert') }}</flux:callout.heading>
+                    <flux:callout.text>
+                        {{ __('Es werden KEINE echten SMS verschickt — der Versand wird nur simuliert. Hinterlege SEVENIO_API_KEY in der Server-Konfiguration, um den Versand zu aktivieren.') }}
+                    </flux:callout.text>
+                </flux:callout>
+            @endunless
+
             <div class="rounded-lg border border-zinc-200 bg-zinc-50 p-3 text-sm dark:border-zinc-700 dark:bg-zinc-800/50">
                 <flux:text class="text-xs uppercase tracking-wide text-zinc-500 dark:text-zinc-400">{{ __('Nachricht') }}</flux:text>
                 <div class="mt-1 whitespace-pre-line">{{ $this->smsBodyPreview() }}</div>
@@ -904,7 +913,9 @@ new #[Title('Kommunikations-Vorlagen')] class extends Component {
                                 <div class="font-medium">{{ $r['name'] }}</div>
                                 <div class="text-xs text-zinc-500 dark:text-zinc-400">{{ $r['to'] }}</div>
                             </div>
-                            @if ($r['success'])
+                            @if ($r['success'] && ! app(\App\Services\Sms\SmsGatewayContract::class)->isConfigured())
+                                <flux:badge color="amber" size="sm" icon="exclamation-triangle">{{ __('Simuliert — kein Gateway') }}</flux:badge>
+                            @elseif ($r['success'])
                                 <flux:badge color="emerald" size="sm" icon="check">{{ __('OK') }}</flux:badge>
                             @else
                                 <flux:badge color="rose" size="sm" icon="x-mark">{{ $r['error'] ?? __('Fehler') }}</flux:badge>
