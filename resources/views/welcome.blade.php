@@ -233,6 +233,7 @@
                         'Mehr-Mandanten-Verwaltung für Berater: ein Login, Wechsel per Team-Switcher',
                         'SMS-Alarmierung und QR-Notfallaushang',
                         'Verwaltungs-Template für Kommunen: Fachverfahren, Bürgerdienste (OZG), E-Akte',
+                        'Notfall-App für iOS & Android: offline verfügbar, Alarm-Quittierung, Face-ID-Sperre',
                     ],
                     'offers' => [
                         '@type' => 'Offer',
@@ -871,6 +872,97 @@
                         @endforeach
                     </ul>
                 </div>
+            </div>
+        </div>
+    </section>
+
+    {{-- ============ NOTFALL-APP ============ --}}
+    <section id="app" class="py-20 lg:py-28 bg-slate-900 text-white relative overflow-hidden">
+        <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(99,102,241,0.22),transparent_60%)]"></div>
+        <div class="relative max-w-7xl mx-auto px-6 lg:px-8">
+            <div class="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+                <div>
+                    <span class="text-sm font-semibold uppercase tracking-wide text-indigo-300">Die Notfall-App für iOS &amp; Android</span>
+                    <h2 class="mt-3 text-3xl sm:text-4xl font-semibold tracking-tight">
+                        Das Notfallhandbuch in der Hosentasche – auch wenn alles andere ausfällt.
+                    </h2>
+                    <p class="mt-4 text-lg text-slate-300 leading-relaxed">
+                        Ihr Krisenstab trägt Handbuch, Kontakte und Checklisten immer bei sich –
+                        einsatzbereit, wenn Server, Netzwerk und Telefonanlage gerade nicht mehr helfen.
+                    </p>
+                    <ul class="mt-8 space-y-6">
+                        <li class="flex gap-4">
+                            <span class="inline-flex items-center justify-center w-10 h-10 shrink-0 rounded-lg bg-indigo-500/20 ring-1 ring-indigo-400/30 text-indigo-300">
+                                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4M2 12h4M18 12h4M12 18v4"/><circle cx="12" cy="12" r="4"/></svg>
+                            </span>
+                            <div>
+                                <h3 class="font-semibold text-white">Alle Daten offline auf dem Gerät</h3>
+                                <p class="mt-1 text-sm text-slate-300 leading-relaxed">
+                                    Notfallhandbuch, Krisenstab-Kontakte, Wiederanlauf-Pläne und Szenario-Checklisten
+                                    liegen lokal auf dem Smartphone. Lesen <span class="font-medium text-white">und Abhaken
+                                    funktionieren ohne Internet</span> – Änderungen werden automatisch übertragen, sobald
+                                    wieder Verbindung besteht.
+                                </p>
+                            </div>
+                        </li>
+                        <li class="flex gap-4">
+                            <span class="inline-flex items-center justify-center w-10 h-10 shrink-0 rounded-lg bg-indigo-500/20 ring-1 ring-indigo-400/30 text-indigo-300">
+                                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+                            </span>
+                            <div>
+                                <h3 class="font-semibold text-white">Alarme, die wirklich ankommen – auch nachts</h3>
+                                <p class="mt-1 text-sm text-slate-300 leading-relaxed">
+                                    Notfall-Benachrichtigungen sind <span class="font-medium text-white">zeitkritisch</span>:
+                                    Sie durchbrechen Fokus-Modi wie „Nicht stören" oder „Schlafen" auf dem iPhone, auf Android
+                                    klingelt der Alarm in Alarm-Lautstärke. Jeder quittiert mit einem Tipp –
+                                    <span class="font-medium text-white">„Gesehen" oder „Ich übernehme"</span> – und alle sehen,
+                                    wer reagiert hat. Reagiert niemand, eskaliert {{ $productName }} automatisch
+                                    <span class="font-medium text-white">per SMS an den gesamten Krisenstab</span> – die letzte
+                                    Meile, die auch ohne Internet funktioniert.
+                                </p>
+                            </div>
+                        </li>
+                        <li class="flex gap-4">
+                            <span class="inline-flex items-center justify-center w-10 h-10 shrink-0 rounded-lg bg-indigo-500/20 ring-1 ring-indigo-400/30 text-indigo-300">
+                                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+                            </span>
+                            <div>
+                                <h3 class="font-semibold text-white">Sicherheit &amp; Datenschutz eingebaut</h3>
+                                <p class="mt-1 text-sm text-slate-300 leading-relaxed">
+                                    App-Sperre per <span class="font-medium text-white">Face ID bzw. Fingerabdruck</span> schützt
+                                    die sensiblen Kontaktdaten auf dem Gerät. Zugangsdaten liegen verschlüsselt im
+                                    Geräte-Schlüsselbund, beim Abmelden werden alle lokalen Daten gelöscht – und die App
+                                    enthält <span class="font-medium text-white">kein Tracking und keine Werbung</span>.
+                                </p>
+                            </div>
+                        </li>
+                    </ul>
+                    <div class="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3 text-sm text-slate-400">
+                        <span class="flex items-center gap-2">
+                            <svg class="w-4 h-4 text-indigo-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></svg>
+                            Für iPhone (iOS 17+) und Android
+                        </span>
+                        <span class="flex items-center gap-2">
+                            <svg class="w-4 h-4 text-indigo-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                            Ab dem Business-Tarif inklusive
+                        </span>
+                    </div>
+                </div>
+
+                {{-- Mockup: App im Alarmfall --}}
+                @include('partials.notfall-app-mockup', [
+                    'mockupPush' => 'Notfall gemeldet: Ransomware-Verdacht',
+                    'mockupTitle' => 'Ransomware-Verdacht',
+                    'mockupMeta' => 'Gestartet 03:12 · Hauptstandort',
+                    'mockupChips' => ['2× gesehen', 'S. Krause übernimmt'],
+                    'mockupSteps' => [
+                        ['Internet-Uplink trennen', 'done'],
+                        ['IT-Dienstleister anrufen (Notfallnummer)', 'done'],
+                        ['Krisenstab einberufen', 'pending'],
+                        ['Mitarbeitende über Sammelpunkt informieren', 'open'],
+                    ],
+                    'mockupCaption' => 'Beispielansicht der '.$productName.'-App im Alarmfall – offline, mit Quittierungen.',
+                ])
             </div>
         </div>
     </section>

@@ -25,8 +25,23 @@ test('kommunen page shows the app section with offline, alarm and sms messaging'
         ->assertSee('Nicht stören')
         ->assertSee('Automatische SMS-Eskalation')
         ->assertSee('SMS an den')
+        ->assertSee('Sicherheit & Datenschutz eingebaut')
+        ->assertSee('Face ID')
         ->assertSee('Offline verfügbar')
         ->assertSee('Stromausfall Rathaus');
+});
+
+test('landing page shows the app section with offline, alarm and security messaging', function () {
+    $this->get(route('home'))
+        ->assertOk()
+        ->assertSee('Die Notfall-App für iOS & Android')
+        ->assertSee('Das Notfallhandbuch in der Hosentasche')
+        ->assertSee('Alle Daten offline auf dem Gerät')
+        ->assertSee('Alarme, die wirklich ankommen – auch nachts')
+        ->assertSee('Sicherheit & Datenschutz eingebaut')
+        ->assertSee('Face ID')
+        ->assertSee('Ab dem Business-Tarif inklusive')
+        ->assertSee('Ransomware-Verdacht');
 });
 
 test('landing page highlights kommunen and links to the kommunen page', function () {
