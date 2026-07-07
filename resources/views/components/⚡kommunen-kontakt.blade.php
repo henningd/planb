@@ -13,6 +13,9 @@ use Livewire\Component;
  * die Plattform-Kontaktadresse per E-Mail. Honeypot + IP-Rate-Limit gegen Spam.
  */
 new class extends Component {
+    /** Lead-Quelle: 'kommunen' (Kommunen-Seite) oder 'web' (Startseite). */
+    public string $source = 'kommunen';
+
     public string $contactName = '';
 
     public string $organization = '';
@@ -53,7 +56,7 @@ new class extends Component {
             'message' => ['required', 'string', 'max:4000'],
         ], attributes: [
             'contactName' => __('Name'),
-            'organization' => __('Kommune / Organisation'),
+            'organization' => $this->source === 'web' ? __('Unternehmen / Organisation') : __('Kommune / Organisation'),
             'email' => __('E-Mail-Adresse'),
             'phone' => __('Telefon'),
             'message' => __('Nachricht'),
@@ -63,7 +66,7 @@ new class extends Component {
             'email' => $validated['email'],
             'company_name' => $validated['organization'],
             'contact_name' => $validated['contactName'],
-            'source' => 'kommunen',
+            'source' => $this->source === 'web' ? 'web' : 'kommunen',
             'answers' => [
                 'message' => $validated['message'],
                 'phone' => $validated['phone'] ?? null,
@@ -107,8 +110,8 @@ new class extends Component {
                     @error('contactName') <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
                 </div>
                 <div>
-                    <label for="kk-org" class="block text-sm font-medium text-slate-700">{{ __('Kommune / Organisation') }} *</label>
-                    <input id="kk-org" type="text" wire:model="organization" required placeholder="{{ __('z. B. Stadt Musterstadt') }}"
+                    <label for="kk-org" class="block text-sm font-medium text-slate-700">{{ $source === 'web' ? __('Unternehmen / Organisation') : __('Kommune / Organisation') }} *</label>
+                    <input id="kk-org" type="text" wire:model="organization" required placeholder="{{ $source === 'web' ? __('z. B. Beispiel GmbH') : __('z. B. Stadt Musterstadt') }}"
                         class="mt-1 w-full rounded-lg border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500">
                     @error('organization') <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
                 </div>
@@ -128,7 +131,7 @@ new class extends Component {
             <div class="mt-4">
                 <label for="kk-message" class="block text-sm font-medium text-slate-700">{{ __('Ihre Nachricht') }} *</label>
                 <textarea id="kk-message" rows="4" wire:model="message" required
-                    placeholder="{{ __('z. B. Bitte um ein Angebot für den Kommunal-Tarif für unsere Verwaltung mit 3 Liegenschaften …') }}"
+                    placeholder="{{ $source === 'web' ? __('z. B. Bitte um eine Demo für unser Unternehmen mit 2 Standorten …') : __('z. B. Bitte um ein Angebot für den Kommunal-Tarif für unsere Verwaltung mit 3 Liegenschaften …') }}"
                     class="mt-1 w-full rounded-lg border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500"></textarea>
                 @error('message') <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
             </div>

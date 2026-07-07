@@ -85,3 +85,20 @@ test('the kommunen page renders the contact form and pricing links to it', funct
         ->assertOk()
         ->assertSee(route('kommunen.show').'#kontakt', false);
 });
+
+test('the landing page embeds the form and inquiries are tagged with source web', function () {
+    $this->get(route('home'))
+        ->assertOk()
+        ->assertSee('Oder schreiben Sie uns direkt')
+        ->assertSee('Unternehmen / Organisation');
+
+    Livewire::test('kommunen-kontakt', ['source' => 'web'])
+        ->set('contactName', 'Max Beispiel')
+        ->set('organization', 'Beispiel GmbH')
+        ->set('email', 'max@beispiel.de')
+        ->set('message', 'Bitte um eine Demo.')
+        ->call('submit')
+        ->assertSet('sent', true);
+
+    expect(Lead::query()->first()->source)->toBe('web');
+});

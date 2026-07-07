@@ -251,7 +251,7 @@
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600,700" rel="stylesheet" />
 
-    @vite(['resources/css/app.css'])
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="bg-white text-slate-900 antialiased font-sans">
 
@@ -1665,6 +1665,16 @@
                 </div>
             </div>
         </div>
+
+            <div class="mt-10">
+                <div class="text-center">
+                    <h3 class="text-2xl font-semibold tracking-tight text-slate-900">{{ __('Oder schreiben Sie uns direkt') }}</h3>
+                    <p class="mt-2 text-slate-600">{{ __('Demo, Fragen oder Angebot — wir melden uns in der Regel innerhalb eines Werktags.') }}</p>
+                </div>
+                <div class="mt-6 max-w-3xl mx-auto">
+                    <livewire:kommunen-kontakt source="web" />
+                </div>
+            </div>
     </section>
 
     @include('partials.marketing-footer')

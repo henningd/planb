@@ -25,7 +25,7 @@ class KommunenInquiryReceived extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Kommunen-Anfrage: '.$this->lead->company_name,
+            subject: ($this->lead->source === 'kommunen' ? 'Kommunen-Anfrage: ' : 'Website-Anfrage: ').$this->lead->company_name,
             replyTo: [new Address($this->lead->email, (string) $this->lead->contact_name)],
         );
     }

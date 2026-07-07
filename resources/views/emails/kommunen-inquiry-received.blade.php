@@ -1,5 +1,5 @@
 <x-mail::message>
-# Neue Anfrage über die Kommunen-Seite
+# Neue Anfrage über die Website ({{ $lead->source === 'kommunen' ? 'Kommunen-Seite' : 'Startseite' }})
 
 **Name:** {{ $lead->contact_name }}<br>
 **Kommune / Organisation:** {{ $lead->company_name }}<br>
