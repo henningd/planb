@@ -14,6 +14,22 @@ Der Token erhält automatisch den Berechtigungsumfang (Scope) **`monitoring.writ
 
 Nach Klick auf **„Erstellen"** wird der Token **einmalig im Klartext angezeigt**. Kopieren Sie ihn sofort — danach ist er nur noch als Hash gespeichert und nicht mehr rekonstruierbar. Wenn Sie ihn vergessen, müssen Sie einen neuen erstellen.
 
+**Wohin mit dem Token?** Er wird bei jedem Webhook-Aufruf als Bearer-Token mitgeschickt. Beim **Prometheus Alertmanager** gehört er in die `alertmanager.yml` unter `http_config`:
+
+```yaml
+webhook_configs:
+  - url: https://<ihre-instanz>/api/v1/webhooks/prometheus
+    send_resolved: true
+    http_config:
+      authorization:
+        type: Bearer
+        credentials: planb_…     # ← Ihr Token
+```
+
+Bei **Zabbix** als HTTP-Header der Webhook-Action: `Authorization: Bearer planb_…` — die vollständigen Konfigurationen für beide Tools stehen in Schritt 3.
+
+**Tipp:** Legen Sie **ein Token pro Quelle** an (eines für Prometheus, eines für Zabbix). Dann können Sie später gezielt einen Zugang widerrufen, ohne die andere Anbindung zu kappen.
+
 ## Schritt 2 — System-Mapping pflegen
 
 Auf jedem System können Sie unter **„Monitoring-Hostnamen / Labels"** (die Monitoring-Keys des Systems) eine Liste von Bezeichnungen pflegen — z. B.:
