@@ -24,15 +24,23 @@ use Illuminate\Support\Collection;
  */
 class Cockpit
 {
-    public static function for(Company $company): CockpitData
+    /**
+     * @param  string|null  $selectedRunId  Bei mehreren parallel aktiven Abläufen
+     *                                      der im Cockpit gewählte; unbekannte/beendete
+     *                                      IDs fallen auf den neuesten zurück.
+     */
+    public static function for(Company $company, ?string $selectedRunId = null): CockpitData
     {
-        $activeRun = self::activeRun($company);
+        $activeRuns = self::activeRuns($company);
+        $activeRun = ($selectedRunId !== null ? $activeRuns->firstWhere('id', $selectedRunId) : null)
+            ?? $activeRuns->first();
 
         $damage = self::damageRates($company);
 
         return new CockpitData(
             company: $company,
             activeRun: $activeRun,
+            activeRuns: $activeRuns,
             crisisStaff: self::crisisStaff($company),
             recoveryOrder: self::recoveryOrder($company, $activeRun),
             steps: $activeRun ? $activeRun->steps()->with('checkedBy')->orderBy('sort')->get() : collect(),
@@ -55,7 +63,12 @@ class Cockpit
         return (bool) CompanySetting::for($company)->get('incident_mode_enabled', true);
     }
 
-    private static function activeRun(Company $company): ?ScenarioRun
+    /**
+     * Alle aktuell laufenden Abläufe der Firma, neueste zuerst.
+     *
+     * @return Collection<int, ScenarioRun>
+     */
+    private static function activeRuns(Company $company): Collection
     {
         return ScenarioRun::query()
             ->where('company_id', $company->id)
@@ -63,7 +76,8 @@ class Cockpit
             ->whereNull('aborted_at')
             ->with(['scenario', 'startedBy'])
             ->orderByDesc('started_at')
-            ->first();
+            ->get()
+            ->values();
     }
 
     /**

@@ -85,7 +85,22 @@ new #[Title('Krisen-Cockpit')] class extends Component {
             return null;
         }
 
-        return Cockpit::for($company);
+        return Cockpit::for($company, $this->activeRunId !== '' ? $this->activeRunId : null);
+    }
+
+    /**
+     * Umschalter bei mehreren parallel aktiven Notfällen: wechselt das gesamte
+     * Lagebild (Checkliste, Live-Kanal, Meldepflichten, Beenden) auf den
+     * gewählten Ablauf. Fremde/beendete IDs fängt Cockpit::for selbst ab.
+     */
+    public function selectRun(string $id): void
+    {
+        $this->activeRunId = $id;
+        $this->refreshCockpitLive();
+        // Cockpit::for fällt bei unbekannter ID auf den neuesten Run zurück —
+        // die Property danach auf die tatsächlich gewählte ID normalisieren
+        // (wichtig für den dynamischen Echo-Kanal {activeRunId}).
+        $this->activeRunId = $this->cockpit?->activeRun?->id ?? '';
     }
 
     #[Computed]
@@ -113,6 +128,8 @@ new #[Title('Krisen-Cockpit')] class extends Component {
         $run->update(['ended_at' => now()]);
         $this->writeLogEntry($run, 'system', __('Szenario beendet'));
         unset($this->cockpit);
+        // Läuft parallel ein weiterer Notfall, direkt dorthin umschalten.
+        $this->activeRunId = $this->cockpit?->activeRun?->id ?? '';
 
         Flux::toast(variant: 'success', text: __('Szenario beendet.'));
     }
@@ -587,6 +604,40 @@ new #[Title('Krisen-Cockpit')] class extends Component {
             @endphp
 
             <div class="space-y-6">
+                {{-- Umschalter bei mehreren parallel aktiven Notfällen --}}
+                @if ($cockpit->activeRuns->count() > 1)
+                    <div class="rounded-xl border border-amber-300 bg-amber-50 p-3 dark:border-amber-800 dark:bg-amber-950/40">
+                        <flux:text class="px-1 text-xs font-semibold uppercase tracking-wide text-amber-800 dark:text-amber-200">
+                            {{ __(':count Notfälle gleichzeitig aktiv — Lagebild wählen', ['count' => $cockpit->activeRuns->count()]) }}
+                        </flux:text>
+                        <div class="mt-2 flex gap-2 overflow-x-auto pb-1">
+                            @foreach ($cockpit->activeRuns as $candidate)
+                                @php
+                                    $isSelected = $candidate->id === $run->id;
+                                @endphp
+                                <button
+                                    type="button"
+                                    wire:key="run-switch-{{ $candidate->id }}"
+                                    wire:click="selectRun('{{ $candidate->id }}')"
+                                    class="{{ $isSelected
+                                        ? 'border-rose-600 bg-rose-600 text-white'
+                                        : 'border-amber-300 bg-white text-zinc-800 hover:border-rose-400 dark:border-amber-800 dark:bg-zinc-900 dark:text-zinc-100' }} flex shrink-0 items-center gap-2 rounded-lg border px-3 py-2 text-left text-sm transition"
+                                >
+                                    <span class="font-medium">{{ $candidate->scenario?->name ?? $candidate->title ?? '–' }}</span>
+                                    @if ($candidate->isDrill())
+                                        <span class="{{ $isSelected ? 'bg-white/20 text-white' : 'bg-amber-500 text-white' }} rounded-full px-1.5 py-0.5 text-[10px] font-bold">
+                                            {{ __('ÜBUNG') }}
+                                        </span>
+                                    @endif
+                                    <span class="{{ $isSelected ? 'text-rose-100' : 'text-zinc-500 dark:text-zinc-400' }} text-xs">
+                                        {{ $candidate->started_at?->format('H:i') }}
+                                    </span>
+                                </button>
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
+
                 {{-- Sektion 1: Lage-Header (sticky) --}}
                 <div
                     class="sticky top-0 z-30 -mx-4 rounded-xl border-l-4 border border-l-rose-500 border-rose-200 bg-rose-50 px-6 py-5 text-rose-950 shadow-sm dark:border-rose-900 dark:border-l-rose-500 dark:bg-rose-950/40 dark:text-rose-50 sm:mx-0"

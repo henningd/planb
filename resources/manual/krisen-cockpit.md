@@ -26,6 +26,14 @@ In der Sektion **„Kommunikation"** liegen die [Kommunikations-Vorlagen](/handb
 
 Empfänger sind die Mitarbeiter mit hinterlegter Mobilnummer (SMS) bzw. E-Mail-Adresse — Details im Kapitel [Kommunikations-Vorlagen](/handbuch/kommunikations-vorlagen).
 
+## Mehrere Notfälle gleichzeitig
+
+Laufen mehrere Abläufe parallel (z. B. eine Übung und ein echter Alarm, oder Vorfälle an zwei Standorten), zeigt das Cockpit oben einen **Umschalter**: eine Leiste mit allen aktiven Lagen — jeweils mit Szenario-Name, Startzeit und ÜBUNG-Kennzeichnung. Ein Klick wechselt das komplette Lagebild (Checkliste, Live-Updates, Meldepflichten, Beenden-Knopf) auf den gewählten Ablauf.
+
+- Standardmäßig ist der **zuletzt gestartete** Notfall ausgewählt; startet während der Arbeit ein weiterer, bleibt Ihre Auswahl bestehen.
+- Der **Beenden-Knopf** wirkt immer nur auf den gerade ausgewählten Ablauf; danach springt das Cockpit automatisch zum nächsten aktiven.
+- Die Notfall-App zeigt parallel laufende Notfälle ohnehin alle als Liste auf der Startseite.
+
 ## Im Hintergrund: Live-Updates
 
 Wenn mehrere Personen gleichzeitig auf dem Cockpit oder dem Szenario-Lauf-Detail sind, sehen alle in Echtzeit, wer welchen Schritt erledigt hat. Das ist der **War-Room** (siehe Kapitel „Protokolle und Übungen").

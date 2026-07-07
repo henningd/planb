@@ -105,3 +105,100 @@ test('toggleStep marks step as checked', function () {
     expect($step->fresh()->checked_at)->toBeNull()
         ->and($step->fresh()->checked_by_user_id)->toBeNull();
 });
+
+test('with parallel runs the cockpit shows a switcher and defaults to the newest', function () {
+    $user = User::factory()->create();
+    $company = Company::factory()->for($user->currentTeam)->create();
+
+    $older = ScenarioRun::factory()->for($company)->create([
+        'title' => 'Stromausfall Rathaus',
+        'started_at' => now()->subHour(),
+        'ended_at' => null,
+        'aborted_at' => null,
+    ]);
+    $newer = ScenarioRun::factory()->for($company)->create([
+        'title' => 'Ransomware-Verdacht',
+        'started_at' => now()->subMinutes(5),
+        'ended_at' => null,
+        'aborted_at' => null,
+    ]);
+
+    Livewire::actingAs($user->fresh())
+        ->test('pages::incident-mode.index')
+        ->assertOk()
+        ->assertSee('Notfälle gleichzeitig aktiv')
+        ->assertSee('Stromausfall Rathaus')
+        ->assertSee('Ransomware-Verdacht')
+        ->assertSet('activeRunId', $newer->id);
+});
+
+test('selectRun switches the whole cockpit to the chosen run', function () {
+    $user = User::factory()->create();
+    $company = Company::factory()->for($user->currentTeam)->create();
+
+    $older = ScenarioRun::factory()->for($company)->create([
+        'title' => 'Stromausfall Rathaus',
+        'started_at' => now()->subHour(),
+        'ended_at' => null,
+        'aborted_at' => null,
+    ]);
+    ScenarioRunStep::factory()->for($older, 'run')->create(['title' => 'USV prüfen', 'sort' => 1]);
+    $newer = ScenarioRun::factory()->for($company)->create([
+        'started_at' => now()->subMinutes(5),
+        'ended_at' => null,
+        'aborted_at' => null,
+    ]);
+
+    Livewire::actingAs($user->fresh())
+        ->test('pages::incident-mode.index')
+        ->call('selectRun', $older->id)
+        ->assertSet('activeRunId', $older->id)
+        ->assertSee('USV prüfen');
+});
+
+test('ending the selected run falls back to the next active one', function () {
+    $user = User::factory()->create();
+    $company = Company::factory()->for($user->currentTeam)->create();
+
+    $older = ScenarioRun::factory()->for($company)->create([
+        'started_at' => now()->subHour(),
+        'ended_at' => null,
+        'aborted_at' => null,
+    ]);
+    $newer = ScenarioRun::factory()->for($company)->create([
+        'started_at' => now()->subMinutes(5),
+        'ended_at' => null,
+        'aborted_at' => null,
+    ]);
+
+    $component = Livewire::actingAs($user->fresh())
+        ->test('pages::incident-mode.index')
+        ->call('endRun'); // beendet den neuesten (Default-Auswahl)
+
+    expect($newer->fresh()->ended_at)->not->toBeNull()
+        ->and($older->fresh()->ended_at)->toBeNull();
+    $component->assertSet('activeRunId', $older->id);
+});
+
+test('selecting a foreign or unknown run id falls back to the newest own run', function () {
+    $user = User::factory()->create();
+    $company = Company::factory()->for($user->currentTeam)->create();
+    $own = ScenarioRun::factory()->for($company)->create([
+        'started_at' => now()->subMinutes(5),
+        'ended_at' => null,
+        'aborted_at' => null,
+    ]);
+
+    $otherUser = User::factory()->create();
+    $otherCompany = Company::factory()->for($otherUser->currentTeam)->create();
+    $foreign = ScenarioRun::factory()->for($otherCompany)->create([
+        'started_at' => now(),
+        'ended_at' => null,
+        'aborted_at' => null,
+    ]);
+
+    Livewire::actingAs($user->fresh())
+        ->test('pages::incident-mode.index')
+        ->call('selectRun', $foreign->id)
+        ->assertSet('activeRunId', $own->id);
+});

@@ -30,9 +30,14 @@ class CockpitData
      * @param  list<ObligationItem>  $obligations
      * @param  list<DamageRateItem>  $damageRatePerSystem
      */
+    /**
+     * @param  Collection<int, ScenarioRun>  $activeRuns  Alle aktuell laufenden
+     *                                                    Abläufe (neueste zuerst) — für den Umschalter bei Parallel-Lagen.
+     */
     public function __construct(
         public readonly Company $company,
         public readonly ?ScenarioRun $activeRun,
+        public readonly Collection $activeRuns,
         public readonly array $crisisStaff,
         public readonly array $recoveryOrder,
         public readonly Collection $steps,
