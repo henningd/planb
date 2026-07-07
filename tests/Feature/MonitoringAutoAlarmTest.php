@@ -221,3 +221,40 @@ test('a monitoring-triggered run records its source and the alerting host', func
         ->first();
     expect($notification->triggered_by_name)->toBe('IT-Monitoring · srv-prod-01');
 });
+
+test('a new outage after the all-clear starts a second alarm run', function () {
+    Queue::fake();
+    [$company, , , $token] = autoAlarmSetup();
+
+    $post = fn (string $status, string $startsAt) => test()->postJson('/api/v1/webhooks/prometheus', [
+        'alerts' => [[
+            'fingerprint' => 'fp-refire',
+            'status' => $status,
+            'startsAt' => $startsAt,
+            'labels' => ['alertname' => 'HostOffline', 'instance' => 'srv-prod-01', 'severity' => 'critical'],
+            'annotations' => ['summary' => 'Host offline'],
+        ]],
+    ], ['Authorization' => 'Bearer '.$token]);
+
+    // Erster Ausfall: Alarm startet. Der Notfall wird beendet, dann Entwarnung.
+    $post('firing', '2026-07-07T08:55:43Z')->assertStatus(202);
+    ScenarioRun::withoutGlobalScope(CurrentCompanyScope::class)
+        ->where('company_id', $company->id)
+        ->update(['ended_at' => now()]);
+    $post('resolved', '2026-07-07T08:55:43Z')->assertStatus(202);
+
+    // Zweiter Ausfall am selben Tag muss WIEDER alarmieren — inkl. Push.
+    $post('firing', '2026-07-07T13:54:43Z')->assertStatus(202);
+
+    expect(ScenarioRun::query()
+        ->withoutGlobalScope(CurrentCompanyScope::class)
+        ->where('company_id', $company->id)
+        ->count())->toBe(2);
+
+    $incidentPushes = Queue::pushed(SendCompanyPush::class, function (SendCompanyPush $job) {
+        $data = (fn () => $this->data)->call($job);
+
+        return ($data['type'] ?? null) === 'incident';
+    });
+    expect($incidentPushes)->toHaveCount(2);
+});

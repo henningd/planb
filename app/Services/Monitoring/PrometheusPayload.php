@@ -19,7 +19,10 @@ namespace App\Services\Monitoring;
  *   ]
  * }
  *
- * Idempotency-Key = fingerprint (von Alertmanager pro Alert+Status garantiert eindeutig).
+ * Idempotency-Key = fingerprint + startsAt + status. Der Fingerprint allein
+ * identifiziert nur die Alert-IDENTITÄT (Label-Set) und bleibt über getrennte
+ * Ausfälle hinweg gleich — erst startsAt unterscheidet die Episode. Ohne
+ * startsAt würde ein erneuter Ausfall desselben Hosts als Duplikat verworfen.
  */
 class PrometheusPayload
 {
@@ -52,9 +55,11 @@ class PrometheusPayload
             $normalizedStatus = $status === 'resolved' ? 'resolved' : 'firing';
 
             $fingerprint = (string) ($alert['fingerprint'] ?? '');
+            $startsAt = trim((string) ($alert['startsAt'] ?? ''));
+            $episode = $startsAt !== '' ? ':'.$startsAt : '';
             $idempotency = $fingerprint !== ''
-                ? 'fp:'.$fingerprint.':'.$normalizedStatus
-                : 'amgr:'.($labels['alertname'] ?? 'unknown').':'.($host ?? '').':'.$normalizedStatus;
+                ? 'fp:'.$fingerprint.$episode.':'.$normalizedStatus
+                : 'amgr:'.($labels['alertname'] ?? 'unknown').':'.($host ?? '').$episode.':'.$normalizedStatus;
 
             $subject = (string) ($annotations['summary']
                 ?? $annotations['description']

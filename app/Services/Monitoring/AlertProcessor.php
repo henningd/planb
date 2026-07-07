@@ -296,21 +296,24 @@ class AlertProcessor
 
     private function findRecentOpenIncident(System $system, string $companyId): ?IncidentReport
     {
-        $reportId = MonitoringAlert::query()
+        $latest = MonitoringAlert::query()
             ->withoutGlobalScope(CurrentCompanyScope::class)
             ->where('company_id', $companyId)
             ->where('system_id', $system->id)
             ->whereNotNull('incident_report_id')
             ->where('received_at', '>=', now()->subHours(24))
             ->orderByDesc('received_at')
-            ->value('incident_report_id');
+            ->first();
 
-        if ($reportId === null) {
+        // Nach einer Entwarnung gilt die Episode als beendet: der nächste
+        // firing-Alert eröffnet einen NEUEN Incident und darf wieder
+        // automatisch alarmieren, statt lautlos am alten zu landen.
+        if ($latest === null || $latest->status === 'resolved') {
             return null;
         }
 
         return IncidentReport::query()
             ->withoutGlobalScope(CurrentCompanyScope::class)
-            ->find($reportId);
+            ->find($latest->incident_report_id);
     }
 }

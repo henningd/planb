@@ -323,3 +323,38 @@ it('maps a zabbix alert directly via the system_id field', function () {
         ->assertJsonPath('alerts.0.handling', 'created_incident')
         ->assertJsonPath('alerts.0.system_id', $system->id);
 });
+
+it('treats a re-fired prometheus alert with the same fingerprint as a new episode', function () {
+    [, , , $token] = setupApiTokenAndSystem(['srv-prod-01']);
+
+    $alert = fn (string $status, string $startsAt) => [
+        'alerts' => [[
+            'fingerprint' => 'fp-episode',
+            'status' => $status,
+            'startsAt' => $startsAt,
+            'labels' => ['alertname' => 'HostOffline', 'instance' => 'srv-prod-01:9100', 'severity' => 'critical'],
+            'annotations' => ['summary' => 'Host offline'],
+        ]],
+    ];
+
+    // Erster Ausfall + Entwarnung.
+    $this->postJson('/api/v1/webhooks/prometheus', $alert('firing', '2026-07-07T08:55:43Z'), ['Authorization' => 'Bearer '.$token])
+        ->assertStatus(202)
+        ->assertJsonPath('alerts.0.handling', 'created_incident');
+    $this->postJson('/api/v1/webhooks/prometheus', $alert('resolved', '2026-07-07T08:55:43Z'), ['Authorization' => 'Bearer '.$token])
+        ->assertStatus(202)
+        ->assertJsonPath('alerts.0.handling', 'matched_existing');
+
+    // Zweiter Ausfall: gleicher Fingerprint (Alertmanager hasht nur die
+    // Labels), aber neues startsAt → neue Episode, neuer Incident.
+    $this->postJson('/api/v1/webhooks/prometheus', $alert('firing', '2026-07-07T13:54:43Z'), ['Authorization' => 'Bearer '.$token])
+        ->assertStatus(202)
+        ->assertJsonPath('alerts.0.handling', 'created_incident');
+
+    // Wiederholung derselben Episode (repeat_interval) bleibt dedupliziert.
+    $this->postJson('/api/v1/webhooks/prometheus', $alert('firing', '2026-07-07T13:54:43Z'), ['Authorization' => 'Bearer '.$token])
+        ->assertStatus(202);
+
+    expect(MonitoringAlert::query()->withoutGlobalScope(CurrentCompanyScope::class)->count())->toBe(3);
+    expect(IncidentReport::query()->withoutGlobalScope(CurrentCompanyScope::class)->count())->toBe(2);
+});
