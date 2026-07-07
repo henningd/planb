@@ -124,7 +124,7 @@ Solange das Fenster läuft, zeigt die System-Seite einen gut sichtbaren Hinweis 
 
 ## Alarm-Posts in Slack / Microsoft Teams
 
-Wenn Ihr Team ohnehin in Slack oder Teams lebt, soll ein Notfall auch dort sichtbar sein. Sind in den System-Einstellungen die **Slack-Webhook-URL** und/oder die **Microsoft-Teams-Webhook-URL** hinterlegt (dieselben, die auch die [Kommunikations-Vorlagen](/handbuch/kommunikations-vorlagen) nutzen), postet die Plattform drei Ereignisse **automatisch als Karte** in den Kanal:
+Wenn Ihr Team ohnehin in Slack oder Teams lebt, soll ein Notfall auch dort sichtbar sein. Sind die Webhook-URLs hinterlegt (dieselben, die auch die [Kommunikations-Vorlagen](/handbuch/kommunikations-vorlagen) nutzen), postet die Plattform drei Ereignisse **automatisch als Karte** in den Kanal:
 
 - **Notfall gemeldet** — beim Start eines Alarms.
 - **Eskalation** — wenn ein echter Alarm nach Ablauf der Eskalationsfrist von niemandem quittiert wurde.
@@ -133,6 +133,25 @@ Wenn Ihr Team ohnehin in Slack oder Teams lebt, soll ein Notfall auch dort sicht
 **Übungen** werden dabei deutlich mit dem Präfix **„ÜBUNG:"** gekennzeichnet — niemand im Kanal muss rätseln, ob es ernst ist.
 
 Die Funktion ist standardmäßig aktiv und lässt sich über die Einstellung **„Alarm-Posts in Slack/Teams"** abschalten. Ohne hinterlegte Webhook-URL wird schlicht nichts gesendet.
+
+### Slack anbinden — Schritt für Schritt
+
+1. Öffnen Sie [api.slack.com/apps](https://api.slack.com/apps) → **„Create New App" → „From scratch"**, Name z. B. „PlanB", Ihren Workspace wählen.
+2. Links im Menü **„Incoming Webhooks"** → Schalter aktivieren → **„Add New Webhook to Workspace"** → den Ziel-Kanal wählen (z. B. `#krisenstab`).
+3. Die erzeugte URL kopieren (beginnt mit `https://hooks.slack.com/services/…`).
+4. In der Plattform unter **„Systemeinstellungen"** ins Feld **„Slack-Webhook-URL"** einfügen und speichern.
+
+### Microsoft Teams anbinden — Schritt für Schritt
+
+1. Im Ziel-Kanal (z. B. „Krisenstab") auf **„⋯" → „Konnektoren"** → **„Incoming Webhook"** einrichten, Namen vergeben (z. B. „PlanB"), die URL kopieren. In neueren Teams-Versionen läuft das über **„⋯" → „Workflows"** mit der Vorlage „Bei Empfang einer Webhookanforderung in einem Kanal posten" — kommt darüber später keine Test-Karte an, nutzen Sie den klassischen Incoming-Webhook-Konnektor.
+2. In der Plattform unter **„Systemeinstellungen"** ins Feld **„Microsoft-Teams-Webhook-URL"** einfügen und speichern.
+
+### Testen und gut zu wissen
+
+- **Schnellster Test:** eine [Kommunikations-Vorlage](/handbuch/kommunikations-vorlagen) mit Kanal „Slack" oder „Teams" anlegen und senden — Fehler (falsche URL, gelöschter Kanal) werden direkt angezeigt. Oder einen **Übungsalarm** auslösen: Die Karte erscheint mit „ÜBUNG:"-Präfix im Kanal.
+- **Ein Kanal pro Dienst:** Es gibt je eine URL für Slack und eine für Teams — sinnvollerweise der Krisen- oder Info-Kanal, den alle abonniert haben. Sind beide hinterlegt, wird in beide gepostet.
+- **Nur Senden, kein Rückkanal:** Antworten im Kanal landen nicht in der Plattform; quittiert wird in der Notfall-App.
+- **Die URL ist ein Geheimnis:** Wer sie kennt, kann in den Kanal posten. Nicht weitergeben — und bei Verdacht in Slack/Teams einfach neu erzeugen und in den Systemeinstellungen austauschen.
 
 ## Verarbeitungs-Pfade
 
