@@ -46,3 +46,12 @@ test('a token name is required', function () {
         ->call('createToken')
         ->assertHasErrors(['newName' => 'required']);
 });
+
+test('the create modal actually renders the name input', function () {
+    $user = User::factory()->create();
+    Company::factory()->for($user->currentTeam)->create();
+
+    Livewire\Livewire::actingAs($user->fresh())
+        ->test('pages::api-tokens.index')
+        ->assertSeeHtml('wire:model="newName"');
+});

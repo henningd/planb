@@ -210,7 +210,9 @@ new #[Title('API & Webhooks')] class extends Component {
         @if ($issuedToken === null)
             <form wire:submit="createToken" class="space-y-5">
                 <flux:heading size="lg">{{ __('Neuen Token erstellen') }}</flux:heading>
-                <flux:input wire:model="newName" :label="__('Bezeichnung (z. B. „Zabbix-Produktion")')" required />
+                {{-- Kein gerades Anführungszeichen im Attribut — das beendet sonst
+                     den Blade-Attributwert und zerlegt den Komponenten-Tag. --}}
+                <flux:input wire:model="newName" :label="__('Bezeichnung (z. B. Zabbix-Produktion)')" required />
                 <div class="flex items-center justify-end gap-2 border-t border-zinc-100 pt-4 dark:border-zinc-800">
                     <flux:modal.close>
                         <flux:button type="button" variant="filled">{{ __('Abbrechen') }}</flux:button>
