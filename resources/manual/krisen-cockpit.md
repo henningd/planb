@@ -26,6 +26,10 @@ In der Sektion **„Kommunikation"** liegen die [Kommunikations-Vorlagen](/handb
 
 Empfänger sind die Mitarbeiter mit hinterlegter Mobilnummer (SMS) bzw. E-Mail-Adresse — Details im Kapitel [Kommunikations-Vorlagen](/handbuch/kommunikations-vorlagen).
 
+## Wer hat ausgelöst?
+
+Der Lage-Header zeigt immer den Auslöser: bei manueller Auslösung den **Namen** der Person (aus Web oder App), bei automatischer Auslösung durch das Monitoring das Badge **„Automatisch · IT-Monitoring"** mit dem auslösenden Host. Das ändert die erste Reaktion: Bei einem automatischen Alarm zuerst den System-Status prüfen, statt nach einem menschlichen Auslöser zu suchen.
+
 ## Mehrere Notfälle gleichzeitig
 
 Laufen mehrere Abläufe parallel (z. B. eine Übung und ein echter Alarm, oder Vorfälle an zwei Standorten), zeigt das Cockpit oben einen **Umschalter**: eine Leiste mit allen aktiven Lagen — jeweils mit Szenario-Name, Startzeit und ÜBUNG-Kennzeichnung. Ein Klick wechselt das komplette Lagebild (Checkliste, Live-Updates, Meldepflichten, Beenden-Knopf) auf den gewählten Ablauf.

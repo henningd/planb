@@ -3,6 +3,7 @@
 use App\Enums\ScenarioRunMode;
 use App\Jobs\SendCompanyPush;
 use App\Models\ApiToken;
+use App\Models\AppNotification;
 use App\Models\Company;
 use App\Models\MonitoringAlert;
 use App\Models\Scenario;
@@ -198,4 +199,25 @@ test('a scenario of another company is rejected as emergency scenario', function
         ->assertHasErrors(['emergency_scenario_id']);
 
     expect($system->fresh()->emergency_scenario_id)->toBeNull();
+});
+
+test('a monitoring-triggered run records its source and the alerting host', function () {
+    Queue::fake();
+    [$company, , , $token] = autoAlarmSetup();
+
+    postZabbixAlert($token)->assertStatus(202);
+
+    $run = ScenarioRun::withoutGlobalScope(CurrentCompanyScope::class)
+        ->where('company_id', $company->id)
+        ->first();
+    expect($run)->not->toBeNull()
+        ->and($run->source)->toBe('monitoring')
+        ->and($run->trigger_detail)->toBe('srv-prod-01');
+
+    // Feed nennt das Monitoring als Auslöser statt niemanden.
+    $notification = AppNotification::withoutGlobalScope(CurrentCompanyScope::class)
+        ->where('company_id', $company->id)
+        ->where('type', 'incident_started')
+        ->first();
+    expect($notification->triggered_by_name)->toBe('IT-Monitoring · srv-prod-01');
 });

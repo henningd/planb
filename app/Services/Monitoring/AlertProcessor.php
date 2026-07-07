@@ -160,6 +160,7 @@ class AlertProcessor
                 mode: ScenarioRunMode::Real,
                 title: null,
                 source: 'monitoring',
+                triggerDetail: $record->host,
             );
         } catch (Throwable $e) {
             Log::warning('Automatische Alarmierung aus Monitoring-Alert fehlgeschlagen: '.$e->getMessage());

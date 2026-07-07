@@ -202,3 +202,23 @@ test('selecting a foreign or unknown run id falls back to the newest own run', f
         ->call('selectRun', $foreign->id)
         ->assertSet('activeRunId', $own->id);
 });
+
+test('a monitoring-triggered run shows the automatic trigger badge instead of Unbekannt', function () {
+    $user = User::factory()->create();
+    $company = Company::factory()->for($user->currentTeam)->create();
+
+    ScenarioRun::factory()->for($company)->create([
+        'started_at' => now()->subMinutes(5),
+        'ended_at' => null,
+        'aborted_at' => null,
+        'started_by_user_id' => null,
+        'source' => 'monitoring',
+        'trigger_detail' => 'srv-prod-01',
+    ]);
+
+    Livewire::actingAs($user->fresh())
+        ->test('pages::incident-mode.index')
+        ->assertSee(__('Automatisch · IT-Monitoring'))
+        ->assertSee('srv-prod-01')
+        ->assertDontSee(__('Unbekannt'));
+});

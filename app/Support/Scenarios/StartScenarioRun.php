@@ -42,6 +42,7 @@ class StartScenarioRun
         ScenarioRunMode|string $mode = ScenarioRunMode::Real,
         ?string $title = null,
         string $source = 'web',
+        ?string $triggerDetail = null,
     ): ScenarioRun {
         $mode = $mode instanceof ScenarioRunMode ? $mode : ScenarioRunMode::from($mode);
         $scenario->loadMissing('steps');
@@ -50,13 +51,15 @@ class StartScenarioRun
             ? $title
             : $scenario->name.' · '.now()->format('d.m.Y H:i');
 
-        $run = DB::transaction(function () use ($scenario, $startedByUserId, $mode, $title) {
+        $run = DB::transaction(function () use ($scenario, $startedByUserId, $mode, $title, $source, $triggerDetail) {
             $run = ScenarioRun::create([
                 'company_id' => $scenario->company_id,
                 'scenario_id' => $scenario->id,
                 'started_by_user_id' => $startedByUserId,
                 'title' => $title,
                 'mode' => $mode->value,
+                'source' => $source,
+                'trigger_detail' => $triggerDetail,
                 'started_at' => now(),
             ]);
 
@@ -105,6 +108,12 @@ class StartScenarioRun
                 ->withoutGlobalScope(CurrentCompanyScope::class)
                 ->find($startedByUserId)?->name
             : null;
+
+        // Automatische Auslösung sichtbar machen: Feed und Chat-Karte nennen
+        // das IT-Monitoring (inkl. Host) statt gar keinen Auslöser.
+        if ($startedBy === null && $run->source === 'monitoring') {
+            $startedBy = trim('IT-Monitoring'.($run->trigger_detail ? ' · '.$run->trigger_detail : ''));
+        }
 
         // Kein „ÜBUNG: "-Präfix im Feed-Titel: die Apps rendern bei is_drill ein
         // eigenes Badge — das Präfix bleibt den System-Pushes vorbehalten.

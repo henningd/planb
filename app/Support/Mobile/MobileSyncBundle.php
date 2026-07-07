@@ -151,6 +151,8 @@ class MobileSyncBundle
                 'is_drill' => $run->isDrill(),
                 'started_at' => $run->started_at?->toIso8601String(),
                 'started_by' => $run->startedBy?->name,
+                'source' => $run->source,
+                'trigger_detail' => $run->trigger_detail,
                 // Eskalations-Zeitpunkt (planb:escalate-unacknowledged-runs):
                 // gesetzt, wenn ein echter Alarm nach Fristablauf ohne
                 // Quittierung eskaliert wurde — sonst null.

@@ -18,6 +18,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'started_by_user_id',
     'title',
     'mode',
+    'source',
+    'trigger_detail',
     'started_at',
     'ended_at',
     'aborted_at',

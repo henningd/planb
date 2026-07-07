@@ -128,6 +128,7 @@ Wenn alles passt: ein **IncidentReport** wird angelegt und die Eskalations-Kette
 Zusätzlich zur automatischen Vorfallseröffnung können Sie pro System ein **Notfall-Szenario hinterlegen** (auf der System-Detailseite unter **„Automatische Alarmierung bei kritischem Monitoring-Alert"**):
 
 - Eröffnet ein kritischer Alert für dieses System einen neuen Vorfall, startet das gewählte Szenario **automatisch als echter Alarm** — inklusive Push-Benachrichtigung an alle gekoppelten Geräte der Notfall-App, Quittierung („Gesehen" / „Ich übernehme") und Eskalation, falls niemand reagiert.
+- Der Auslöser bleibt dabei sichtbar: Krisen-Cockpit, Benachrichtigungs-Feed und Slack/Teams-Karte zeigen **„Automatisch · IT-Monitoring"** samt dem auslösenden Host — niemand muss rätseln, wer den Alarm gestartet hat.
 - Standard ist **keine automatische Alarmierung** — Sie entscheiden pro System, ob ein Monitoring-Alert nur einen Vorfall dokumentiert oder gleich die Mannschaft weckt.
 
 Sinnvoll für die wirklich kritischen Systeme (z. B. zentraler Server, Fachverfahren), bei denen im Ernstfall keine Minute verloren gehen soll.

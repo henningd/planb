@@ -675,7 +675,17 @@ new #[Title('Krisen-Cockpit')] class extends Component {
                             @endif
                             <p class="mt-1 text-sm text-rose-900/80 dark:text-rose-100/80">
                                 <span class="font-semibold">{{ __('Ausgelöst von:') }}</span>
-                                {{ $run->startedBy?->name ?? __('Unbekannt') }}
+                                @if ($run->source === 'monitoring')
+                                    <span class="inline-flex items-center gap-1 rounded-full bg-rose-200/70 px-2 py-0.5 text-xs font-semibold text-rose-900 dark:bg-rose-900/60 dark:text-rose-100">
+                                        <flux:icon.cpu-chip class="h-3.5 w-3.5" />
+                                        {{ __('Automatisch · IT-Monitoring') }}
+                                    </span>
+                                    @if ($run->trigger_detail)
+                                        <span class="font-mono text-xs">{{ $run->trigger_detail }}</span>
+                                    @endif
+                                @else
+                                    {{ $run->startedBy?->name ?? __('Unbekannt') }}
+                                @endif
                                 @if ($run->started_at)
                                     <span class="text-rose-900/80 dark:text-rose-100/80">·</span>
                                     {{ $run->started_at->isoFormat('DD.MM.YYYY HH:mm') }}
