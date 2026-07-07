@@ -224,3 +224,102 @@ it('hides the API page when the feature flag is off', function () {
 
     expect(Route::has('api-tokens.index'))->toBeFalse();
 })->skip('Routes are registered at boot; flag-flip mid-test is not supported.');
+
+it('maps a prometheus alert directly via the planb_system_id label, ignoring key matching', function () {
+    // System OHNE Monitoring-Keys — nur die explizite ID kann treffen.
+    [, , $system, $token] = setupApiTokenAndSystem(null);
+
+    $payload = [
+        'alerts' => [[
+            'fingerprint' => 'fp-id-1',
+            'status' => 'firing',
+            'labels' => [
+                'alertname' => 'ErpDown',
+                'instance' => 'voellig-unbekannter-host:9100',
+                'severity' => 'critical',
+                'planb_system_id' => $system->id,
+            ],
+            'annotations' => ['summary' => 'Kein Key-Treffer, nur die ID'],
+        ]],
+    ];
+
+    $this->postJson('/api/v1/webhooks/prometheus', $payload, ['Authorization' => 'Bearer '.$token])
+        ->assertStatus(202)
+        ->assertJsonPath('alerts.0.handling', 'created_incident')
+        ->assertJsonPath('alerts.0.system_id', $system->id);
+});
+
+it('never matches a planb_system_id belonging to another company and falls back to keys', function () {
+    [, , , $token] = setupApiTokenAndSystem(null);
+
+    $otherUser = User::factory()->create();
+    $otherCompany = Company::factory()->for($otherUser->currentTeam)->create();
+    $foreignSystem = System::withoutGlobalScope(CurrentCompanyScope::class)->create([
+        'company_id' => $otherCompany->id,
+        'name' => 'Fremdes System',
+        'category' => 'geschaeftsbetrieb',
+    ]);
+
+    $payload = [
+        'alerts' => [[
+            'fingerprint' => 'fp-id-2',
+            'status' => 'firing',
+            'labels' => [
+                'alertname' => 'Test',
+                'instance' => 'unbekannt:9100',
+                'severity' => 'critical',
+                'planb_system_id' => $foreignSystem->id,
+            ],
+            'annotations' => ['summary' => 'Fremde ID darf nie ziehen'],
+        ]],
+    ];
+
+    $this->postJson('/api/v1/webhooks/prometheus', $payload, ['Authorization' => 'Bearer '.$token])
+        ->assertStatus(202)
+        ->assertJsonPath('alerts.0.handling', 'no_system_match')
+        ->assertJsonPath('alerts.0.system_id', null);
+});
+
+it('prefers the explicit system id over a key match on a different system', function () {
+    // Keys zeigen auf System A — die explizite ID auf System B. B gewinnt.
+    [, $company, , $token] = setupApiTokenAndSystem(['srv-prod-01']);
+    $target = System::withoutGlobalScope(CurrentCompanyScope::class)->create([
+        'company_id' => $company->id,
+        'name' => 'Zielsystem per ID',
+        'category' => 'geschaeftsbetrieb',
+    ]);
+
+    $payload = [
+        'alerts' => [[
+            'fingerprint' => 'fp-id-3',
+            'status' => 'firing',
+            'labels' => [
+                'alertname' => 'Test',
+                'instance' => 'srv-prod-01:9100',
+                'severity' => 'critical',
+                'planb_system_id' => $target->id,
+            ],
+            'annotations' => ['summary' => 'ID schlaegt Key'],
+        ]],
+    ];
+
+    $this->postJson('/api/v1/webhooks/prometheus', $payload, ['Authorization' => 'Bearer '.$token])
+        ->assertStatus(202)
+        ->assertJsonPath('alerts.0.system_id', $target->id);
+});
+
+it('maps a zabbix alert directly via the system_id field', function () {
+    [, , $system, $token] = setupApiTokenAndSystem(null);
+
+    $this->postJson('/api/v1/webhooks/zabbix', [
+        'host' => 'voellig-unbekannt',
+        'event_id' => 'evt-id-1',
+        'severity' => 'disaster',
+        'status' => 'PROBLEM',
+        'subject' => 'Kein Key-Treffer, nur die ID',
+        'system_id' => $system->id,
+    ], ['Authorization' => 'Bearer '.$token])
+        ->assertStatus(202)
+        ->assertJsonPath('alerts.0.handling', 'created_incident')
+        ->assertJsonPath('alerts.0.system_id', $system->id);
+});

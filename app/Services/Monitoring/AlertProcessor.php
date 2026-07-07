@@ -204,6 +204,21 @@ class AlertProcessor
 
     private function matchSystem(NormalizedAlert $alert, string $companyId): ?System
     {
+        // Explizite System-ID (Prometheus-Label `planb_system_id` / Zabbix-Feld
+        // `system_id`) hat Vorrang — streng auf die Firma des Tokens begrenzt.
+        // Unbekannte oder fremde IDs fallen auf das Key-Matching zurück.
+        if ($alert->systemId !== null) {
+            $system = System::query()
+                ->withoutGlobalScope(CurrentCompanyScope::class)
+                ->where('company_id', $companyId)
+                ->whereKey($alert->systemId)
+                ->first();
+
+            if ($system !== null) {
+                return $system;
+            }
+        }
+
         $candidates = array_filter([$alert->host, $alert->subject]);
         if ($candidates === []) {
             return null;

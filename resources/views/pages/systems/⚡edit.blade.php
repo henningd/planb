@@ -977,6 +977,16 @@ new #[Title('System bearbeiten')] class extends Component {
                     </flux:field>
                 </div>
 
+                @if ($this->system?->exists)
+                    <flux:field>
+                        <flux:label>{{ __('System-ID für die Monitoring-Anbindung') }}</flux:label>
+                        <flux:description>
+                            {{ __('Alternative zur Zuordnung über Hostnamen: Geben Sie diese ID im Alarm mit — als Prometheus-Label planb_system_id bzw. Zabbix-Feld system_id — dann wird der Alarm eindeutig diesem System zugeordnet (hat Vorrang vor den Hostnamen/Labels oben).') }}
+                        </flux:description>
+                        <flux:input value="{{ $this->system->id }}" readonly copyable />
+                    </flux:field>
+                @endif
+
                 <flux:field>
                     <flux:label>{{ __('Automatische Alarmierung bei kritischem Monitoring-Alert') }}</flux:label>
                     <flux:description>

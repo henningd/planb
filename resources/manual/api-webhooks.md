@@ -26,6 +26,8 @@ WAWI
 
 Wenn ein Alarm einen dieser Namen in `host` oder `subject` trägt, wird er automatisch dem System zugeordnet.
 
+**Alternative: eindeutige Zuordnung per System-ID.** Auf der System-Detailseite finden Sie im Monitoring-Bereich die **„System-ID für die Monitoring-Anbindung"** zum Kopieren. Geben Sie diese ID im Alarm mit — als Prometheus-Label **`planb_system_id`** bzw. als Zabbix-Feld **`system_id`** — dann wird der Alarm **direkt und eindeutig** diesem System zugeordnet. Die ID hat Vorrang vor dem Namens-Matching und ist die sauberste Wahl, wenn Hostnamen mehrdeutig sind oder mehrere Systeme auf derselben Maschine laufen. Eine unbekannte oder fremde ID wird ignoriert; dann greift wieder das normale Matching.
+
 ## Schritt 3 — Tools konfigurieren
 
 ### Zabbix
@@ -36,6 +38,7 @@ In Zabbix unter **Configuration → Actions → Webhook**:
 - **Method**: `POST`
 - **Headers**: `Authorization: Bearer planb_…`
 - **Body** (JSON): `{"host":"{HOST.NAME}","event_id":"{EVENT.ID}","trigger_id":"{TRIGGER.ID}","severity":"{TRIGGER.SEVERITY}","status":"{EVENT.VALUE}","subject":"{TRIGGER.NAME}"}`
+- **Optional** für die eindeutige Zuordnung: zusätzlich `"system_id":"<System-ID aus der Plattform>"` in den Body aufnehmen (siehe Schritt 2).
 
 ### Prometheus Alertmanager — Schritt für Schritt
 
@@ -53,11 +56,12 @@ groups:
         for: 5m
         labels:
           severity: critical
+          planb_system_id: "a1b2c3d4-…"   # optional: eindeutige Zuordnung (Schritt 2)
         annotations:
           summary: "srv-prod-01 ist seit 5 Minuten nicht erreichbar"
 ```
 
-Wichtig: Der Wert von `instance` bzw. der Text in `summary` muss zu den **Monitoring-Keys** des Systems passen (Schritt 2) — darüber ordnet die Plattform den Alarm zu.
+Wichtig: Der Wert von `instance` bzw. der Text in `summary` muss zu den **Monitoring-Keys** des Systems passen (Schritt 2) — darüber ordnet die Plattform den Alarm zu. Oder Sie geben mit dem Label **`planb_system_id`** die System-ID direkt mit — dann ist die Zuordnung eindeutig und unabhängig von Hostnamen.
 
 **b) Webhook-Receiver im Alertmanager eintragen** (`alertmanager.yml`), mit dem Token aus Schritt 1:
 

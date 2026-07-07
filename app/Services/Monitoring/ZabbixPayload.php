@@ -37,6 +37,10 @@ class ZabbixPayload
             ? 'evt:'.$eventId
             : 'trg:'.$triggerId.':'.($host ?? '').':'.$normalizedStatus;
 
+        // Optionales Feld `system_id`: direkte, eindeutige Zuordnung zu einem
+        // System — Vorrang vor dem Monitoring-Key-Matching.
+        $systemId = isset($payload['system_id']) ? trim((string) $payload['system_id']) : '';
+
         return [new NormalizedAlert(
             source: 'zabbix',
             idempotencyKey: $idempotency,
@@ -45,6 +49,7 @@ class ZabbixPayload
             host: $host,
             subject: isset($payload['subject']) ? (string) $payload['subject'] : null,
             rawPayload: $payload,
+            systemId: $systemId !== '' ? $systemId : null,
         )];
     }
 }

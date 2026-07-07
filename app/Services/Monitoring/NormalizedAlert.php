@@ -12,6 +12,9 @@ namespace App\Services\Monitoring;
 class NormalizedAlert
 {
     /**
+     * @param  string|null  $systemId  Explizit mitgegebene System-UUID (Prometheus-Label
+     *                                 `planb_system_id` bzw. Zabbix-Feld `system_id`) —
+     *                                 hat beim Matching Vorrang vor den Monitoring-Keys.
      * @param  array<string, mixed>  $rawPayload
      */
     public function __construct(
@@ -22,6 +25,7 @@ class NormalizedAlert
         public readonly ?string $host,
         public readonly ?string $subject,
         public readonly array $rawPayload,
+        public readonly ?string $systemId = null,
     ) {}
 
     public function isFiring(): bool

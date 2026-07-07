@@ -61,6 +61,10 @@ class PrometheusPayload
                 ?? $labels['alertname']
                 ?? 'Prometheus alert');
 
+            // Optionales Label `planb_system_id`: direkte, eindeutige Zuordnung
+            // zu einem System — Vorrang vor dem Monitoring-Key-Matching.
+            $systemId = isset($labels['planb_system_id']) ? trim((string) $labels['planb_system_id']) : '';
+
             $result[] = new NormalizedAlert(
                 source: 'prometheus',
                 idempotencyKey: $idempotency,
@@ -69,6 +73,7 @@ class PrometheusPayload
                 host: $host,
                 subject: $subject,
                 rawPayload: $alert,
+                systemId: $systemId !== '' ? $systemId : null,
             );
         }
 
