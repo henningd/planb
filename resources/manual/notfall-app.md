@@ -36,6 +36,8 @@ Alle Inhalte (Kontakte, Systeme, Szenarien, laufende Alarme) liegen **lokal auf 
 - Sobald das Gerät wieder online ist, werden die abgehakten Schritte **automatisch nachsynchronisiert**. Niemand muss sich merken, was er offline erledigt hat.
 - Kommt sich etwas in die Quere (zwei Personen haken denselben Schritt ab), gewinnt die zuerst eingegangene Erledigung — es geht nichts verloren.
 
+**Automatische Aktualisierung:** Die App gleicht ihre Daten bei jedem Öffnen automatisch mit dem Server ab. Zusätzlich können Sie in den App-Einstellungen unter **„Automatisch aktualisieren"** wählen, wie oft die geöffnete App im Hintergrund nachlädt (15 Minuten bis 6 Stunden). Wichtig: **Alarme sind davon unabhängig** — sie kommen immer sofort per Push, auch bei geschlossener App.
+
 ## Alarm-Quittierung: „Gesehen" und „Ich übernehme"
 
 Wenn ein Notfall gemeldet wird, bekommen alle gekoppelten Geräte eine **Push-Benachrichtigung**. Neu ab Version 1.1 können Empfänger direkt reagieren:
