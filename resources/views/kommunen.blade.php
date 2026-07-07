@@ -48,6 +48,10 @@
             'text'  => 'Pflichtrollen mit Vertretungen besetzen, im Ernstfall per App-Push und SMS alarmieren – mit Quittierung, wer den Alarm gesehen hat und wer übernimmt.',
         ],
         [
+            'title' => 'Automatische Alarmierung aus dem IT-Monitoring',
+            'text'  => 'Prometheus oder Zabbix anbinden: Meldet das Monitoring den Ausfall eines eingebundenen Systems – Fachverfahren, Server, E-Akte –, löst PlanB automatisch den Notfall aus. Vorfall dokumentiert, Krisenstab alarmiert, Checkliste geöffnet – ohne dass nachts jemand den Alarmknopf drücken muss.',
+        ],
+        [
             'title' => 'Meldepflichten-Workflow',
             'text'  => 'Meldepflichten strukturiert erfassen und Fristen nachverfolgen – vom Vorfall bis zur abgeschlossenen Meldung, revisionssicher protokolliert.',
         ],

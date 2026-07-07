@@ -11,7 +11,9 @@ test('kommunen page renders with reasons, modules and cta', function () {
         ->assertSee('NIS2')
         ->assertSee('Bürgerdienste')
         ->assertSee('Notfallaushang')
-        ->assertSee('Krisenstab');
+        ->assertSee('Krisenstab')
+        ->assertSee('Automatische Alarmierung aus dem IT-Monitoring')
+        ->assertSee('Prometheus');
 });
 
 test('kommunen page shows the app section with offline, alarm and sms messaging', function () {
