@@ -72,6 +72,28 @@ Zusätzlich zur automatischen Vorfallseröffnung können Sie pro System ein **No
 
 Sinnvoll für die wirklich kritischen Systeme (z. B. zentraler Server, Fachverfahren), bei denen im Ernstfall keine Minute verloren gehen soll.
 
+## Wartungsfenster: Monitoring-Alarme pausieren
+
+Geplante Wartung — Server-Update am Samstag, Umzug des Racks — löst sonst genau die Fehlalarme aus, die niemand um 3 Uhr nachts sehen will. Dafür gibt es pro System ein **Wartungsfenster**:
+
+1. Das System öffnen und im Monitoring-Bereich das Feld **„Monitoring-Alarme pausiert bis"** auf das Ende der Wartung setzen (Datum und Uhrzeit).
+2. Bis zu diesem Zeitpunkt werden eingehende Alerts für dieses System **nur protokolliert** — es wird **kein Vorfall angelegt und kein automatischer Alarm gestartet**.
+3. **Entwarnungen** (resolved) werden weiterhin normal verarbeitet — ein offener Vorfall bekommt seine „System wieder online"-Notiz also trotzdem.
+
+Solange das Fenster läuft, zeigt die System-Seite einen gut sichtbaren Hinweis („Aktuell pausiert bis …"). Nach Ablauf ist das Monitoring automatisch wieder scharf — Sie müssen nichts zurückstellen. Ein leeres Feld bedeutet: Monitoring aktiv.
+
+## Alarm-Posts in Slack / Microsoft Teams
+
+Wenn Ihr Team ohnehin in Slack oder Teams lebt, soll ein Notfall auch dort sichtbar sein. Sind in den System-Einstellungen die **Slack-Webhook-URL** und/oder die **Microsoft-Teams-Webhook-URL** hinterlegt (dieselben, die auch die [Kommunikations-Vorlagen](/handbuch/kommunikations-vorlagen) nutzen), postet die Plattform drei Ereignisse **automatisch als Karte** in den Kanal:
+
+- **Notfall gemeldet** — beim Start eines Alarms.
+- **Eskalation** — wenn ein echter Alarm nach Ablauf der Eskalationsfrist von niemandem quittiert wurde.
+- **Entwarnung** — wenn der Lauf beendet oder abgebrochen wird.
+
+**Übungen** werden dabei deutlich mit dem Präfix **„ÜBUNG:"** gekennzeichnet — niemand im Kanal muss rätseln, ob es ernst ist.
+
+Die Funktion ist standardmäßig aktiv und lässt sich über die Einstellung **„Alarm-Posts in Slack/Teams"** abschalten. Ohne hinterlegte Webhook-URL wird schlicht nichts gesendet.
+
 ## Verarbeitungs-Pfade
 
 Pro Alarm einer dieser Status:
@@ -79,6 +101,7 @@ Pro Alarm einer dieser Status:
 - **created_incident** — neuer Incident angelegt.
 - **matched_existing** — Folge-Alert, an offenen Incident angehängt.
 - **severity_below_threshold** — geloggt, keine Eskalation.
+- **muted** — Wartungsfenster aktiv, Alert nur protokolliert (kein Vorfall, kein Alarm).
 - **no_system_match** — geloggt, kein passendes System gefunden.
 - **ignored** — z. B. resolved-Status ohne vorherigen Incident.
 
