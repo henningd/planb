@@ -14,6 +14,12 @@ new #[Title('API & Webhooks')] class extends Component {
     public ?string $issuedToken = null;
 
     #[Computed]
+    public function hasCompany(): bool
+    {
+        return Auth::user()->currentCompany() !== null;
+    }
+
+    #[Computed]
     public function tokens()
     {
         return ApiToken::with('createdBy')
@@ -72,10 +78,19 @@ new #[Title('API & Webhooks')] class extends Component {
                 {{ __('Tokens für externe Tools wie Zabbix oder Prometheus Alertmanager. Monitoring-Alarme können automatisch Incidents in PlanB anlegen.') }}
             </flux:subheading>
         </div>
-        <flux:button variant="primary" icon="plus" wire:click="openCreate">
+        <flux:button variant="primary" icon="plus" wire:click="openCreate" :disabled="! $this->hasCompany">
             {{ __('Token erstellen') }}
         </flux:button>
     </div>
+
+    @unless ($this->hasCompany)
+        <flux:callout variant="warning" icon="exclamation-triangle">
+            <flux:callout.heading>{{ __('Noch kein Firmenprofil') }}</flux:callout.heading>
+            <flux:callout.text>
+                {{ __('API-Tokens sind an Ihre Firma gebunden. Bitte legen Sie zuerst über die Einrichtung das Firmenprofil an — danach können Sie hier Tokens für Zabbix oder Prometheus erstellen.') }}
+            </flux:callout.text>
+        </flux:callout>
+    @endunless
 
     <div class="rounded-xl border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-900">
         <div class="border-b border-zinc-100 px-5 py-4 dark:border-zinc-800">
