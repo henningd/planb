@@ -50,13 +50,9 @@ trait SendsCommunicationTemplates
         $this->smsTemplateId = $id;
         $this->smsResults = [];
         $this->smsConfirming = false;
-        $this->smsRecipients = Employee::query()
-            ->whereNotNull('mobile_phone')
-            ->where('mobile_phone', '!=', '')
-            ->orderBy('last_name')
-            ->orderBy('first_name')
-            ->pluck('id')
-            ->all();
+        // Bewusst KEINE Vorauswahl: SMS gehen nur an gezielt angehakte
+        // Empfänger (oder per „Alle auswählen" an alle).
+        $this->smsRecipients = [];
 
         Flux::modal('template-sms-send')->show();
     }

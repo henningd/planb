@@ -56,6 +56,7 @@ test('the crisis cockpit can send an SMS template directly', function () {
     Livewire::actingAs($user)
         ->test('pages::incident-mode.index')
         ->call('openSmsSend', $template->id)
+        ->call('selectAllSmsRecipients')
         ->call('sendSms')
         ->assertHasNoErrors();
 

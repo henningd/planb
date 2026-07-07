@@ -43,14 +43,16 @@ function smsTestSetup(): array
     return [$user->fresh(), $company, $template, $with];
 }
 
-test('opening sms send modal prefills only employees with a mobile number', function () {
+test('opening sms send modal starts with an empty selection and lists only employees with a mobile number', function () {
     [$user, , $template, $withMobile] = smsTestSetup();
 
     $component = Livewire\Livewire::actingAs($user)
         ->test('pages::communication-templates.index')
         ->call('openSmsSend', $template->id);
 
-    expect($component->get('smsRecipients'))->toEqual([$withMobile->id]);
+    // Bewusst keine Vorauswahl — SMS gehen nur an gezielt gewählte Empfänger.
+    expect($component->get('smsRecipients'))->toEqual([])
+        ->and($component->instance()->smsCandidates->pluck('id')->all())->toEqual([$withMobile->id]);
 });
 
 test('sendSms calls gateway for each recipient and resolves placeholders', function () {
@@ -65,6 +67,7 @@ test('sendSms calls gateway for each recipient and resolves placeholders', funct
     Livewire\Livewire::actingAs($user)
         ->test('pages::communication-templates.index')
         ->call('openSmsSend', $template->id)
+        ->call('selectAllSmsRecipients')
         ->call('sendSms')
         ->assertHasNoErrors();
 
@@ -86,6 +89,7 @@ test('sendSms records an audit log entry with sent counts', function () {
     Livewire\Livewire::actingAs($user)
         ->test('pages::communication-templates.index')
         ->call('openSmsSend', $template->id)
+        ->call('selectAllSmsRecipients')
         ->call('sendSms');
 
     $entry = DB::table('audit_log_entries')
@@ -110,6 +114,7 @@ test('sendSms surfaces provider failures per recipient', function () {
     $component = Livewire\Livewire::actingAs($user)
         ->test('pages::communication-templates.index')
         ->call('openSmsSend', $template->id)
+        ->call('selectAllSmsRecipients')
         ->call('sendSms');
 
     $results = $component->get('smsResults');
@@ -124,6 +129,7 @@ test('confirmSendSms toggles confirming state and cancel resets it', function ()
     $component = Livewire\Livewire::actingAs($user)
         ->test('pages::communication-templates.index')
         ->call('openSmsSend', $template->id)
+        ->call('selectAllSmsRecipients')
         ->assertSet('smsConfirming', false)
         ->call('confirmSendSms')
         ->assertSet('smsConfirming', true)
@@ -139,6 +145,7 @@ test('confirmSendSms refuses when no recipients selected', function () {
     Livewire\Livewire::actingAs($user)
         ->test('pages::communication-templates.index')
         ->call('openSmsSend', $template->id)
+        ->call('selectAllSmsRecipients')
         ->set('smsRecipients', [])
         ->call('confirmSendSms')
         ->assertSet('smsConfirming', false);
@@ -156,6 +163,7 @@ test('sendSms resets the confirming flag after a successful run', function () {
     Livewire\Livewire::actingAs($user)
         ->test('pages::communication-templates.index')
         ->call('openSmsSend', $template->id)
+        ->call('selectAllSmsRecipients')
         ->call('confirmSendSms')
         ->assertSet('smsConfirming', true)
         ->call('sendSms')
@@ -219,6 +227,7 @@ test('simulated sends are badged as simulated instead of ok', function () {
     Livewire\Livewire::actingAs($user)
         ->test('pages::communication-templates.index')
         ->call('openSmsSend', $template->id)
+        ->call('selectAllSmsRecipients')
         ->call('confirmSendSms')
         ->call('sendSms')
         ->assertSee('Simuliert — kein Gateway')
