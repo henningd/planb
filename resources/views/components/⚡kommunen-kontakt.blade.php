@@ -101,54 +101,28 @@ new class extends Component {
             </p>
         </div>
     @else
-        <form wire:submit="submit" class="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm lg:p-8">
+        <form wire:submit="submit" class="space-y-4 rounded-xl border border-zinc-200 bg-white p-6 text-left shadow-sm lg:p-8">
             <div class="grid gap-4 sm:grid-cols-2">
-                <div>
-                    <label for="kk-name" class="block text-sm font-medium text-slate-700">{{ __('Name') }} *</label>
-                    <input id="kk-name" type="text" wire:model="contactName" required
-                        class="mt-1 w-full rounded-lg border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500">
-                    @error('contactName') <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
-                </div>
-                <div>
-                    <label for="kk-org" class="block text-sm font-medium text-slate-700">{{ $source === 'web' ? __('Unternehmen / Organisation') : __('Kommune / Organisation') }} *</label>
-                    <input id="kk-org" type="text" wire:model="organization" required placeholder="{{ $source === 'web' ? __('z. B. Beispiel GmbH') : __('z. B. Stadt Musterstadt') }}"
-                        class="mt-1 w-full rounded-lg border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500">
-                    @error('organization') <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
-                </div>
-                <div>
-                    <label for="kk-email" class="block text-sm font-medium text-slate-700">{{ __('Dienstliche E-Mail') }} *</label>
-                    <input id="kk-email" type="email" wire:model="email" required
-                        class="mt-1 w-full rounded-lg border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500">
-                    @error('email') <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
-                </div>
-                <div>
-                    <label for="kk-phone" class="block text-sm font-medium text-slate-700">{{ __('Telefon (optional)') }}</label>
-                    <input id="kk-phone" type="tel" wire:model="phone"
-                        class="mt-1 w-full rounded-lg border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500">
-                    @error('phone') <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
-                </div>
+                <flux:input wire:model="contactName" :label="__('Name')" required />
+                <flux:input wire:model="organization" :label="$source === 'web' ? __('Unternehmen / Organisation') : __('Kommune / Organisation')" :placeholder="$source === 'web' ? __('z. B. Beispiel GmbH') : __('z. B. Stadt Musterstadt')" required />
+                <flux:input type="email" wire:model="email" :label="__('Dienstliche E-Mail')" required />
+                <flux:input type="tel" wire:model="phone" :label="__('Telefon (optional)')" />
             </div>
-            <div class="mt-4">
-                <label for="kk-message" class="block text-sm font-medium text-slate-700">{{ __('Ihre Nachricht') }} *</label>
-                <textarea id="kk-message" rows="4" wire:model="message" required
-                    placeholder="{{ $source === 'web' ? __('z. B. Bitte um eine Demo für unser Unternehmen mit 2 Standorten …') : __('z. B. Bitte um ein Angebot für den Kommunal-Tarif für unsere Verwaltung mit 3 Liegenschaften …') }}"
-                    class="mt-1 w-full rounded-lg border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500"></textarea>
-                @error('message') <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
-            </div>
+
+            <flux:textarea wire:model="message" rows="4" :label="__('Ihre Nachricht')" :placeholder="$source === 'web' ? __('z. B. Bitte um eine Demo für unser Unternehmen mit 2 Standorten …') : __('z. B. Bitte um ein Angebot für den Kommunal-Tarif für unsere Verwaltung mit 3 Liegenschaften …')" required />
 
             {{-- Honeypot — für Menschen unsichtbar --}}
             <input type="text" wire:model="website" name="website" tabindex="-1" autocomplete="off" class="hidden" aria-hidden="true">
 
-            <div class="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <p class="text-xs text-slate-500">
+            <div class="flex flex-col gap-3 pt-2 sm:flex-row sm:items-center sm:justify-between">
+                <p class="text-xs text-zinc-500">
                     {{ __('Ihre Angaben verwenden wir ausschließlich zur Bearbeitung Ihrer Anfrage.') }}
-                    <a href="{{ route('legal.privacy') }}" class="underline hover:text-slate-700">{{ __('Datenschutzerklärung') }}</a>
+                    <a href="{{ route('legal.privacy') }}" class="underline hover:text-zinc-700">{{ __('Datenschutzerklärung') }}</a>
                 </p>
-                <button type="submit" wire:loading.attr="disabled"
-                    class="inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-6 py-3 font-medium text-white shadow-sm transition hover:bg-indigo-700 disabled:opacity-60">
+                <flux:button type="submit" variant="primary" icon="paper-airplane">
                     <span wire:loading.remove>{{ __('Anfrage senden') }}</span>
                     <span wire:loading>{{ __('Wird gesendet …') }}</span>
-                </button>
+                </flux:button>
             </div>
         </form>
     @endif
