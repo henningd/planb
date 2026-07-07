@@ -37,20 +37,60 @@ In Zabbix unter **Configuration → Actions → Webhook**:
 - **Headers**: `Authorization: Bearer planb_…`
 - **Body** (JSON): `{"host":"{HOST.NAME}","event_id":"{EVENT.ID}","trigger_id":"{TRIGGER.ID}","severity":"{TRIGGER.SEVERITY}","status":"{EVENT.VALUE}","subject":"{TRIGGER.NAME}"}`
 
-### Prometheus Alertmanager
+### Prometheus Alertmanager — Schritt für Schritt
 
-In `alertmanager.yml`:
+Zur Einordnung: **Prometheus** sammelt die Messwerte Ihrer Server und wertet darauf Alarmregeln aus; der **Alertmanager** bündelt die Alarme und stellt sie zu — in unserem Fall per Webhook an die Plattform. Konfiguriert wird an zwei Stellen:
+
+**a) Alarmregeln in Prometheus mit Schweregrad versehen.** Ein Vorfall entsteht nur bei den Severity-Werten **`critical`** oder **`page`** — alles darunter (z. B. `warning`) wird nur protokolliert. Beispielregel:
 
 ```yaml
+# prometheus: rules.yml
+groups:
+  - name: planb
+    rules:
+      - alert: ServerNichtErreichbar
+        expr: probe_success{instance="srv-prod-01"} == 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "srv-prod-01 ist seit 5 Minuten nicht erreichbar"
+```
+
+Wichtig: Der Wert von `instance` bzw. der Text in `summary` muss zu den **Monitoring-Keys** des Systems passen (Schritt 2) — darüber ordnet die Plattform den Alarm zu.
+
+**b) Webhook-Receiver im Alertmanager eintragen** (`alertmanager.yml`), mit dem Token aus Schritt 1:
+
+```yaml
+route:
+  receiver: planb
+
 receivers:
   - name: planb
     webhook_configs:
       - url: https://app.example.com/api/v1/webhooks/prometheus
+        send_resolved: true            # Entwarnungen mitschicken
         http_config:
           authorization:
             type: Bearer
-            credentials: planb_…
+            credentials: planb_…       # Token mit Scope monitoring.write
 ```
+
+`send_resolved: true` sorgt dafür, dass auch die Entwarnung ankommt — der offene Vorfall bekommt dann automatisch seine „RESOLVED"-Notiz. Wenn Sie nur kritische Alarme an die Plattform schicken wollen, ergänzen Sie eine Route mit `matchers: ['severity=~"critical|page"']` — nötig ist das nicht, die Plattform filtert selbst.
+
+**c) Verbindung testen**, ohne einen echten Ausfall zu provozieren — direkt per `curl`:
+
+```bash
+curl -X POST https://app.example.com/api/v1/webhooks/prometheus \
+  -H "Authorization: Bearer planb_…" \
+  -H "Content-Type: application/json" \
+  -d '{"status":"firing","alerts":[{"status":"firing",
+       "labels":{"alertname":"Test","severity":"critical",
+                 "instance":"srv-prod-01"},
+       "annotations":{"summary":"Testalarm aus dem Monitoring"}}]}'
+```
+
+Die Antwort zeigt pro Alarm, wie die Plattform ihn behandelt hat (siehe „Verarbeitungs-Pfade" unten) — z. B. `created_incident`, wenn alles passt, oder `no_system_match`, wenn noch ein Monitoring-Key fehlt. Anschließend sehen Sie den Eintrag in der Alarm-Liste auf der API-Seite und den Vorfall in der Vorfalls-Dokumentation. Den Test-Vorfall können Sie danach einfach schließen.
 
 ## Was passiert beim Eingang
 
