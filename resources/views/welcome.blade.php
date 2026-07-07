@@ -180,7 +180,7 @@
     @php($metaDescription = $productName.' – digitales Notfallhandbuch und Krisenmanagement für kleine und mittelständische Unternehmen und Kommunen. Strukturiert vorbereitet auf Cyberangriff, IT-Ausfall und Krise – inkl. NIS2- und BSI-200-4-Unterstützung.')
     <meta name="description" content="{{ $metaDescription }}">
 
-    <title>{{ $productName }} – Digitales Notfallhandbuch &amp; Krisenmanagement für Unternehmen &amp; Kommunen</title>
+    <title>{{ $productName }} – Digitales Notfallhandbuch &amp; Krisenmanagement</title>
 
     <link rel="canonical" href="{{ route('home') }}">
 
