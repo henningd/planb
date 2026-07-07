@@ -81,7 +81,7 @@
     <link rel="icon" href="/favicon.svg" type="image/svg+xml">
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600,700" rel="stylesheet" />
-    @vite(['resources/css/app.css'])
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="bg-white text-slate-900 antialiased font-sans">
 
@@ -118,7 +118,7 @@
                 <a href="{{ route('pricing.show') }}#kommunal" class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-white text-slate-900 font-medium ring-1 ring-slate-200 hover:ring-slate-300 hover:bg-slate-50 transition">
                     Kommunal-Tarif ansehen
                 </a>
-                <a href="{{ route('home') }}#kontakt" class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-white text-slate-900 font-medium ring-1 ring-slate-200 hover:ring-slate-300 hover:bg-slate-50 transition">
+                <a href="#kontakt" class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-white text-slate-900 font-medium ring-1 ring-slate-200 hover:ring-slate-300 hover:bg-slate-50 transition">
                     Demo anfragen
                 </a>
             </div>
@@ -341,6 +341,24 @@
         </div>
     </section>
 
+    {{-- ============ KONTAKT ============ --}}
+    <section id="kontakt" class="py-16 lg:py-24 bg-slate-50 border-y border-slate-100">
+        <div class="max-w-3xl mx-auto px-6 lg:px-8">
+            <div class="text-center">
+                <span class="text-sm font-semibold uppercase tracking-wide text-indigo-600">{{ __('Kontakt') }}</span>
+                <h2 class="mt-3 text-3xl sm:text-4xl font-semibold tracking-tight text-slate-900">
+                    {{ __('Angebot oder Demo anfragen') }}
+                </h2>
+                <p class="mt-4 text-lg text-slate-600">
+                    {{ __('Kurz beschreiben, worum es geht — wir melden uns in der Regel innerhalb eines Werktags. Bestellung gern klassisch per Angebot und Rechnung.') }}
+                </p>
+            </div>
+            <div class="mt-8">
+                <livewire:kommunen-kontakt />
+            </div>
+        </div>
+    </section>
+
     {{-- ============ CTA ============ --}}
     <section class="py-16 lg:py-24">
         <div class="max-w-4xl mx-auto px-6 lg:px-8 text-center">
@@ -356,7 +374,7 @@
                         Kostenlos starten
                     </a>
                 @endif
-                <a href="{{ route('home') }}#kontakt" class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-white text-slate-900 font-medium ring-1 ring-slate-200 hover:ring-slate-300 hover:bg-slate-50 transition">
+                <a href="#kontakt" class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-white text-slate-900 font-medium ring-1 ring-slate-200 hover:ring-slate-300 hover:bg-slate-50 transition">
                     Demo anfragen
                 </a>
             </div>
