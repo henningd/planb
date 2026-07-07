@@ -223,6 +223,9 @@ new #[Title('Standorte')] class extends Component {
                             <flux:menu.item icon="pencil" wire:click="openEdit('{{ $location->id }}')">
                                 {{ __('Bearbeiten') }}
                             </flux:menu.item>
+                            <flux:menu.item icon="qr-code" :href="route('locations.aushang', ['location' => $location->id])" target="_blank">
+                                {{ __('Notfallaushang') }}
+                            </flux:menu.item>
                             <flux:menu.separator />
                             <flux:menu.item icon="trash" variant="danger" wire:click="confirmDelete('{{ $location->id }}')">
                                 {{ __('Löschen') }}

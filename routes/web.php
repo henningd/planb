@@ -15,7 +15,9 @@ use App\Http\Middleware\EnsureTeamMembership;
 use App\Http\Middleware\SetTeamUrlDefaults;
 use App\Models\Company;
 use App\Models\HandbookShare;
+use App\Models\Location;
 use App\Models\Role;
+use App\Models\Scenario;
 use App\Models\System;
 use App\Scopes\CurrentCompanyScope;
 use App\Support\CurrentCompany;
@@ -555,6 +557,39 @@ Route::prefix('{current_team}')
                 'url' => route('systems.show', ['current_team' => $currentTeam, 'system' => $systemModel->id]),
             ]);
         })->name('systems.sticker');
+
+        // Druckbarer Notfallaushang je Standort (optional mit festem Szenario).
+        // Der QR traegt das Offline-Payload der Notfall-App (Brief 4b):
+        // {"planb":"aushang","location":...,"scenario":...,"url":<Fallback>}
+        Route::get('locations/{location}/aushang', function (string $currentTeam, string $location) {
+            $locationModel = Location::findOrFail($location);
+
+            $scenario = null;
+            if (($scenarioId = (string) request()->query('scenario')) !== '') {
+                $scenario = Scenario::findOrFail($scenarioId);
+            }
+
+            $share = HandbookShare::query()
+                ->whereNull('revoked_at')
+                ->where(fn ($q) => $q->whereNull('expires_at')->orWhere('expires_at', '>', now()))
+                ->latest('created_at')
+                ->first();
+            $fallbackUrl = $share !== null ? route('handbook.shared', ['token' => $share->token]) : null;
+
+            $payload = array_filter([
+                'planb' => 'aushang',
+                'location' => $locationModel->id,
+                'scenario' => $scenario?->id,
+                'url' => $fallbackUrl,
+            ], fn ($v) => $v !== null);
+
+            return view('notfallaushang', [
+                'location' => $locationModel,
+                'scenario' => $scenario,
+                'payloadJson' => json_encode($payload, JSON_UNESCAPED_SLASHES),
+                'fallbackUrl' => $fallbackUrl,
+            ]);
+        })->name('locations.aushang');
     });
 
 Route::prefix('admin')

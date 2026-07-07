@@ -1,6 +1,22 @@
-## Was der Aushang ist
+## Zwei Arten von Aushängen
 
-Der QR-Aushang ist ein **gedruckter A4-Zettel** für den Server-Schrank oder den Standort eines kritischen Systems. Er enthält:
+Es gibt in der Plattform **zwei verschiedene gedruckte Aushänge** — sie sehen sich ähnlich, tun aber Unterschiedliches:
+
+1. **Der Notfallaushang je Standort** (dieser Abschnitt direkt hier): großer roter A4-Aushang fürs Gebäude. Sein QR-Code wird mit der **Notfall-App gescannt** und öffnet **offline** die passende Szenario-Checkliste — er funktioniert also auch, wenn Server und Internet ausgefallen sind.
+2. **Der System-Aushang** (weiter unten): Info-Zettel für den Server-Schrank. Sein QR-Code führt zur **System-Detailseite im Browser** — dafür braucht man Netz und ein Login.
+
+## Der Notfallaushang je Standort
+
+**So drucken Sie ihn:** Auf der Seite **„Standorte"** im Kontextmenü (⋯) eines Standorts auf **„Notfallaushang"** klicken — es öffnet sich der druckfertige A4-Aushang mit rotem „IM NOTFALL"-Kopf, Standortname und QR-Code, dazu eine Drei-Schritt-Anleitung für die Mitarbeitenden.
+
+- Standardmäßig ist der Aushang **standortweit**: Nach dem Scan wählt man in der App das passende Szenario. Sie können den Aushang auch **auf ein festes Szenario festlegen** (z. B. „Stromausfall" für den Technikraum), indem Sie an die Adresse der Aushang-Seite `?scenario=<Szenario-ID>` anhängen.
+- **Der Scan funktioniert offline:** Der QR-Code enthält keine Internet-Adresse, sondern eine Kennung, die die Notfall-App gegen ihre lokalen Daten auflöst. Voraussetzung: Die App wurde auf dem Gerät einmal gekoppelt und hat synchronisiert.
+- **Fallback ohne App:** Existiert ein aktiver Handbuch-Freigabelink, druckt der Aushang zusätzlich dessen Web-Adresse ab — für Personen ohne eingerichtete App.
+- **Wo aufhängen:** am Empfang, im Flur, im Pausenraum, an jedem Standort/Eigenbetrieb — überall dort, wo im Ernstfall jemand als Erstes steht.
+
+## Der System-Aushang (Server-Schrank)
+
+Der System-Aushang ist ein **gedruckter A4-Zettel** für den Server-Schrank oder den Standort eines kritischen Systems. Er enthält:
 
 - Den **System-Namen** und die Kategorie.
 - Einen **QR-Code**, der zur System-Detailseite in der App führt.
@@ -10,7 +26,7 @@ Der QR-Aushang ist ein **gedruckter A4-Zettel** für den Server-Schrank oder den
 - **Dienstleister mit Hotline und Vertragsnummer**.
 - **Abhängigkeiten** — was muss zuerst laufen.
 
-## So drucken Sie einen Aushang
+### So drucken Sie den System-Aushang
 
 Auf der **Systeme-Liste** oder der **System-Detail-Seite** gibt es einen QR-Code-Knopf:
 
