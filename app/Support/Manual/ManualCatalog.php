@@ -43,6 +43,7 @@ class ManualCatalog
 
             // Ernstfall
             ['category' => 'Ernstfall', 'slug' => 'krisen-cockpit', 'title' => 'Krisen-Cockpit', 'summary' => 'Das reduzierte Live-Cockpit für den Ernstfall.'],
+            ['category' => 'Ernstfall', 'slug' => 'alarmablauf', 'title' => 'Alarmierung und Eskalation', 'summary' => 'Was nach dem Auslösen automatisch passiert — Push, Slack/Teams, Quittierung, SMS-Eskalation, Entwarnung. Mit Ablauf-Grafik.'],
             ['category' => 'Ernstfall', 'slug' => 'notfall-app', 'title' => 'Notfall-App fürs Smartphone', 'summary' => 'Handbuch, Kontakte und Checklisten offline auf dem Handy — mit Alarm-Quittierung, Alarmen trotz „Nicht stören", Übungsmodus und Massen-Rollout.'],
             ['category' => 'Ernstfall', 'slug' => 'szenarien', 'title' => 'Szenarien', 'summary' => 'Vorgefertigte Playbooks für typische Notlagen — inklusive kommunaler Vorlagen für Verwaltungen.'],
             ['category' => 'Ernstfall', 'slug' => 'wiederanlauf', 'title' => 'Wiederanlauf', 'summary' => 'Reihenfolge der System-Wiederherstellung nach einem Ausfall.'],
