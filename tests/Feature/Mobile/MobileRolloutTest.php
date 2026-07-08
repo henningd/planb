@@ -124,3 +124,19 @@ test('the self-service flow keeps its short ttl', function () {
 
     expect($issued['model']->expires_at->diffInMinutes(now(), true))->toBeLessThanOrEqual(60.0);
 });
+
+test('a single selected user is enough for the rollout pdf', function () {
+    $admin = rolloutAdmin();
+    $member = rolloutMember($admin);
+    rolloutMember($admin); // weiteres, NICHT ausgewähltes Mitglied
+
+    Livewire::actingAs($admin)->test('pages::settings.mobile-access')
+        ->set('rolloutSelection', [(string) $member->id])
+        ->call('downloadRolloutPdf')
+        ->assertFileDownloaded('notfall-app-zugaenge-'.now()->format('Y-m-d').'.pdf');
+
+    $codes = MobileAccessCode::query()->get();
+
+    expect($codes)->toHaveCount(1)
+        ->and($codes->first()->user_id)->toBe($member->id);
+});
