@@ -157,6 +157,8 @@ test('visible alarm pushes carry the time-sensitive APNs interruption level', fu
 
         return ($message['apns']['headers']['apns-priority'] ?? null) === '10'
             && ($message['apns']['payload']['aps']['interruption-level'] ?? null) === 'time-sensitive'
+            // Weckt die App im Hintergrund → Sync + Widget-Aktualisierung.
+            && ($message['apns']['payload']['aps']['content-available'] ?? null) === 1
             && isset($message['notification']);
     });
 })->with(['incident', 'incident_ended', 'incident_escalation']);

@@ -56,15 +56,21 @@ class FcmPushSender implements PushSender
                     ['title' => $title, 'body' => $body],
                     fn ($value) => $value !== null,
                 );
-                // Sichtbare Alarmierung: sofort zustellen.
-                $message['apns'] = ['headers' => ['apns-priority' => '10']];
+                // Sichtbare Alarmierung: sofort zustellen. content-available
+                // weckt die iOS-App zusätzlich im Hintergrund, damit sie den
+                // Stand synct und das Homescreen-Widget aktualisiert — ohne
+                // dass jemand die Mitteilung antippen oder die App öffnen muss.
+                $message['apns'] = [
+                    'headers' => ['apns-priority' => '10'],
+                    'payload' => ['aps' => ['content-available' => 1]],
+                ];
 
                 // Alarm-Pushes (Notfall gemeldet/beendet/eskaliert) durchbrechen
                 // iOS-Fokus-Modi als „time-sensitive" — das zugehörige Entitlement
                 // bringt die App mit. Andere sichtbare Pushes (z. B. Handbuch)
                 // bleiben normale Notifications.
                 if (in_array($data['type'] ?? null, self::TIME_SENSITIVE_TYPES, true)) {
-                    $message['apns']['payload'] = ['aps' => ['interruption-level' => 'time-sensitive']];
+                    $message['apns']['payload']['aps']['interruption-level'] = 'time-sensitive';
                 }
             } else {
                 // Stiller Sync-Push: iOS liefert Data-only-Nachrichten NUR aus,
