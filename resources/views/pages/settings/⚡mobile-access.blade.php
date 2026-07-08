@@ -288,7 +288,8 @@ new #[Title('Notfall-App')] class extends Component {
                         <div class="mt-3 max-h-72 divide-y divide-zinc-100 overflow-y-auto rounded-lg border border-zinc-200 dark:divide-zinc-800 dark:border-zinc-700">
                             @forelse ($this->rolloutMembers as $member)
                                 <label class="flex cursor-pointer items-center gap-3 px-4 py-2.5 hover:bg-zinc-50 dark:hover:bg-zinc-800" wire:key="rollout-{{ $member->id }}">
-                                    <input type="checkbox" value="{{ $member->id }}" wire:model="rolloutSelection"
+                                    {{-- .live: Zähler + Button-Freischaltung reagieren sofort auf jedes Häkchen. --}}
+                                    <input type="checkbox" value="{{ $member->id }}" wire:model.live="rolloutSelection"
                                            class="size-4 rounded border-zinc-300 text-zinc-800 dark:border-zinc-600" />
                                     <span class="min-w-0">
                                         <span class="block truncate text-sm font-medium text-zinc-800 dark:text-zinc-100">{{ $member->name }}</span>
