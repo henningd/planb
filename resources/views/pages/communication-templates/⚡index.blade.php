@@ -900,7 +900,7 @@ new #[Title('Kommunikations-Vorlagen')] class extends Component {
                         <div class="flex items-center gap-3">
                             <input
                                 type="checkbox"
-                                wire:model="smsRecipients"
+                                wire:model.live="smsRecipients"
                                 value="{{ $candidate->id }}"
                                 class="rounded border-zinc-300 dark:border-zinc-600"
                             >
@@ -996,7 +996,7 @@ new #[Title('Kommunikations-Vorlagen')] class extends Component {
                     <div class="mt-2 max-h-64 space-y-1 overflow-y-auto rounded-lg border border-zinc-200 p-3 dark:border-zinc-700">
                         @foreach ($this->emailCandidates as $employee)
                             <flux:checkbox
-                                wire:model="emailRecipients"
+                                wire:model.live="emailRecipients"
                                 value="{{ $employee->id }}"
                                 :label="$employee->nameLastFirst().' · '.$employee->email"
                             />
