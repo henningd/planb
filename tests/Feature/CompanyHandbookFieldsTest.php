@@ -47,6 +47,44 @@ test('company edit page saves all handbook fields', function () {
         ->and($company->data_protection_authority_website)->toBe('https://www.baden-wuerttemberg.datenschutz.de');
 });
 
+test('company edit page saves the crisis room / lagezentrum fields', function () {
+    $user = User::factory()->create();
+
+    Livewire\Livewire::actingAs($user->fresh())
+        ->test('pages::company.edit')
+        ->set('name', 'Acme GmbH')
+        ->set('industry', Industry::Sonstiges->value)
+        ->set('crisis_room_primary', 'Hauptsitz, Gebäude A, Raum 1.12')
+        ->set('crisis_room_secondary', 'Standort Süd, Konferenzraum EG')
+        ->set('crisis_room_digital_link', 'https://meet.example.test/krisenstab')
+        ->set('crisis_room_equipment', ['phone', 'whiteboard', 'paper_binder'])
+        ->set('crisis_room_access', 'Schlüssel im Tresor Empfang; Zutritt: Notfallbeauftragte/r, GF.')
+        ->set('crisis_room_preparation', 'Haustechnik richtet Technik ein, Zielzeit 15 Minuten.')
+        ->call('save')
+        ->assertHasNoErrors();
+
+    $company = Company::where('team_id', $user->currentTeam->id)->firstOrFail();
+
+    expect($company->crisis_room_primary)->toBe('Hauptsitz, Gebäude A, Raum 1.12')
+        ->and($company->crisis_room_secondary)->toBe('Standort Süd, Konferenzraum EG')
+        ->and($company->crisis_room_digital_link)->toBe('https://meet.example.test/krisenstab')
+        ->and($company->crisis_room_equipment)->toBe(['phone', 'whiteboard', 'paper_binder'])
+        ->and($company->crisis_room_access)->toBe('Schlüssel im Tresor Empfang; Zutritt: Notfallbeauftragte/r, GF.')
+        ->and($company->crisis_room_preparation)->toBe('Haustechnik richtet Technik ein, Zielzeit 15 Minuten.');
+});
+
+test('an invalid crisis room equipment value is rejected', function () {
+    $user = User::factory()->create();
+
+    Livewire\Livewire::actingAs($user->fresh())
+        ->test('pages::company.edit')
+        ->set('name', 'Acme')
+        ->set('industry', Industry::Sonstiges->value)
+        ->set('crisis_room_equipment', ['phone', 'kaffeemaschine'])
+        ->call('save')
+        ->assertHasErrors(['crisis_room_equipment.*']);
+});
+
 test('legal form invalid value is rejected', function () {
     $user = User::factory()->create();
 

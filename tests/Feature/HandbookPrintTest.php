@@ -130,6 +130,35 @@ test('handbook print omits the open items chapter when there are none', function
         ->assertDontSee('Offene Punkte / Klärpunkte');
 });
 
+test('handbook print shows the crisis room chapter when configured', function () {
+    $user = User::factory()->create();
+    Company::factory()->for($user->currentTeam)->create([
+        'crisis_room_primary' => 'Hauptsitz, Gebäude A, Raum 1.12',
+        'crisis_room_secondary' => 'Standort Süd, Konferenzraum EG',
+        'crisis_room_equipment' => ['phone', 'whiteboard'],
+        'crisis_room_preparation' => 'Haustechnik richtet die Technik ein.',
+    ]);
+
+    $this->actingAs($user->fresh())
+        ->get(route('handbook.print'))
+        ->assertOk()
+        ->assertSee('4.4 Lagezentrum und Krisenraum')
+        ->assertSee('Hauptsitz, Gebäude A, Raum 1.12')
+        ->assertSee('Standort Süd, Konferenzraum EG')
+        ->assertSee('Telefon')
+        ->assertSee('Whiteboard');
+});
+
+test('handbook print omits the crisis room chapter when not configured', function () {
+    $user = User::factory()->create();
+    Company::factory()->for($user->currentTeam)->create();
+
+    $this->actingAs($user->fresh())
+        ->get(route('handbook.print'))
+        ->assertOk()
+        ->assertDontSee('4.4 Lagezentrum und Krisenraum');
+});
+
 test('handbook print redirects with 404 when no company exists', function () {
     $user = User::factory()->create();
 

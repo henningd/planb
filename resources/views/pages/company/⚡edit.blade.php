@@ -39,6 +39,19 @@ new #[Title('Firma')] class extends Component {
 
     public ?string $budget_management = null;
 
+    public string $crisis_room_primary = '';
+
+    public string $crisis_room_secondary = '';
+
+    public string $crisis_room_digital_link = '';
+
+    /** @var list<string> */
+    public array $crisis_room_equipment = [];
+
+    public string $crisis_room_access = '';
+
+    public string $crisis_room_preparation = '';
+
     public string $data_protection_authority_name = '';
 
     public string $data_protection_authority_phone = '';
@@ -70,6 +83,12 @@ new #[Title('Firma')] class extends Component {
             $this->budget_it_lead = $company->budget_it_lead !== null ? (string) $company->budget_it_lead : null;
             $this->budget_emergency_officer = $company->budget_emergency_officer !== null ? (string) $company->budget_emergency_officer : null;
             $this->budget_management = $company->budget_management !== null ? (string) $company->budget_management : null;
+            $this->crisis_room_primary = (string) $company->crisis_room_primary;
+            $this->crisis_room_secondary = (string) $company->crisis_room_secondary;
+            $this->crisis_room_digital_link = (string) $company->crisis_room_digital_link;
+            $this->crisis_room_equipment = $company->crisis_room_equipment ?? [];
+            $this->crisis_room_access = (string) $company->crisis_room_access;
+            $this->crisis_room_preparation = (string) $company->crisis_room_preparation;
             $this->data_protection_authority_name = (string) $company->data_protection_authority_name;
             $this->data_protection_authority_phone = (string) $company->data_protection_authority_phone;
             $this->data_protection_authority_website = (string) $company->data_protection_authority_website;
@@ -113,6 +132,13 @@ new #[Title('Firma')] class extends Component {
             'budget_it_lead' => ['nullable', 'numeric', 'min:0'],
             'budget_emergency_officer' => ['nullable', 'numeric', 'min:0'],
             'budget_management' => ['nullable', 'numeric', 'min:0'],
+            'crisis_room_primary' => ['nullable', 'string', 'max:255'],
+            'crisis_room_secondary' => ['nullable', 'string', 'max:255'],
+            'crisis_room_digital_link' => ['nullable', 'string', 'max:255'],
+            'crisis_room_equipment' => ['array'],
+            'crisis_room_equipment.*' => ['string', Rule::in(collect(\App\Enums\CrisisRoomEquipment::cases())->pluck('value'))],
+            'crisis_room_access' => ['nullable', 'string', 'max:2000'],
+            'crisis_room_preparation' => ['nullable', 'string', 'max:2000'],
             'data_protection_authority_name' => ['nullable', 'string', 'max:255'],
             'data_protection_authority_phone' => ['nullable', 'string', 'max:100'],
             'data_protection_authority_website' => ['nullable', 'string', 'max:255'],
@@ -121,6 +147,9 @@ new #[Title('Firma')] class extends Component {
         $payload = collect($validated)
             ->map(fn ($value) => $value === '' ? null : $value)
             ->toArray();
+
+        // Leere Ausstattungsauswahl als null statt [] speichern.
+        $payload['crisis_room_equipment'] = $payload['crisis_room_equipment'] ?: null;
 
         $team = Auth::user()->currentTeam;
 
@@ -540,6 +569,35 @@ new #[Title('Firma')] class extends Component {
                 <flux:input wire:model="budget_emergency_officer" :label="__('Notfallbeauftragte/r (€)')" type="number" min="0" step="0.01" placeholder="z. B. 2000" />
                 <flux:input wire:model="budget_management" :label="__('Geschäftsführung (€)')" type="number" min="0" step="0.01" placeholder="z. B. 20000" />
             </div>
+        </div>
+
+        <div class="space-y-6 rounded-xl border border-zinc-200 bg-white p-6 dark:border-zinc-700 dark:bg-zinc-900">
+            <div>
+                <flux:heading size="lg">{{ __('Lagezentrum & Krisenraum') }}</flux:heading>
+                <flux:subheading>
+                    {{ __('Wo tritt der Krisenstab im Ernstfall zusammen? Primärer und Ersatz-Krisenraum, digitaler Zugang, Ausstattung, Zutritt und Vorbereitung (erscheint im Handbuch, Kap. 4.4).') }}
+                </flux:subheading>
+            </div>
+
+            <div class="grid gap-6 sm:grid-cols-2">
+                <flux:input wire:model="crisis_room_primary" :label="__('Primärer Krisenraum')" type="text" placeholder="z. B. Hauptsitz, Gebäude A, Raum 1.12 (Besprechung Nord)" />
+                <flux:input wire:model="crisis_room_secondary" :label="__('Ersatz-Krisenraum')" type="text" placeholder="z. B. Standort Süd, Konferenzraum EG" />
+            </div>
+
+            <flux:input wire:model="crisis_room_digital_link" :label="__('Digitaler Krisenraum / Notfall-Meeting-Link')" type="text" placeholder="z. B. https://meet… oder Teams-Raum „Krisenstab“" />
+
+            <flux:fieldset>
+                <flux:legend>{{ __('Ausstattung') }}</flux:legend>
+                <div class="grid gap-2 sm:grid-cols-2">
+                    @foreach (App\Enums\CrisisRoomEquipment::options() as $option)
+                        <flux:checkbox wire:model="crisis_room_equipment" value="{{ $option['value'] }}" :label="$option['label']" />
+                    @endforeach
+                </div>
+            </flux:fieldset>
+
+            <flux:textarea wire:model="crisis_room_access" :label="__('Zutritt / Schlüssel / Verantwortliche')" rows="2" placeholder="z. B. Schlüssel im Tresor Empfang; Zutritt: Notfallbeauftragte/r, GF, Haustechnik (Vertretung: Frau Meier)." />
+
+            <flux:textarea wire:model="crisis_room_preparation" :label="__('Wer bereitet den Raum im Notfall vor?')" rows="2" placeholder="z. B. Haustechnik richtet Technik ein, Assistenz legt Notfallordner und Getränke bereit — Zielzeit 15 Minuten nach Alarm." />
         </div>
 
         <div class="space-y-6 rounded-xl border border-zinc-200 bg-white p-6 dark:border-zinc-700 dark:bg-zinc-900">

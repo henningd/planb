@@ -24,6 +24,19 @@ Ist eine Rolle nicht verfügbar, übernimmt die hinterlegte **Vertretung automat
 
 Damit das im Ernstfall funktioniert, muss jede Krisenrolle unter **Stammdaten → Rollen** mit einer Hauptperson **und** mindestens einer Stellvertretung besetzt sein. Fehlt eine Vertretung, weist die Onboarding-Prüfung darauf hin.
 
+## Lagezentrum und Krisenraum
+
+Wo der Krisenstab **physisch** zusammentritt, hinterlegen Sie unter **Stammdaten → Firma** im Abschnitt „Lagezentrum & Krisenraum":
+
+- **Primärer Krisenraum** — Standort / Gebäude / Raum.
+- **Ersatz-Krisenraum** — falls der primäre Raum nicht nutzbar ist.
+- **Digitaler Krisenraum** — Notfall-Meeting-Link, wenn nicht alle vor Ort sein können.
+- **Ausstattung** — Telefon, Bildschirm, Whiteboard, Drucker, Papier-Notfallordner, Strom/Netzwerk/LTE.
+- **Zutritt / Schlüssel / Verantwortliche** — wer kommt rein, wo liegt der Schlüssel.
+- **Vorbereitung im Notfall** — wer richtet den Raum ein und in welcher Zielzeit.
+
+Diese Angaben erscheinen im Handbuch-PDF als **Kapitel 4.4 „Lagezentrum und Krisenraum"** — aber nur, wenn mindestens ein Feld ausgefüllt ist.
+
 ## Wo Sie es finden
 
 - **In der App:** Die Besetzung pflegen Sie unter **Stammdaten → Mitarbeiter** (Krisenrolle je Person) und **Stammdaten → Rollen** (Haupt-/Vertretung).

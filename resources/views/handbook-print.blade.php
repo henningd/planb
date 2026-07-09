@@ -907,6 +907,34 @@
                 <tr><td class="label">Geschäftsführung</td><td>Letzte Entscheidungsinstanz. Freigabe externer Kommunikation. Genehmigung außerordentlicher Ausgaben und Maßnahmen.</td></tr>
             </tbody>
         </table>
+
+        @php($crisisRoomEquipment = \App\Enums\CrisisRoomEquipment::labelsFor($company->crisis_room_equipment ?? []))
+        @if ($company->crisis_room_primary || $company->crisis_room_secondary || $company->crisis_room_digital_link || ! empty($crisisRoomEquipment) || $company->crisis_room_access || $company->crisis_room_preparation)
+            <h3>4.4 Lagezentrum und Krisenraum</h3>
+            <p>Der Ort, an dem der Krisenstab im Ernstfall zusammentritt und die Lage führt.</p>
+            <table>
+                <tbody>
+                    @if ($company->crisis_room_primary)
+                        <tr><td class="label">Primärer Krisenraum</td><td>{{ $company->crisis_room_primary }}</td></tr>
+                    @endif
+                    @if ($company->crisis_room_secondary)
+                        <tr><td class="label">Ersatz-Krisenraum</td><td>{{ $company->crisis_room_secondary }}</td></tr>
+                    @endif
+                    @if ($company->crisis_room_digital_link)
+                        <tr><td class="label">Digitaler Krisenraum</td><td>{{ $company->crisis_room_digital_link }}</td></tr>
+                    @endif
+                    @if (! empty($crisisRoomEquipment))
+                        <tr><td class="label">Ausstattung</td><td>{{ implode(' · ', $crisisRoomEquipment) }}</td></tr>
+                    @endif
+                    @if ($company->crisis_room_access)
+                        <tr><td class="label">Zutritt / Schlüssel / Verantwortliche</td><td>{{ $company->crisis_room_access }}</td></tr>
+                    @endif
+                    @if ($company->crisis_room_preparation)
+                        <tr><td class="label">Vorbereitung im Notfall</td><td>{{ $company->crisis_room_preparation }}</td></tr>
+                    @endif
+                </tbody>
+            </table>
+        @endif
     </div>
 
     {{-- ============ KAPITEL 5: KONTAKTE & ESKALATIONSKETTE ============ --}}
