@@ -6,6 +6,7 @@ use App\Events\ScenarioRunStepCompleted;
 use App\Events\ScenarioRunStepReopened;
 use App\Models\Company;
 use App\Models\CrisisLogEntry;
+use App\Models\FordecDecision;
 use App\Models\ScenarioRun;
 use App\Models\ScenarioRunStep;
 use App\Models\ServiceProvider as ServiceProviderModel;
@@ -36,6 +37,21 @@ new #[Title('Krisen-Cockpit')] class extends Component {
      * Freitext für einen neuen manuellen Logbuch-Eintrag.
      */
     public string $newLogMessage = '';
+
+    // FORDEC-Entscheidungsmaske (Facts, Options, Risks & Benefits, Decision, Execution, Check).
+    public string $fordecTitle = '';
+
+    public string $fordecFacts = '';
+
+    public string $fordecOptions = '';
+
+    public string $fordecRisksBenefits = '';
+
+    public string $fordecDecision = '';
+
+    public string $fordecExecution = '';
+
+    public ?string $fordecCheckAt = null;
 
     /**
      * Beim Page-Load gewählter Bibel-Vers für „kein Notfall". Bleibt für die
@@ -364,6 +380,73 @@ new #[Title('Krisen-Cockpit')] class extends Component {
     }
 
     /**
+     * Dokumentierte FORDEC-Entscheidungen des aktiven Laufs (neueste zuerst).
+     *
+     * @return Collection<int, FordecDecision>
+     */
+    #[Computed]
+    public function fordecDecisions(): Collection
+    {
+        $run = $this->cockpit?->activeRun;
+        if ($run === null) {
+            return collect();
+        }
+
+        return FordecDecision::where('scenario_run_id', $run->id)
+            ->orderByDesc('created_at')
+            ->get();
+    }
+
+    /**
+     * Speichert eine FORDEC-Entscheidung und spiegelt sie ins Krisen-Logbuch.
+     */
+    public function saveFordec(): void
+    {
+        $run = $this->cockpit?->activeRun;
+        if ($run === null) {
+            Flux::toast(variant: 'warning', text: __('FORDEC-Entscheidungen können nur bei einem aktiven Vorfall dokumentiert werden.'));
+
+            return;
+        }
+
+        $validated = $this->validate([
+            'fordecTitle' => ['nullable', 'string', 'max:255'],
+            'fordecFacts' => ['nullable', 'string', 'max:5000'],
+            'fordecOptions' => ['nullable', 'string', 'max:5000'],
+            'fordecRisksBenefits' => ['nullable', 'string', 'max:5000'],
+            'fordecDecision' => ['required', 'string', 'max:5000'],
+            'fordecExecution' => ['nullable', 'string', 'max:5000'],
+            'fordecCheckAt' => ['nullable', 'date'],
+        ]);
+
+        FordecDecision::create([
+            'company_id' => $run->company_id,
+            'scenario_run_id' => $run->id,
+            'user_id' => Auth::id(),
+            'title' => $validated['fordecTitle'] ?: null,
+            'facts' => $validated['fordecFacts'] ?: null,
+            'options' => $validated['fordecOptions'] ?: null,
+            'risks_benefits' => $validated['fordecRisksBenefits'] ?: null,
+            'decision' => $validated['fordecDecision'],
+            'execution' => $validated['fordecExecution'] ?: null,
+            'check_at' => $validated['fordecCheckAt'] ?: null,
+            'created_by_name' => Auth::user()?->name,
+        ]);
+
+        // Als Entscheidung ins Krisen-Logbuch spiegeln, damit sie im Protokoll/Export erscheint.
+        $summary = trim(($validated['fordecTitle'] !== '' ? $validated['fordecTitle'].': ' : '').$validated['fordecDecision']);
+        $this->writeLogEntry($run, 'decision', __('FORDEC-Entscheidung: :summary', ['summary' => $summary]));
+
+        $this->reset([
+            'fordecTitle', 'fordecFacts', 'fordecOptions',
+            'fordecRisksBenefits', 'fordecDecision', 'fordecExecution', 'fordecCheckAt',
+        ]);
+        unset($this->fordecDecisions, $this->logEntries);
+
+        Flux::toast(variant: 'success', text: __('FORDEC-Entscheidung dokumentiert.'));
+    }
+
+    /**
      * Farbe der Typ-Badge im Krisen-Logbuch.
      */
     public function logTypeBadgeColor(string $type): string
@@ -603,7 +686,7 @@ new #[Title('Krisen-Cockpit')] class extends Component {
                 $startedAtIso = $run->started_at?->toIso8601String();
             @endphp
 
-            <div class="space-y-6">
+            <div class="space-y-6" x-data="{ cockpitTab: 'recovery' }">
                 {{-- Umschalter bei mehreren parallel aktiven Notfällen --}}
                 @if ($cockpit->activeRuns->count() > 1)
                     <div class="rounded-xl border border-amber-300 bg-amber-50 p-3 dark:border-amber-800 dark:bg-amber-950/40">
@@ -713,6 +796,31 @@ new #[Title('Krisen-Cockpit')] class extends Component {
                     </div>
                 </div>
 
+                {{-- Umschalter: Wiederanlauf ↔ FORDEC-Entscheidung (weitere Bereiche später) --}}
+                <div class="flex flex-wrap gap-2 border-b border-zinc-200 pb-1 dark:border-zinc-700">
+                    <button
+                        type="button"
+                        x-on:click="cockpitTab = 'recovery'"
+                        :class="cockpitTab === 'recovery' ? 'border-indigo-600 text-indigo-700 dark:text-indigo-300' : 'border-transparent text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200'"
+                        class="inline-flex items-center gap-2 border-b-2 px-3 py-2 text-sm font-medium transition"
+                    >
+                        <flux:icon.arrow-path class="h-4 w-4" />
+                        {{ __('Wiederanlauf') }}
+                    </button>
+                    <button
+                        type="button"
+                        x-on:click="cockpitTab = 'fordec'"
+                        :class="cockpitTab === 'fordec' ? 'border-indigo-600 text-indigo-700 dark:text-indigo-300' : 'border-transparent text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200'"
+                        class="inline-flex items-center gap-2 border-b-2 px-3 py-2 text-sm font-medium transition"
+                        data-test="cockpit-tab-fordec"
+                    >
+                        <flux:icon.scale class="h-4 w-4" />
+                        {{ __('FORDEC-Entscheidung') }}
+                    </button>
+                </div>
+
+                {{-- Tab „Wiederanlauf": Krisenstab, Schritte, Kommunikation, Meldepflichten, Logbuch --}}
+                <div x-show="cockpitTab === 'recovery'" class="space-y-6">
                 {{-- Sektion 2: Krisenstab --}}
                 @php
                     $smsConfigured = app(\App\Services\Sms\SmsGatewayContract::class)->isConfigured();
@@ -1275,6 +1383,78 @@ new #[Title('Krisen-Cockpit')] class extends Component {
                     @endif
                 </div>
             </div>
+
+                </div>{{-- Ende Tab „Wiederanlauf" --}}
+
+                {{-- Tab „FORDEC-Entscheidung": strukturierte, nachvollziehbare Krisenentscheidung --}}
+                <div x-show="cockpitTab === 'fordec'" x-cloak class="space-y-6">
+                    <div class="rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
+                        <div class="mb-1 flex items-center gap-2">
+                            <flux:icon.scale class="h-5 w-5 text-zinc-500" />
+                            <flux:heading size="lg">{{ __('FORDEC-Entscheidung') }}</flux:heading>
+                        </div>
+                        <flux:subheading class="mb-4">
+                            {{ __('Strukturierte Krisenentscheidung in sechs Schritten. Wird revisionssicher gespeichert und ins Krisen-Logbuch übernommen.') }}
+                        </flux:subheading>
+
+                        <form wire:submit="saveFordec" class="space-y-4">
+                            <flux:input wire:model="fordecTitle" :label="__('Kurztitel (optional)')" type="text" placeholder="z. B. Verlagerung in den Ausweichstandort" />
+                            <flux:textarea wire:model="fordecFacts" :label="__('Facts — Was wissen wir sicher?')" rows="2" placeholder="Gesicherte Fakten, Status, betroffene Systeme/Standorte." />
+                            <flux:textarea wire:model="fordecOptions" :label="__('Options — Welche Handlungsoptionen gibt es?')" rows="2" placeholder="Mögliche Handlungswege, auch die Option „nichts tun / abwarten“." />
+                            <flux:textarea wire:model="fordecRisksBenefits" :label="__('Risks &amp; Benefits — Risiken und Vorteile der Optionen')" rows="2" placeholder="Pro Option: was spricht dafür, was dagegen, welche Nebenwirkungen?" />
+                            <flux:textarea wire:model="fordecDecision" :label="__('Decision — Was wurde entschieden?')" rows="2" placeholder="Die getroffene Entscheidung, klar und eindeutig." required />
+                            <flux:textarea wire:model="fordecExecution" :label="__('Execution — Wer macht was bis wann?')" rows="2" placeholder="Verantwortliche, Aufgaben, Fristen." />
+                            <flux:input wire:model="fordecCheckAt" :label="__('Check — Wann prüfen wir die Entscheidung erneut?')" type="datetime-local" />
+
+                            <div class="flex justify-end">
+                                <flux:button variant="primary" type="submit" icon="check" data-test="cockpit-fordec-save">
+                                    {{ __('Entscheidung dokumentieren') }}
+                                </flux:button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div class="rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
+                        <flux:heading size="lg" class="mb-4">{{ __('Dokumentierte Entscheidungen') }}</flux:heading>
+                        @forelse ($this->fordecDecisions as $decision)
+                            <div wire:key="fordec-{{ $decision->id }}" class="border-t border-zinc-100 py-4 first:border-t-0 first:pt-0 dark:border-zinc-800">
+                                <div class="flex flex-wrap items-center justify-between gap-2">
+                                    <flux:heading size="base">{{ $decision->title ?: __('FORDEC-Entscheidung') }}</flux:heading>
+                                    <div class="flex items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400">
+                                        <span>{{ $decision->created_at->format('d.m.Y H:i') }}</span>
+                                        @if ($decision->created_by_name)<span>· {{ $decision->created_by_name }}</span>@endif
+                                    </div>
+                                </div>
+                                <dl class="mt-2 space-y-1.5 text-sm">
+                                    @foreach ([
+                                        __('Facts') => $decision->facts,
+                                        __('Options') => $decision->options,
+                                        __('Risks & Benefits') => $decision->risks_benefits,
+                                        __('Decision') => $decision->decision,
+                                        __('Execution') => $decision->execution,
+                                    ] as $label => $value)
+                                        @if ($value)
+                                            <div class="grid grid-cols-[9rem_1fr] gap-2">
+                                                <dt class="font-medium text-zinc-500 dark:text-zinc-400">{{ $label }}</dt>
+                                                <dd class="text-zinc-800 dark:text-zinc-200 whitespace-pre-line">{{ $value }}</dd>
+                                            </div>
+                                        @endif
+                                    @endforeach
+                                    @if ($decision->check_at)
+                                        <div class="grid grid-cols-[9rem_1fr] gap-2">
+                                            <dt class="font-medium text-zinc-500 dark:text-zinc-400">{{ __('Check') }}</dt>
+                                            <dd class="text-zinc-800 dark:text-zinc-200">{{ $decision->check_at->format('d.m.Y H:i') }} {{ __('Uhr') }}</dd>
+                                        </div>
+                                    @endif
+                                </dl>
+                            </div>
+                        @empty
+                            <flux:text class="text-sm text-zinc-500 dark:text-zinc-400">
+                                {{ __('Noch keine FORDEC-Entscheidung dokumentiert.') }}
+                            </flux:text>
+                        @endforelse
+                    </div>
+                </div>{{-- Ende Tab „FORDEC-Entscheidung" --}}
 
             @include('partials.communication-send-modals')
 

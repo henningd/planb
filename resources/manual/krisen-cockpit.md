@@ -46,6 +46,21 @@ Wenn mehrere Personen gleichzeitig auf dem Cockpit oder dem Szenario-Lauf-Detail
 
 In der Wiederanlauf-Sektion sehen Sie pro System die geschätzten **Ausfallkosten pro Stunde**. Im Cockpit wird daraus pro Lage live aufaddiert: „Bisher entstandener Schaden: 3.420 €". Hilft, die richtigen Eskalations-Entscheidungen zu treffen.
 
+## FORDEC-Entscheidungen
+
+Oben im Cockpit gibt es einen Umschalter zwischen **Wiederanlauf** und **FORDEC-Entscheidung**. Damit im Ernstfall nicht nur Aufgaben abgearbeitet, sondern auch wichtige Entscheidungen nachvollziehbar dokumentiert werden.
+
+FORDEC ist eine Entscheidungsmaske in sechs Schritten:
+
+- **Facts** — Was wissen wir sicher?
+- **Options** — Welche Handlungsoptionen gibt es?
+- **Risks & Benefits** — Welche Risiken und Vorteile haben die Optionen?
+- **Decision** — Was wurde entschieden?
+- **Execution** — Wer macht was bis wann?
+- **Check** — Wann prüfen wir die Entscheidung erneut?
+
+Jede gespeicherte Entscheidung wird zusätzlich als Eintrag ins **Krisen-Logbuch** übernommen und erscheint damit auch im Protokoll-Export. Den Leitfaden mit einem ausgearbeiteten Beispiel finden Sie im Handbuch-PDF (Kapitel 4.5) und auf der Seite [Krisenorganisation und Krisenstab](krisenstab).
+
 ## Wann sehe ich das Cockpit?
 
 Das Cockpit ist nur sinnvoll, wenn ein **aktiver Szenario-Lauf** läuft. Wenn keiner aktiv ist, sehen Sie eine leere Seite mit dem Knopf „Notfall melden" — der startet einen neuen Szenario-Lauf.

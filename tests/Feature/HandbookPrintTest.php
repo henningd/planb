@@ -159,6 +159,19 @@ test('handbook print omits the crisis room chapter when not configured', functio
         ->assertDontSee('4.4 Lagezentrum und Krisenraum');
 });
 
+test('handbook print includes the FORDEC decision guide', function () {
+    $user = User::factory()->create();
+    Company::factory()->for($user->currentTeam)->create();
+
+    $this->actingAs($user->fresh())
+        ->get(route('handbook.print'))
+        ->assertOk()
+        ->assertSee('4.5 FORDEC-Leitfaden für Krisenentscheidungen')
+        ->assertSee('Was wissen wir sicher?')
+        ->assertSee('Wann prüfen wir die Entscheidung erneut?')
+        ->assertSee('Beispiel');
+});
+
 test('handbook print redirects with 404 when no company exists', function () {
     $user = User::factory()->create();
 

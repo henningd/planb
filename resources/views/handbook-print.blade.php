@@ -935,6 +935,28 @@
                 </tbody>
             </table>
         @endif
+
+        <h3>4.5 FORDEC-Leitfaden für Krisenentscheidungen</h3>
+        <p>In der Krise werden Entscheidungen unter Zeitdruck und Unsicherheit getroffen. <em>FORDEC</em> (aus der Luftfahrt) strukturiert diese Entscheidungen und macht sie nachvollziehbar. Der Krisenstab arbeitet die sechs Schritte der Reihe nach ab; im Krisen-Cockpit steht dafür eine Eingabemaske bereit, die jede Entscheidung revisionssicher ins Krisen-Logbuch übernimmt.</p>
+        <table>
+            <tbody>
+                <tr><td class="label">F &mdash; Facts</td><td>Was wissen wir sicher? Gesicherte Fakten, Status, betroffene Systeme und Standorte.</td></tr>
+                <tr><td class="label">O &mdash; Options</td><td>Welche Handlungsoptionen gibt es? Auch die Option „abwarten“ bewusst benennen.</td></tr>
+                <tr><td class="label">R &mdash; Risks &amp; Benefits</td><td>Welche Risiken und Vorteile hat jede Option? Nebenwirkungen mitdenken.</td></tr>
+                <tr><td class="label">D &mdash; Decision</td><td>Was wurde entschieden? Klar und eindeutig, mit benannter Entscheiderin/Entscheider.</td></tr>
+                <tr><td class="label">E &mdash; Execution</td><td>Wer macht was bis wann? Verantwortliche, Aufgaben, Fristen.</td></tr>
+                <tr><td class="label">C &mdash; Check</td><td>Wann prüfen wir die Entscheidung erneut? Ergebnis kontrollieren, bei Bedarf neu durch FORDEC.</td></tr>
+            </tbody>
+        </table>
+        <div class="callout">
+            <div class="callout-title">Beispiel</div>
+            <strong>F:</strong> Der zentrale Dateiserver ist seit 30 Minuten verschlüsselt, Ursache Ransomware; Backups von gestern Nacht sind unversehrt. &mdash;
+            <strong>O:</strong> (1) Wiederherstellung aus Backup, (2) Zahlung des Lösegelds, (3) Weiterbetrieb im Papier-Notbetrieb bis zur Wiederherstellung. &mdash;
+            <strong>R&amp;B:</strong> (1) ~4 h Ausfall, kein Datenverlust über gestern hinaus, sicher; (2) rechtlich/ethisch heikel, keine Garantie; (3) überbrückt, aber begrenzt tragfähig. &mdash;
+            <strong>D:</strong> Wiederherstellung aus Backup, parallel Papier-Notbetrieb. &mdash;
+            <strong>E:</strong> IT-Verantwortliche/r startet Restore (bis 14:00 Uhr), Team Empfang aktiviert Papier-Notbetrieb (sofort). &mdash;
+            <strong>C:</strong> Lagebesprechung um 14:30 Uhr &mdash; ist der Restore erfolgreich?
+        </div>
     </div>
 
     {{-- ============ KAPITEL 5: KONTAKTE & ESKALATIONSKETTE ============ --}}
