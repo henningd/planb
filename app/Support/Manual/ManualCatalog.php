@@ -43,6 +43,7 @@ class ManualCatalog
 
             // Ernstfall
             ['category' => 'Ernstfall', 'slug' => 'krisen-cockpit', 'title' => 'Krisen-Cockpit', 'summary' => 'Das reduzierte Live-Cockpit für den Ernstfall.'],
+            ['category' => 'Ernstfall', 'slug' => 'krisenstab', 'title' => 'Krisenorganisation und Krisenstab', 'summary' => 'Wie aus den Rollen im Ernstfall der Krisenstab entsteht — die fünf Funktionen (Leitung, Notfallbeauftragte/r, Lagebild, Protokoll, Fachberater) und die automatische Vertretung. Kapitel 4 im Handbuch-PDF.'],
             ['category' => 'Ernstfall', 'slug' => 'alarmablauf', 'title' => 'Alarmierung und Eskalation', 'summary' => 'Was nach dem Auslösen automatisch passiert — Push, Slack/Teams, Quittierung, SMS-Eskalation, Entwarnung. Mit Ablauf-Grafik.'],
             ['category' => 'Ernstfall', 'slug' => 'notfall-app', 'title' => 'Notfall-App fürs Smartphone', 'summary' => 'Handbuch, Kontakte und Checklisten offline auf dem Handy — mit Alarm-Quittierung, Alarmen trotz „Nicht stören", Übungsmodus und Massen-Rollout.'],
             ['category' => 'Ernstfall', 'slug' => 'szenarien', 'title' => 'Szenarien', 'summary' => 'Vorgefertigte Playbooks für typische Notlagen — inklusive kommunaler Vorlagen für Verwaltungen.'],
@@ -52,6 +53,7 @@ class ManualCatalog
             ['category' => 'Ernstfall', 'slug' => 'uebungsberichte', 'title' => 'Übungsberichte', 'summary' => 'Auswertung abgeschlossener Übungen mit Kennzahlen, Lücken-Hinweisen und PDF-Export — der Nachweis für Prüfer und Versicherer.'],
             ['category' => 'Ernstfall', 'slug' => 'lessons-learned', 'title' => 'Lessons Learned', 'summary' => 'Strukturierte After-Action-Auswertung mit Maßnahmen.'],
             ['category' => 'Ernstfall', 'slug' => 'risiken', 'title' => 'Risiko-Register', 'summary' => 'Risiken bewerten, behandeln, Restrisiko nachweisen.'],
+            ['category' => 'Ernstfall', 'slug' => 'offene-punkte', 'title' => 'Offene Punkte / Klärpunkte', 'summary' => 'Bekannte, aber noch nicht final entschiedene, geprüfte, dokumentierte oder getestete Themen — mit Verantwortlichem, Frist, Wiedervorlage und Überführung in Risiko/Maßnahme/Szenario/Test. Erscheint im Audit-Teil des Handbuch-PDFs.'],
             ['category' => 'Ernstfall', 'slug' => 'kommunikations-vorlagen', 'title' => 'Kommunikations-Vorlagen', 'summary' => 'Vorbereitete Texte für Mitarbeiter, Kunden, Behörden — versendbar via E-Mail, SMS, Slack, Teams.'],
             ['category' => 'Ernstfall', 'slug' => 'testplan', 'title' => 'Testplan', 'summary' => 'Geplante Notfall-Tests mit Verantwortlichen und Fälligkeiten.'],
 
