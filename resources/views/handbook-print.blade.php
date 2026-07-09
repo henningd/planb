@@ -266,6 +266,25 @@
             margin-top: 0.3mm;
         }
 
+        /* Hervorgehobener Hinweis (z. B. Vertretungsregel in Kapitel 4). */
+        .callout {
+            border: 0.5pt solid #888;
+            border-left: 2.5pt solid #333;
+            background: #f6f6f6;
+            padding: 2mm 3mm;
+            margin: 2mm 0 4mm;
+            font-size: 10pt;
+            line-height: 1.4;
+            page-break-inside: avoid;
+        }
+        .callout .callout-title {
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 8.5pt;
+            letter-spacing: 0.04em;
+            margin-bottom: 1mm;
+        }
+
         /* Notfallbetrieb / Ersatzprozesse (8.4): je Prozess ein gestapelter
            Block statt enger 5-Spalten-Tabelle — druck- und randsicher. */
         .fallback-block {
@@ -582,7 +601,7 @@
                 '1' => 'Versionshistorie',
                 '2' => 'Definitionen: Störung, Notfall, Krise',
                 '3' => 'Geltungsbereich und Zweck',
-                '4' => 'Krisenorganisation und Verantwortlichkeiten',
+                '4' => 'Krisenorganisation und Krisenstab',
                 '5' => 'Kontakte und Eskalationskette',
                 '6' => 'Notfall-Level und Eskalationsstufen',
                 '7' => 'Verhaltenskodex im Notfall',
@@ -804,10 +823,48 @@
             <div class="ref">{{ $aktenzeichen }}</div>
         </div>
 
-        <h2>4. Krisenorganisation und Verantwortlichkeiten</h2>
-        <p>Jede Schlüsselrolle ist mit einer Hauptperson und mindestens einer Vertretung besetzt. Vertretungen sind gleichberechtigt handlungsfähig, sobald die Hauptperson nicht erreichbar ist.</p>
+        <h2>4. Krisenorganisation und Krisenstab</h2>
+        <p>Bei einer einfachen Störung genügt die normale Linienorganisation. Sobald ein Notfall zur Krise eskaliert, tritt der <strong>Krisenstab</strong> zusammen: ein zeitlich befristetes Führungsgremium, das die Lage übernimmt und führt, bis der Normalbetrieb wiederhergestellt ist. Einberufen wird er durch die/den Notfallbeauftragte/n. Der Krisenstab ist über <em>Funktionen</em> definiert, nicht über einzelne Personen &mdash; jede Funktion wird zu Beginn bewusst einer anwesenden Person zugewiesen.</p>
 
-        <h3>4.1 Krisenrollen &mdash; Besetzung und Vertretung</h3>
+        <h3>4.1 Funktionen im Krisenstab</h3>
+        <table class="role-table">
+            <thead>
+                <tr>
+                    <th style="width: 32%;">Funktion</th>
+                    <th>Aufgabe</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Krisenstabsleitung</strong></td>
+                    <td>Führt die Lage. Trifft oder koordiniert die Entscheidungen, setzt klare Prioritäten und gibt die externe Kommunikation frei. Wird in der Regel von der Geschäftsführung oder einer dafür benannten Person wahrgenommen.</td>
+                </tr>
+                <tr>
+                    <td><strong>Notfallbeauftragte/r</strong></td>
+                    <td>Koordiniert die Maßnahmen, ruft den Krisenstab zusammen und achtet auf einen geordneten Ablauf sowie auf eine lückenlose Dokumentation.</td>
+                </tr>
+                <tr>
+                    <td><strong>Lagebild-Funktion</strong></td>
+                    <td>Sammelt Fakten, Status, offene Punkte und neue Informationen und hält den aktuellen Stand für alle sichtbar (Lagekarte bzw. War-Room-Board).</td>
+                </tr>
+                <tr>
+                    <td><strong>Protokollführung</strong></td>
+                    <td>Dokumentiert Entscheidungen, Aufgaben, Zeiten und Verantwortliche. Grundlage für Nachvollziehbarkeit, Audit und Lessons Learned.</td>
+                </tr>
+                <tr>
+                    <td><strong>Fachberater je Lage</strong></td>
+                    <td>Werden je nach Szenario hinzugezogen &mdash; z.&nbsp;B. IT, Datenschutz, Kommunikation, Haustechnik, Pflege, Produktion oder Facility. Eingebunden wird, wer zur konkreten Lage beitragen kann.</td>
+                </tr>
+            </tbody>
+        </table>
+        <p class="small">In kleineren Organisationen werden mehrere Funktionen in Personalunion besetzt (z.&nbsp;B. Notfallbeauftragte/r zugleich Protokollführung). Entscheidend ist, dass jede Funktion bewusst zugewiesen und benannt ist.</p>
+
+        <div class="callout">
+            <div class="callout-title">Automatische Vertretung</div>
+            Ist eine Rolle nicht verfügbar, übernimmt die hinterlegte Vertretung automatisch die Aufgaben und Befugnisse dieser Rolle &mdash; vollumfänglich und ohne gesonderte Anordnung &mdash; bis die Hauptperson wieder verfügbar ist oder die Geschäftsführung etwas anderes entscheidet.
+        </div>
+
+        <h3>4.2 Krisenrollen &mdash; Besetzung und Vertretung</h3>
         @if ($crisisHolders->isEmpty())
             <p><em>Keine Krisenrollen vergeben.</em></p>
         @else
@@ -852,7 +909,7 @@
             </table>
         @endif
 
-        <h3>4.2 Aufgaben im Notfall</h3>
+        <h3>4.3 Aufgaben im Notfall</h3>
         <table>
             <tbody>
                 <tr><td class="label">Notfallbeauftragte/r</td><td>Koordiniert alle Maßnahmen, trifft operative Entscheidungen, beruft Lagebesprechungen ein, dokumentiert den Vorfall, hält Protokoll.</td></tr>

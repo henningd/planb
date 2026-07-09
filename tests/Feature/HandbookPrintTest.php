@@ -85,6 +85,23 @@ test('handbook print includes RACI matrix and tasks per system', function () {
         ->assertSee('Tagliche-Pruefung-Z');
 });
 
+test('handbook print describes the crisis team structure and deputy rule', function () {
+    $user = User::factory()->create();
+    Company::factory()->for($user->currentTeam)->create();
+
+    $this->actingAs($user->fresh())
+        ->get(route('handbook.print'))
+        ->assertOk()
+        ->assertSee('Krisenorganisation und Krisenstab')
+        ->assertSee('Funktionen im Krisenstab')
+        ->assertSee('Krisenstabsleitung')
+        ->assertSee('Lagebild-Funktion')
+        ->assertSee('Protokollführung')
+        ->assertSee('Fachberater je Lage')
+        ->assertSee('Automatische Vertretung')
+        ->assertSee('übernimmt die hinterlegte Vertretung automatisch die Aufgaben und Befugnisse');
+});
+
 test('handbook print redirects with 404 when no company exists', function () {
     $user = User::factory()->create();
 
