@@ -44,6 +44,7 @@ return [
     'bcm_policy' => filter_var(env('FEATURE_BCM_POLICY_ENABLED', true), FILTER_VALIDATE_BOOLEAN),
     'management_review' => filter_var(env('FEATURE_MANAGEMENT_REVIEW_ENABLED', true), FILTER_VALIDATE_BOOLEAN),
     'training_records' => filter_var(env('FEATURE_TRAINING_RECORDS_ENABLED', true), FILTER_VALIDATE_BOOLEAN),
+    'open_items' => filter_var(env('FEATURE_OPEN_ITEMS_ENABLED', true), FILTER_VALIDATE_BOOLEAN),
 
     // Bereich „Abteilungen / Rollen" (/roles): Menüpunkt und Seiten. Routen
     // bleiben registriert und liefern 404, damit Verweise aus Onboarding und

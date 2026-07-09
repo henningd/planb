@@ -597,21 +597,9 @@
     <div class="sheet page-break">
         <h2 style="margin-top:0;">Inhaltsverzeichnis</h2>
         <table class="toc-table">
-            @foreach ([
-                '1' => 'Versionshistorie',
-                '2' => 'Definitionen: Störung, Notfall, Krise',
-                '3' => 'Geltungsbereich und Zweck',
-                '4' => 'Krisenorganisation und Krisenstab',
-                '5' => 'Kontakte und Eskalationskette',
-                '6' => 'Notfall-Level und Eskalationsstufen',
-                '7' => 'Verhaltenskodex im Notfall',
-                '8' => 'Verfügbare Mittel und Befugnisse',
-                '9' => 'Systeme und Betriebskontinuität',
-                '10' => 'Notfall-Szenarien und Playbooks',
-                '11' => 'Kommunikation im Notfall',
-                '12' => 'Meldepflichten und dokumentierte Vorfälle',
-                '13' => 'Pflege und Testplan',
-            ] as $num => $title)
+            @php($tocChapters = ['1' => 'Versionshistorie', '2' => 'Definitionen: Störung, Notfall, Krise', '3' => 'Geltungsbereich und Zweck', '4' => 'Krisenorganisation und Krisenstab', '5' => 'Kontakte und Eskalationskette', '6' => 'Notfall-Level und Eskalationsstufen', '7' => 'Verhaltenskodex im Notfall', '8' => 'Verfügbare Mittel und Befugnisse', '9' => 'Systeme und Betriebskontinuität', '10' => 'Notfall-Szenarien und Playbooks', '11' => 'Kommunikation im Notfall', '12' => 'Meldepflichten und dokumentierte Vorfälle', '13' => 'Pflege und Testplan'])
+            @php($openItems->isNotEmpty() ? ($tocChapters['14'] = 'Offene Punkte / Klärpunkte') : null)
+            @foreach ($tocChapters as $num => $title)
                 <tr>
                     <td class="num">{{ $num }}.</td>
                     <td>{{ $title }}</td>
@@ -1795,6 +1783,62 @@
             {{ $company->name }} &mdash; Notfall- und Krisenhandbuch &mdash; {{ $aktenzeichen }} &mdash; Stand {{ now()->format('d.m.Y H:i') }} Uhr
         </div>
     </div>
+
+    {{-- ============ KAPITEL 14: OFFENE PUNKTE / KLÄRPUNKTE (Governance/Audit) ============ --}}
+    @if ($openItems->isNotEmpty())
+        <div class="sheet page-break">
+            <div class="doc-header">
+                <img class="emblem-mark" src="{{ $emblemSrc }}" alt="">
+                <div class="org">{{ $company->name }} &mdash; Notfall- und Krisenhandbuch</div>
+                <div class="ref">{{ $aktenzeichen }}</div>
+            </div>
+
+            <h2>14. Offene Punkte / Klärpunkte</h2>
+            <p>Bekannte, aber noch nicht final entschiedene, geprüfte, dokumentierte oder getestete Themen. Dieses Register dient dem Governance- und Audit-Nachweis: Es zeigt offene Lücken, wer sie verantwortet, bis wann sie zu klären sind, wann sie erneut geprüft werden und ob sie bereits in ein Risiko, eine Maßnahme, ein Szenario oder einen Test überführt wurden.</p>
+
+            <table class="role-table">
+                <thead>
+                    <tr>
+                        <th style="width: 40%;">Thema und Relevanz</th>
+                        <th style="width: 20%;">Verantwortlich</th>
+                        <th style="width: 12%;">Frist</th>
+                        <th style="width: 12%;">Wiedervorlage</th>
+                        <th style="width: 16%;">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach ($openItems as $item)
+                        <tr>
+                            <td>
+                                <strong>{{ $item->title }}</strong>
+                                @if ($item->relevance)<div class="small">{{ $item->relevance }}</div>@endif
+                                @if ($item->risk)<div class="small"><em>Risiko:</em> {{ $item->risk->title }}</div>@endif
+                            </td>
+                            <td class="small">
+                                @if ($item->responsible){{ $item->responsible->fullName() }}@endif
+                                @if ($item->responsible && $item->responsibleRole)<br>@endif
+                                @if ($item->responsibleRole)Rolle: {{ $item->responsibleRole->name }}@endif
+                                @if (! $item->responsible && ! $item->responsibleRole)&mdash;@endif
+                            </td>
+                            <td class="small">
+                                {{ $item->due_at?->format('d.m.Y') ?? '—' }}
+                                @if ($item->isOverdue())<br><em>überfällig</em>@endif
+                            </td>
+                            <td class="small">{{ $item->review_at?->format('d.m.Y') ?? '—' }}</td>
+                            <td class="small">
+                                {{ $item->status->label() }}
+                                @if ($item->conversion)<br><em>&rarr; {{ $item->conversion->shortLabel() }}</em>@endif
+                            </td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+
+            <div class="footer-note">
+                {{ $company->name }} &mdash; Notfall- und Krisenhandbuch &mdash; {{ $aktenzeichen }} &mdash; Stand {{ now()->format('d.m.Y H:i') }} Uhr
+            </div>
+        </div>
+    @endif
 
     <script>
         if (new URLSearchParams(window.location.search).get('print') === '1') {

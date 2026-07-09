@@ -51,6 +51,7 @@
         <env name="FEATURE_BCM_POLICY_ENABLED" value="true" force="true"/>
         <env name="FEATURE_MANAGEMENT_REVIEW_ENABLED" value="true" force="true"/>
         <env name="FEATURE_TRAINING_RECORDS_ENABLED" value="true" force="true"/>
+        <env name="FEATURE_OPEN_ITEMS_ENABLED" value="true" force="true"/>
         <env name="FEATURE_BIBLE_VERSES_ENABLED" value="true" force="true"/>
         <!-- 2FA-Pflicht in der Test-Suite standardmäßig aus, damit bestehende
              Tests ohne 2FA-Setup auf geschützte Seiten kommen. Die gezielten

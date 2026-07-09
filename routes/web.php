@@ -345,6 +345,9 @@ Route::prefix('{current_team}')
         if (config('features.management_review')) {
             Route::livewire('management-review', 'pages::management-reviews.index')->name('management-reviews.index');
         }
+        if (config('features.open_items')) {
+            Route::livewire('offene-punkte', 'pages::open-items.index')->name('open-items.index');
+        }
         if (config('features.training_records')) {
             Route::livewire('schulungen', 'pages::training-records.index')->name('training-records.index');
         }

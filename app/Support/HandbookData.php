@@ -5,6 +5,7 @@ namespace App\Support;
 use App\Models\Company;
 use App\Models\Contract;
 use App\Models\HandbookShare;
+use App\Models\OpenItem;
 use App\Models\ServiceProvider;
 use App\Models\System;
 use App\Scopes\CurrentCompanyScope;
@@ -59,9 +60,17 @@ class HandbookData
             ->where('company_id', $company->id)
             ->orderBy('title');
 
+        $openItemsQuery = OpenItem::with(['risk', 'responsible', 'responsibleRole'])
+            ->where('company_id', $company->id)
+            ->orderByRaw("CASE WHEN status = 'resolved' THEN 1 ELSE 0 END")
+            ->orderByRaw('due_at is null')
+            ->orderBy('due_at')
+            ->orderBy('sort');
+
         if ($share !== null) {
             $providersQuery->withoutGlobalScope(CurrentCompanyScope::class);
             $contractsQuery->withoutGlobalScope(CurrentCompanyScope::class);
+            $openItemsQuery->withoutGlobalScope(CurrentCompanyScope::class);
         }
 
         $systemsDetail = self::buildSystemsDetail($company);
@@ -70,6 +79,7 @@ class HandbookData
             'company' => $company,
             'providers' => $providersQuery->get(),
             'contracts' => config('features.contracts') ? $contractsQuery->get() : collect(),
+            'openItems' => config('features.open_items') ? $openItemsQuery->get() : collect(),
             'recoveryPlan' => RecoveryOrder::compute($company->systems),
             'systemsDetail' => $systemsDetail,
             'share' => $share,

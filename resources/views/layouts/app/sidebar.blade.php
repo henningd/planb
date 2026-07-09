@@ -185,6 +185,11 @@
                             {{ __('Reifegrad (BSI 200-4)') }}
                         </flux:sidebar.item>
                     @endif
+                    @if (config('features.open_items') && \Illuminate\Support\Facades\Route::has('open-items.index'))
+                        <flux:sidebar.item icon="flag" :href="route('open-items.index')" :current="request()->routeIs('open-items.*')" wire:navigate>
+                            {{ __('Offene Punkte') }}
+                        </flux:sidebar.item>
+                    @endif
                 </flux:sidebar.group>
 
                 <flux:sidebar.group

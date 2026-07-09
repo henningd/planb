@@ -5,6 +5,7 @@ use App\Enums\EmergencyResourceType;
 use App\Models\Company;
 use App\Models\EmergencyResource;
 use App\Models\Employee;
+use App\Models\OpenItem;
 use App\Models\ServiceProvider;
 use App\Models\System;
 use App\Models\SystemTask;
@@ -100,6 +101,33 @@ test('handbook print describes the crisis team structure and deputy rule', funct
         ->assertSee('Fachberater je Lage')
         ->assertSee('Automatische Vertretung')
         ->assertSee('übernimmt die hinterlegte Vertretung automatisch die Aufgaben und Befugnisse');
+});
+
+test('handbook print shows the open items chapter when items exist', function () {
+    $user = User::factory()->create();
+    $company = Company::factory()->for($user->currentTeam)->create();
+
+    OpenItem::factory()->for($company)->create([
+        'title' => 'Ausweichstandort noch nicht abgestimmt',
+        'relevance' => 'Ohne abgestimmten Ausweichstandort ist der Wiederanlauf nicht gesichert.',
+    ]);
+
+    $this->actingAs($user->fresh())
+        ->get(route('handbook.print'))
+        ->assertOk()
+        ->assertSee('14. Offene Punkte / Klärpunkte')
+        ->assertSee('Ausweichstandort noch nicht abgestimmt')
+        ->assertSee('Governance- und Audit-Nachweis');
+});
+
+test('handbook print omits the open items chapter when there are none', function () {
+    $user = User::factory()->create();
+    Company::factory()->for($user->currentTeam)->create();
+
+    $this->actingAs($user->fresh())
+        ->get(route('handbook.print'))
+        ->assertOk()
+        ->assertDontSee('Offene Punkte / Klärpunkte');
 });
 
 test('handbook print redirects with 404 when no company exists', function () {
