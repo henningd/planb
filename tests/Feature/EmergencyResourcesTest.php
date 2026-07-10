@@ -67,3 +67,21 @@ test('user can delete a resource', function () {
 
     expect(EmergencyResource::withoutGlobalScope(CurrentCompanyScope::class)->count())->toBe(0);
 });
+
+test('the broadened emergency resource types are available and saveable', function () {
+    $user = User::factory()->create();
+    Company::factory()->for($user->currentTeam)->create();
+
+    Livewire\Livewire::actingAs($user->fresh())
+        ->test('pages::emergency-resources.index')
+        ->set('type', EmergencyResourceType::NotebookPool->value)
+        ->set('name', 'Notebook-Pool Lager')
+        ->call('save')
+        ->assertHasNoErrors();
+
+    expect(EmergencyResource::where('name', 'Notebook-Pool Lager')->firstOrFail()->type)
+        ->toBe(EmergencyResourceType::NotebookPool);
+
+    expect(count(EmergencyResourceType::cases()))->toBeGreaterThanOrEqual(16)
+        ->and(EmergencyResourceType::KeysAccess->label())->toBe('Schlüssel / Zutritt');
+});

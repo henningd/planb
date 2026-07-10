@@ -1303,7 +1303,7 @@
         @endif
 
         @if ($company->emergencyResources->isNotEmpty())
-            <h3>8.3 Verfügbare Sofortmittel und Ressourcen</h3>
+            <h3>8.3 Verfügbare Mittel und Notfallressourcen</h3>
             <table class="role-table">
                 <thead>
                     <tr>

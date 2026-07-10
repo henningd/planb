@@ -287,7 +287,7 @@ test('handbook 8.3 emergency resources table shows the configured budget', funct
     $this->actingAs($user->fresh())
         ->get(route('handbook.print'))
         ->assertOk()
-        ->assertSee('8.3 Verfügbare Sofortmittel und Ressourcen')
+        ->assertSee('8.3 Verfügbare Mittel und Notfallressourcen')
         ->assertSee('Sofort verfügbares Budget')
         ->assertSee('5.000 €')
         ->assertSee('Reserve-Notebook');

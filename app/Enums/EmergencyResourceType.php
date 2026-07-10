@@ -6,24 +6,42 @@ enum EmergencyResourceType: string
 {
     case EmergencyCash = 'emergency_cash';
     case ReplacementHardware = 'replacement_hardware';
-    case OfflineBackup = 'offline_backup';
+    case Communication = 'communication';
     case EmergencySim = 'emergency_sim';
     case OfflineDocs = 'offline_docs';
     case PasswordSafe = 'password_safe';
+    case KeysAccess = 'keys_access';
+    case AlternateWorkplace = 'alternate_workplace';
+    case NotebookPool = 'notebook_pool';
+    case SparePrinter = 'spare_printer';
     case GeneratorUps = 'generator_ups';
+    case LightingPowerbank = 'lighting_powerbank';
+    case Evacuation = 'evacuation';
+    case SafetyEquipment = 'safety_equipment';
+    case Consumables = 'consumables';
+    case OfflineBackup = 'offline_backup';
     case Other = 'other';
 
     public function label(): string
     {
         return match ($this) {
-            self::EmergencyCash => 'Notfallkasse (Bargeld)',
-            self::ReplacementHardware => 'Ersatz-Hardware',
+            self::EmergencyCash => 'Notfallkasse / Kreditkarte',
+            self::ReplacementHardware => 'Ersatzhardware',
+            self::Communication => 'Kommunikationsmittel',
+            self::EmergencySim => 'LTE-/5G-Backup / Hotspot',
+            self::OfflineDocs => 'Papier-Notfallordner / Offline-Docs',
+            self::PasswordSafe => 'Notfallzugänge / Break-Glass',
+            self::KeysAccess => 'Schlüssel / Zutritt',
+            self::AlternateWorkplace => 'Ausweicharbeitsplatz',
+            self::NotebookPool => 'Notfallarbeitsplatz / Notebook-Pool',
+            self::SparePrinter => 'Ersatzdrucker / Druckmaterial',
+            self::GeneratorUps => 'Strom / USV / Akkus',
+            self::LightingPowerbank => 'Beleuchtung / Powerbanks',
+            self::Evacuation => 'Evakuierungsmaterial',
+            self::SafetyEquipment => 'Sicherheitsausstattung',
+            self::Consumables => 'Verbrauchsmaterial',
             self::OfflineBackup => 'Offline-Backup',
-            self::EmergencySim => 'Notfall-SIM / Hotspot',
-            self::OfflineDocs => 'Handbücher / Offline-Docs',
-            self::PasswordSafe => 'Passwort-Safe (Offline)',
-            self::GeneratorUps => 'Generator / USV',
-            self::Other => 'Sonstiges',
+            self::Other => 'Sonstige Ressource',
         };
     }
 
