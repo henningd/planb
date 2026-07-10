@@ -28,6 +28,8 @@ new #[Title('System bearbeiten')] class extends Component {
 
     public string $description = '';
 
+    public string $location_detail = '';
+
     public string $fallback_process = '';
 
     public string $runbook_reference = '';
@@ -92,6 +94,7 @@ new #[Title('System bearbeiten')] class extends Component {
             $this->system = $system;
             $this->name = $system->name;
             $this->description = (string) $system->description;
+            $this->location_detail = (string) $system->location_detail;
             $this->fallback_process = (string) $system->fallback_process;
             $this->runbook_reference = (string) $system->runbook_reference;
             $this->emergency_level_id = $system->emergency_level_id;
@@ -690,6 +693,7 @@ new #[Title('System bearbeiten')] class extends Component {
         $validated = $this->validate([
             'name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:2000'],
+            'location_detail' => ['nullable', 'string', 'max:255'],
             'fallback_process' => ['nullable', 'string', 'max:2000'],
             'runbook_reference' => ['nullable', 'string', 'max:255'],
             'emergency_level_id' => ['nullable', 'uuid', 'exists:emergency_levels,id'],
@@ -841,6 +845,13 @@ new #[Title('System bearbeiten')] class extends Component {
                 :label="__('Beschreibung')"
                 rows="3"
                 placeholder="Wofür wird dieses System genutzt?"
+            />
+
+            <flux:input
+                wire:model="location_detail"
+                :label="__('Bereich / Etage / Gebäudeteil')"
+                type="text"
+                placeholder="z. B. Werk 1, Halle A, CNC-Fertigung · oder: Haus A, Pflegebereich A1"
             />
 
             <flux:textarea

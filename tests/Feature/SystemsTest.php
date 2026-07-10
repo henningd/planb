@@ -654,3 +654,22 @@ test('system show forbids access to a system from another tenant', function () {
         ->get(route('systems.show', ['system' => $foreign]))
         ->assertNotFound();
 });
+
+test('system edit page saves the location detail (building/area)', function () {
+    $user = User::factory()->create();
+    $company = Company::factory()->for($user->currentTeam)->create();
+
+    $system = System::withoutGlobalScope(CurrentCompanyScope::class)->create([
+        'company_id' => $company->id,
+        'name' => 'CNC-Steuerung',
+        'category' => 'geschaeftsbetrieb',
+    ]);
+
+    Livewire\Livewire::actingAs($user->fresh())
+        ->test('pages::systems.edit', ['system' => $system])
+        ->set('location_detail', 'Werk 1, Halle A, CNC-Fertigung')
+        ->call('save')
+        ->assertHasNoErrors();
+
+    expect($system->fresh()->location_detail)->toBe('Werk 1, Halle A, CNC-Fertigung');
+});

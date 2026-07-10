@@ -5,6 +5,7 @@ use App\Enums\EmergencyResourceType;
 use App\Models\Company;
 use App\Models\EmergencyResource;
 use App\Models\Employee;
+use App\Models\Location;
 use App\Models\OpenItem;
 use App\Models\Scenario;
 use App\Models\ServiceProvider;
@@ -193,6 +194,30 @@ test('handbook print shows a scenario alarm chain when maintained', function () 
         ->assertSee('Wer erkennt / meldet?')
         ->assertSee('Nachtwache am Empfang')
         ->assertSee('Wer gibt die Kommunikation frei?');
+});
+
+test('handbook print shows building areas for locations and systems', function () {
+    $user = User::factory()->create();
+    $company = Company::factory()->for($user->currentTeam)->create();
+
+    Location::factory()->for($company)->create([
+        'name' => 'Seniorenzentrum Sonnengarten',
+        'building_areas' => 'Haus A: Pflegebereich A1',
+    ]);
+
+    System::withoutGlobalScope(CurrentCompanyScope::class)->create([
+        'company_id' => $company->id,
+        'name' => 'Rufanlage Haus A',
+        'category' => 'geschaeftsbetrieb',
+        'location_detail' => 'Haus A, Pflegebereich A1',
+    ]);
+
+    $this->actingAs($user->fresh())
+        ->get(route('handbook.print'))
+        ->assertOk()
+        ->assertSee('Haus A: Pflegebereich A1')
+        ->assertSee('Rufanlage Haus A')
+        ->assertSee('Haus A, Pflegebereich A1');
 });
 
 test('handbook print redirects with 404 when no company exists', function () {

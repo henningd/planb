@@ -702,6 +702,12 @@ new #[Title('System')] class extends Component {
                         {{ $system->description }}
                     </flux:text>
                 @endif
+                @if ($system->location_detail)
+                    <div class="mt-2 flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400">
+                        <flux:icon.map-pin class="h-4 w-4 shrink-0 text-zinc-400" />
+                        <span>{{ $system->location_detail }}</span>
+                    </div>
+                @endif
                 @if ($system->fallback_process)
                     <div class="mt-3">
                         <flux:text class="text-xs uppercase text-zinc-500 dark:text-zinc-400">{{ __('Notbetrieb / Ersatzprozess (Kurznotiz)') }}</flux:text>

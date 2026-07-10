@@ -6,6 +6,8 @@ Ein Standort ist ein physischer Ort, an dem Ihr Unternehmen tätig ist: Hauptsit
 - **Notfall-Aushänge**: pro Standort kann ein gedruckter Notfall-Aushang gemacht werden.
 - **Mitarbeiter-Zuordnung**: wer arbeitet wo? Wichtig für Evakuierung und Erreichbarkeit.
 
+Für größere oder verschachtelte Liegenschaften (Pflege, Industrie, Kommunen) gibt es das optionale Feld **„Gebäude / Bereiche / Etagen"** — ein Freitext für die interne Struktur (z. B. „Haus A: Pflegebereich A1 (Pflegeleitstelle); Haus B: Verwaltung EG"). Es erscheint bei den Standort-Angaben im Handbuch-PDF. Wo eine einzelne Anlage bzw. ein System genau sitzt, hinterlegen Sie direkt am [System](systeme) im Feld „Bereich / Etage / Gebäudeteil".
+
 Erreichbar über die Sidebar **„Notfallhandbuch → Standorte"**.
 
 ## Einen Standort anlegen

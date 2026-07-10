@@ -30,6 +30,8 @@ new #[Title('Standorte')] class extends Component {
 
     public string $notes = '';
 
+    public string $building_areas = '';
+
     public int $sort = 0;
 
     public ?string $deletingId = null;
@@ -74,6 +76,7 @@ new #[Title('Standorte')] class extends Component {
         $this->is_headquarters = $location->is_headquarters;
         $this->phone = (string) $location->phone;
         $this->notes = (string) $location->notes;
+        $this->building_areas = (string) $location->building_areas;
         $this->sort = $location->sort;
 
         Flux::modal('location-form')->show();
@@ -96,6 +99,7 @@ new #[Title('Standorte')] class extends Component {
             'is_headquarters' => ['boolean'],
             'phone' => ['nullable', 'string', 'max:50'],
             'notes' => ['nullable', 'string', 'max:2000'],
+            'building_areas' => ['nullable', 'string', 'max:2000'],
             'sort' => ['integer', 'min:0'],
         ]);
 
@@ -182,7 +186,7 @@ new #[Title('Standorte')] class extends Component {
 
     protected function resetForm(): void
     {
-        $this->reset(['editingId', 'name', 'street', 'postal_code', 'city', 'is_headquarters', 'phone', 'notes', 'sort']);
+        $this->reset(['editingId', 'name', 'street', 'postal_code', 'city', 'is_headquarters', 'phone', 'notes', 'building_areas', 'sort']);
         $this->country = 'DE';
     }
 }; ?>
@@ -247,6 +251,13 @@ new #[Title('Standorte')] class extends Component {
                         </div>
                     @endif
                 </div>
+
+                @if ($location->building_areas)
+                    <div class="mt-4 border-t border-zinc-100 pt-3 dark:border-zinc-800">
+                        <div class="text-xs font-medium uppercase tracking-wide text-zinc-400 dark:text-zinc-500">{{ __('Gebäude / Bereiche') }}</div>
+                        <flux:text class="mt-1 whitespace-pre-line text-sm text-zinc-600 dark:text-zinc-400">{{ $location->building_areas }}</flux:text>
+                    </div>
+                @endif
 
                 @if ($location->notes)
                     <flux:text class="mt-4 border-t border-zinc-100 pt-3 text-sm text-zinc-600 dark:border-zinc-800 dark:text-zinc-400">
@@ -332,6 +343,8 @@ new #[Title('Standorte')] class extends Component {
             @endif
 
             <flux:checkbox wire:model="is_headquarters" :label="__('Hauptsitz')" />
+
+            <flux:textarea wire:model="building_areas" :label="__('Gebäude / Bereiche / Etagen')" rows="3" placeholder="z. B. Haus A: Pflegebereich A1 (Pflegeleitstelle); Haus B: Verwaltung EG–2. OG" />
 
             <flux:textarea wire:model="notes" :label="__('Notizen')" rows="3" />
 

@@ -4,6 +4,8 @@ In dieser Plattform ist ein **System** alles, von dem Ihr Geschäftsbetrieb abh�
 
 Erreichbar über die Sidebar **„Notfallhandbuch → Systeme"**.
 
+Wo ein System bzw. eine Anlage physisch sitzt, halten Sie im optionalen Feld **„Bereich / Etage / Gebäudeteil"** fest (z. B. „Werk 1, Halle A, CNC-Fertigung" oder „Haus A, Pflegebereich A1"). Es erscheint im Systemblatt des Handbuch-PDFs und auf der System-Detailseite. Die grobe Gebäude-/Bereichsstruktur einer Liegenschaft pflegen Sie am [Standort](standorte).
+
 ## Ein System anlegen
 
 Knopf **„Neues System"**. Pflichtangaben:

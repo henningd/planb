@@ -740,7 +740,7 @@
                     <th>Standort-Adressen</th>
                     <td>
                         @foreach ($company->locations as $loc)
-                            <div>{{ $loc->name }}: {{ $loc->street }}, {{ $loc->postal_code }} {{ $loc->city }}@if ($loc->is_headquarters) <em>(Hauptsitz)</em>@endif</div>
+                            <div>{{ $loc->name }}: {{ $loc->street }}, {{ $loc->postal_code }} {{ $loc->city }}@if ($loc->is_headquarters) <em>(Hauptsitz)</em>@endif@if ($loc->building_areas)<br><span class="small">Gebäude / Bereiche: {{ $loc->building_areas }}</span>@endif</div>
                         @endforeach
                     </td>
                 </tr>
@@ -1444,6 +1444,7 @@
                             <td>
                                 <strong>{{ $system->name }}</strong>
                                 @if ($system->description)<br><span class="small">{{ $system->description }}</span>@endif
+                                @if ($system->location_detail)<br><span class="small">Standort/Bereich: {{ $system->location_detail }}</span>@endif
                                 @if ($system->serviceProviders->isNotEmpty())
                                     <br><span class="small">Dienstleister: {{ $system->serviceProviders->pluck('name')->join(', ') }}</span>
                                 @endif

@@ -24,6 +24,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
     'is_headquarters',
     'phone',
     'notes',
+    'building_areas',
     'sort',
 ])]
 class Location extends Model

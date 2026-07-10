@@ -27,6 +27,24 @@ test('user can create a location via the livewire page', function () {
     expect(Location::count())->toBe(1);
 });
 
+test('a location can store buildings and areas', function () {
+    $user = User::factory()->create();
+    Company::factory()->for($user->currentTeam)->create();
+
+    Livewire\Livewire::actingAs($user->fresh())
+        ->test('pages::locations.index')
+        ->set('name', 'Seniorenzentrum Sonnengarten')
+        ->set('street', 'Gartenweg 5')
+        ->set('postal_code', '53773')
+        ->set('city', 'Hennef')
+        ->set('country', 'DE')
+        ->set('building_areas', 'Haus A: Pflegebereich A1 (Pflegeleitstelle); Haus B: Verwaltung EG')
+        ->call('save')
+        ->assertHasNoErrors();
+
+    expect(Location::first()->building_areas)->toBe('Haus A: Pflegebereich A1 (Pflegeleitstelle); Haus B: Verwaltung EG');
+});
+
 test('setting a new headquarters resets the previous one', function () {
     $user = User::factory()->create();
     $company = Company::factory()->for($user->currentTeam)->create();
