@@ -157,3 +157,31 @@ test('an insurance policy stores the extended fields and scenario links', functi
         ->and($policy->isReviewOverdue())->toBeTrue()
         ->and($policy->scenarios()->count())->toBe(1);
 });
+
+test('the handbook shows the richer insurance details', function () {
+    $user = User::factory()->create();
+    $company = Company::factory()->for($user->currentTeam)->create();
+
+    $policy = InsurancePolicy::withoutGlobalScope(CurrentCompanyScope::class)->create([
+        'company_id' => $company->id,
+        'type' => InsuranceType::Cyber->value,
+        'insurer' => 'CyberProtect AG',
+        'coverage_amount' => '5 Mio €',
+        'required_documents' => 'Schadenanzeige und Forensik-Bericht',
+        'approval_note' => 'Vor Forensik Versicherer informieren.',
+    ]);
+    $scenario = Scenario::withoutGlobalScope(CurrentCompanyScope::class)->create([
+        'company_id' => $company->id,
+        'name' => 'Cyberangriff',
+    ]);
+    $policy->scenarios()->attach($scenario->id);
+
+    $this->actingAs($user->fresh())
+        ->get(route('handbook.print'))
+        ->assertOk()
+        ->assertSee('Versicherungen und Schadenmeldung')
+        ->assertSee('5 Mio €')
+        ->assertSee('Schadenanzeige und Forensik-Bericht')
+        ->assertSee('Vor Forensik Versicherer informieren.')
+        ->assertSee('Cyberangriff');
+});

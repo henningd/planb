@@ -1251,13 +1251,14 @@
         <p class="legal small">Jede Notfallausgabe ist zu dokumentieren <em>(Datum, Betrag, Grund, Genehmigender)</em> und nach Abschluss des Vorfalls in der Buchhaltung nachzuerfassen.</p>
 
         @if ($company->insurancePolicies->isNotEmpty())
-            <h3>8.2 Versicherungen</h3>
+            <h3>8.2 Versicherungen und Schadenmeldung</h3>
+            <p class="small">Im Schadenfall zählt jede Minute: Schadenhotline anrufen, Meldefrist einhalten, benötigte Unterlagen bereitstellen. <strong>Vor</strong> Beauftragung von Forensik, Sanierung oder Ersatzbeschaffung ggf. Freigabe des Versicherers einholen (siehe Hinweis).</p>
             <table class="role-table">
                 <thead>
                     <tr>
-                        <th style="width: 32%;">Versicherer</th>
-                        <th style="width: 28%;">Art</th>
-                        <th>Police und Konditionen</th>
+                        <th style="width: 28%;">Versicherer / Art</th>
+                        <th style="width: 34%;">Police, Deckung, Fristen</th>
+                        <th>Schadenmeldung und Freigabe</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -1265,21 +1266,23 @@
                         <tr>
                             <td>
                                 <strong>{{ $policy->insurer }}</strong>
-                                @if ($policy->contact_name)<div class="small">{{ $policy->contact_name }}</div>@endif
+                                <div class="small">{{ $policy->type->label() }}</div>
+                                @if ($policy->contact_name)<div class="small">Kontakt: {{ $policy->contact_name }}</div>@endif
+                                @if ($policy->responsibleRole)<div class="small">Intern: {{ $policy->responsibleRole->name }}</div>@endif
+                                @if ($policy->scenarios->isNotEmpty())<div class="small"><em>Greift bei:</em> {{ $policy->scenarios->pluck('name')->join(', ') }}</div>@endif
                             </td>
-                            <td>{{ $policy->type->label() }}</td>
                             <td>
                                 @if ($policy->policy_number)
                                     <div class="contact-label">Police</div>
                                     <div class="contact-value">{{ $policy->policy_number }}</div>
                                 @endif
-                                @if ($policy->hotline)
-                                    <div class="contact-label contact-label-spaced">Hotline</div>
-                                    <div class="contact-value">{{ $policy->hotline }}</div>
+                                @if ($policy->valid_until)
+                                    <div class="contact-label contact-label-spaced">Laufzeit bis</div>
+                                    <div class="contact-value">{{ $policy->valid_until->format('d.m.Y') }}{{ $policy->isExpired() ? ' (abgelaufen!)' : '' }}</div>
                                 @endif
-                                @if ($policy->email)
-                                    <div class="contact-label contact-label-spaced">E-Mail</div>
-                                    <div class="contact-value contact-email">{{ $policy->email }}</div>
+                                @if ($policy->coverage_amount)
+                                    <div class="contact-label contact-label-spaced">Deckungssumme</div>
+                                    <div class="contact-value">{{ $policy->coverage_amount }}</div>
                                 @endif
                                 @if ($policy->deductible)
                                     <div class="contact-label contact-label-spaced">Selbstbehalt</div>
@@ -1289,8 +1292,23 @@
                                     <div class="contact-label contact-label-spaced">Meldefrist</div>
                                     <div class="contact-value">{{ $policy->reporting_window }}</div>
                                 @endif
-                                @if (! $policy->policy_number && ! $policy->hotline && ! $policy->email && ! $policy->deductible && ! $policy->reporting_window)
-                                    —
+                            </td>
+                            <td>
+                                @if ($policy->hotline)
+                                    <div class="contact-label">Schadenhotline</div>
+                                    <div class="contact-value">{{ $policy->hotline }}</div>
+                                @endif
+                                @if ($policy->email)
+                                    <div class="contact-label contact-label-spaced">E-Mail Schaden</div>
+                                    <div class="contact-value contact-email">{{ $policy->email }}</div>
+                                @endif
+                                @if ($policy->required_documents)
+                                    <div class="contact-label contact-label-spaced">Benötigte Unterlagen</div>
+                                    <div class="contact-value">{{ $policy->required_documents }}</div>
+                                @endif
+                                @if ($policy->approval_required || $policy->approval_note)
+                                    <div class="contact-label contact-label-spaced">Freigabe nötig</div>
+                                    <div class="contact-value">{{ $policy->approval_note ?: 'Vor Forensik/Sanierung/Ersatzbeschaffung Versicherer freigeben lassen.' }}</div>
                                 @endif
                             </td>
                         </tr>
