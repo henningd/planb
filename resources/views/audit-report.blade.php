@@ -199,6 +199,114 @@
             </table>
         @endif
 
+        @if ($trainingRecords->isNotEmpty())
+            <h2>Schulungen und Awareness</h2>
+            <p class="small muted">Prüfpunkte: Welche Schulungen sind geplant/durchgeführt? Wer wurde geschult? Wann ist die nächste Fälligkeit? Welche Nachweise liegen vor?</p>
+            <table>
+                <thead>
+                    <tr><th>Thema</th><th>Person</th><th>Status</th><th>Nächste Fälligkeit</th><th>Nachweis / Notiz</th></tr>
+                </thead>
+                <tbody>
+                    @foreach ($trainingRecords as $training)
+                        <tr>
+                            <td><strong>{{ $training->topic }}</strong><div class="small">{{ $training->type?->label() }}</div></td>
+                            <td>{{ $training->employee?->fullName() ?? '—' }}</td>
+                            <td>{{ $training->completed_at ? 'durchgeführt am '.$training->completed_at->format('d.m.Y') : 'geplant' }}</td>
+                            <td>{{ $training->next_due_at?->format('d.m.Y') ?? '—' }}@if ($training->isOverdue()) <strong>(überfällig)</strong>@endif</td>
+                            <td class="small">{{ $training->notes ?: '—' }}</td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        @endif
+
+        @if ($systemTasks->isNotEmpty())
+            <h2>Aufgaben und Nachverfolgung</h2>
+            <p class="small muted">Prüfpunkte: offene, überfällige und im Berichtszeitraum ({{ $periodStart->format('d.m.Y') }}–{{ $generatedAt->format('d.m.Y') }}) erledigte Aufgaben; Aufgaben mit Risikobezug.</p>
+            <table>
+                <thead>
+                    <tr><th>Aufgabe</th><th>System</th><th>Zuständig</th><th>Fällig</th><th>Status</th></tr>
+                </thead>
+                <tbody>
+                    @foreach ($systemTasks as $task)
+                        <tr>
+                            <td>
+                                <strong>{{ $task->title }}</strong>
+                                @if ($task->riskMitigation) <span class="small">· aus Risiko</span>@endif
+                            </td>
+                            <td>{{ $task->system?->name ?? '—' }}</td>
+                            <td class="small">{{ $task->assignees->pluck('first_name')->merge($task->roleAssignees->pluck('name'))->join(', ') ?: '—' }}</td>
+                            <td>{{ $task->due_date?->format('d.m.Y') ?? '—' }}</td>
+                            <td>
+                                @if ($task->isDone())
+                                    erledigt{{ $task->completed_at ? ' am '.$task->completed_at->format('d.m.Y') : '' }}
+                                @elseif ($task->isOverdue())
+                                    <strong>überfällig</strong>
+                                @else
+                                    offen
+                                @endif
+                            </td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        @endif
+
+        @if ($lessonsLearned->isNotEmpty())
+            <h2>Lessons Learned</h2>
+            <p class="small muted">Erkenntnisse aus Vorfällen und Übungen samt abgeleiteter Maßnahmen (offene/überfällige Maßnahmen sind nachzuverfolgen).</p>
+            @foreach ($lessonsLearned as $lesson)
+                <table class="meta-table" style="margin-bottom: 4px;">
+                    <tr><th style="width: 22%;">Erkenntnis</th><td><strong>{{ $lesson->title }}</strong>@if ($lesson->finalized_at) <span class="small">· finalisiert {{ $lesson->finalized_at->format('d.m.Y') }}</span>@else <span class="small">· Entwurf</span>@endif</td></tr>
+                    @if ($lesson->root_cause)<tr><th>Ursache</th><td>{{ $lesson->root_cause }}</td></tr>@endif
+                    @if ($lesson->what_went_poorly)<tr><th>Verbesserungsbedarf</th><td>{{ $lesson->what_went_poorly }}</td></tr>@endif
+                </table>
+                @if ($lesson->actionItems->isNotEmpty())
+                    <table>
+                        <thead><tr><th>Abgeleitete Maßnahme</th><th>Zuständig</th><th>Frist</th><th>Status</th></tr></thead>
+                        <tbody>
+                            @foreach ($lesson->actionItems as $action)
+                                <tr>
+                                    <td>{{ $action->description }}</td>
+                                    <td class="small">{{ $action->responsibleEmployee?->fullName() ?? '—' }}</td>
+                                    <td>{{ $action->due_date?->format('d.m.Y') ?? '—' }}</td>
+                                    <td>{{ $action->status->label() }}@if ($action->isOverdue()) <strong>(überfällig)</strong>@endif</td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                @endif
+            @endforeach
+        @endif
+
+        <h2>Management Review / BCMS-Governance</h2>
+        <p class="small muted">Konsolidierter Governance-Überblick der Geschäftsführung: geprüfte Risiken, offene Punkte, überfällige Maßnahmen, Tests, Lessons Learned, Schulungsstand, Entscheidungen und nächste Review-Fälligkeit.</p>
+        <table class="meta-table">
+            <tr><th style="width: 40%;">Erfasste Risiken</th><td>{{ $governanceSnapshot['risksTotal'] }}</td></tr>
+            <tr><th>Offene Punkte (offen / davon überfällig)</th><td>{{ $governanceSnapshot['openItemsOpen'] }} / {{ $governanceSnapshot['openItemsOverdue'] }}</td></tr>
+            <tr><th>Überfällige Präventionsmaßnahmen</th><td>{{ $governanceSnapshot['measuresOverdue'] }}</td></tr>
+            <tr><th>Tests / Übungen (gesamt / davon überfällig)</th><td>{{ $governanceSnapshot['testsTotal'] }} / {{ $governanceSnapshot['testsOverdue'] }}</td></tr>
+            <tr><th>Lessons Learned (offene Maßnahmen)</th><td>{{ $governanceSnapshot['lessonsTotal'] }} ({{ $governanceSnapshot['lessonsOpenActions'] }})</td></tr>
+            <tr><th>Schulungen (durchgeführt / geplant / überfällig)</th><td>{{ $governanceSnapshot['trainingDone'] }} / {{ $governanceSnapshot['trainingPlanned'] }} / {{ $governanceSnapshot['trainingOverdue'] }}</td></tr>
+            <tr><th>Aufgaben (offen / überfällig / im Zeitraum erledigt)</th><td>{{ $governanceSnapshot['tasksOpen'] }} / {{ $governanceSnapshot['tasksOverdue'] }} / {{ $governanceSnapshot['tasksDoneInPeriod'] }}</td></tr>
+            <tr><th>Nächste Management-Review fällig</th><td>{{ $governanceSnapshot['nextReviewAt']?->format('d.m.Y') ?? '—' }}</td></tr>
+        </table>
+
+        @if ($managementReviews->isNotEmpty())
+            <h3>Durchgeführte Management-Reviews</h3>
+            @foreach ($managementReviews as $review)
+                <table class="meta-table" style="margin-bottom: 4px;">
+                    <tr><th style="width: 22%;">Review</th><td><strong>{{ $review->title }}</strong> · {{ $review->review_date?->format('d.m.Y') ?? '—' }}@if ($review->conducted_by) · Leitung: {{ $review->conducted_by }}@endif</td></tr>
+                    @if ($review->participants)<tr><th>Teilnehmer</th><td>{{ $review->participants }}</td></tr>@endif
+                    @if ($review->summary)<tr><th>Zusammenfassung</th><td>{{ $review->summary }}</td></tr>@endif
+                    @if ($review->decisions)<tr><th>Entscheidungen der GF</th><td>{{ $review->decisions }}</td></tr>@endif
+                    <tr><th>Nächste Review</th><td>{{ $review->next_review_at?->format('d.m.Y') ?? '—' }}@if ($review->isFollowUpOverdue()) <strong>(überfällig)</strong>@endif</td></tr>
+                </table>
+            @endforeach
+        @else
+            <p class="small"><em>Noch kein Management-Review dokumentiert.</em></p>
+        @endif
+
         @if ($unlinkedRisks->isNotEmpty() || $unlinkedMeasures->isNotEmpty() || $unlinkedOpenItems->isNotEmpty())
             <h2>Anhang: Nicht zugeordnet</h2>
             <p class="small muted">Governance-Einträge ohne Zuordnung zu einem Geschäftsprozess. Für die Vollständigkeit der BIA sollten diese noch einem Prozess zugeordnet werden.</p>

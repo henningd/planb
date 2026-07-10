@@ -1945,6 +1945,26 @@
             </table>
         @endif
 
+        @if (isset($trainingRecords) && $trainingRecords->isNotEmpty())
+            <h3>13.4 Schulungs- und Awareness-Nachweise</h3>
+            <p>Nachweis der geplanten und durchgeführten Schulungen zu Notfall, Krise und Awareness &mdash; mit geschulter Person, Status und nächster Fälligkeit.</p>
+            <table>
+                <thead>
+                    <tr><th>Thema</th><th>Person</th><th>Durchgeführt</th><th>Nächste Fälligkeit</th></tr>
+                </thead>
+                <tbody>
+                    @foreach ($trainingRecords as $training)
+                        <tr>
+                            <td><strong>{{ $training->topic }}</strong>@if ($training->type)<br><span class="small">{{ $training->type->label() }}</span>@endif</td>
+                            <td>{{ $training->employee?->fullName() ?? '—' }}</td>
+                            <td>{{ $training->completed_at?->format('d.m.Y') ?? 'geplant' }}</td>
+                            <td>{{ $training->next_due_at?->format('d.m.Y') ?? '—' }}@if ($training->isOverdue()) &middot; <strong>überfällig</strong>@endif</td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        @endif
+
         <div class="footer-note">
             {{ $company->name }} &mdash; Notfall- und Krisenhandbuch &mdash; {{ $aktenzeichen }} &mdash; Stand {{ now()->format('d.m.Y H:i') }} Uhr
         </div>

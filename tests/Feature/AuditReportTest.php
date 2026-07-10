@@ -5,11 +5,17 @@ use App\Enums\ProcessCriticality;
 use App\Models\AiSystem;
 use App\Models\BusinessProcess;
 use App\Models\Company;
+use App\Models\Employee;
 use App\Models\InsurancePolicy;
+use App\Models\LessonLearned;
+use App\Models\LessonLearnedActionItem;
+use App\Models\ManagementReview;
 use App\Models\OpenItem;
 use App\Models\PreventiveMeasure;
 use App\Models\Risk;
 use App\Models\System;
+use App\Models\SystemTask;
+use App\Models\TrainingRecord;
 use App\Models\User;
 use App\Scopes\CurrentCompanyScope;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -101,6 +107,62 @@ test('the audit report includes an insurance review section', function () {
         ->assertSee('abgelaufen')
         ->assertSee('überfällig')
         ->assertSee('nicht getestet');
+});
+
+test('the audit report includes training, tasks, lessons and management review', function () {
+    $user = User::factory()->create();
+    $company = Company::factory()->for($user->currentTeam)->create();
+
+    $employee = Employee::factory()->create([
+        'company_id' => $company->id,
+        'first_name' => 'Max',
+        'last_name' => 'Muster',
+    ]);
+    TrainingRecord::factory()->create([
+        'company_id' => $company->id,
+        'employee_id' => $employee->id,
+        'topic' => 'Notfall-Erstschulung',
+    ]);
+
+    $system = System::withoutGlobalScope(CurrentCompanyScope::class)->create([
+        'company_id' => $company->id,
+        'name' => 'ERP',
+        'category' => 'geschaeftsbetrieb',
+    ]);
+    SystemTask::factory()->create([
+        'company_id' => $company->id,
+        'system_id' => $system->id,
+        'title' => 'Backup-Konzept prüfen',
+    ]);
+
+    $lesson = LessonLearned::factory()->create([
+        'company_id' => $company->id,
+        'title' => 'Kommunikation zu langsam',
+    ]);
+    LessonLearnedActionItem::factory()->create([
+        'lesson_learned_id' => $lesson->id,
+        'description' => 'Alarmkette aktualisieren',
+    ]);
+
+    ManagementReview::factory()->create([
+        'company_id' => $company->id,
+        'title' => 'Jahres-Review 2026',
+        'decisions' => 'Budget für BCM freigegeben',
+    ]);
+
+    $this->actingAs($user->fresh())
+        ->get(route('audit-report.print'))
+        ->assertOk()
+        ->assertSee('Schulungen und Awareness')
+        ->assertSee('Notfall-Erstschulung')
+        ->assertSee('Aufgaben und Nachverfolgung')
+        ->assertSee('Backup-Konzept prüfen')
+        ->assertSee('Lessons Learned')
+        ->assertSee('Kommunikation zu langsam')
+        ->assertSee('Alarmkette aktualisieren')
+        ->assertSee('Management Review / BCMS-Governance')
+        ->assertSee('Jahres-Review 2026')
+        ->assertSee('Budget für BCM freigegeben');
 });
 
 test('the audit report includes an ai systems section', function () {

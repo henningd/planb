@@ -10,6 +10,7 @@ use App\Models\HandbookShare;
 use App\Models\OpenItem;
 use App\Models\ServiceProvider;
 use App\Models\System;
+use App\Models\TrainingRecord;
 use App\Scopes\CurrentCompanyScope;
 
 /**
@@ -81,12 +82,19 @@ class HandbookData
             ->orderBy('sort')
             ->orderBy('name');
 
+        $trainingRecordsQuery = TrainingRecord::with('employee')
+            ->where('company_id', $company->id)
+            ->orderByRaw('completed_at is null')
+            ->orderBy('next_due_at')
+            ->orderBy('topic');
+
         if ($share !== null) {
             $providersQuery->withoutGlobalScope(CurrentCompanyScope::class);
             $contractsQuery->withoutGlobalScope(CurrentCompanyScope::class);
             $openItemsQuery->withoutGlobalScope(CurrentCompanyScope::class);
             $businessProcessesQuery->withoutGlobalScope(CurrentCompanyScope::class);
             $authorityContactsQuery->withoutGlobalScope(CurrentCompanyScope::class);
+            $trainingRecordsQuery->withoutGlobalScope(CurrentCompanyScope::class);
         }
 
         $systemsDetail = self::buildSystemsDetail($company);
@@ -98,6 +106,7 @@ class HandbookData
             'openItems' => config('features.open_items') ? $openItemsQuery->get() : collect(),
             'businessProcesses' => config('features.bia') ? $businessProcessesQuery->get() : collect(),
             'authorityContacts' => config('features.authority_contacts') ? $authorityContactsQuery->get() : collect(),
+            'trainingRecords' => config('features.training_records') ? $trainingRecordsQuery->get() : collect(),
             'recoveryPlan' => RecoveryOrder::compute($company->systems),
             'systemsDetail' => $systemsDetail,
             'share' => $share,

@@ -5,16 +5,22 @@ namespace App\Support;
 use App\Models\AiSystem;
 use App\Models\BusinessProcess;
 use App\Models\Company;
+use App\Models\HandbookTest;
 use App\Models\InsurancePolicy;
+use App\Models\LessonLearned;
+use App\Models\ManagementReview;
 use App\Models\OpenItem;
 use App\Models\PreventiveMeasure;
 use App\Models\Risk;
+use App\Models\SystemTask;
+use App\Models\TrainingRecord;
 use Illuminate\Support\Carbon;
 
 /**
  * Sammelt die Daten für den Audit-/Governance-Bericht: prozesszentrisch die
  * vollständige BIA je Geschäftsprozess samt verknüpfter Risiken, Maßnahmen und
- * Offener Punkte — plus einen Anhang mit (noch) nicht zugeordneten Einträgen,
+ * Offener Punkte — plus Nachweise zu Schulungen, Aufgaben, Lessons Learned und
+ * Management Review sowie einen Anhang mit (noch) nicht zugeordneten Einträgen,
  * damit im Bericht nichts verloren geht.
  */
 class AuditReportData
@@ -24,6 +30,9 @@ class AuditReportData
      */
     public static function forCompany(Company $company, ?Carbon $generatedAt = null): array
     {
+        $now = $generatedAt ?? now();
+        $periodStart = $now->copy()->subYear();
+
         $processes = BusinessProcess::with([
             'systems',
             'responsible',
@@ -40,6 +49,63 @@ class AuditReportData
             ->orderBy('name')
             ->get();
 
+        $trainingRecords = config('features.training_records')
+            ? TrainingRecord::with('employee')
+                ->where('company_id', $company->id)
+                ->orderByRaw('completed_at is null')
+                ->orderBy('next_due_at')
+                ->orderBy('topic')
+                ->get()
+            : collect();
+
+        $systemTasks = SystemTask::with(['system', 'riskMitigation', 'assignees', 'roleAssignees'])
+            ->where('company_id', $company->id)
+            ->orderByRaw('completed_at is null desc')
+            ->orderByRaw('due_date is null')
+            ->orderBy('due_date')
+            ->get();
+
+        $lessonsLearned = config('features.lessons_learned')
+            ? LessonLearned::with(['actionItems.responsibleEmployee', 'author'])
+                ->where('company_id', $company->id)
+                ->orderByRaw('finalized_at is null')
+                ->orderByDesc('finalized_at')
+                ->orderByDesc('created_at')
+                ->get()
+            : collect();
+
+        $managementReviews = config('features.management_review')
+            ? ManagementReview::where('company_id', $company->id)
+                ->orderByDesc('review_date')
+                ->get()
+            : collect();
+
+        $handbookTests = HandbookTest::with(['responsible', 'responsibleRole'])
+            ->where('company_id', $company->id)
+            ->orderBy('next_due_at')
+            ->get();
+
+        $openItems = OpenItem::where('company_id', $company->id)->get();
+        $measures = PreventiveMeasure::where('company_id', $company->id)->get();
+
+        $governanceSnapshot = [
+            'risksTotal' => Risk::where('company_id', $company->id)->count(),
+            'openItemsOpen' => $openItems->filter(fn (OpenItem $i) => $i->status->value !== 'resolved')->count(),
+            'openItemsOverdue' => $openItems->filter(fn (OpenItem $i) => $i->isOverdue())->count(),
+            'measuresOverdue' => $measures->filter(fn (PreventiveMeasure $m) => $m->isOverdue())->count(),
+            'testsTotal' => $handbookTests->count(),
+            'testsOverdue' => $handbookTests->filter(fn (HandbookTest $t) => $t->isOverdue())->count(),
+            'lessonsTotal' => $lessonsLearned->count(),
+            'lessonsOpenActions' => $lessonsLearned->sum(fn (LessonLearned $l) => $l->actionItems->filter(fn ($a) => ! in_array($a->status->value, ['done', 'cancelled'], true))->count()),
+            'trainingDone' => $trainingRecords->filter(fn (TrainingRecord $t) => $t->completed_at !== null)->count(),
+            'trainingPlanned' => $trainingRecords->filter(fn (TrainingRecord $t) => $t->completed_at === null)->count(),
+            'trainingOverdue' => $trainingRecords->filter(fn (TrainingRecord $t) => $t->isOverdue())->count(),
+            'tasksOpen' => $systemTasks->filter(fn (SystemTask $t) => ! $t->isDone())->count(),
+            'tasksOverdue' => $systemTasks->filter(fn (SystemTask $t) => $t->isOverdue())->count(),
+            'tasksDoneInPeriod' => $systemTasks->filter(fn (SystemTask $t) => $t->completed_at !== null && $t->completed_at->greaterThanOrEqualTo($periodStart))->count(),
+            'nextReviewAt' => $managementReviews->max('next_review_at'),
+        ];
+
         return [
             'company' => $company,
             'processes' => $processes,
@@ -54,7 +120,14 @@ class AuditReportData
                     ->orderBy('name')
                     ->get()
                 : collect(),
-            'generatedAt' => $generatedAt ?? now(),
+            'trainingRecords' => $trainingRecords,
+            'systemTasks' => $systemTasks,
+            'lessonsLearned' => $lessonsLearned,
+            'managementReviews' => $managementReviews,
+            'handbookTests' => $handbookTests,
+            'governanceSnapshot' => $governanceSnapshot,
+            'periodStart' => $periodStart,
+            'generatedAt' => $now,
         ];
     }
 }
