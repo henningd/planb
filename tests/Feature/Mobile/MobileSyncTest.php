@@ -180,3 +180,37 @@ test('the handbook pdf endpoint rejects a foreign or unknown version', function 
         ->get('/api/mobile/handbook/'.Str::uuid()->toString().'/pdf')
         ->assertNotFound();
 });
+
+test('scenarios carry description and the alarm chain in the bundle', function () {
+    [$user, $company, $token] = syncSession();
+
+    Scenario::factory()->for($company)->create([
+        'name' => 'Cyber-Angriff',
+        'description' => 'Ransomware oder Datenabfluss.',
+        'trigger' => 'Monitoring-Alarm oder Meldung',
+        'alarm_chain_detector' => 'IT-Monitoring / Mitarbeitende',
+        'alarm_chain_lead_role' => 'Notfallbeauftragte/r',
+    ]);
+
+    $data = test()->withToken($token)->getJson('/api/mobile/sync')
+        ->assertOk()
+        ->json('data.scenarios');
+
+    $scenario = collect($data)->firstWhere('title', 'Cyber-Angriff');
+
+    expect($scenario['description'])->toBe('Ransomware oder Datenabfluss.')
+        ->and($scenario['trigger'])->toBe('Monitoring-Alarm oder Meldung')
+        ->and($scenario['alarm_chain'])->toBe([
+            'detector' => 'IT-Monitoring / Mitarbeitende',
+            'lead_role' => 'Notfallbeauftragte/r',
+        ]);
+
+    // Ohne gefüllte Felder bleibt alarm_chain null (Apps blenden den Abschnitt aus).
+    Scenario::factory()->for($company)->create([
+        'name' => 'Ohne Kette',
+        'alarm_chain_detector' => null,
+    ]);
+    $bare = collect(test()->withToken($token)->getJson('/api/mobile/sync')->json('data.scenarios'))
+        ->firstWhere('title', 'Ohne Kette');
+    expect($bare['alarm_chain'])->toBeNull();
+});

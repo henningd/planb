@@ -414,7 +414,19 @@ class MobileSyncBundle
             ->map(fn (Scenario $scenario) => [
                 'id' => $scenario->id,
                 'title' => $scenario->name,
+                'description' => $scenario->description,
                 'trigger' => $scenario->trigger,
+                // Alarmkette (7 Freitext-Felder) — nur gefüllte Felder, sonst null,
+                // damit die Apps den Abschnitt komplett ausblenden können.
+                'alarm_chain' => array_filter([
+                    'detector' => $scenario->alarm_chain_detector,
+                    'first_contact' => $scenario->alarm_chain_first_contact,
+                    'lead_role' => $scenario->alarm_chain_lead_role,
+                    'providers' => $scenario->alarm_chain_providers,
+                    'management' => $scenario->alarm_chain_management,
+                    'authorities' => $scenario->alarm_chain_authorities,
+                    'comms_approval' => $scenario->alarm_chain_comms_approval,
+                ], fn ($value) => filled($value)) ?: null,
                 'steps' => $scenario->steps->map(fn ($step) => [
                     'position' => $step->sort,
                     'text' => trim($step->title.($step->description ? ' — '.$step->description : '')),
