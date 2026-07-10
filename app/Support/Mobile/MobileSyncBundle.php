@@ -422,7 +422,12 @@ class MobileSyncBundle
 
             $rows[] = [
                 'position' => $position++,
+                'system_id' => $system instanceof System ? $system->id : null,
                 'system' => $system instanceof System ? $system->name : (string) $system,
+                // Abhängigkeits-Kanten für die App-Chips („Braucht" / „Wird
+                // gebraucht von") — Relationen sind im Cockpit bereits geladen.
+                'depends_on' => $system instanceof System ? $system->dependencies->pluck('id')->all() : [],
+                'dependents' => $system instanceof System ? $system->dependents->pluck('id')->all() : [],
                 'rto_minutes' => $item['rto_minutes'],
                 'level' => $item['level_name'],
                 // Stufen-Infos (redundant je Zeile, damit die Apps ohne
