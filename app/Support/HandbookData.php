@@ -2,6 +2,7 @@
 
 namespace App\Support;
 
+use App\Models\BusinessProcess;
 use App\Models\Company;
 use App\Models\Contract;
 use App\Models\HandbookShare;
@@ -67,10 +68,16 @@ class HandbookData
             ->orderBy('due_at')
             ->orderBy('sort');
 
+        $businessProcessesQuery = BusinessProcess::with(['systems', 'responsible', 'responsibleRole'])
+            ->where('company_id', $company->id)
+            ->orderBy('sort')
+            ->orderBy('name');
+
         if ($share !== null) {
             $providersQuery->withoutGlobalScope(CurrentCompanyScope::class);
             $contractsQuery->withoutGlobalScope(CurrentCompanyScope::class);
             $openItemsQuery->withoutGlobalScope(CurrentCompanyScope::class);
+            $businessProcessesQuery->withoutGlobalScope(CurrentCompanyScope::class);
         }
 
         $systemsDetail = self::buildSystemsDetail($company);
@@ -80,6 +87,7 @@ class HandbookData
             'providers' => $providersQuery->get(),
             'contracts' => config('features.contracts') ? $contractsQuery->get() : collect(),
             'openItems' => config('features.open_items') ? $openItemsQuery->get() : collect(),
+            'businessProcesses' => config('features.bia') ? $businessProcessesQuery->get() : collect(),
             'recoveryPlan' => RecoveryOrder::compute($company->systems),
             'systemsDetail' => $systemsDetail,
             'share' => $share,

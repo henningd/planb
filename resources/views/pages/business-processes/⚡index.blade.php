@@ -30,6 +30,8 @@ new #[Title('Geschäftsprozesse')] class extends Component {
 
     public string $peak_times = '';
 
+    public string $fallback_process = '';
+
     public string $responsible_employee_id = '';
 
     public string $responsible_role_id = '';
@@ -116,6 +118,7 @@ new #[Title('Geschäftsprozesse')] class extends Component {
         $this->rto_hours = $this->minutesToHoursField($process->rto_minutes);
         $this->rpo_hours = $this->minutesToHoursField($process->rpo_minutes);
         $this->peak_times = (string) $process->peak_times;
+        $this->fallback_process = (string) $process->fallback_process;
         $this->responsible_employee_id = (string) ($process->responsible_employee_id ?? '');
         $this->responsible_role_id = (string) ($process->responsible_role_id ?? '');
         $this->notes = (string) $process->notes;
@@ -141,6 +144,7 @@ new #[Title('Geschäftsprozesse')] class extends Component {
             'rto_hours' => ['nullable', 'numeric', 'min:0'],
             'rpo_hours' => ['nullable', 'numeric', 'min:0'],
             'peak_times' => ['nullable', 'string', 'max:255'],
+            'fallback_process' => ['nullable', 'string', 'max:2000'],
             'responsible_employee_id' => ['nullable', 'string', Rule::exists('employees', 'id')],
             'responsible_role_id' => ['nullable', 'string', Rule::exists('roles', 'id')],
             'notes' => ['nullable', 'string', 'max:2000'],
@@ -197,7 +201,7 @@ new #[Title('Geschäftsprozesse')] class extends Component {
 
     protected function resetForm(): void
     {
-        $this->reset(['editingId', 'name', 'description', 'mtpd_hours', 'rto_hours', 'rpo_hours', 'peak_times', 'responsible_employee_id', 'responsible_role_id', 'notes', 'sort', 'selectedSystems']);
+        $this->reset(['editingId', 'name', 'description', 'mtpd_hours', 'rto_hours', 'rpo_hours', 'peak_times', 'fallback_process', 'responsible_employee_id', 'responsible_role_id', 'notes', 'sort', 'selectedSystems']);
         $this->criticality = ProcessCriticality::Mittel->value;
     }
 
@@ -394,6 +398,8 @@ new #[Title('Geschäftsprozesse')] class extends Component {
                     </div>
                 @endif
             </div>
+
+            <flux:textarea wire:model="fallback_process" :label="__('Ersatzprozess / Notbetrieb')" rows="2" placeholder="Wie läuft der Prozess weiter, wenn die Systeme ausfallen? (z. B. Papier-Notbetrieb, Ausweichstandort)" />
 
             <flux:textarea wire:model="notes" :label="__('Notizen')" rows="2" />
             <flux:input wire:model="sort" :label="__('Sortierung')" type="number" min="0" />

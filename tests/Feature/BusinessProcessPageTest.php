@@ -41,6 +41,21 @@ test('the business process page lists processes of the current company', functio
         ->assertSee('4 Stunden');
 });
 
+test('a business process can store an Ersatzprozess (fallback)', function () {
+    [$user] = bpActingUser();
+
+    Livewire::actingAs($user)
+        ->test('pages::business-processes.index')
+        ->set('name', 'Medikamentengabe')
+        ->set('criticality', ProcessCriticality::Existenzkritisch->value)
+        ->set('fallback_process', 'Papier-Betäubungsmittelbuch, manuelle Ausgabe durch PDL')
+        ->call('save')
+        ->assertHasNoErrors();
+
+    expect(BusinessProcess::firstWhere('name', 'Medikamentengabe')->fallback_process)
+        ->toBe('Papier-Betäubungsmittelbuch, manuelle Ausgabe durch PDL');
+});
+
 test('a process can be created through the Livewire component including system assignment', function () {
     [$user, $company, $system] = bpActingUser();
 

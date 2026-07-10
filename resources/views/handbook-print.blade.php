@@ -1423,11 +1423,47 @@
             <em>RPO (Recovery Point Objective)</em> bezeichnet den maximal tolerierbaren Datenverlust und bestimmt die erforderliche Backup-Frequenz. Die Systemblätter dokumentieren das <em>Was</em>; das technische <em>Wie</em> steht in den Runbooks.
         </p>
 
+        @php($criticalProcesses = ($businessProcesses ?? collect())->filter(fn ($p) => $p->isCritical()))
+        @php($bpOffset = $criticalProcesses->isNotEmpty() ? 1 : 0)
+        @if ($criticalProcesses->isNotEmpty())
+            <h3>9.1 Kritische Geschäftsprozesse (BIA)</h3>
+            <p class="small">Geschäftsprozesse mit hoher oder existenzkritischer Bedeutung — mit Wiederanlaufzeit (RTO), abhängigen Systemen, Ersatzprozess und verantwortlicher Rolle. Die vollständige Business-Impact-Analyse wird im System gepflegt.</p>
+            <table class="role-table">
+                <thead>
+                    <tr>
+                        <th>Prozess</th>
+                        <th style="width: 22mm;">Kritikalität</th>
+                        <th style="width: 20mm;">RTO</th>
+                        <th>Abhängige Systeme</th>
+                        <th>Ersatzprozess</th>
+                        <th style="width: 30mm;">Verantwortlich</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach ($criticalProcesses as $bp)
+                        <tr>
+                            <td><strong>{{ $bp->name }}</strong></td>
+                            <td>{{ $bp->criticality->label() }}</td>
+                            <td class="small">{{ \App\Support\Duration::inHours($bp->rto_minutes) ?? '—' }}</td>
+                            <td class="small">{{ $bp->systems->pluck('name')->join(', ') ?: '—' }}</td>
+                            <td class="small">{{ $bp->fallback_process ?: '—' }}</td>
+                            <td class="small">
+                                @if ($bp->responsible){{ $bp->responsible->fullName() }}@endif
+                                @if ($bp->responsible && $bp->responsibleRole)<br>@endif
+                                @if ($bp->responsibleRole)Rolle: {{ $bp->responsibleRole->name }}@endif
+                                @if (! $bp->responsible && ! $bp->responsibleRole)—@endif
+                            </td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        @endif
+
         @foreach (\App\Enums\SystemCategory::cases() as $category)
             @php($systems = $company->systems->where('category', $category))
             @continue($systems->isEmpty())
 
-            <h3>9.{{ $loop->iteration }} {{ $category->label() }}</h3>
+            <h3>9.{{ $loop->iteration + $bpOffset }} {{ $category->label() }}</h3>
             <p class="small">{{ $category->description() }}</p>
             <table class="role-table">
                 <thead>
@@ -1475,7 +1511,7 @@
         @endforeach
 
         @if (! empty($recoveryPlan['stages']))
-            <h3>9.{{ count(array_filter(\App\Enums\SystemCategory::cases(), fn ($c) => $company->systems->where('category', $c)->isNotEmpty())) + 1 }} Wiederanlauf-Reihenfolge</h3>
+            <h3>9.{{ count(array_filter(\App\Enums\SystemCategory::cases(), fn ($c) => $company->systems->where('category', $c)->isNotEmpty())) + 1 + $bpOffset }} Wiederanlauf-Reihenfolge</h3>
             <p>Verbindliche Reihenfolge nach Abhängigkeitsanalyse. Eine Stufe darf erst gestartet werden, wenn die vorherige vollständig läuft. Systeme einer Stufe können parallel angefahren werden.</p>
             <table>
                 <thead>

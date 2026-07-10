@@ -27,6 +27,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
     'rto_minutes',
     'rpo_minutes',
     'peak_times',
+    'fallback_process',
     'responsible_employee_id',
     'responsible_role_id',
     'notes',
@@ -40,6 +41,17 @@ class BusinessProcess extends Model
     public function auditLabel(): string
     {
         return $this->name;
+    }
+
+    /**
+     * Kritisch für das Ernstfall-Handbuch = hohe oder existenzkritische Bedeutung.
+     */
+    public function isCritical(): bool
+    {
+        return in_array($this->criticality, [
+            ProcessCriticality::Hoch,
+            ProcessCriticality::Existenzkritisch,
+        ], true);
     }
 
     /**

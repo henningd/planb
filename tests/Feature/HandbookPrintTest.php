@@ -2,6 +2,8 @@
 
 use App\Enums\CrisisRole;
 use App\Enums\EmergencyResourceType;
+use App\Enums\ProcessCriticality;
+use App\Models\BusinessProcess;
 use App\Models\Company;
 use App\Models\EmergencyResource;
 use App\Models\Employee;
@@ -218,6 +220,42 @@ test('handbook print shows building areas for locations and systems', function (
         ->assertSee('Haus A: Pflegebereich A1')
         ->assertSee('Rufanlage Haus A')
         ->assertSee('Haus A, Pflegebereich A1');
+});
+
+test('handbook print lists only critical business processes with recovery data', function () {
+    $user = User::factory()->create();
+    $company = Company::factory()->for($user->currentTeam)->create();
+
+    $system = System::withoutGlobalScope(CurrentCompanyScope::class)->create([
+        'company_id' => $company->id,
+        'name' => 'Pflegedokumentation',
+        'category' => 'geschaeftsbetrieb',
+    ]);
+
+    $critical = BusinessProcess::factory()->create([
+        'company_id' => $company->id,
+        'name' => 'Medikamentengabe',
+        'criticality' => ProcessCriticality::Existenzkritisch,
+        'rto_minutes' => 240,
+        'fallback_process' => 'Papier-Notbetrieb im Stationszimmer',
+    ]);
+    $critical->systems()->attach($system->id);
+
+    BusinessProcess::factory()->create([
+        'company_id' => $company->id,
+        'name' => 'Newsletter-Versand',
+        'criticality' => ProcessCriticality::Niedrig,
+    ]);
+
+    $this->actingAs($user->fresh())
+        ->get(route('handbook.print'))
+        ->assertOk()
+        ->assertSee('Kritische Geschäftsprozesse (BIA)')
+        ->assertSee('Medikamentengabe')
+        ->assertSee('4 Stunden')
+        ->assertSee('Pflegedokumentation')
+        ->assertSee('Papier-Notbetrieb im Stationszimmer')
+        ->assertDontSee('Newsletter-Versand');
 });
 
 test('handbook print redirects with 404 when no company exists', function () {
