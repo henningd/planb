@@ -252,5 +252,8 @@ test('the recovery order carries levels and metrics for the apps', function () {
         ->and($row['stage'])->toBe(1)
         ->and($row['system_id'])->toBe($system->id)
         ->and($row['depends_on'])->toBe([])
-        ->and($row['dependents'])->toBe([]);
+        ->and($row['dependents'])->toBe([])
+        ->and($row['start_minutes'])->toBe(0)
+        ->and($row['end_minutes'])->toBe(120)
+        ->and($row['rto_missing'])->toBeFalse();
 });

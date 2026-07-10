@@ -26,6 +26,7 @@ use App\Models\ServiceProvider;
 use App\Models\System;
 use App\Models\SystemTask;
 use App\Scopes\CurrentCompanyScope;
+use App\Support\Graph\RecoveryTimelineBuilder;
 use App\Support\Incident\Cockpit;
 use App\Support\RecoveryOrder;
 use Illuminate\Support\Collection;
@@ -65,7 +66,7 @@ class MobileSyncBundle
             'crisis_roles' => self::crisisRoles($cockpit->crisisStaff),
             'service_providers' => self::serviceProviders($company),
             'emergency_resources' => self::emergencyResources($company),
-            'recovery_order' => self::recoveryOrder($cockpit->recoveryOrder),
+            'recovery_order' => self::recoveryOrder($company, $cockpit->recoveryOrder),
             'scenarios' => self::scenarios($company),
             'active_runs' => self::activeRuns($company),
             'notifications' => self::notifications($company),
@@ -385,10 +386,18 @@ class MobileSyncBundle
      * @param  list<array{system: System, level_name: ?string, level_sort: ?int, rto_minutes: ?int, depth: int, open_tasks: int, total_tasks: int}>  $recoveryOrder
      * @return array<int, array<string, mixed>>
      */
-    private static function recoveryOrder(array $recoveryOrder): array
+    private static function recoveryOrder(Company $company, array $recoveryOrder): array
     {
         $rows = [];
         $position = 1;
+
+        // Zeitleisten-Daten (Start-/Endminute je System) — gleiche Quelle wie
+        // die Backend-Gantt-Ansicht, für die Tablet-Zeitleiste der Apps.
+        $timeline = RecoveryTimelineBuilder::build($company);
+        $timelineBySystem = [];
+        foreach ($timeline['entries'] as $entry) {
+            $timelineBySystem[$entry['system']->id] = $entry;
+        }
 
         // Abhängigkeits-Stufen wie auf /systems/recovery: Stufe 1 kann sofort
         // starten, Stufe n erst, wenn Stufe n-1 läuft. Gleiche Quelle wie die
@@ -439,6 +448,10 @@ class MobileSyncBundle
                 'rpo_minutes' => $system instanceof System ? $system->rpo_minutes : null,
                 // 1-basierte Start-Stufe (null bei zyklischen Abhängigkeiten).
                 'stage' => $system instanceof System ? ($stageBySystem[$system->id] ?? null) : null,
+                // Zeitleiste: Minuten ab Notfallbeginn (Start nach Abhängigkeiten).
+                'start_minutes' => $system instanceof System ? ($timelineBySystem[$system->id]['start'] ?? null) : null,
+                'end_minutes' => $system instanceof System ? ($timelineBySystem[$system->id]['end'] ?? null) : null,
+                'rto_missing' => $system instanceof System ? (bool) ($timelineBySystem[$system->id]['rto_missing'] ?? false) : false,
                 'depth' => $item['depth'] ?? 0,
                 'open_tasks' => $item['open_tasks'] ?? 0,
                 'total_tasks' => $item['total_tasks'] ?? 0,
