@@ -193,6 +193,11 @@
                             {{ __('Offene Punkte') }}
                         </flux:sidebar.item>
                     @endif
+                    @if (config('features.ai_governance') && \Illuminate\Support\Facades\Route::has('ai-systems.index'))
+                        <flux:sidebar.item icon="cpu-chip" :href="route('ai-systems.index')" :current="request()->routeIs('ai-systems.*')" wire:navigate>
+                            {{ __('KI-Governance') }}
+                        </flux:sidebar.item>
+                    @endif
                 </flux:sidebar.group>
 
                 <flux:sidebar.group

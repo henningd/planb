@@ -351,6 +351,9 @@ Route::prefix('{current_team}')
         if (config('features.open_items')) {
             Route::livewire('offene-punkte', 'pages::open-items.index')->name('open-items.index');
         }
+        if (config('features.ai_governance')) {
+            Route::livewire('ki-systeme', 'pages::ai-systems.index')->name('ai-systems.index');
+        }
         if (config('features.training_records')) {
             Route::livewire('schulungen', 'pages::training-records.index')->name('training-records.index');
         }
