@@ -3,6 +3,7 @@
 use App\Enums\CommunicationAudience;
 use App\Enums\CommunicationChannel;
 use App\Mail\CommunicationTemplateMail;
+use App\Models\AuthorityContact;
 use App\Models\CommunicationDispatch;
 use App\Models\CommunicationDispatchRecipient;
 use App\Models\CommunicationTemplate;
@@ -32,6 +33,8 @@ new #[Title('Kommunikations-Vorlagen')] class extends Component {
     public string $channel = '';
 
     public ?string $scenario_id = null;
+
+    public ?string $recipient_authority_contact_id = null;
 
     public string $subject = '';
 
@@ -92,6 +95,15 @@ new #[Title('Kommunikations-Vorlagen')] class extends Component {
     public function scenarios(): Collection
     {
         return Scenario::orderBy('name')->get();
+    }
+
+    /**
+     * @return Collection<int, AuthorityContact>
+     */
+    #[Computed]
+    public function authorityContacts(): Collection
+    {
+        return AuthorityContact::orderBy('type')->orderBy('name')->get();
     }
 
     /**
@@ -172,6 +184,7 @@ new #[Title('Kommunikations-Vorlagen')] class extends Component {
         $this->audience = $template->audience->value;
         $this->channel = $template->channel->value;
         $this->scenario_id = $template->scenario_id;
+        $this->recipient_authority_contact_id = $template->recipient_authority_contact_id;
         $this->subject = (string) $template->subject;
         $this->body = $template->body;
         $this->fallback = (string) $template->fallback;
@@ -192,6 +205,7 @@ new #[Title('Kommunikations-Vorlagen')] class extends Component {
             'audience' => ['required', 'in:'.collect(CommunicationAudience::cases())->pluck('value')->implode(',')],
             'channel' => ['required', 'in:'.collect(CommunicationChannel::cases())->pluck('value')->implode(',')],
             'scenario_id' => ['nullable', 'uuid', 'exists:scenarios,id'],
+            'recipient_authority_contact_id' => ['nullable', 'uuid', 'exists:authority_contacts,id'],
             'subject' => ['nullable', 'string', 'max:255'],
             'body' => ['required', 'string', 'max:4000'],
             'fallback' => ['nullable', 'string', 'max:2000'],
@@ -626,7 +640,7 @@ new #[Title('Kommunikations-Vorlagen')] class extends Component {
 
     protected function resetForm(): void
     {
-        $this->reset(['editingId', 'name', 'scenario_id', 'subject', 'body', 'fallback']);
+        $this->reset(['editingId', 'name', 'scenario_id', 'recipient_authority_contact_id', 'subject', 'body', 'fallback']);
         $this->audience = CommunicationAudience::Employees->value;
         $this->channel = CommunicationChannel::Email->value;
     }
@@ -774,6 +788,15 @@ new #[Title('Kommunikations-Vorlagen')] class extends Component {
                     <flux:select.option value="{{ $scenario->id }}">{{ $scenario->name }}</flux:select.option>
                 @endforeach
             </flux:select>
+
+            @if (config('features.authority_contacts') && $this->authorityContacts->isNotEmpty())
+                <flux:select wire:model="recipient_authority_contact_id" :label="__('Empfänger: Behörde / Meldestelle (optional)')">
+                    <flux:select.option value="">{{ __('Kein fester Empfänger') }}</flux:select.option>
+                    @foreach ($this->authorityContacts as $authority)
+                        <flux:select.option value="{{ $authority->id }}">{{ $authority->name }} ({{ $authority->type->label() }})</flux:select.option>
+                    @endforeach
+                </flux:select>
+            @endif
 
             <flux:input wire:model="subject" :label="__('Betreff (optional)')" type="text" placeholder="z. B. Wichtige Information zum Betriebsablauf" />
 

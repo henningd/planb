@@ -152,6 +152,14 @@ class Company extends Model
     }
 
     /**
+     * @return HasMany<AuthorityContact, $this>
+     */
+    public function authorityContacts(): HasMany
+    {
+        return $this->hasMany(AuthorityContact::class)->orderBy('type')->orderBy('sort')->orderBy('name');
+    }
+
+    /**
      * @return HasMany<HandbookShare, $this>
      */
     public function handbookShares(): HasMany

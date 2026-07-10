@@ -1748,7 +1748,49 @@
 
         <h2>12. Meldepflichten und dokumentierte Vorfälle</h2>
 
-        <h3>12.1 DSGVO &mdash; Meldepflicht bei Datenpannen</h3>
+        <h3>12.1 Behörden, Meldestellen und externe Stellen</h3>
+        <p>Wer ist im Ernst-/Meldefall zu kontaktieren &mdash; mit Anlass, Frist, Kontaktweg, verantwortlicher Rolle und passender Kommunikationsvorlage. Im Zweifel eher zu früh als zu spät melden; Details können nachgereicht werden.</p>
+        @if (! isset($authorityContacts) || $authorityContacts->isEmpty())
+            <p><em>Keine Behörden-/Meldestellen-Kontakte hinterlegt.</em></p>
+        @else
+            <table class="role-table">
+                <thead>
+                    <tr>
+                        <th style="width: 22%;">Stelle</th>
+                        <th style="width: 26%;">Anlass</th>
+                        <th style="width: 12%;">Frist</th>
+                        <th>Kontaktweg</th>
+                        <th style="width: 16%;">Rolle / Vorlage</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach ($authorityContacts as $ac)
+                        <tr>
+                            <td>
+                                <strong>{{ $ac->name }}</strong>
+                                <div class="small">{{ $ac->type?->label() }}</div>
+                                @if ($ac->contact_name)<div class="small">{{ $ac->contact_name }}</div>@endif
+                            </td>
+                            <td>{{ $ac->occasion ?: '—' }}</td>
+                            <td>{{ $ac->deadline ?: '—' }}</td>
+                            <td>
+                                @if ($ac->phone)<div><span class="contact-label">Telefon</span> {{ $ac->phone }}</div>@endif
+                                @if ($ac->email)<div><span class="contact-label">E-Mail</span> <span class="contact-email">{{ $ac->email }}</span></div>@endif
+                                @if ($ac->contact_way)<div class="small">{{ $ac->contact_way }}</div>@endif
+                                @if (! $ac->phone && ! $ac->email && ! $ac->contact_way)—@endif
+                            </td>
+                            <td>
+                                @if ($ac->responsibleRole)<div>{{ $ac->responsibleRole->name }}</div>@endif
+                                @if ($ac->communicationTemplate)<div class="small">Vorlage: {{ $ac->communicationTemplate->name }}</div>@endif
+                                @if (! $ac->responsibleRole && ! $ac->communicationTemplate)—@endif
+                            </td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        @endif
+
+        <h3>12.2 DSGVO &mdash; Meldepflicht bei Datenpannen</h3>
         <p>Gemäß <em>Art. 33 DSGVO</em> ist eine Meldung an die zuständige Aufsichtsbehörde innerhalb von 72 Stunden ab Kenntnis vorzunehmen, sofern ein Risiko für die Rechte und Freiheiten Betroffener besteht. Bei hohem Risiko sind zusätzlich die Betroffenen ohne unangemessene Verzögerung zu informieren <em>(Art. 34 DSGVO)</em>.</p>
         <table class="meta-table">
             <tr><th>Zuständige Aufsichtsbehörde</th><td>{{ $company->data_protection_authority_name ?? '—' }}@if ($company->data_protection_authority_phone) &middot; Tel.: {{ \App\Support\PhoneFormat::display($company->data_protection_authority_phone) }}@endif@if ($company->data_protection_authority_website)<br>{{ $company->data_protection_authority_website }}@endif</td></tr>
@@ -1757,7 +1799,7 @@
             <tr><th>Datenschutzbeauftragte/r</th><td>{{ $dpo?->fullName() ?? '—' }}@if ($dpo) &middot; {{ \App\Support\PhoneFormat::display($dpo->mobile_phone) }} &middot; {{ $dpo->email }}@endif</td></tr>
         </table>
 
-        <h3>12.2 BSI / NIS2-Meldepflichten</h3>
+        <h3>12.3 BSI / NIS2-Meldepflichten</h3>
         <table class="meta-table">
             <tr><th>KRITIS-Einordnung</th><td>{{ $company->kritis_relevant?->label() ?? '—' }}</td></tr>
             <tr><th>NIS2-Einordnung</th><td>{{ $company->nis2_classification?->label() ?? '—' }}</td></tr>
@@ -1766,7 +1808,7 @@
             <tr><th>Detailmeldung</th><td>Innerhalb von 72 Stunden.</td></tr>
         </table>
 
-        <h3>12.3 Dokumentierte Vorfälle</h3>
+        <h3>12.4 Dokumentierte Vorfälle</h3>
         @if ($company->incidentReports->isEmpty())
             <p><em>Keine Vorfälle dokumentiert.</em></p>
         @else
@@ -1807,7 +1849,7 @@
             </table>
         @endif
 
-        <h3>12.4 Merkhilfe</h3>
+        <h3>12.5 Merkhilfe</h3>
         <p><em>Wann ist zu melden?</em> Immer wenn personenbezogene Daten betroffen sind und ein Risiko für die Betroffenen besteht.<br>
         <em>Frist:</em> 72 Stunden ab Kenntnis &mdash; gerechnet ab dem Zeitpunkt, zu dem ein Mitarbeiter Kenntnis erlangt.<br>
         <em>Im Zweifel:</em> Eher zu früh als zu spät melden; Details können nachgereicht werden.</p>

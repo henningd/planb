@@ -46,6 +46,7 @@ return [
     'training_records' => filter_var(env('FEATURE_TRAINING_RECORDS_ENABLED', true), FILTER_VALIDATE_BOOLEAN),
     'open_items' => filter_var(env('FEATURE_OPEN_ITEMS_ENABLED', true), FILTER_VALIDATE_BOOLEAN),
     'ai_governance' => filter_var(env('FEATURE_AI_GOVERNANCE_ENABLED', true), FILTER_VALIDATE_BOOLEAN),
+    'authority_contacts' => filter_var(env('FEATURE_AUTHORITY_CONTACTS_ENABLED', true), FILTER_VALIDATE_BOOLEAN),
 
     // Bereich „Abteilungen / Rollen" (/roles): Menüpunkt und Seiten. Routen
     // bleiben registriert und liefern 404, damit Verweise aus Onboarding und

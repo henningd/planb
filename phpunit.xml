@@ -53,6 +53,7 @@
         <env name="FEATURE_TRAINING_RECORDS_ENABLED" value="true" force="true"/>
         <env name="FEATURE_OPEN_ITEMS_ENABLED" value="true" force="true"/>
         <env name="FEATURE_AI_GOVERNANCE_ENABLED" value="true" force="true"/>
+        <env name="FEATURE_AUTHORITY_CONTACTS_ENABLED" value="true" force="true"/>
         <env name="FEATURE_BIBLE_VERSES_ENABLED" value="true" force="true"/>
         <!-- 2FA-Pflicht in der Test-Suite standardmäßig aus, damit bestehende
              Tests ohne 2FA-Setup auf geschützte Seiten kommen. Die gezielten

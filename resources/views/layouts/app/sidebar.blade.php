@@ -198,6 +198,11 @@
                             {{ __('KI-Governance') }}
                         </flux:sidebar.item>
                     @endif
+                    @if (config('features.authority_contacts') && \Illuminate\Support\Facades\Route::has('authority-contacts.index'))
+                        <flux:sidebar.item icon="building-library" :href="route('authority-contacts.index')" :current="request()->routeIs('authority-contacts.*')" wire:navigate>
+                            {{ __('Behörden & Meldestellen') }}
+                        </flux:sidebar.item>
+                    @endif
                 </flux:sidebar.group>
 
                 <flux:sidebar.group

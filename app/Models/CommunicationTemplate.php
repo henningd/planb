@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['company_id', 'scenario_id', 'name', 'audience', 'channel', 'subject', 'body', 'fallback', 'sort'])]
+#[Fillable(['company_id', 'scenario_id', 'recipient_authority_contact_id', 'name', 'audience', 'channel', 'subject', 'body', 'fallback', 'sort'])]
 class CommunicationTemplate extends Model
 {
     use BelongsToCurrentCompany, HasUuids, LogsAudit;
@@ -22,6 +22,16 @@ class CommunicationTemplate extends Model
     public function scenario(): BelongsTo
     {
         return $this->belongsTo(Scenario::class);
+    }
+
+    /**
+     * Standard-Empfänger aus den gepflegten Behördenkontakten (optional).
+     *
+     * @return BelongsTo<AuthorityContact, $this>
+     */
+    public function recipientAuthorityContact(): BelongsTo
+    {
+        return $this->belongsTo(AuthorityContact::class, 'recipient_authority_contact_id');
     }
 
     /**

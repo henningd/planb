@@ -356,6 +356,9 @@ Route::prefix('{current_team}')
             Route::livewire('ki-systeme/klassifizierung', 'pages::ai-systems.classify')->name('ai-systems.classify');
             Route::livewire('ki-systeme/{aiSystem}', 'pages::ai-systems.show')->name('ai-systems.show');
         }
+        if (config('features.authority_contacts')) {
+            Route::livewire('authority-contacts', 'pages::authority-contacts.index')->name('authority-contacts.index');
+        }
         if (config('features.training_records')) {
             Route::livewire('schulungen', 'pages::training-records.index')->name('training-records.index');
         }

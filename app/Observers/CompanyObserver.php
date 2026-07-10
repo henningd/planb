@@ -2,6 +2,7 @@
 
 namespace App\Observers;
 
+use App\Models\AuthorityContact;
 use App\Models\Company;
 use App\Models\EmergencyResourceCategory;
 use App\Models\GlobalScenario;
@@ -63,6 +64,16 @@ class CompanyObserver
         foreach (EmergencyResourceCategory::defaultNames() as $index => $name) {
             $company->emergencyResourceCategories()->create([
                 'name' => $name,
+                'sort' => $index + 1,
+            ]);
+        }
+
+        foreach (AuthorityContact::defaultsForIndustry($company->industry) as $index => $contact) {
+            $company->authorityContacts()->create([
+                'type' => $contact['type'],
+                'name' => $contact['name'],
+                'occasion' => $contact['occasion'],
+                'deadline' => $contact['deadline'],
                 'sort' => $index + 1,
             ]);
         }
