@@ -11,6 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (Schema::hasColumn('companies', 'crisis_room_primary')) {
+            return;
+        }
+
         Schema::table('companies', function (Blueprint $table) {
             $table->string('crisis_room_primary')->nullable()->after('budget_management');
             $table->string('crisis_room_secondary')->nullable()->after('crisis_room_primary');

@@ -11,6 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // Idempotent: ein abgebrochener früherer Lauf kann Spalten bereits
+        // hinzugefügt haben, ohne die Migration zu registrieren.
+        if (Schema::hasColumn('scenarios', 'alarm_chain_detector')) {
+            return;
+        }
+
         Schema::table('scenarios', function (Blueprint $table) {
             $table->text('alarm_chain_detector')->nullable()->after('trigger');
             $table->text('alarm_chain_first_contact')->nullable()->after('alarm_chain_detector');

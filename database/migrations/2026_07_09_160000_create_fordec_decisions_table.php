@@ -11,6 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // Idempotent: ein abgebrochener früherer Lauf kann die Tabelle bereits
+        // angelegt haben, ohne die Migration zu registrieren.
+        if (Schema::hasTable('fordec_decisions')) {
+            return;
+        }
+
         Schema::create('fordec_decisions', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->foreignUuid('company_id')->constrained()->cascadeOnDelete();
