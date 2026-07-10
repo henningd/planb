@@ -28,6 +28,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
     'rpo_minutes',
     'peak_times',
     'fallback_process',
+    'last_reviewed_at',
+    'next_review_at',
     'responsible_employee_id',
     'responsible_role_id',
     'notes',
@@ -83,6 +85,14 @@ class BusinessProcess extends Model
     }
 
     /**
+     * Ist die nächste geplante Überprüfung des Prozesses bereits überfällig?
+     */
+    public function isReviewOverdue(): bool
+    {
+        return $this->next_review_at !== null && $this->next_review_at->isPast();
+    }
+
+    /**
      * @return array<string, string>
      */
     protected function casts(): array
@@ -92,6 +102,8 @@ class BusinessProcess extends Model
             'mtpd_minutes' => 'integer',
             'rto_minutes' => 'integer',
             'rpo_minutes' => 'integer',
+            'last_reviewed_at' => 'date',
+            'next_review_at' => 'date',
             'sort' => 'integer',
         ];
     }

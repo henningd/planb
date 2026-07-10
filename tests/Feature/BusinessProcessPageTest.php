@@ -56,6 +56,34 @@ test('a business process can store an Ersatzprozess (fallback)', function () {
         ->toBe('Papier-Betäubungsmittelbuch, manuelle Ausgabe durch PDL');
 });
 
+test('a business process stores review dates and flags an overdue review', function () {
+    [$user, $company] = bpActingUser();
+
+    Livewire::actingAs($user)
+        ->test('pages::business-processes.index')
+        ->set('name', 'Lohnabrechnung')
+        ->set('criticality', ProcessCriticality::Hoch->value)
+        ->set('last_reviewed_at', '2026-01-15')
+        ->set('next_review_at', '2026-07-15')
+        ->call('save')
+        ->assertHasNoErrors();
+
+    $process = BusinessProcess::firstWhere('name', 'Lohnabrechnung');
+    expect($process->last_reviewed_at->toDateString())->toBe('2026-01-15')
+        ->and($process->next_review_at->toDateString())->toBe('2026-07-15');
+
+    $overdue = BusinessProcess::factory()->create([
+        'company_id' => $company->id,
+        'name' => 'Überfälliger Prozess',
+        'next_review_at' => now()->subWeek()->toDateString(),
+    ]);
+    expect($overdue->isReviewOverdue())->toBeTrue();
+
+    $this->actingAs($user)
+        ->get(route('business-processes.index'))
+        ->assertSee('überfällig');
+});
+
 test('a process can be created through the Livewire component including system assignment', function () {
     [$user, $company, $system] = bpActingUser();
 

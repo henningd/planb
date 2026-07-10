@@ -32,6 +32,10 @@ new #[Title('Geschäftsprozesse')] class extends Component {
 
     public string $fallback_process = '';
 
+    public ?string $last_reviewed_at = null;
+
+    public ?string $next_review_at = null;
+
     public string $responsible_employee_id = '';
 
     public string $responsible_role_id = '';
@@ -119,6 +123,8 @@ new #[Title('Geschäftsprozesse')] class extends Component {
         $this->rpo_hours = $this->minutesToHoursField($process->rpo_minutes);
         $this->peak_times = (string) $process->peak_times;
         $this->fallback_process = (string) $process->fallback_process;
+        $this->last_reviewed_at = $process->last_reviewed_at?->toDateString();
+        $this->next_review_at = $process->next_review_at?->toDateString();
         $this->responsible_employee_id = (string) ($process->responsible_employee_id ?? '');
         $this->responsible_role_id = (string) ($process->responsible_role_id ?? '');
         $this->notes = (string) $process->notes;
@@ -145,6 +151,8 @@ new #[Title('Geschäftsprozesse')] class extends Component {
             'rpo_hours' => ['nullable', 'numeric', 'min:0'],
             'peak_times' => ['nullable', 'string', 'max:255'],
             'fallback_process' => ['nullable', 'string', 'max:2000'],
+            'last_reviewed_at' => ['nullable', 'date'],
+            'next_review_at' => ['nullable', 'date'],
             'responsible_employee_id' => ['nullable', 'string', Rule::exists('employees', 'id')],
             'responsible_role_id' => ['nullable', 'string', Rule::exists('roles', 'id')],
             'notes' => ['nullable', 'string', 'max:2000'],
@@ -201,7 +209,7 @@ new #[Title('Geschäftsprozesse')] class extends Component {
 
     protected function resetForm(): void
     {
-        $this->reset(['editingId', 'name', 'description', 'mtpd_hours', 'rto_hours', 'rpo_hours', 'peak_times', 'fallback_process', 'responsible_employee_id', 'responsible_role_id', 'notes', 'sort', 'selectedSystems']);
+        $this->reset(['editingId', 'name', 'description', 'mtpd_hours', 'rto_hours', 'rpo_hours', 'peak_times', 'fallback_process', 'last_reviewed_at', 'next_review_at', 'responsible_employee_id', 'responsible_role_id', 'notes', 'sort', 'selectedSystems']);
         $this->criticality = ProcessCriticality::Mittel->value;
     }
 
@@ -304,6 +312,14 @@ new #[Title('Geschäftsprozesse')] class extends Component {
                         </div>
                     @endif
 
+                    @if ($process->next_review_at)
+                        <div>
+                            <flux:badge :color="$process->isReviewOverdue() ? 'red' : 'zinc'" size="sm" icon="arrow-path">
+                                {{ __('Nächste Prüfung') }}: {{ $process->next_review_at->format('d.m.Y') }}{{ $process->isReviewOverdue() ? ' ('.__('überfällig').')' : '' }}
+                            </flux:badge>
+                        </div>
+                    @endif
+
                     @if ($process->peak_times)
                         <div class="flex items-center gap-2">
                             <flux:icon.clock class="h-4 w-4 text-zinc-400" />
@@ -400,6 +416,11 @@ new #[Title('Geschäftsprozesse')] class extends Component {
             </div>
 
             <flux:textarea wire:model="fallback_process" :label="__('Ersatzprozess / Notbetrieb')" rows="2" placeholder="Wie läuft der Prozess weiter, wenn die Systeme ausfallen? (z. B. Papier-Notbetrieb, Ausweichstandort)" />
+
+            <div class="grid gap-4 sm:grid-cols-2">
+                <flux:input wire:model="last_reviewed_at" :label="__('Letzte Prüfung')" type="date" />
+                <flux:input wire:model="next_review_at" :label="__('Nächste Prüfung')" type="date" />
+            </div>
 
             <flux:textarea wire:model="notes" :label="__('Notizen')" rows="2" />
             <flux:input wire:model="sort" :label="__('Sortierung')" type="number" min="0" />
