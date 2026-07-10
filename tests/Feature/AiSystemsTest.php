@@ -8,6 +8,7 @@ use App\Models\AiSystemLogEntry;
 use App\Models\Company;
 use App\Models\User;
 use App\Support\Ai\AiRiskClassifier;
+use App\Support\Compliance\Catalog;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 
@@ -149,6 +150,21 @@ test('the classification assistant computes the class and creates a system', fun
     expect($system)->not->toBeNull()
         ->and($system->risk_class)->toBe(AiRiskClass::High)
         ->and($system->company_id)->toBe($company->id);
+});
+
+test('the compliance catalog has an ai governance check that flags issues', function () {
+    [$user, $company] = aiActingUser();
+    $this->actingAs($user);
+
+    $check = collect(Catalog::all())->firstWhere('key', 'ai.governance');
+    expect($check)->not->toBeNull();
+
+    // Kein KI-System erfasst → Bestandsaufnahme offen (Teil-Erfüllung).
+    expect($check->evaluate($company)->score)->toBeLessThan(100);
+
+    // Verbotenes System → Durchfallen.
+    AiSystem::factory()->create(['company_id' => $company->id, 'risk_class' => AiRiskClass::Prohibited]);
+    expect($check->evaluate($company->fresh())->score)->toBe(0);
 });
 
 test('ai systems are scoped to the current company', function () {

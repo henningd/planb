@@ -64,6 +64,7 @@ class ManualCatalog
 
             // Compliance & Audit
             ['category' => 'Compliance', 'slug' => 'compliance-dashboard', 'title' => 'Compliance-Dashboard', 'summary' => 'Reifegrad-Score nach BSI 200-4 / NIS2 mit 30-Tage-Trend.'],
+            ['category' => 'Compliance', 'slug' => 'ki-governance', 'title' => 'KI-Governance (EU-KI-Verordnung)', 'summary' => 'KI-System-Register, Klassifizierungs-Assistent, Protokoll/Nachweise und Prüfung nach Verordnung (EU) 2024/1689.'],
             ['category' => 'Compliance', 'slug' => 'audit-log', 'title' => 'Audit-Log', 'summary' => 'Lückenlose Änderungshistorie, Filter, CSV/PDF-Export.'],
             ['category' => 'Compliance', 'slug' => 'mandanten-export', 'title' => 'Mandanten-Archiv', 'summary' => 'Vollständiger ZIP-Export für DSGVO-Auskunft und Datenrückgabe.'],
 

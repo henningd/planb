@@ -2,10 +2,12 @@
 
 namespace App\Support\Compliance;
 
+use App\Enums\AiRiskClass;
 use App\Enums\ComplianceCategory;
 use App\Enums\CrisisRole;
 use App\Enums\RiskStatus;
 use App\Enums\SystemOwnership;
+use App\Models\AiSystem;
 use App\Models\CommunicationTemplate;
 use App\Models\Company;
 use App\Models\EmergencyResource;
@@ -45,7 +47,50 @@ class Catalog
             self::communicationTemplates(),
             self::risksHandled(),
             self::risksReviewed(),
+            self::aiGovernance(),
         ];
+    }
+
+    private static function aiGovernance(): Check
+    {
+        return new Check(
+            key: 'ai.governance',
+            label: 'KI-Systeme erfasst & eingestuft',
+            description: 'KI-Systeme sind im Register erfasst, nach EU-KI-Verordnung eingestuft (nicht „unklassifiziert"), ohne verbotene Praktiken, und ihre Prüftermine sind nicht überfällig.',
+            category: ComplianceCategory::Systeme,
+            weight: 6,
+            evaluator: function (Company $company): Result {
+                if (! config('features.ai_governance')) {
+                    return Result::notApplicable('KI-Governance deaktiviert.');
+                }
+                $action = ['label' => 'KI-Systeme öffnen', 'route' => 'ai-systems.index'];
+                $systems = AiSystem::query()->where('company_id', $company->id)->get();
+
+                if ($systems->isEmpty()) {
+                    return Result::partial(50, 'Noch keine KI-Systeme erfasst — KI-Bestandsaufnahme nach EU-KI-VO durchführen.', action: $action);
+                }
+
+                $prohibited = $systems->filter(fn (AiSystem $s) => $s->isProhibited());
+                if ($prohibited->isNotEmpty()) {
+                    return Result::fail('Verbotene KI-Praktik im Einsatz — sofort einstellen.', $prohibited->pluck('name')->take(5)->all(), $action);
+                }
+
+                $bad = $systems->filter(fn (AiSystem $s) => $s->risk_class === AiRiskClass::Unclassified || $s->isReviewOverdue());
+                $total = $systems->count();
+                $good = $total - $bad->count();
+
+                if ($bad->isEmpty()) {
+                    return Result::pass("Alle {$total} KI-Systeme sind eingestuft und die Prüfungen aktuell.", action: $action);
+                }
+
+                return Result::partial(
+                    (int) round($good / $total * 100),
+                    "{$bad->count()} von {$total} KI-Systemen sind nicht eingestuft oder haben eine überfällige Prüfung.",
+                    $bad->pluck('name')->take(5)->all(),
+                    $action,
+                );
+            },
+        );
     }
 
     private static function systemRolesCoverage(): Check

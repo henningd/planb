@@ -2,6 +2,7 @@
 
 namespace App\Support;
 
+use App\Models\AiSystem;
 use App\Models\BusinessProcess;
 use App\Models\Company;
 use App\Models\InsurancePolicy;
@@ -46,6 +47,13 @@ class AuditReportData
             'unlinkedMeasures' => PreventiveMeasure::with(['responsible', 'responsibleRole'])->where('company_id', $company->id)->whereNull('business_process_id')->orderBy('title')->get(),
             'unlinkedOpenItems' => OpenItem::with(['responsible', 'responsibleRole'])->where('company_id', $company->id)->whereNull('business_process_id')->orderBy('title')->get(),
             'insurancePolicies' => InsurancePolicy::with(['responsibleRole', 'scenarios'])->where('company_id', $company->id)->orderBy('type')->orderBy('insurer')->get(),
+            'aiSystems' => config('features.ai_governance')
+                ? AiSystem::with('responsibleRole')
+                    ->where('company_id', $company->id)
+                    ->orderByRaw("CASE risk_class WHEN 'prohibited' THEN 0 WHEN 'high' THEN 1 WHEN 'limited' THEN 2 WHEN 'minimal' THEN 3 ELSE 4 END")
+                    ->orderBy('name')
+                    ->get()
+                : collect(),
             'generatedAt' => $generatedAt ?? now(),
         ];
     }

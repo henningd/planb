@@ -2,6 +2,7 @@
 
 use App\Enums\InsuranceType;
 use App\Enums\ProcessCriticality;
+use App\Models\AiSystem;
 use App\Models\BusinessProcess;
 use App\Models\Company;
 use App\Models\InsurancePolicy;
@@ -100,4 +101,23 @@ test('the audit report includes an insurance review section', function () {
         ->assertSee('abgelaufen')
         ->assertSee('überfällig')
         ->assertSee('nicht getestet');
+});
+
+test('the audit report includes an ai systems section', function () {
+    $user = User::factory()->create();
+    $company = Company::factory()->for($user->currentTeam)->create();
+
+    AiSystem::factory()->highRisk()->create([
+        'company_id' => $company->id,
+        'name' => 'Bewerber-Ranking',
+        'next_review_at' => '2020-01-01',
+    ]);
+
+    $this->actingAs($user->fresh())
+        ->get(route('audit-report.print'))
+        ->assertOk()
+        ->assertSee('KI-Systeme (EU-KI-Verordnung)')
+        ->assertSee('Bewerber-Ranking')
+        ->assertSee('Hochrisiko')
+        ->assertSee('überfällig');
 });

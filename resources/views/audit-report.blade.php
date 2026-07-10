@@ -129,6 +129,41 @@
             <p class="empty">Es sind noch keine Geschäftsprozesse erfasst.</p>
         @endforelse
 
+        @if ($aiSystems->isNotEmpty())
+            <h2>KI-Systeme (EU-KI-Verordnung)</h2>
+            <p class="small muted">Prüfpunkte: alle KI-Systeme erfasst und eingestuft? Keine verbotenen Praktiken? Menschliche Aufsicht dokumentiert? Konformität/Registrierung bei Hochrisiko? Prüftermine aktuell?</p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>System</th>
+                        <th>Rolle</th>
+                        <th>Risikoklasse</th>
+                        <th>Aufsicht / Konformität</th>
+                        <th>Nächste Prüfung</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach ($aiSystems as $sys)
+                        <tr>
+                            <td>
+                                <strong>{{ $sys->name }}</strong>
+                                @if ($sys->provider_name)<br><span class="small">{{ $sys->provider_name }}</span>@endif
+                                @if ($sys->responsibleRole)<br><span class="small">intern: {{ $sys->responsibleRole->name }}</span>@endif
+                            </td>
+                            <td>{{ $sys->role->label() }}</td>
+                            <td>{{ $sys->risk_class->label() }}</td>
+                            <td class="small">
+                                {{ $sys->human_oversight ? 'Aufsicht dokumentiert' : 'Aufsicht offen' }}
+                                @if ($sys->conformity_status)<br>{{ $sys->conformity_status }}@endif
+                                @if ($sys->eu_db_registration)<br>EU-DB: {{ $sys->eu_db_registration }}@endif
+                            </td>
+                            <td>{{ $sys->next_review_at?->format('d.m.Y') ?? '—' }}@if ($sys->isReviewOverdue()) <strong>(überfällig)</strong>@endif</td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        @endif
+
         @if ($insurancePolicies->isNotEmpty())
             <h2>Versicherungen und Schadenabsicherung</h2>
             <p class="small muted">Prüfpunkte: Policen aktuell? Ansprechpartner hinterlegt? Schadenmeldeweg getestet? Deckung zu den Top-Risiken passend (Szenariobezug)? Nächste Prüfung der Versicherungsdaten terminiert?</p>
