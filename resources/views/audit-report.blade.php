@@ -129,6 +129,41 @@
             <p class="empty">Es sind noch keine Geschäftsprozesse erfasst.</p>
         @endforelse
 
+        @if ($insurancePolicies->isNotEmpty())
+            <h2>Versicherungen und Schadenabsicherung</h2>
+            <p class="small muted">Prüfpunkte: Policen aktuell? Ansprechpartner hinterlegt? Schadenmeldeweg getestet? Deckung zu den Top-Risiken passend (Szenariobezug)? Nächste Prüfung der Versicherungsdaten terminiert?</p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Versicherer / Art</th>
+                        <th>Laufzeit</th>
+                        <th>Deckung / SB</th>
+                        <th>Meldeweg getestet</th>
+                        <th>Nächste Prüfung</th>
+                        <th>Szenariobezug</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach ($insurancePolicies as $policy)
+                        <tr>
+                            <td>
+                                <strong>{{ $policy->insurer }}</strong><br>
+                                <span class="small">{{ $policy->type->label() }}</span>
+                                @if ($policy->contact_name || $policy->responsibleRole)
+                                    <br><span class="small">{{ $policy->contact_name ?: '—' }}@if ($policy->responsibleRole) · intern: {{ $policy->responsibleRole->name }}@endif</span>
+                                @endif
+                            </td>
+                            <td>{{ $policy->valid_until?->format('d.m.Y') ?? '—' }}@if ($policy->isExpired()) <strong>(abgelaufen)</strong>@endif</td>
+                            <td>{{ $policy->coverage_amount ?: '—' }}@if ($policy->deductible)<br><span class="small">SB {{ $policy->deductible }}</span>@endif</td>
+                            <td>{{ $policy->claims_process_tested_at?->format('d.m.Y') ?? 'nicht getestet' }}</td>
+                            <td>{{ $policy->next_review_at?->format('d.m.Y') ?? '—' }}@if ($policy->isReviewOverdue()) <strong>(überfällig)</strong>@endif</td>
+                            <td class="small">{{ $policy->scenarios->pluck('name')->join(', ') ?: '—' }}</td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        @endif
+
         @if ($unlinkedRisks->isNotEmpty() || $unlinkedMeasures->isNotEmpty() || $unlinkedOpenItems->isNotEmpty())
             <h2>Anhang: Nicht zugeordnet</h2>
             <p class="small muted">Governance-Einträge ohne Zuordnung zu einem Geschäftsprozess. Für die Vollständigkeit der BIA sollten diese noch einem Prozess zugeordnet werden.</p>

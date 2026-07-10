@@ -4,6 +4,7 @@ namespace App\Support;
 
 use App\Models\BusinessProcess;
 use App\Models\Company;
+use App\Models\InsurancePolicy;
 use App\Models\OpenItem;
 use App\Models\PreventiveMeasure;
 use App\Models\Risk;
@@ -44,6 +45,7 @@ class AuditReportData
             'unlinkedRisks' => Risk::where('company_id', $company->id)->whereNull('business_process_id')->orderBy('title')->get(),
             'unlinkedMeasures' => PreventiveMeasure::with(['responsible', 'responsibleRole'])->where('company_id', $company->id)->whereNull('business_process_id')->orderBy('title')->get(),
             'unlinkedOpenItems' => OpenItem::with(['responsible', 'responsibleRole'])->where('company_id', $company->id)->whereNull('business_process_id')->orderBy('title')->get(),
+            'insurancePolicies' => InsurancePolicy::with(['responsibleRole', 'scenarios'])->where('company_id', $company->id)->orderBy('type')->orderBy('insurer')->get(),
             'generatedAt' => $generatedAt ?? now(),
         ];
     }

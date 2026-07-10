@@ -1,8 +1,10 @@
 <?php
 
+use App\Enums\InsuranceType;
 use App\Enums\ProcessCriticality;
 use App\Models\BusinessProcess;
 use App\Models\Company;
+use App\Models\InsurancePolicy;
 use App\Models\OpenItem;
 use App\Models\PreventiveMeasure;
 use App\Models\Risk;
@@ -74,4 +76,28 @@ test('the audit report requires a company', function () {
     $this->actingAs($user)
         ->get(route('audit-report.print'))
         ->assertNotFound();
+});
+
+test('the audit report includes an insurance review section', function () {
+    $user = User::factory()->create();
+    $company = Company::factory()->for($user->currentTeam)->create();
+
+    InsurancePolicy::withoutGlobalScope(CurrentCompanyScope::class)->create([
+        'company_id' => $company->id,
+        'type' => InsuranceType::Cyber->value,
+        'insurer' => 'CyberProtect AG',
+        'coverage_amount' => '5 Mio €',
+        'valid_until' => '2020-01-01',
+        'next_review_at' => '2020-06-01',
+    ]);
+
+    $this->actingAs($user->fresh())
+        ->get(route('audit-report.print'))
+        ->assertOk()
+        ->assertSee('Versicherungen und Schadenabsicherung')
+        ->assertSee('CyberProtect AG')
+        ->assertSee('5 Mio €')
+        ->assertSee('abgelaufen')
+        ->assertSee('überfällig')
+        ->assertSee('nicht getestet');
 });
