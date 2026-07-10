@@ -399,9 +399,9 @@ new #[Title('Versicherungen')] class extends Component {
                 </flux:select>
             </div>
 
-            <div class="rounded-lg border border-amber-200 bg-amber-50/60 p-4 dark:border-amber-900 dark:bg-amber-950/20">
+            <div class="space-y-4 rounded-lg border border-amber-200 bg-amber-50/60 p-4 dark:border-amber-900 dark:bg-amber-950/20">
                 <flux:checkbox wire:model="approval_required" :label="__('Freigabe des Versicherers nötig vor Forensik / Sanierung / Ersatzbeschaffung')" />
-                <flux:textarea wire:model="approval_note" :label="__('Hinweis zur Freigabe')" rows="2" class="mt-3" placeholder="z. B. Cyber-Versicherer muss VOR Beauftragung von IT-Forensik informiert werden, sonst kein Deckungsschutz." />
+                <flux:textarea wire:model="approval_note" :label="__('Hinweis zur Freigabe')" rows="2" placeholder="z. B. Cyber-Versicherer muss VOR Beauftragung von IT-Forensik informiert werden, sonst kein Deckungsschutz." />
             </div>
 
             @if ($this->scenarios->isNotEmpty())
