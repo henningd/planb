@@ -380,7 +380,7 @@ class MobileSyncBundle
     }
 
     /**
-     * @param  list<array{system: System, level_name: ?string, rto_minutes: ?int}>  $recoveryOrder
+     * @param  list<array{system: System, level_name: ?string, level_sort: ?int, rto_minutes: ?int, depth: int, open_tasks: int, total_tasks: int}>  $recoveryOrder
      * @return array<int, array<string, mixed>>
      */
     private static function recoveryOrder(array $recoveryOrder): array
@@ -390,11 +390,27 @@ class MobileSyncBundle
 
         foreach ($recoveryOrder as $item) {
             $system = $item['system'];
+            $level = $system instanceof System ? $system->emergencyLevel : null;
+
             $rows[] = [
                 'position' => $position++,
                 'system' => $system instanceof System ? $system->name : (string) $system,
                 'rto_minutes' => $item['rto_minutes'],
                 'level' => $item['level_name'],
+                // Stufen-Infos (redundant je Zeile, damit die Apps ohne
+                // zweite Collection gruppieren können).
+                'level_sort' => $item['level_sort'] ?? null,
+                'level_description' => $level?->description,
+                'level_reaction' => $level?->reaction,
+                // Kennzahlen wie im Backend-Wiederanlauf.
+                'rpo_minutes' => $system instanceof System ? $system->rpo_minutes : null,
+                'depth' => $item['depth'] ?? 0,
+                'open_tasks' => $item['open_tasks'] ?? 0,
+                'total_tasks' => $item['total_tasks'] ?? 0,
+                'description' => $system instanceof System ? $system->description : null,
+                'fallback_process' => $system instanceof System ? $system->fallback_process : null,
+                'runbook_reference' => $system instanceof System ? $system->runbook_reference : null,
+                'location_detail' => $system instanceof System ? $system->location_detail : null,
             ];
         }
 

@@ -3,12 +3,15 @@
 use App\Enums\ScenarioRunMode;
 use App\Models\ApiToken;
 use App\Models\Company;
+use App\Models\EmergencyLevel;
 use App\Models\Location;
 use App\Models\MobileAccessCode;
 use App\Models\Scenario;
 use App\Models\ScenarioRun;
 use App\Models\ScenarioStep;
 use App\Models\ServiceProvider;
+use App\Models\System;
+use App\Models\SystemTask;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
@@ -213,4 +216,36 @@ test('scenarios carry description and the alarm chain in the bundle', function (
     $bare = collect(test()->withToken($token)->getJson('/api/mobile/sync')->json('data.scenarios'))
         ->firstWhere('title', 'Ohne Kette');
     expect($bare['alarm_chain'])->toBeNull();
+});
+
+test('the recovery order carries levels and metrics for the apps', function () {
+    [$user, $company, $token] = syncSession();
+
+    $level = EmergencyLevel::factory()->for($company)->create([
+        'name' => 'Stufe 1 (kritisch)',
+        'description' => 'Sofort wiederherstellen.',
+        'reaction' => 'Innerhalb von 60 Minuten reagieren.',
+        'sort' => 1,
+    ]);
+    $system = System::factory()->for($company)->create([
+        'name' => 'ERP',
+        'emergency_level_id' => $level->id,
+        'rto_minutes' => 120,
+        'rpo_minutes' => 30,
+        'fallback_process' => 'Papierliste im Lager',
+        'runbook_reference' => 'Wiki: ERP-Restore',
+    ]);
+    SystemTask::factory()->for($system)->for($company)->create(['title' => 'Restore starten']);
+
+    $row = collect(test()->withToken($token)->getJson('/api/mobile/sync')->json('data.recovery_order'))
+        ->firstWhere('system', 'ERP');
+
+    expect($row['level'])->toBe('Stufe 1 (kritisch)')
+        ->and($row['level_description'])->toBe('Sofort wiederherstellen.')
+        ->and($row['level_reaction'])->toBe('Innerhalb von 60 Minuten reagieren.')
+        ->and($row['rpo_minutes'])->toBe(30)
+        ->and($row['open_tasks'])->toBe(1)
+        ->and($row['total_tasks'])->toBe(1)
+        ->and($row['fallback_process'])->toBe('Papierliste im Lager')
+        ->and($row['runbook_reference'])->toBe('Wiki: ERP-Restore');
 });
