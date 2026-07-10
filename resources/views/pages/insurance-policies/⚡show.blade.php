@@ -70,13 +70,43 @@ new #[Title('Versicherung')] class extends Component {
                     <div class="flex items-start gap-3">
                         <flux:icon.document-text class="mt-0.5 h-4 w-4 shrink-0 text-zinc-400" />
                         <div>
-                            <dt class="text-xs uppercase tracking-wide text-zinc-500 dark:text-zinc-400">{{ __('Police-Nummer') }}</dt>
+                            <dt class="text-xs uppercase tracking-wide text-zinc-500 dark:text-zinc-400">{{ __('Policennummer') }}</dt>
                             <dd class="text-zinc-900 dark:text-zinc-100">{{ $policy->policy_number }}</dd>
                         </div>
                     </div>
                 @endif
-                @if (! $policy->policy_number)
-                    <flux:text class="text-sm text-zinc-500">{{ __('Keine Police-Nummer hinterlegt.') }}</flux:text>
+                @if ($policy->valid_from || $policy->valid_until)
+                    <div class="flex items-start gap-3">
+                        <flux:icon.calendar class="mt-0.5 h-4 w-4 shrink-0 text-zinc-400" />
+                        <div>
+                            <dt class="text-xs uppercase tracking-wide text-zinc-500 dark:text-zinc-400">{{ __('Laufzeit') }}</dt>
+                            <dd class="text-zinc-900 dark:text-zinc-100">
+                                {{ $policy->valid_from?->format('d.m.Y') ?? '—' }} – {{ $policy->valid_until?->format('d.m.Y') ?? '—' }}
+                                @if ($policy->isExpired()) <flux:badge color="red" size="sm">{{ __('abgelaufen') }}</flux:badge>@endif
+                            </dd>
+                        </div>
+                    </div>
+                @endif
+                @if ($policy->coverage_amount)
+                    <div class="flex items-start gap-3">
+                        <flux:icon.banknotes class="mt-0.5 h-4 w-4 shrink-0 text-zinc-400" />
+                        <div>
+                            <dt class="text-xs uppercase tracking-wide text-zinc-500 dark:text-zinc-400">{{ __('Deckungssumme') }}</dt>
+                            <dd class="text-zinc-900 dark:text-zinc-100">{{ $policy->coverage_amount }}</dd>
+                        </div>
+                    </div>
+                @endif
+                @if ($policy->responsibleRole)
+                    <div class="flex items-start gap-3">
+                        <flux:icon.identification class="mt-0.5 h-4 w-4 shrink-0 text-zinc-400" />
+                        <div>
+                            <dt class="text-xs uppercase tracking-wide text-zinc-500 dark:text-zinc-400">{{ __('Zuständige interne Rolle') }}</dt>
+                            <dd class="text-zinc-900 dark:text-zinc-100">{{ $policy->responsibleRole->name }}</dd>
+                        </div>
+                    </div>
+                @endif
+                @if (! $policy->policy_number && ! $policy->valid_from && ! $policy->valid_until && ! $policy->coverage_amount && ! $policy->responsibleRole)
+                    <flux:text class="text-sm text-zinc-500">{{ __('Keine weiteren Police-Daten hinterlegt.') }}</flux:text>
                 @endif
             </dl>
         </div>
@@ -137,7 +167,51 @@ new #[Title('Versicherung')] class extends Component {
                     <flux:text class="text-sm text-zinc-500 sm:col-span-2">{{ __('Keine Schadenbedingungen hinterlegt.') }}</flux:text>
                 @endif
             </dl>
+            @if ($policy->required_documents)
+                <div class="mt-4 border-t border-zinc-100 pt-3 dark:border-zinc-800">
+                    <div class="text-xs uppercase tracking-wide text-zinc-500 dark:text-zinc-400">{{ __('Benötigte Unterlagen im Schadenfall') }}</div>
+                    <flux:text class="mt-1 whitespace-pre-line text-sm text-zinc-800 dark:text-zinc-200">{{ $policy->required_documents }}</flux:text>
+                </div>
+            @endif
+            @if ($policy->approval_required || $policy->approval_note)
+                <div class="mt-4 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-100">
+                    <strong>{{ __('Freigabe nötig') }}:</strong>
+                    {{ $policy->approval_note ?: __('Vor Beauftragung von Forensik / Sanierung / Ersatzbeschaffung ist die Freigabe des Versicherers einzuholen.') }}
+                </div>
+            @endif
         </div>
+
+        @if ($policy->scenarios->isNotEmpty() || $policy->claims_process_tested_at || $policy->last_reviewed_at || $policy->next_review_at)
+            <div class="rounded-xl border border-zinc-200 bg-white p-6 dark:border-zinc-700 dark:bg-zinc-900 lg:col-span-2">
+                <flux:heading size="lg">{{ __('Szenariobezug, Prüfung & Nachweise') }}</flux:heading>
+                @if ($policy->scenarios->isNotEmpty())
+                    <div class="mt-4">
+                        <div class="text-xs uppercase tracking-wide text-zinc-500 dark:text-zinc-400">{{ __('Greift bei folgenden Szenarien') }}</div>
+                        <div class="mt-1 flex flex-wrap gap-1.5">
+                            @foreach ($policy->scenarios as $scenario)
+                                <flux:badge color="zinc" size="sm">{{ $scenario->name }}</flux:badge>
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
+                <dl class="mt-4 grid gap-4 text-sm sm:grid-cols-3">
+                    <div>
+                        <dt class="text-xs uppercase tracking-wide text-zinc-500 dark:text-zinc-400">{{ __('Schadenmeldeweg getestet') }}</dt>
+                        <dd class="text-zinc-900 dark:text-zinc-100">{{ $policy->claims_process_tested_at?->format('d.m.Y') ?? '—' }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs uppercase tracking-wide text-zinc-500 dark:text-zinc-400">{{ __('Letzte Prüfung') }}</dt>
+                        <dd class="text-zinc-900 dark:text-zinc-100">{{ $policy->last_reviewed_at?->format('d.m.Y') ?? '—' }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs uppercase tracking-wide text-zinc-500 dark:text-zinc-400">{{ __('Nächste Prüfung') }}</dt>
+                        <dd @class(['text-rose-600 dark:text-rose-400 font-medium' => $policy->isReviewOverdue(), 'text-zinc-900 dark:text-zinc-100' => ! $policy->isReviewOverdue()])>
+                            {{ $policy->next_review_at?->format('d.m.Y') ?? '—' }}{{ $policy->isReviewOverdue() ? ' ('.__('überfällig').')' : '' }}
+                        </dd>
+                    </div>
+                </dl>
+            </div>
+        @endif
 
         @if ($policy->notes)
             <div class="rounded-xl border border-zinc-200 bg-white p-6 dark:border-zinc-700 dark:bg-zinc-900 lg:col-span-2">
