@@ -216,11 +216,15 @@ new #[Title('Dienstleister')] class extends Component {
                 </div>
 
                 <div class="mt-4 space-y-2 text-sm">
+                    @if ($provider->sla)
+                        <div>
+                            <span class="inline-block max-w-full break-words rounded-md bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-600 dark:bg-zinc-700/60 dark:text-zinc-200">{{ $provider->sla }}</span>
+                        </div>
+                    @endif
                     @if ($provider->hotline)
-                        <div class="flex items-center gap-2">
-                            <flux:icon.phone class="h-4 w-4 text-zinc-400" />
-                            <span class="font-medium">{{ $provider->hotline }}</span>
-                            @if ($provider->sla)<flux:badge color="zinc" size="sm">{{ $provider->sla }}</flux:badge>@endif
+                        <div class="flex items-start gap-2">
+                            <flux:icon.phone class="mt-0.5 h-4 w-4 shrink-0 text-zinc-400" />
+                            <span class="min-w-0 break-words font-medium">{{ $provider->hotline }}</span>
                         </div>
                     @endif
                     @if ($provider->email)
