@@ -148,6 +148,44 @@ test('scenario show page saves metadata', function () {
     expect($scenario->fresh()->name)->toBe('Ransomware (überarbeitet)');
 });
 
+test('scenario detail page shows trigger, alarm chain and steps read-only', function () {
+    $user = User::factory()->create();
+    $company = Company::factory()->for($user->currentTeam)->create();
+
+    $scenario = Scenario::withoutGlobalScope(CurrentCompanyScope::class)
+        ->where('company_id', $company->id)->first();
+    $scenario->update([
+        'trigger' => 'Brandmeldeanlage schlägt an.',
+        'alarm_chain_detector' => 'Nachtwache am Empfang',
+        'alarm_chain_comms_approval' => 'Geschäftsführung',
+    ]);
+
+    $this->actingAs($user->fresh())
+        ->get(route('scenarios.detail', $scenario))
+        ->assertOk()
+        ->assertSee($scenario->name)
+        ->assertSee('Brandmeldeanlage schlägt an.')
+        ->assertSee('Alarmkette')
+        ->assertSee('Nachtwache am Empfang')
+        ->assertSee('Wer gibt die Kommunikation frei?')
+        ->assertSee('Bearbeiten');
+});
+
+test('scenario detail page blocks access for other tenants', function () {
+    $user = User::factory()->create();
+    $company = Company::factory()->for($user->currentTeam)->create();
+    $foreignScenario = $company->scenarios()->first();
+
+    $otherUser = User::factory()->create();
+    Company::factory()->for($otherUser->currentTeam)->create();
+
+    // The global CurrentCompanyScope filters the route-model binding to
+    // the current tenant, so foreign IDs return 404 instead of 403.
+    $this->actingAs($otherUser->fresh())
+        ->get(route('scenarios.detail', $foreignScenario))
+        ->assertNotFound();
+});
+
 test('scenario show page saves the optional alarm chain', function () {
     $user = User::factory()->create();
     $company = Company::factory()->for($user->currentTeam)->create();

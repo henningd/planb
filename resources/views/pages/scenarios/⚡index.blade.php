@@ -217,7 +217,9 @@ new #[Title('Szenarien')] class extends Component {
             <div class="flex flex-col rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
                 <div class="flex items-start justify-between gap-3">
                     <div class="flex-1">
-                        <flux:heading size="base">{{ $scenario->name }}</flux:heading>
+                        <flux:heading size="base">
+                            <a href="{{ route('scenarios.detail', $scenario) }}" wire:navigate class="hover:underline">{{ $scenario->name }}</a>
+                        </flux:heading>
                         @if ($scenario->description)
                             <flux:text class="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
                                 {{ $scenario->description }}
@@ -251,6 +253,9 @@ new #[Title('Szenarien')] class extends Component {
                     <flux:dropdown align="start">
                         <flux:button size="sm" variant="ghost" icon="ellipsis-vertical" />
                         <flux:menu>
+                            <flux:menu.item icon="eye" :href="route('scenarios.detail', $scenario)" wire:navigate>
+                                {{ __('Details ansehen') }}
+                            </flux:menu.item>
                             <flux:menu.item icon="pencil" :href="route('scenarios.show', $scenario)" wire:navigate>
                                 {{ __('Bearbeiten') }}
                             </flux:menu.item>

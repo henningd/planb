@@ -2,6 +2,8 @@
 
 Ein **Szenario** ist ein vorgefertigtes Playbook für eine typische Notlage. Statt im Ernstfall zu überlegen „was tun wir bei Ransomware?", folgen Sie der Liste der Schritte, die im Szenario hinterlegt sind.
 
+Ein Klick auf den **Namen** eines Szenarios (oder „Details ansehen" im Menü) öffnet die **Detailansicht** — eine übersichtliche, schreibgeschützte Sicht mit Auslöser, Alarmkette und allen Schritten in Reihenfolge. Zum Ändern führt von dort der Knopf „Bearbeiten".
+
 Erreichbar über die Sidebar **„Ernstfall → Szenarien"**.
 
 ## Globale und eigene Szenarien

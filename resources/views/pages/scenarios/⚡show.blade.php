@@ -165,9 +165,12 @@ new #[Title('Szenario bearbeiten')] class extends Component {
 }; ?>
 
 <section class="w-full">
-    <div class="mb-2">
+    <div class="mb-2 flex items-center justify-between gap-4">
         <flux:link :href="route('scenarios.index')" wire:navigate class="text-sm">
             ← {{ __('Alle Szenarien') }}
+        </flux:link>
+        <flux:link :href="route('scenarios.detail', $scenario)" wire:navigate class="text-sm">
+            {{ __('Detailansicht') }} →
         </flux:link>
     </div>
 

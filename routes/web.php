@@ -375,6 +375,7 @@ Route::prefix('{current_team}')
         });
 
         Route::livewire('scenarios', 'pages::scenarios.index')->name('scenarios.index');
+        Route::livewire('scenarios/{scenario}/detail', 'pages::scenarios.detail')->name('scenarios.detail');
         Route::livewire('scenarios/{scenario}', 'pages::scenarios.show')->name('scenarios.show');
         Route::livewire('scenario-runs', 'pages::scenario-runs.index')->name('scenario-runs.index');
         Route::livewire('scenario-runs/{run}', 'pages::scenario-runs.show')->name('scenario-runs.show');
