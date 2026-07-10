@@ -1,8 +1,10 @@
 <?php
 
 use App\Enums\AiRiskClass;
+use App\Enums\AiSystemLogType;
 use App\Enums\AiSystemRole;
 use App\Models\AiSystem;
+use App\Models\AiSystemLogEntry;
 use App\Models\Company;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -76,6 +78,48 @@ test('an overdue review is flagged and the obligation hint reflects the class', 
         ->get(route('ai-systems.index'))
         ->assertSee('Prüfung überfällig')
         ->assertSee('Risikomanagement');
+});
+
+test('the detail page shows the system and accepts protocol entries', function () {
+    [$user, $company] = aiActingUser();
+    $system = AiSystem::factory()->highRisk()->create([
+        'company_id' => $company->id,
+        'name' => 'Kreditscoring',
+        'purpose' => 'Bewertet die Kreditwürdigkeit von Antragstellern.',
+    ]);
+
+    $this->actingAs($user)
+        ->get(route('ai-systems.show', $system))
+        ->assertOk()
+        ->assertSee('Kreditscoring')
+        ->assertSee('Bewertet die Kreditwürdigkeit')
+        ->assertSee('Protokoll & Nachweise');
+
+    Livewire::actingAs($user)
+        ->test('pages::ai-systems.show', ['aiSystem' => $system])
+        ->set('logType', 'oversight')
+        ->set('logSummary', 'Manuelle Übersteuerung einer Ablehnung dokumentiert.')
+        ->set('logOccurredAt', '2026-07-01')
+        ->call('addLogEntry')
+        ->assertHasNoErrors();
+
+    $entry = AiSystemLogEntry::firstWhere('ai_system_id', $system->id);
+    expect($entry)->not->toBeNull()
+        ->and($entry->type)->toBe(AiSystemLogType::Oversight)
+        ->and($entry->summary)->toBe('Manuelle Übersteuerung einer Ablehnung dokumentiert.')
+        ->and($entry->user_id)->toBe($user->id);
+});
+
+test('the detail page blocks access for other tenants', function () {
+    [$user] = aiActingUser();
+
+    $otherUser = User::factory()->create();
+    $otherCompany = Company::factory()->for($otherUser->currentTeam)->create();
+    $foreign = AiSystem::factory()->create(['company_id' => $otherCompany->id]);
+
+    $this->actingAs($user)
+        ->get(route('ai-systems.show', $foreign))
+        ->assertNotFound();
 });
 
 test('ai systems are scoped to the current company', function () {

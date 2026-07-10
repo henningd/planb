@@ -353,6 +353,7 @@ Route::prefix('{current_team}')
         }
         if (config('features.ai_governance')) {
             Route::livewire('ki-systeme', 'pages::ai-systems.index')->name('ai-systems.index');
+            Route::livewire('ki-systeme/{aiSystem}', 'pages::ai-systems.show')->name('ai-systems.show');
         }
         if (config('features.training_records')) {
             Route::livewire('schulungen', 'pages::training-records.index')->name('training-records.index');

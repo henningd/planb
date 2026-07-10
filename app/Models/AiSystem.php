@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * Ein KI-System im Register nach EU-KI-Verordnung: Zweck, Rolle des
@@ -54,6 +55,14 @@ class AiSystem extends Model
     public function responsibleRole(): BelongsTo
     {
         return $this->belongsTo(Role::class, 'responsible_role_id');
+    }
+
+    /**
+     * @return HasMany<AiSystemLogEntry, $this>
+     */
+    public function logEntries(): HasMany
+    {
+        return $this->hasMany(AiSystemLogEntry::class)->orderByDesc('occurred_at')->orderByDesc('created_at');
     }
 
     public function isProhibited(): bool
