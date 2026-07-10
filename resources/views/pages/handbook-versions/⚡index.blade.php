@@ -314,13 +314,14 @@ new #[Title('Notfallhandbuch')] class extends Component {
                         </flux:button>
                         @if ($this->currentVersion->hasPdf())
                             <flux:button
-                                variant="primary"
+                                variant="filled"
                                 icon="arrow-down-tray"
                                 :href="route('handbook-versions.pdf', ['current_team' => auth()->user()->currentTeam->slug, 'version' => $this->currentVersion->id])"
                             >
-                                {{ __('PDF herunterladen') }}
+                                {{ __('Freigegebenes PDF') }}
                             </flux:button>
                         @endif
+                        <x-handbook-export-menu />
                     </div>
                 </div>
             @else
@@ -336,9 +337,12 @@ new #[Title('Notfallhandbuch')] class extends Component {
                             </flux:text>
                         </div>
                     </div>
-                    <flux:button icon="eye" variant="filled" :href="route('handbook.print')" target="_blank">
-                        {{ __('Live-Vorschau ansehen') }}
-                    </flux:button>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <flux:button icon="eye" variant="filled" :href="route('handbook.print')" target="_blank">
+                            {{ __('Live-Vorschau ansehen') }}
+                        </flux:button>
+                        <x-handbook-export-menu />
+                    </div>
                 </div>
             @endif
         </div>

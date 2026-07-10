@@ -6,6 +6,7 @@ use App\Http\Controllers\BackupController;
 use App\Http\Controllers\CrisisLogExportController;
 use App\Http\Controllers\DrillReportPdfController;
 use App\Http\Controllers\EmergencyCardController;
+use App\Http\Controllers\HandbookExportController;
 use App\Http\Controllers\HandbookVersionPdfController;
 use App\Http\Controllers\LeadConfirmationController;
 use App\Http\Controllers\PreferenceController;
@@ -454,6 +455,9 @@ Route::prefix('{current_team}')
             Route::get('handbook-versions/{version}/pdf', HandbookVersionPdfController::class)
                 ->where('version', '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}')
                 ->name('handbook-versions.pdf');
+            Route::get('handbook-export/ernstfall-handbuch.pdf', [HandbookExportController::class, 'ernstfall'])->name('handbook-export.ernstfall');
+            Route::get('handbook-export/audit-bericht.pdf', [HandbookExportController::class, 'audit'])->name('handbook-export.audit');
+            Route::get('handbook-export/vollstaendig.pdf', [HandbookExportController::class, 'full'])->name('handbook-export.full');
             Route::livewire('handbook-tests', 'pages::handbook-tests.index')->name('handbook-tests.index');
             if (config('features.compliance')) {
                 Route::livewire('compliance', 'pages::compliance.index')->name('compliance.index');

@@ -1855,6 +1855,9 @@
         <em>Im Zweifel:</em> Eher zu früh als zu spät melden; Details können nachgereicht werden.</p>
     </div>
 
+    {{-- Governance-/Audit-Kapitel (13 Pflege/Testplan, 14 Offene Punkte) nur im
+         vollständigen Export, nicht im schlanken Ernstfall-Handbuch. --}}
+    @if (($exportMode ?? 'full') !== 'ernstfall')
     {{-- ============ KAPITEL 13: PFLEGE & TESTPLAN ============ --}}
     <div class="sheet page-break">
         <div class="doc-header">
@@ -2025,6 +2028,7 @@
             </div>
         </div>
     @endif
+    @endif {{-- exportMode !== 'ernstfall' --}}
 
     <script>
         if (new URLSearchParams(window.location.search).get('print') === '1') {
