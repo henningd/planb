@@ -49,10 +49,21 @@ new #[Title('Neues Risiko')] class extends Component {
      */
     public array $mitigations = [];
 
+    public string $business_process_id = '';
+
     #[Computed]
     public function hasCompany(): bool
     {
         return Auth::user()->currentCompany() !== null;
+    }
+
+    /**
+     * @return \Illuminate\Support\Collection<int, \App\Models\BusinessProcess>
+     */
+    #[Computed]
+    public function businessProcesses(): \Illuminate\Support\Collection
+    {
+        return \App\Models\BusinessProcess::query()->orderBy('name')->get();
     }
 
     #[Computed]
@@ -121,6 +132,7 @@ new #[Title('Neues Risiko')] class extends Component {
             'treatment_strategy' => ['nullable', 'in:'.collect(RiskTreatmentStrategy::cases())->pluck('value')->implode(',')],
             'owner_user_id' => ['nullable', 'integer', 'exists:users,id'],
             'review_due_at' => ['nullable', 'date'],
+            'business_process_id' => ['nullable', 'string', 'exists:business_processes,id'],
             'system_ids' => ['array'],
             'system_ids.*' => ['uuid', 'exists:systems,id'],
             'mitigations' => ['array'],
@@ -144,6 +156,7 @@ new #[Title('Neues Risiko')] class extends Component {
                 'treatment_strategy' => $validated['treatment_strategy'],
                 'owner_user_id' => $validated['owner_user_id'],
                 'review_due_at' => $validated['review_due_at'],
+                'business_process_id' => ($validated['business_process_id'] ?? '') ?: null,
             ]);
 
             $risk->systems()->sync($validated['system_ids'] ?? []);
@@ -197,6 +210,15 @@ new #[Title('Neues Risiko')] class extends Component {
                 </flux:select>
 
                 <flux:input wire:model="review_due_at" :label="__('Nächster Review fällig')" type="date" />
+
+                @if ($this->businessProcesses->isNotEmpty())
+                    <flux:select wire:model="business_process_id" :label="__('Betroffener Geschäftsprozess')">
+                        <flux:select.option value="">{{ __('— optional —') }}</flux:select.option>
+                        @foreach ($this->businessProcesses as $process)
+                            <flux:select.option value="{{ $process->id }}">{{ $process->name }}</flux:select.option>
+                        @endforeach
+                    </flux:select>
+                @endif
             </div>
         </div>
 

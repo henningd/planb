@@ -2,6 +2,7 @@
 
 use App\Enums\OpenItemConversion;
 use App\Enums\OpenItemStatus;
+use App\Models\BusinessProcess;
 use App\Models\Company;
 use App\Models\OpenItem;
 use App\Models\Risk;
@@ -55,6 +56,24 @@ test('an open item can be created with the full clarification fields', function 
         ->and($item->risk_id)->toBe($risk->id)
         ->and($item->status)->toBe(OpenItemStatus::Open)
         ->and($item->resolved_at)->toBeNull();
+});
+
+test('an open item can be linked to a business process', function () {
+    [$user, $company] = openItemsActingUser();
+    $process = BusinessProcess::factory()->create([
+        'company_id' => $company->id,
+        'name' => 'Medikamentengabe',
+    ]);
+
+    Livewire::actingAs($user)
+        ->test('pages::open-items.index')
+        ->set('title', 'Break-Glass-Zugang ungetestet')
+        ->set('business_process_id', $process->id)
+        ->call('save')
+        ->assertHasNoErrors();
+
+    expect(OpenItem::firstWhere('title', 'Break-Glass-Zugang ungetestet')->business_process_id)
+        ->toBe($process->id);
 });
 
 test('marking an item resolved records the conversion and resolved timestamp', function () {

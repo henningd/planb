@@ -52,6 +52,8 @@ new #[Title('Präventivmaßnahmen')] class extends Component {
 
     public string $risk_id = '';
 
+    public string $business_process_id = '';
+
     public string $result_notes = '';
 
     public int $sort = 0;
@@ -133,6 +135,15 @@ new #[Title('Präventivmaßnahmen')] class extends Component {
         return Risk::query()->orderBy('title')->get();
     }
 
+    /**
+     * @return Collection<int, \App\Models\BusinessProcess>
+     */
+    #[Computed]
+    public function businessProcesses(): Collection
+    {
+        return \App\Models\BusinessProcess::query()->orderBy('name')->get();
+    }
+
     public function openCreate(): void
     {
         $this->resetForm();
@@ -162,6 +173,7 @@ new #[Title('Präventivmaßnahmen')] class extends Component {
         $this->responsible_employee_id = (string) ($m->responsible_employee_id ?? '');
         $this->responsible_role_id = (string) ($m->responsible_role_id ?? '');
         $this->risk_id = (string) ($m->risk_id ?? '');
+        $this->business_process_id = (string) ($m->business_process_id ?? '');
         $this->result_notes = (string) $m->result_notes;
         $this->sort = $m->sort;
 
@@ -190,6 +202,7 @@ new #[Title('Präventivmaßnahmen')] class extends Component {
             'responsible_employee_id' => ['nullable', 'string', Rule::exists('employees', 'id')],
             'responsible_role_id' => ['nullable', 'string', Rule::exists('roles', 'id')],
             'risk_id' => ['nullable', 'string', Rule::exists('risks', 'id')],
+            'business_process_id' => ['nullable', 'string', Rule::exists('business_processes', 'id')],
             'result_notes' => ['nullable', 'string', 'max:2000'],
             'sort' => ['integer', 'min:0'],
         ]);
@@ -288,7 +301,7 @@ new #[Title('Präventivmaßnahmen')] class extends Component {
 
     protected function resetForm(): void
     {
-        $this->reset(['editingId', 'system_id', 'title', 'description', 'interval', 'target_date', 'last_executed_at', 'next_due_at', 'responsible_employee_id', 'responsible_role_id', 'notifyResponsible', 'risk_id', 'result_notes', 'sort']);
+        $this->reset(['editingId', 'system_id', 'title', 'description', 'interval', 'target_date', 'last_executed_at', 'next_due_at', 'responsible_employee_id', 'responsible_role_id', 'notifyResponsible', 'risk_id', 'business_process_id', 'result_notes', 'sort']);
         $this->category = PreventiveMeasureCategory::Backup->value;
         $this->status = PreventiveMeasureStatus::Planned->value;
         $this->effectiveness = PreventiveMeasureEffectiveness::NotAssessed->value;
@@ -534,6 +547,15 @@ new #[Title('Präventivmaßnahmen')] class extends Component {
                         <flux:select.option value="">{{ __('—') }}</flux:select.option>
                         @foreach ($this->risks as $risk)
                             <flux:select.option value="{{ $risk->id }}">{{ $risk->title }}</flux:select.option>
+                        @endforeach
+                    </flux:select>
+                @endif
+
+                @if ($this->businessProcesses->isNotEmpty())
+                    <flux:select wire:model="business_process_id" :label="__('Verknüpfter Geschäftsprozess')">
+                        <flux:select.option value="">{{ __('—') }}</flux:select.option>
+                        @foreach ($this->businessProcesses as $process)
+                            <flux:select.option value="{{ $process->id }}">{{ $process->name }}</flux:select.option>
                         @endforeach
                     </flux:select>
                 @endif

@@ -27,6 +27,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 #[Fillable([
     'company_id',
+    'business_process_id',
     'system_id',
     'title',
     'description',
@@ -84,6 +85,14 @@ class PreventiveMeasure extends Model
     public function risk(): BelongsTo
     {
         return $this->belongsTo(Risk::class);
+    }
+
+    /**
+     * @return BelongsTo<BusinessProcess, $this>
+     */
+    public function businessProcess(): BelongsTo
+    {
+        return $this->belongsTo(BusinessProcess::class);
     }
 
     public function isRecurring(): bool

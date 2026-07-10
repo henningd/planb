@@ -4,6 +4,7 @@ use App\Enums\RiskCategory;
 use App\Enums\RiskMitigationStatus;
 use App\Enums\RiskStatus;
 use App\Models\AuditLogEntry;
+use App\Models\BusinessProcess;
 use App\Models\Company;
 use App\Models\Employee;
 use App\Models\Risk;
@@ -431,4 +432,34 @@ it('logs audit entries', function () {
 
     $entries = AuditLogEntry::where('entity_type', 'Risk')->get();
     expect($entries->pluck('action')->all())->toBe(['created', 'updated']);
+});
+
+test('a risk can be linked to a business process on creation and updated on the detail page', function () {
+    $user = User::factory()->create();
+    $company = Company::factory()->for($user->currentTeam)->create();
+    $process = BusinessProcess::factory()->create([
+        'company_id' => $company->id,
+        'name' => 'Auftragsabwicklung',
+    ]);
+
+    Livewire\Livewire::actingAs($user->fresh())
+        ->test('pages::risks.create')
+        ->set('title', 'Ausfall Warenwirtschaft')
+        ->set('category', RiskCategory::Operational->value)
+        ->set('probability', 3)
+        ->set('impact', 4)
+        ->set('status', RiskStatus::Identified->value)
+        ->set('business_process_id', $process->id)
+        ->call('save');
+
+    $risk = Risk::firstWhere('title', 'Ausfall Warenwirtschaft');
+    expect($risk->business_process_id)->toBe($process->id);
+
+    // Auf der Detailseite wieder entkoppeln.
+    Livewire\Livewire::actingAs($user->fresh())
+        ->test('pages::risks.show', ['risk' => $risk])
+        ->set('business_process_id', '')
+        ->assertHasNoErrors();
+
+    expect($risk->fresh()->business_process_id)->toBeNull();
 });

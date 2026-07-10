@@ -18,6 +18,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable([
     'company_id',
+    'business_process_id',
     'title',
     'description',
     'category',
@@ -57,6 +58,14 @@ class Risk extends Model
     public function owner(): BelongsTo
     {
         return $this->belongsTo(User::class, 'owner_user_id');
+    }
+
+    /**
+     * @return BelongsTo<BusinessProcess, $this>
+     */
+    public function businessProcess(): BelongsTo
+    {
+        return $this->belongsTo(BusinessProcess::class);
     }
 
     public function score(): int

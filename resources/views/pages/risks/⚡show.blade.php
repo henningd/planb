@@ -23,11 +23,29 @@ new #[Title('Risiko-Detail')] class extends Component {
 
     public ?string $new_mitigation_target_date = null;
 
+    public string $business_process_id = '';
+
     public function mount(Risk $risk): void
     {
         abort_if($risk->company_id !== Auth::user()->currentCompany()?->id, 403);
 
-        $this->risk = $risk->load(['systems', 'owner', 'mitigations.responsibleEmployee', 'mitigations.systemTask']);
+        $this->risk = $risk->load(['systems', 'owner', 'businessProcess', 'mitigations.responsibleEmployee', 'mitigations.systemTask']);
+        $this->business_process_id = (string) ($risk->business_process_id ?? '');
+    }
+
+    /**
+     * @return \Illuminate\Support\Collection<int, \App\Models\BusinessProcess>
+     */
+    #[Computed]
+    public function businessProcesses(): \Illuminate\Support\Collection
+    {
+        return \App\Models\BusinessProcess::query()->orderBy('name')->get();
+    }
+
+    public function updatedBusinessProcessId(string $value): void
+    {
+        $this->risk->update(['business_process_id' => $value !== '' ? $value : null]);
+        $this->risk->refresh()->load('businessProcess');
     }
 
     public function materializeAsTask(string $mitigationId): void
@@ -229,6 +247,17 @@ new #[Title('Risiko-Detail')] class extends Component {
                     <div>{{ $risk->created_at->format('d.m.Y') }}</div>
                 </div>
             </div>
+
+            @if ($this->businessProcesses->isNotEmpty())
+                <div class="mt-4 border-t border-zinc-100 pt-4 dark:border-zinc-800">
+                    <flux:select wire:model.live="business_process_id" :label="__('Betroffener Geschäftsprozess')">
+                        <flux:select.option value="">{{ __('— kein Geschäftsprozess —') }}</flux:select.option>
+                        @foreach ($this->businessProcesses as $process)
+                            <flux:select.option value="{{ $process->id }}">{{ $process->name }}</flux:select.option>
+                        @endforeach
+                    </flux:select>
+                </div>
+            @endif
         </div>
 
         <div class="rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">

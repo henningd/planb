@@ -4,6 +4,9 @@ use App\Enums\ProcessCriticality;
 use App\Enums\SystemType;
 use App\Models\BusinessProcess;
 use App\Models\Company;
+use App\Models\OpenItem;
+use App\Models\PreventiveMeasure;
+use App\Models\Risk;
 use App\Models\System;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -39,6 +42,23 @@ test('the business process page lists processes of the current company', functio
         ->assertSee('Auftragsabwicklung')
         ->assertSee('Existenzkritisch')
         ->assertSee('4 Stunden');
+});
+
+test('a business process aggregates linked risks, measures and open items', function () {
+    [$user, $company, $system] = bpActingUser();
+    $this->actingAs($user);
+
+    $process = BusinessProcess::factory()->create(['company_id' => $company->id, 'name' => 'Abrechnung']);
+
+    Risk::factory()->create(['company_id' => $company->id, 'business_process_id' => $process->id]);
+    PreventiveMeasure::factory()->create(['company_id' => $company->id, 'system_id' => $system->id, 'business_process_id' => $process->id]);
+    OpenItem::factory()->create(['company_id' => $company->id, 'business_process_id' => $process->id]);
+
+    $fresh = BusinessProcess::with(['risks', 'preventiveMeasures', 'openItems'])->findOrFail($process->id);
+
+    expect($fresh->risks)->toHaveCount(1)
+        ->and($fresh->preventiveMeasures)->toHaveCount(1)
+        ->and($fresh->openItems)->toHaveCount(1);
 });
 
 test('a business process can store an Ersatzprozess (fallback)', function () {

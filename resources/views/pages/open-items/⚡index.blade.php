@@ -24,6 +24,8 @@ new #[Title('Offene Punkte')] class extends Component {
 
     public string $risk_id = '';
 
+    public string $business_process_id = '';
+
     public string $responsible_employee_id = '';
 
     public string $responsible_role_id = '';
@@ -91,6 +93,15 @@ new #[Title('Offene Punkte')] class extends Component {
         return Risk::query()->orderBy('title')->get();
     }
 
+    /**
+     * @return Collection<int, \App\Models\BusinessProcess>
+     */
+    #[Computed]
+    public function businessProcesses(): Collection
+    {
+        return \App\Models\BusinessProcess::query()->orderBy('name')->get();
+    }
+
     public function openCreate(): void
     {
         $this->resetForm();
@@ -106,6 +117,7 @@ new #[Title('Offene Punkte')] class extends Component {
         $this->title = (string) $item->title;
         $this->relevance = (string) $item->relevance;
         $this->risk_id = (string) ($item->risk_id ?? '');
+        $this->business_process_id = (string) ($item->business_process_id ?? '');
         $this->responsible_employee_id = (string) ($item->responsible_employee_id ?? '');
         $this->responsible_role_id = (string) ($item->responsible_role_id ?? '');
         $this->due_at = $item->due_at?->toDateString();
@@ -129,6 +141,7 @@ new #[Title('Offene Punkte')] class extends Component {
             'title' => ['required', 'string', 'max:255'],
             'relevance' => ['nullable', 'string', 'max:5000'],
             'risk_id' => ['nullable', 'string', Rule::exists('risks', 'id')],
+            'business_process_id' => ['nullable', 'string', Rule::exists('business_processes', 'id')],
             'responsible_employee_id' => ['nullable', 'string', Rule::exists('employees', 'id')],
             'responsible_role_id' => ['nullable', 'string', Rule::exists('roles', 'id')],
             'due_at' => ['nullable', 'date'],
@@ -181,7 +194,7 @@ new #[Title('Offene Punkte')] class extends Component {
     protected function resetForm(): void
     {
         $this->reset([
-            'editingId', 'title', 'relevance', 'risk_id', 'responsible_employee_id',
+            'editingId', 'title', 'relevance', 'risk_id', 'business_process_id', 'responsible_employee_id',
             'responsible_role_id', 'due_at', 'review_at', 'conversion', 'resolution_note',
         ]);
         $this->status = 'open';
@@ -302,6 +315,13 @@ new #[Title('Offene Punkte')] class extends Component {
                 <flux:select.option value="">{{ __('Kein Risiko verknüpft') }}</flux:select.option>
                 @foreach ($this->risks as $risk)
                     <flux:select.option value="{{ $risk->id }}">{{ $risk->title }}</flux:select.option>
+                @endforeach
+            </flux:select>
+
+            <flux:select wire:model="business_process_id" :label="__('Verknüpfter Geschäftsprozess')">
+                <flux:select.option value="">{{ __('Kein Geschäftsprozess verknüpft') }}</flux:select.option>
+                @foreach ($this->businessProcesses as $process)
+                    <flux:select.option value="{{ $process->id }}">{{ $process->name }}</flux:select.option>
                 @endforeach
             </flux:select>
 

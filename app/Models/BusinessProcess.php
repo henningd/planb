@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * Geschäftsprozess als Gegenstand der Business-Impact-Analyse (BIA): erfasst
@@ -82,6 +83,36 @@ class BusinessProcess extends Model
     public function responsibleRole(): BelongsTo
     {
         return $this->belongsTo(Role::class, 'responsible_role_id');
+    }
+
+    /**
+     * Optional mit diesem Prozess verknüpfte Risiken.
+     *
+     * @return HasMany<Risk, $this>
+     */
+    public function risks(): HasMany
+    {
+        return $this->hasMany(Risk::class);
+    }
+
+    /**
+     * Optional mit diesem Prozess verknüpfte Präventivmaßnahmen.
+     *
+     * @return HasMany<PreventiveMeasure, $this>
+     */
+    public function preventiveMeasures(): HasMany
+    {
+        return $this->hasMany(PreventiveMeasure::class);
+    }
+
+    /**
+     * Optional mit diesem Prozess verknüpfte Offene Punkte / Klärpunkte.
+     *
+     * @return HasMany<OpenItem, $this>
+     */
+    public function openItems(): HasMany
+    {
+        return $this->hasMany(OpenItem::class);
     }
 
     /**
