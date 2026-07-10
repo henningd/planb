@@ -6,6 +6,7 @@ use App\Models\Company;
 use App\Models\EmergencyResource;
 use App\Models\Employee;
 use App\Models\OpenItem;
+use App\Models\Scenario;
 use App\Models\ServiceProvider;
 use App\Models\System;
 use App\Models\SystemTask;
@@ -170,6 +171,28 @@ test('handbook print includes the FORDEC decision guide', function () {
         ->assertSee('Was wissen wir sicher?')
         ->assertSee('Wann prüfen wir die Entscheidung erneut?')
         ->assertSee('Beispiel');
+});
+
+test('handbook print shows a scenario alarm chain when maintained', function () {
+    $user = User::factory()->create();
+    $company = Company::factory()->for($user->currentTeam)->create();
+
+    Scenario::withoutGlobalScope(CurrentCompanyScope::class)->create([
+        'company_id' => $company->id,
+        'name' => 'Brandfall nachts',
+        'trigger' => 'Brandmeldeanlage schlägt außerhalb der Geschäftszeiten an.',
+        'alarm_chain_detector' => 'Nachtwache am Empfang',
+        'alarm_chain_comms_approval' => 'Geschäftsführung',
+    ]);
+
+    $this->actingAs($user->fresh())
+        ->get(route('handbook.print'))
+        ->assertOk()
+        ->assertSee('Brandfall nachts')
+        ->assertSee('Alarmkette')
+        ->assertSee('Wer erkennt / meldet?')
+        ->assertSee('Nachtwache am Empfang')
+        ->assertSee('Wer gibt die Kommunikation frei?');
 });
 
 test('handbook print redirects with 404 when no company exists', function () {

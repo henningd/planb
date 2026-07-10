@@ -48,6 +48,20 @@ Auf der Detail-Seite Knopf **„Lauf starten"**:
 
 Wer den Lauf gestartet hat, ist im Audit-Log nachvollziehbar.
 
+## Alarmkette (optional)
+
+Pro Szenario können Sie optional eine **Alarmkette** pflegen — sieben einfache Fragen, ohne Uhrzeitlogik:
+
+1. Wer erkennt / meldet?
+2. Wer wird zuerst informiert?
+3. Welche Rolle übernimmt die Lage?
+4. Welche Dienstleister werden informiert?
+5. Muss die Geschäftsführung informiert werden?
+6. Müssen Behörden / externe Stellen informiert werden?
+7. Wer gibt die Kommunikation frei?
+
+Brauchen Sie unterschiedliche Abläufe für Tag und Nacht, legen Sie einfach **eigene Szenarien** an (z. B. „Brandfall tagsüber" und „Brandfall nachts") — das hält das System einfach. Ausgefüllte Felder erscheinen im **Handbuch-PDF direkt beim Szenario**.
+
 ## Wer was sehen darf
 
 Globale Szenarien sind für **alle Team-Mitglieder lesbar**. Eigene Szenarien anlegen, bearbeiten und Läufe starten dürfen alle. Löschen darf nur **Admin und Owner**.

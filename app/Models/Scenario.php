@@ -11,7 +11,19 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['company_id', 'name', 'description', 'trigger'])]
+#[Fillable([
+    'company_id',
+    'name',
+    'description',
+    'trigger',
+    'alarm_chain_detector',
+    'alarm_chain_first_contact',
+    'alarm_chain_lead_role',
+    'alarm_chain_providers',
+    'alarm_chain_management',
+    'alarm_chain_authorities',
+    'alarm_chain_comms_approval',
+])]
 class Scenario extends Model
 {
     /** @use HasFactory<ScenarioFactory> */

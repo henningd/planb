@@ -1592,6 +1592,25 @@
                 @if ($scenario->trigger)
                     <p><strong>Auslöser.</strong> <em>{{ $scenario->trigger }}</em></p>
                 @endif
+                @php($alarmChain = array_filter([
+                    'Wer erkennt / meldet?' => $scenario->alarm_chain_detector,
+                    'Wer wird zuerst informiert?' => $scenario->alarm_chain_first_contact,
+                    'Welche Rolle übernimmt die Lage?' => $scenario->alarm_chain_lead_role,
+                    'Welche Dienstleister werden informiert?' => $scenario->alarm_chain_providers,
+                    'Muss die Geschäftsführung informiert werden?' => $scenario->alarm_chain_management,
+                    'Müssen Behörden / externe Stellen informiert werden?' => $scenario->alarm_chain_authorities,
+                    'Wer gibt die Kommunikation frei?' => $scenario->alarm_chain_comms_approval,
+                ]))
+                @if (! empty($alarmChain))
+                    <p class="small" style="margin-bottom:1mm;"><strong>Alarmkette</strong></p>
+                    <table>
+                        <tbody>
+                            @foreach ($alarmChain as $question => $answer)
+                                <tr><td class="label">{{ $question }}</td><td>{{ $answer }}</td></tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                @endif
                 @if ($scenario->steps->isNotEmpty())
                     <table>
                         <thead>

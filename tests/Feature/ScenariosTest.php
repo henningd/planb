@@ -148,6 +148,31 @@ test('scenario show page saves metadata', function () {
     expect($scenario->fresh()->name)->toBe('Ransomware (überarbeitet)');
 });
 
+test('scenario show page saves the optional alarm chain', function () {
+    $user = User::factory()->create();
+    $company = Company::factory()->for($user->currentTeam)->create();
+
+    $scenario = Scenario::withoutGlobalScope(CurrentCompanyScope::class)
+        ->where('company_id', $company->id)->first();
+
+    Livewire\Livewire::actingAs($user->fresh())
+        ->test('pages::scenarios.show', ['scenario' => $scenario])
+        ->set('alarmDetector', 'Nachtwache am Empfang')
+        ->set('alarmFirstContact', 'Notfallbeauftragte/r (Mobil)')
+        ->set('alarmLeadRole', 'Notfallbeauftragte/r')
+        ->set('alarmProviders', 'IT-Dienstleister, Brandmeldefirma')
+        ->set('alarmManagement', 'Ja, ab Stufe Hoch')
+        ->set('alarmAuthorities', 'Feuerwehr 112')
+        ->set('alarmCommsApproval', 'Geschäftsführung')
+        ->call('saveMeta')
+        ->assertHasNoErrors();
+
+    $scenario->refresh();
+    expect($scenario->alarm_chain_detector)->toBe('Nachtwache am Empfang')
+        ->and($scenario->alarm_chain_first_contact)->toBe('Notfallbeauftragte/r (Mobil)')
+        ->and($scenario->alarm_chain_comms_approval)->toBe('Geschäftsführung');
+});
+
 test('scenario show page can add and delete steps', function () {
     $user = User::factory()->create();
     $company = Company::factory()->for($user->currentTeam)->create();

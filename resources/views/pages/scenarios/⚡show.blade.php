@@ -16,6 +16,21 @@ new #[Title('Szenario bearbeiten')] class extends Component {
 
     public string $trigger = '';
 
+    // Optionale Alarmkette (7 Freitext-Fragen, keine Uhrzeitlogik).
+    public string $alarmDetector = '';
+
+    public string $alarmFirstContact = '';
+
+    public string $alarmLeadRole = '';
+
+    public string $alarmProviders = '';
+
+    public string $alarmManagement = '';
+
+    public string $alarmAuthorities = '';
+
+    public string $alarmCommsApproval = '';
+
     public ?string $editingStepId = null;
 
     public string $stepTitle = '';
@@ -36,6 +51,13 @@ new #[Title('Szenario bearbeiten')] class extends Component {
         $this->name = $scenario->name;
         $this->description = (string) $scenario->description;
         $this->trigger = (string) $scenario->trigger;
+        $this->alarmDetector = (string) $scenario->alarm_chain_detector;
+        $this->alarmFirstContact = (string) $scenario->alarm_chain_first_contact;
+        $this->alarmLeadRole = (string) $scenario->alarm_chain_lead_role;
+        $this->alarmProviders = (string) $scenario->alarm_chain_providers;
+        $this->alarmManagement = (string) $scenario->alarm_chain_management;
+        $this->alarmAuthorities = (string) $scenario->alarm_chain_authorities;
+        $this->alarmCommsApproval = (string) $scenario->alarm_chain_comms_approval;
     }
 
     public function saveMeta(): void
@@ -44,12 +66,26 @@ new #[Title('Szenario bearbeiten')] class extends Component {
             'name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:2000'],
             'trigger' => ['nullable', 'string', 'max:2000'],
+            'alarmDetector' => ['nullable', 'string', 'max:2000'],
+            'alarmFirstContact' => ['nullable', 'string', 'max:2000'],
+            'alarmLeadRole' => ['nullable', 'string', 'max:2000'],
+            'alarmProviders' => ['nullable', 'string', 'max:2000'],
+            'alarmManagement' => ['nullable', 'string', 'max:2000'],
+            'alarmAuthorities' => ['nullable', 'string', 'max:2000'],
+            'alarmCommsApproval' => ['nullable', 'string', 'max:2000'],
         ]);
 
         $this->scenario->update([
             'name' => $validated['name'],
             'description' => $validated['description'] ?: null,
             'trigger' => $validated['trigger'] ?: null,
+            'alarm_chain_detector' => $validated['alarmDetector'] ?: null,
+            'alarm_chain_first_contact' => $validated['alarmFirstContact'] ?: null,
+            'alarm_chain_lead_role' => $validated['alarmLeadRole'] ?: null,
+            'alarm_chain_providers' => $validated['alarmProviders'] ?: null,
+            'alarm_chain_management' => $validated['alarmManagement'] ?: null,
+            'alarm_chain_authorities' => $validated['alarmAuthorities'] ?: null,
+            'alarm_chain_comms_approval' => $validated['alarmCommsApproval'] ?: null,
         ]);
 
         Flux::toast(variant: 'success', text: __('Szenario gespeichert.'));
@@ -145,6 +181,22 @@ new #[Title('Szenario bearbeiten')] class extends Component {
             <flux:input wire:model="name" :label="__('Name')" required />
             <flux:textarea wire:model="description" :label="__('Beschreibung')" rows="3" />
             <flux:textarea wire:model="trigger" :label="__('Auslöser')" rows="2" placeholder="{{ __('Woran erkennen Sie, dass dieses Szenario zutrifft?') }}" />
+
+            <flux:fieldset>
+                <flux:legend>{{ __('Alarmkette (optional)') }}</flux:legend>
+                <flux:text class="mb-3 text-sm text-zinc-500 dark:text-zinc-400">
+                    {{ __('Wer wird in welcher Reihenfolge informiert? Optional pflegbar. Für abweichende Abläufe (z. B. Tag/Nacht) legen Sie einfach ein eigenes Szenario an. Ausgefüllte Felder erscheinen im Handbuch direkt beim Szenario.') }}
+                </flux:text>
+                <div class="space-y-3">
+                    <flux:input wire:model="alarmDetector" :label="__('1. Wer erkennt / meldet?')" />
+                    <flux:input wire:model="alarmFirstContact" :label="__('2. Wer wird zuerst informiert?')" />
+                    <flux:input wire:model="alarmLeadRole" :label="__('3. Welche Rolle übernimmt die Lage?')" />
+                    <flux:input wire:model="alarmProviders" :label="__('4. Welche Dienstleister werden informiert?')" />
+                    <flux:input wire:model="alarmManagement" :label="__('5. Muss die Geschäftsführung informiert werden?')" />
+                    <flux:input wire:model="alarmAuthorities" :label="__('6. Müssen Behörden / externe Stellen informiert werden?')" />
+                    <flux:input wire:model="alarmCommsApproval" :label="__('7. Wer gibt die Kommunikation frei?')" />
+                </div>
+            </flux:fieldset>
 
             <div class="flex items-center justify-end gap-2 border-t border-zinc-100 pt-4 dark:border-zinc-800">
                 <flux:button variant="primary" type="submit">
