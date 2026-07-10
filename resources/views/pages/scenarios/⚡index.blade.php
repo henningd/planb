@@ -226,7 +226,21 @@ new #[Title('Szenarien')] class extends Component {
                             </flux:text>
                         @endif
                     </div>
-                    <flux:badge color="zinc" size="sm">{{ $scenario->steps->count() }} {{ __('Schritte') }}</flux:badge>
+                    <flux:dropdown align="end">
+                        <flux:button size="sm" variant="ghost" icon="ellipsis-vertical" />
+                        <flux:menu>
+                            <flux:menu.item icon="eye" :href="route('scenarios.detail', $scenario)" wire:navigate>
+                                {{ __('Details ansehen') }}
+                            </flux:menu.item>
+                            <flux:menu.item icon="pencil" :href="route('scenarios.show', $scenario)" wire:navigate>
+                                {{ __('Bearbeiten') }}
+                            </flux:menu.item>
+                            <flux:menu.separator />
+                            <flux:menu.item icon="trash" variant="danger" wire:click="confirmDelete('{{ $scenario->id }}')">
+                                {{ __('Löschen') }}
+                            </flux:menu.item>
+                        </flux:menu>
+                    </flux:dropdown>
                 </div>
 
                 @if ($scenario->trigger)
@@ -250,21 +264,7 @@ new #[Title('Szenarien')] class extends Component {
                 </ol>
 
                 <div class="mt-5 flex items-center justify-between gap-2 border-t border-zinc-100 pt-4 dark:border-zinc-800">
-                    <flux:dropdown align="start">
-                        <flux:button size="sm" variant="ghost" icon="ellipsis-vertical" />
-                        <flux:menu>
-                            <flux:menu.item icon="eye" :href="route('scenarios.detail', $scenario)" wire:navigate>
-                                {{ __('Details ansehen') }}
-                            </flux:menu.item>
-                            <flux:menu.item icon="pencil" :href="route('scenarios.show', $scenario)" wire:navigate>
-                                {{ __('Bearbeiten') }}
-                            </flux:menu.item>
-                            <flux:menu.separator />
-                            <flux:menu.item icon="trash" variant="danger" wire:click="confirmDelete('{{ $scenario->id }}')">
-                                {{ __('Löschen') }}
-                            </flux:menu.item>
-                        </flux:menu>
-                    </flux:dropdown>
+                    <flux:badge color="zinc" size="sm">{{ $scenario->steps->count() }} {{ __('Schritte') }}</flux:badge>
                     <flux:button size="sm" variant="primary" wire:click="openStart('{{ $scenario->id }}')" icon="play">
                         {{ __('Starten') }}
                     </flux:button>
