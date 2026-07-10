@@ -248,5 +248,6 @@ test('the recovery order carries levels and metrics for the apps', function () {
         ->and($row['total_tasks'])->toBe(1)
         ->and($row['fallback_process'])->toBe('Papierliste im Lager')
         ->and($row['runbook_reference'])->toBe('Wiki: ERP-Restore')
-        ->and($row['tasks'])->toBe([['title' => 'Restore starten', 'done' => false]]);
+        ->and($row['tasks'])->toBe([['title' => 'Restore starten', 'done' => false]])
+        ->and($row['stage'])->toBe(1);
 });

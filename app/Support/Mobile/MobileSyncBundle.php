@@ -27,6 +27,7 @@ use App\Models\System;
 use App\Models\SystemTask;
 use App\Scopes\CurrentCompanyScope;
 use App\Support\Incident\Cockpit;
+use App\Support\RecoveryOrder;
 use Illuminate\Support\Collection;
 
 /**
@@ -389,6 +390,21 @@ class MobileSyncBundle
         $rows = [];
         $position = 1;
 
+        // Abhängigkeits-Stufen wie auf /systems/recovery: Stufe 1 kann sofort
+        // starten, Stufe n erst, wenn Stufe n-1 läuft. Gleiche Quelle wie die
+        // Backend-Seite (RecoveryOrder::compute), damit App und Web identisch sind.
+        $systems = collect($recoveryOrder)
+            ->map(fn (array $item) => $item['system'])
+            ->filter(fn ($system) => $system instanceof System)
+            ->values();
+        $plan = RecoveryOrder::compute($systems);
+        $stageBySystem = [];
+        foreach ($plan['stages'] as $index => $stageSystems) {
+            foreach ($stageSystems as $stageSystem) {
+                $stageBySystem[$stageSystem->id] = $index + 1;
+            }
+        }
+
         // Aufgaben aller Systeme in einem Rutsch laden (statt je Zeile).
         $systemIds = collect($recoveryOrder)
             ->map(fn (array $item) => $item['system'] instanceof System ? $item['system']->id : null)
@@ -416,6 +432,8 @@ class MobileSyncBundle
                 'level_reaction' => $level?->reaction,
                 // Kennzahlen wie im Backend-Wiederanlauf.
                 'rpo_minutes' => $system instanceof System ? $system->rpo_minutes : null,
+                // 1-basierte Start-Stufe (null bei zyklischen Abhängigkeiten).
+                'stage' => $system instanceof System ? ($stageBySystem[$system->id] ?? null) : null,
                 'depth' => $item['depth'] ?? 0,
                 'open_tasks' => $item['open_tasks'] ?? 0,
                 'total_tasks' => $item['total_tasks'] ?? 0,
