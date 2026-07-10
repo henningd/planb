@@ -1317,10 +1317,10 @@
                     @foreach ($company->emergencyResources as $r)
                         <tr>
                             <td>
-                                <strong>{{ $r->name ?: $r->type->label() }}</strong>
+                                <strong>{{ $r->name ?: $r->categoryLabel() }}</strong>
                                 @if ($r->description)<div class="small">{{ $r->description }}</div>@endif
                             </td>
-                            <td>{{ $r->type->label() }}</td>
+                            <td>{{ $r->categoryLabel() }}</td>
                             <td>
                                 @if ($r->available_budget !== null)
                                     {{ number_format($r->available_budget, 0, ',', '.') }} €

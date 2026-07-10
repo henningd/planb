@@ -10,9 +10,11 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 #[Fillable([
     'company_id',
+    'category_id',
     'type',
     'name',
     'description',
@@ -32,7 +34,24 @@ class EmergencyResource extends Model
 
     public function auditLabel(): string
     {
-        return $this->name ?? $this->type->label();
+        return $this->name ?? $this->category?->name ?? $this->type?->label() ?? 'Notfallressource';
+    }
+
+    /**
+     * @return BelongsTo<EmergencyResourceCategory, $this>
+     */
+    public function category(): BelongsTo
+    {
+        return $this->belongsTo(EmergencyResourceCategory::class);
+    }
+
+    /**
+     * Anzuzeigende Kategorie-Bezeichnung (frei konfigurierte Kategorie, sonst
+     * der alte Enum-Typ als Fallback für Altdaten).
+     */
+    public function categoryLabel(): string
+    {
+        return $this->category?->name ?? $this->type?->label() ?? '—';
     }
 
     public function isOverdue(): bool

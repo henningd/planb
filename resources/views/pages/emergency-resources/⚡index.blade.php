@@ -1,7 +1,7 @@
 <?php
 
-use App\Enums\EmergencyResourceType;
 use App\Models\EmergencyResource;
+use App\Models\EmergencyResourceCategory;
 use Flux\Flux;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Auth;
@@ -13,7 +13,7 @@ use Livewire\Component;
 new #[Title('Sofortmittel')] class extends Component {
     public ?string $editingId = null;
 
-    public string $type = '';
+    public string $category_id = '';
 
     public string $name = '';
 
@@ -33,13 +33,13 @@ new #[Title('Sofortmittel')] class extends Component {
 
     public int $sort = 0;
 
-    public string $filterType = '';
+    public string $filterCategory = '';
 
     public ?string $deletingId = null;
 
     public function mount(): void
     {
-        $this->type = EmergencyResourceType::EmergencyCash->value;
+        $this->category_id = (string) ($this->categories()->first()?->id ?? '');
     }
 
     #[Computed]
@@ -49,14 +49,23 @@ new #[Title('Sofortmittel')] class extends Component {
     }
 
     /**
+     * @return Collection<int, EmergencyResourceCategory>
+     */
+    #[Computed]
+    public function categories(): Collection
+    {
+        return EmergencyResourceCategory::orderBy('sort')->orderBy('name')->get();
+    }
+
+    /**
      * @return Collection<int, EmergencyResource>
      */
     #[Computed]
     public function resources(): Collection
     {
         return EmergencyResource::query()
-            ->when($this->filterType !== '', fn ($q) => $q->where('type', $this->filterType))
-            ->orderBy('type')
+            ->with('category')
+            ->when($this->filterCategory !== '', fn ($q) => $q->where('category_id', $this->filterCategory))
             ->orderBy('sort')
             ->orderBy('name')
             ->get();
@@ -73,7 +82,7 @@ new #[Title('Sofortmittel')] class extends Component {
         $r = EmergencyResource::findOrFail($id);
 
         $this->editingId = $r->id;
-        $this->type = $r->type->value;
+        $this->category_id = (string) ($r->category_id ?? '');
         $this->name = (string) $r->name;
         $this->description = (string) $r->description;
         $this->location = (string) $r->location;
@@ -96,7 +105,7 @@ new #[Title('Sofortmittel')] class extends Component {
         }
 
         $validated = $this->validate([
-            'type' => ['required', 'string', Rule::in(collect(EmergencyResourceType::cases())->pluck('value'))],
+            'category_id' => ['required', 'string', Rule::exists('emergency_resource_categories', 'id')->where('company_id', Auth::user()->currentCompany()?->id)],
             'name' => ['nullable', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:2000'],
             'location' => ['nullable', 'string', 'max:255'],
@@ -143,15 +152,7 @@ new #[Title('Sofortmittel')] class extends Component {
     protected function resetForm(): void
     {
         $this->reset(['editingId', 'name', 'description', 'location', 'access_holders', 'available_budget', 'last_check_at', 'next_check_at', 'notes', 'sort']);
-        $this->type = EmergencyResourceType::EmergencyCash->value;
-    }
-
-    /**
-     * @return array<int, array{value: string, label: string}>
-     */
-    public function typeOptions(): array
-    {
-        return EmergencyResourceType::options();
+        $this->category_id = (string) ($this->categories()->first()?->id ?? '');
     }
 }; ?>
 
@@ -176,13 +177,16 @@ new #[Title('Sofortmittel')] class extends Component {
     @endunless
 
     @if ($this->hasCompany)
-        <div class="mb-4 flex flex-wrap gap-3">
-            <flux:select wire:model.live="filterType" placeholder="{{ __('Alle Typen') }}" class="max-w-xs">
-                <flux:select.option value="">{{ __('Alle Typen') }}</flux:select.option>
-                @foreach ($this->typeOptions() as $option)
-                    <flux:select.option value="{{ $option['value'] }}">{{ $option['label'] }}</flux:select.option>
+        <div class="mb-4 flex flex-wrap items-center gap-3">
+            <flux:select wire:model.live="filterCategory" placeholder="{{ __('Alle Kategorien') }}" class="max-w-xs">
+                <flux:select.option value="">{{ __('Alle Kategorien') }}</flux:select.option>
+                @foreach ($this->categories as $category)
+                    <flux:select.option value="{{ $category->id }}">{{ $category->name }}</flux:select.option>
                 @endforeach
             </flux:select>
+            <flux:link :href="route('emergency-resource-categories.index')" wire:navigate class="text-sm">
+                {{ __('Kategorien verwalten') }} →
+            </flux:link>
         </div>
     @endif
 
@@ -191,9 +195,9 @@ new #[Title('Sofortmittel')] class extends Component {
             <div id="resource-{{ $resource->id }}" wire:key="resource-{{ $resource->id }}" class="flex flex-col rounded-xl border border-zinc-200 bg-white p-5 scroll-mt-24 [&:target]:ring-2 [&:target]:ring-sky-400 dark:border-zinc-700 dark:bg-zinc-900">
                 <div class="flex items-start justify-between gap-2">
                     <div class="min-w-0 flex-1">
-                        <flux:heading size="base">{{ $resource->name ?: $resource->type->label() }}</flux:heading>
+                        <flux:heading size="base">{{ $resource->name ?: $resource->categoryLabel() }}</flux:heading>
                         <div class="mt-1 flex flex-wrap items-center gap-1.5">
-                            <flux:badge color="zinc" size="sm">{{ $resource->type->label() }}</flux:badge>
+                            <flux:badge color="zinc" size="sm">{{ $resource->categoryLabel() }}</flux:badge>
                             @if ($resource->isOverdue())
                                 <flux:badge color="red" size="sm">{{ __('Prüfung überfällig') }}</flux:badge>
                             @endif
@@ -270,9 +274,10 @@ new #[Title('Sofortmittel')] class extends Component {
                 <flux:subheading>{{ __('Was steht bereit, wo, wer hat Zugriff, wann wurde es zuletzt geprüft.') }}</flux:subheading>
             </div>
 
-            <flux:select wire:model="type" :label="__('Typ')" required>
-                @foreach ($this->typeOptions() as $option)
-                    <flux:select.option value="{{ $option['value'] }}">{{ $option['label'] }}</flux:select.option>
+            <flux:select wire:model="category_id" :label="__('Kategorie')" required>
+                <flux:select.option value="">{{ __('Bitte wählen') }}</flux:select.option>
+                @foreach ($this->categories as $category)
+                    <flux:select.option value="{{ $category->id }}">{{ $category->name }}</flux:select.option>
                 @endforeach
             </flux:select>
 

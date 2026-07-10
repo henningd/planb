@@ -328,6 +328,7 @@ Route::prefix('{current_team}')
                 ->name('contracts.show');
         }
         Route::livewire('emergency-resources', 'pages::emergency-resources.index')->name('emergency-resources.index');
+        Route::livewire('notfallressourcen-kategorien', 'pages::emergency-resource-categories.index')->name('emergency-resource-categories.index');
         Route::livewire('fallback-processes', 'pages::fallback-processes.index')->name('fallback-processes.index');
         if (config('features.preventive_measures')) {
             Route::livewire('praevention', 'pages::preventive-measures.index')->name('preventive-measures.index');

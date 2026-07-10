@@ -3,6 +3,7 @@
 namespace App\Observers;
 
 use App\Models\Company;
+use App\Models\EmergencyResourceCategory;
 use App\Models\GlobalScenario;
 use App\Support\Audit\AccountAudit;
 use App\Support\SystemRoleProvisioner;
@@ -55,6 +56,13 @@ class CompanyObserver
         foreach (self::DEFAULT_SYSTEM_PRIORITIES as $index => $priority) {
             $company->systemPriorities()->create([
                 ...$priority,
+                'sort' => $index + 1,
+            ]);
+        }
+
+        foreach (EmergencyResourceCategory::defaultNames() as $index => $name) {
+            $company->emergencyResourceCategories()->create([
+                'name' => $name,
                 'sort' => $index + 1,
             ]);
         }

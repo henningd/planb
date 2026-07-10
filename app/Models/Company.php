@@ -168,6 +168,14 @@ class Company extends Model
     }
 
     /**
+     * @return HasMany<EmergencyResourceCategory, $this>
+     */
+    public function emergencyResourceCategories(): HasMany
+    {
+        return $this->hasMany(EmergencyResourceCategory::class)->orderBy('sort')->orderBy('name');
+    }
+
+    /**
      * @return HasMany<FallbackProcess, $this>
      */
     public function fallbackProcesses(): HasMany

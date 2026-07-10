@@ -13,7 +13,9 @@ Sofortmittel sind die **physischen Reserven**, die Sie im Ernstfall sofort brauc
 
 Erreichbar über die Sidebar **„Notfallhandbuch → Sofortmittel"**.
 
-Sie legen Ressourcen frei konfigurierbar an (Name, Aufbewahrungsort, Zugriffsberechtigte, Budget, Prüftermine) und ordnen jeder eine **Kategorie** zu. Die Kategorien sind bewusst breit und auf IT- und Notbetrieb ausgerichtet — u. a. Notfallkasse/Kreditkarte, Ersatzhardware, Kommunikationsmittel, LTE-/5G-Backup, Papier-Notfallordner, Notfallzugänge/Break-Glass, Schlüssel/Zutritt, Ausweicharbeitsplatz, Notebook-Pool, Ersatzdrucker, Strom/USV/Akkus, Beleuchtung/Powerbanks, Evakuierungsmaterial, Sicherheitsausstattung, Verbrauchsmaterial und Sonstige. Über die Kategorie lässt sich filtern. Alle Ressourcen erscheinen im Handbuch-PDF unter **„8.3 Verfügbare Mittel und Notfallressourcen"**.
+Sie legen Ressourcen frei konfigurierbar an (Name, Aufbewahrungsort, Zugriffsberechtigte, Budget, Prüftermine) und ordnen jeder eine **Kategorie** zu.
+
+Die **Kategorien sind pro Firma frei konfigurierbar**: Unter **Stammdaten → „Notfall-Kategorien"** legen Sie eigene Kategorien an, benennen sie um oder löschen sie. Zum Start ist eine breite, auf IT- und Notbetrieb ausgerichtete Standardliste hinterlegt (u. a. Notfallkasse/Kreditkarte, Ersatzhardware, Kommunikationsmittel, LTE-/5G-Backup, Papier-Notfallordner, Notfallzugänge/Break-Glass, Schlüssel/Zutritt, Ausweicharbeitsplatz, Notebook-Pool, Ersatzdrucker, Strom/USV/Akkus, Beleuchtung/Powerbanks, Evakuierungsmaterial, Sicherheitsausstattung, Verbrauchsmaterial, Sonstige). Über die Kategorie lässt sich filtern. Alle Ressourcen erscheinen im Handbuch-PDF unter **„8.3 Verfügbare Mittel und Notfallressourcen"**.
 
 ## Eine Ressource anlegen
 

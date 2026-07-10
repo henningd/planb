@@ -42,7 +42,7 @@ class HandbookData
             'insurancePolicies',
             'handbookVersions.changedBy',
             'handbookVersions.approvedBy',
-            'emergencyResources',
+            'emergencyResources.category',
             'fallbackProcesses.responsibleRole',
             'fallbackProcesses.responsibleEmployee',
             'fallbackProcesses.systems',

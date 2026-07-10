@@ -109,6 +109,9 @@
                             {{ __('Versicherungen') }}
                         </flux:sidebar.item>
                     @endif
+                    <flux:sidebar.item icon="tag" :href="route('emergency-resource-categories.index')" :current="request()->routeIs('emergency-resource-categories.*')" wire:navigate>
+                        {{ __('Notfall-Kategorien') }}
+                    </flux:sidebar.item>
                 </flux:sidebar.group>
 
                 <flux:sidebar.group
