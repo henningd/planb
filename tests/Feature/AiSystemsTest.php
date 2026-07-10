@@ -7,6 +7,7 @@ use App\Models\AiSystem;
 use App\Models\AiSystemLogEntry;
 use App\Models\Company;
 use App\Models\User;
+use App\Support\Ai\AiRiskClassifier;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 
@@ -120,6 +121,34 @@ test('the detail page blocks access for other tenants', function () {
     $this->actingAs($user)
         ->get(route('ai-systems.show', $foreign))
         ->assertNotFound();
+});
+
+test('the risk classifier follows the decision tree order', function () {
+    $classify = fn (array $a) => AiRiskClassifier::classify($a);
+
+    expect($classify(['prohibited' => true, 'high_risk_area' => true]))->toBe(AiRiskClass::Prohibited)
+        ->and($classify(['high_risk_area' => true]))->toBe(AiRiskClass::High)
+        ->and($classify(['safety_component' => true]))->toBe(AiRiskClass::High)
+        ->and($classify(['transparency' => true]))->toBe(AiRiskClass::Limited)
+        ->and($classify([]))->toBe(AiRiskClass::Minimal);
+});
+
+test('the classification assistant computes the class and creates a system', function () {
+    [$user, $company] = aiActingUser();
+
+    Livewire::actingAs($user)
+        ->test('pages::ai-systems.classify')
+        ->set('high_risk_area', true)
+        ->assertSee('Hochrisiko')
+        ->set('systemName', 'Bewerber-Ranking')
+        ->call('saveAsSystem')
+        ->assertHasNoErrors()
+        ->assertRedirect();
+
+    $system = AiSystem::firstWhere('name', 'Bewerber-Ranking');
+    expect($system)->not->toBeNull()
+        ->and($system->risk_class)->toBe(AiRiskClass::High)
+        ->and($system->company_id)->toBe($company->id);
 });
 
 test('ai systems are scoped to the current company', function () {

@@ -189,9 +189,14 @@ new #[Title('KI-Governance')] class extends Component {
             </flux:subheading>
         </div>
 
-        <flux:button variant="primary" icon="plus" wire:click="openCreate" :disabled="! $this->hasCompany">
-            {{ __('Neues KI-System') }}
-        </flux:button>
+        <div class="flex items-center gap-2">
+            <flux:button variant="filled" icon="scale" :href="route('ai-systems.classify')" wire:navigate :disabled="! $this->hasCompany">
+                {{ __('Klassifizierung') }}
+            </flux:button>
+            <flux:button variant="primary" icon="plus" wire:click="openCreate" :disabled="! $this->hasCompany">
+                {{ __('Neues KI-System') }}
+            </flux:button>
+        </div>
     </div>
 
     @unless ($this->hasCompany)
