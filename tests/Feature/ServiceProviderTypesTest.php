@@ -51,3 +51,25 @@ test('invalid service provider type is rejected', function () {
         ->call('save')
         ->assertHasErrors(['type']);
 });
+
+test('new cross-industry service provider types are saveable', function () {
+    $user = User::factory()->create();
+    Company::factory()->for($user->currentTeam)->create();
+
+    Livewire\Livewire::actingAs($user->fresh())
+        ->test('pages::service-providers.index')
+        ->set('name', 'Brandmelde-Technik GmbH')
+        ->set('type', ServiceProviderType::FireProtection->value)
+        ->call('save')
+        ->assertHasNoErrors();
+
+    expect(ServiceProvider::where('name', 'Brandmelde-Technik GmbH')->firstOrFail()->type)
+        ->toBe(ServiceProviderType::FireProtection);
+});
+
+test('the type catalogue is broad and the generic authority counts as authority', function () {
+    expect(count(ServiceProviderType::cases()))->toBeGreaterThanOrEqual(20)
+        ->and(ServiceProviderType::Authority->isAuthority())->toBeTrue()
+        ->and(ServiceProviderType::FireProtection->isAuthority())->toBeFalse()
+        ->and(ServiceProviderType::Hvac->label())->toBe('Heizung / Klima / Lüftung');
+});

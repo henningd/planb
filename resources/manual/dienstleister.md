@@ -12,6 +12,8 @@ Dienstleister sind die externen Partner, die im Ernstfall **eine Hotline haben u
 
 Erreichbar über die Sidebar **„Notfallhandbuch → Dienstleister"**.
 
+Jeder Dienstleister bekommt eine **Kategorie**. Diese sind bewusst branchenübergreifend — von IT-Systemhaus/MSP, Cloud/SaaS, Cyberversicherung und IT-Forensik über Gebäudetechnik, Heizung/Klima/Lüftung, Aufzugtechnik, Brandschutz, Sicherheitsdienst und Maschinenservice bis zu Logistik/Spedition, kritischen Zulieferern, Reinigung/Hygiene, Catering, Versicherung, Rechtsberatung/Datenschutz und Behörden/Meldestellen. So passt das Notfallhandbuch für IT genauso wie für Pflege, Industrie oder Kommunen. Über die Kategorie lässt sich die Liste filtern.
+
 ## Einen Dienstleister anlegen
 
 Knopf **„Neuer Dienstleister"**. Pflichtangaben:
