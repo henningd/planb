@@ -20,6 +20,7 @@ use App\Models\Role;
 use App\Models\Scenario;
 use App\Models\System;
 use App\Scopes\CurrentCompanyScope;
+use App\Support\AuditReportData;
 use App\Support\CurrentCompany;
 use App\Support\HandbookData;
 use App\Support\Manual\ManualCatalog;
@@ -552,6 +553,15 @@ Route::prefix('{current_team}')
 
             return view('handbook-print', HandbookData::forCompany($company));
         })->name('handbook.print');
+
+        if (config('features.bia')) {
+            Route::get('audit-bericht', function () {
+                $company = CurrentCompany::resolve();
+                abort_unless($company, 404);
+
+                return view('audit-report', AuditReportData::forCompany($company));
+            })->name('audit-report.print');
+        }
 
         Route::get('systems/{system}/sticker', function (string $currentTeam, string $system) {
             $systemModel = System::with(['priority', 'serviceProviders', 'dependencies'])

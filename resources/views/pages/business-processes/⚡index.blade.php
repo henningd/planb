@@ -247,9 +247,16 @@ new #[Title('Geschäftsprozesse')] class extends Component {
             </flux:subheading>
         </div>
 
-        <flux:button variant="primary" icon="plus" wire:click="openCreate" :disabled="! $this->hasCompany">
-            {{ __('Neuer Prozess') }}
-        </flux:button>
+        <div class="flex items-center gap-2">
+            @if ($this->hasCompany && Route::has('audit-report.print'))
+                <flux:button variant="filled" icon="document-arrow-down" :href="route('audit-report.print')" target="_blank">
+                    {{ __('Audit-Bericht (PDF)') }}
+                </flux:button>
+            @endif
+            <flux:button variant="primary" icon="plus" wire:click="openCreate" :disabled="! $this->hasCompany">
+                {{ __('Neuer Prozess') }}
+            </flux:button>
+        </div>
     </div>
 
     @unless ($this->hasCompany)
