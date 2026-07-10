@@ -24,6 +24,7 @@ use App\Models\ScenarioRunAcknowledgement;
 use App\Models\ScenarioRunStep;
 use App\Models\ServiceProvider;
 use App\Models\System;
+use App\Models\SystemTask;
 use App\Scopes\CurrentCompanyScope;
 use App\Support\Incident\Cockpit;
 use Illuminate\Support\Collection;
@@ -388,9 +389,20 @@ class MobileSyncBundle
         $rows = [];
         $position = 1;
 
+        // Aufgaben aller Systeme in einem Rutsch laden (statt je Zeile).
+        $systemIds = collect($recoveryOrder)
+            ->map(fn (array $item) => $item['system'] instanceof System ? $item['system']->id : null)
+            ->filter();
+        $tasksBySystem = SystemTask::query()
+            ->whereIn('system_id', $systemIds)
+            ->orderBy('created_at')
+            ->get()
+            ->groupBy('system_id');
+
         foreach ($recoveryOrder as $item) {
             $system = $item['system'];
             $level = $system instanceof System ? $system->emergencyLevel : null;
+            $tasks = $system instanceof System ? ($tasksBySystem->get($system->id) ?? collect()) : collect();
 
             $rows[] = [
                 'position' => $position++,
@@ -411,6 +423,12 @@ class MobileSyncBundle
                 'fallback_process' => $system instanceof System ? $system->fallback_process : null,
                 'runbook_reference' => $system instanceof System ? $system->runbook_reference : null,
                 'location_detail' => $system instanceof System ? $system->location_detail : null,
+                // Die konkreten Wiederanlauf-Aufgaben (Anzeige in der App;
+                // abgehakt wird weiterhin im Backend/Cockpit).
+                'tasks' => $tasks->map(fn ($task) => [
+                    'title' => $task->title,
+                    'done' => $task->completed_at !== null,
+                ])->values()->all(),
             ];
         }
 
