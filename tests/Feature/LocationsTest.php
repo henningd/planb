@@ -88,3 +88,56 @@ test('user can delete a location', function () {
 
     expect(Location::withoutGlobalScope(CurrentCompanyScope::class)->count())->toBe(0);
 });
+
+test('location detail page renders address and a map with a marker when coordinates exist', function () {
+    $user = User::factory()->create();
+    $company = Company::factory()->for($user->currentTeam)->create();
+    $location = Location::factory()->for($company)->create([
+        'name' => 'Seniorenzentrum Sonnengarten',
+        'street' => 'Gartenweg 5',
+        'city' => 'Hennef',
+        'lat' => 50.7753,
+        'lng' => 7.2830,
+        'building_areas' => 'Haus A: Pflegebereich A1',
+    ]);
+
+    $this->actingAs($user->fresh())
+        ->get(route('locations.detail', $location))
+        ->assertOk()
+        ->assertSee('Seniorenzentrum Sonnengarten')
+        ->assertSee('Gartenweg 5')
+        ->assertSee('Haus A: Pflegebereich A1')
+        ->assertSee('openstreetmap.org/export/embed.html', false)
+        ->assertSee('Größere Karte öffnen');
+});
+
+test('location detail page shows a hint when no coordinates are stored', function () {
+    $user = User::factory()->create();
+    $company = Company::factory()->for($user->currentTeam)->create();
+    $location = Location::factory()->for($company)->create([
+        'name' => 'Standort ohne Koordinaten',
+        'lat' => null,
+        'lng' => null,
+    ]);
+
+    $this->actingAs($user->fresh())
+        ->get(route('locations.detail', $location))
+        ->assertOk()
+        ->assertSee('keine Koordinaten hinterlegt')
+        ->assertDontSee('export/embed.html', false);
+});
+
+test('location detail page blocks access for other tenants', function () {
+    $user = User::factory()->create();
+    $company = Company::factory()->for($user->currentTeam)->create();
+    $foreignLocation = Location::factory()->for($company)->create();
+
+    $otherUser = User::factory()->create();
+    Company::factory()->for($otherUser->currentTeam)->create();
+
+    // The global CurrentCompanyScope filters the route-model binding to the
+    // current tenant, so foreign IDs return 404 instead of 403.
+    $this->actingAs($otherUser->fresh())
+        ->get(route('locations.detail', $foreignLocation))
+        ->assertNotFound();
+});

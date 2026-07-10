@@ -216,7 +216,9 @@ new #[Title('Standorte')] class extends Component {
             <div class="flex flex-col rounded-xl border border-zinc-200 bg-white p-5 transition hover:border-zinc-300 hover:shadow-sm dark:border-zinc-700 dark:bg-zinc-900 dark:hover:border-zinc-600">
                 <div class="flex items-start justify-between gap-2">
                     <div class="min-w-0 flex-1">
-                        <flux:heading size="base">{{ $location->name }}</flux:heading>
+                        <flux:heading size="base">
+                            <a href="{{ route('locations.detail', $location) }}" wire:navigate class="hover:underline">{{ $location->name }}</a>
+                        </flux:heading>
                         @if ($location->is_headquarters)
                             <flux:badge color="sky" size="sm" class="mt-1">{{ __('Hauptsitz') }}</flux:badge>
                         @endif
@@ -224,6 +226,9 @@ new #[Title('Standorte')] class extends Component {
                     <flux:dropdown align="end">
                         <flux:button size="sm" variant="ghost" icon="ellipsis-vertical" />
                         <flux:menu>
+                            <flux:menu.item icon="eye" :href="route('locations.detail', $location)" wire:navigate>
+                                {{ __('Details ansehen') }}
+                            </flux:menu.item>
                             <flux:menu.item icon="pencil" wire:click="openEdit('{{ $location->id }}')">
                                 {{ __('Bearbeiten') }}
                             </flux:menu.item>

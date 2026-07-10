@@ -8,6 +8,8 @@ Ein Standort ist ein physischer Ort, an dem Ihr Unternehmen tätig ist: Hauptsit
 
 Für größere oder verschachtelte Liegenschaften (Pflege, Industrie, Kommunen) gibt es das optionale Feld **„Gebäude / Bereiche / Etagen"** — ein Freitext für die interne Struktur (z. B. „Haus A: Pflegebereich A1 (Pflegeleitstelle); Haus B: Verwaltung EG"). Es erscheint bei den Standort-Angaben im Handbuch-PDF. Wo eine einzelne Anlage bzw. ein System genau sitzt, hinterlegen Sie direkt am [System](systeme) im Feld „Bereich / Etage / Gebäudeteil".
 
+Ein Klick auf den **Namen** eines Standorts (oder „Details ansehen" im Menü) öffnet die **Detailansicht** mit Adresse, Kontakt, Gebäude/Bereichen und Notizen. Sind **Koordinaten** hinterlegt (sie werden automatisch aus der Adresse ermittelt), zeigt die Seite zusätzlich eine **Karte mit Markierung** des Standorts.
+
 Erreichbar über die Sidebar **„Notfallhandbuch → Standorte"**.
 
 ## Einen Standort anlegen

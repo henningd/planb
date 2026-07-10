@@ -297,6 +297,7 @@ Route::prefix('{current_team}')
 
         Route::livewire('company', 'pages::company.edit')->name('company.edit');
         Route::livewire('locations', 'pages::locations.index')->name('locations.index');
+        Route::livewire('locations/{location}/detail', 'pages::locations.detail')->name('locations.detail');
         if (config('features.departments')) {
             Route::livewire('departments', 'pages::departments.index')->name('departments.index');
         }
