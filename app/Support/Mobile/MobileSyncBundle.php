@@ -142,6 +142,7 @@ class MobileSyncBundle
                 'startedBy',
                 'steps' => fn ($q) => $q->orderBy('sort'),
                 'steps.checkedBy',
+                'steps.assignedEmployee',
                 'crisisLogEntries.user',
                 'acknowledgements.user',
                 'messages' => fn ($q) => $q->orderBy('created_at'),
@@ -182,6 +183,7 @@ class MobileSyncBundle
                     'checked' => $step->checked_at !== null,
                     'checked_at' => $step->checked_at?->toIso8601String(),
                     'checked_by' => $step->checkedBy?->name,
+                    'assigned_to' => $step->assignedEmployee?->fullName(),
                     'note' => $step->note,
                 ])->all(),
                 // Verlauf/Historie des Laufs (wer wann was, App/Web) für die App.

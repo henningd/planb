@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'title',
     'description',
     'responsible',
+    'assigned_employee_id',
     'checked_at',
     'checked_by_user_id',
     'note',
@@ -38,6 +39,16 @@ class ScenarioRunStep extends Model
     public function checkedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'checked_by_user_id');
+    }
+
+    /**
+     * Für diesen Schritt zuständige/übernehmende Person (optional).
+     *
+     * @return BelongsTo<Employee, $this>
+     */
+    public function assignedEmployee(): BelongsTo
+    {
+        return $this->belongsTo(Employee::class, 'assigned_employee_id');
     }
 
     public function isChecked(): bool

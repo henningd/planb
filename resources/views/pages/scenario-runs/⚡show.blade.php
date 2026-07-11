@@ -2,8 +2,10 @@
 
 use App\Events\ScenarioRunMessagePosted;
 use App\Events\ScenarioRunNoteUpdated;
+use App\Events\ScenarioRunStepAssigned;
 use App\Events\ScenarioRunStepCompleted;
 use App\Events\ScenarioRunStepReopened;
+use App\Models\Employee;
 use App\Models\ScenarioRun;
 use App\Models\ScenarioRunMessage;
 use App\Support\Scenarios\CloseScenarioRun;
@@ -32,11 +34,42 @@ new #[Title("Durchlauf")] class extends Component {
     {
         abort_if($run->company_id !== Auth::user()->currentCompany()?->id, 403);
 
-        $this->run = $run->load(["steps", "startedBy", "scenario"]);
+        $this->run = $run->load(["steps.assignedEmployee", "startedBy", "scenario"]);
 
         foreach ($this->run->steps as $step) {
             $this->notes[$step->id] = (string) $step->note;
         }
+    }
+
+    /**
+     * @return \Illuminate\Support\Collection<int, Employee>
+     */
+    #[Computed]
+    public function employees(): \Illuminate\Support\Collection
+    {
+        return Employee::query()->orderBy("last_name")->orderBy("first_name")->get();
+    }
+
+    /** Schritt einer Person zuweisen bzw. Zuweisung entfernen (leerer Wert). */
+    public function assignStep(string $stepId, string $employeeId = ""): void
+    {
+        $step = $this->run->steps->firstWhere("id", $stepId);
+        abort_unless($step, 404);
+
+        $step->update(["assigned_employee_id" => $employeeId ?: null]);
+        $this->run->load("steps.assignedEmployee");
+
+        $name = $step->assigned_employee_id
+            ? $this->employees->firstWhere("id", $step->assigned_employee_id)?->fullName()
+            : null;
+
+        rescue(fn () => event(new ScenarioRunStepAssigned($step->refresh(), $name)), report: false);
+    }
+
+    #[On("echo-private:scenario-run.{run.id},.step.assigned")]
+    public function applyStepAssigned(): void
+    {
+        $this->run->load("steps.assignedEmployee");
     }
 
     /** Öffentlichen Live-Lage-Link aktivieren (für GF/externe ohne App-Zugang). */
@@ -380,6 +413,22 @@ new #[Title("Durchlauf")] class extends Component {
                                 <flux:badge color="zinc" size="sm">{{ __('Wer') }}: {{ $step->responsible }}</flux:badge>
                             </div>
                         @endif
+                        <div class="mt-2 flex flex-wrap items-center gap-2">
+                            @if ($step->assignedEmployee)
+                                <flux:badge color="sky" size="sm" icon="user">{{ __('Zuständig') }}: {{ $step->assignedEmployee->fullName() }}</flux:badge>
+                            @endif
+                            @if ($run->isActive())
+                                <select
+                                    x-on:change="$wire.assignStep('{{ $step->id }}', $event.target.value)"
+                                    class="rounded-md border border-zinc-300 bg-white px-2 py-1 text-xs dark:border-zinc-600 dark:bg-zinc-900"
+                                >
+                                    <option value="">{{ $step->assignedEmployee ? __('— Zuweisung entfernen —') : __('— zuweisen —') }}</option>
+                                    @foreach ($this->employees as $employee)
+                                        <option value="{{ $employee->id }}" @selected($step->assigned_employee_id === $employee->id)>{{ $employee->nameLastFirst() }}</option>
+                                    @endforeach
+                                </select>
+                            @endif
+                        </div>
                         @if ($step->checked_at)
                             <flux:text class="mt-2 text-xs text-emerald-700 dark:text-emerald-400">
                                 ✓ {{ $step->checked_at->format('d.m.Y H:i') }}

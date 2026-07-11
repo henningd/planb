@@ -52,3 +52,14 @@ Auf der Übersichtsseite sehen Sie Zähler:
 Versicherer fragen oft nach diesen Zahlen — eine durchgeführte Übung pro Halbjahr ist ein guter Richtwert.
 
 > **Praxis-Hinweis**: Eine **echte Lage** ist im System ein scharfes Werkzeug. Verwenden Sie sie nur, wenn der Krisenstab tatsächlich aktiv arbeitet — sonst entsteht Alarmmüdigkeit. Tests bitte als „Tabletop-Übung" markieren.
+
+## Gemeinsam bearbeiten (Live-Zusammenarbeit)
+
+Ein laufender Durchlauf ist ein **gemeinsamer Arbeitsraum** — mehrere Personen arbeiten gleichzeitig, alles gleicht sich live ab:
+
+- **Wer ist dabei?** Oben sehen Sie, wer den Notfall gerade offen hat (Presence).
+- **Schritte zuweisen:** Jeder Schritt lässt sich einer Person zuweisen bzw. „übernehmen" — so weiß jeder, wer was macht, und nichts wird doppelt oder gar nicht erledigt.
+- **Koordination:** Ein freier Meldungs-Stream („Feuerwehr eingetroffen", „Strom wieder da") ergänzt das Ereignis-Log und die Schritt-Notizen.
+- **Live-Lage teilen:** Über **„Live-Lage teilen"** erzeugen Sie einen tokengeschützten, read-only Lagestatus-Link (Phase, Fortschritt, offene Schritte) für Geschäftsführung oder externe Partner **ohne App-Zugang** — er aktualisiert sich selbst und ist jederzeit widerrufbar. Bewusst ohne Kontaktdaten/Notizen.
+
+Abgehakte Schritte, Notizen, Zuweisungen und Meldungen erscheinen bei allen Beteiligten in Echtzeit (Web) bzw. beim nächsten Sync (App).
