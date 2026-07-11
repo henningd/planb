@@ -430,7 +430,10 @@ new #[Title('Krisen-Cockpit')] class extends Component {
         $this->newCoordinationMessage = '';
         unset($this->coordinationMessages);
 
+        // Web-Clients live via Reverb, App-Geräte per stillem Sync-Push (auch im
+        // Hintergrund) – so sehen Cockpit und App die Meldung zeitnah beidseitig.
         rescue(fn () => event(new ScenarioRunMessagePosted($message)), report: false);
+        rescue(fn () => app(PushNotifier::class)->syncCompany($run->company), report: false);
     }
 
     /**
