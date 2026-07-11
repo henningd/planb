@@ -31,6 +31,10 @@ use Throwable;
     'pdf_hash',
     'pdf_size',
     'pdf_generated_at',
+    'audit_pdf_path',
+    'audit_pdf_hash',
+    'audit_pdf_size',
+    'audit_pdf_generated_at',
 ])]
 class HandbookVersion extends Model
 {
@@ -84,6 +88,11 @@ class HandbookVersion extends Model
         return $this->pdf_path !== null;
     }
 
+    public function hasAuditPdf(): bool
+    {
+        return $this->audit_pdf_path !== null;
+    }
+
     /**
      * Returns the share of acknowledgements relative to the expected audience as a value 0..1.
      *
@@ -128,6 +137,9 @@ class HandbookVersion extends Model
     protected static function booted(): void
     {
         static::deleted(function (self $version) {
+            if ($version->audit_pdf_path) {
+                Storage::disk('handbook')->delete($version->audit_pdf_path);
+            }
             if ($version->pdf_path) {
                 Storage::disk('handbook')->delete($version->pdf_path);
             }
@@ -203,6 +215,8 @@ class HandbookVersion extends Model
             'approved_at' => 'date',
             'pdf_generated_at' => 'datetime',
             'pdf_size' => 'integer',
+            'audit_pdf_generated_at' => 'datetime',
+            'audit_pdf_size' => 'integer',
         ];
     }
 }

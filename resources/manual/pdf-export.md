@@ -14,6 +14,8 @@ Im Ernstfall sind oft die App, die Cloud, das Internet nicht erreichbar — gera
 
 Davon unberührt bleibt das **revisionssichere, versionierte PDF**: Es wird weiterhin einmalig pro freigegebener Version erzeugt, mit SHA-256-Hash signiert und dauerhaft abgelegt (siehe unten). Die drei Export-Typen ersetzen es nicht, sondern ergänzen es um zweckgebundene, jederzeit neu erzeugbare Fassungen.
 
+**Revisionssicher pro Version:** Beim Freigeben einer Version wird — sofern das BIA-/Governance-Modul aktiv ist — **zusätzlich der Audit-Bericht** zu genau diesem Stand erzeugt und unveränderlich abgelegt. In der Versionsliste stehen dann pro Version zwei feste Downloads bereit: **Handbuch-PDF** und **Audit-Bericht** — beide eingefroren auf den freigegebenen Stand, im Gegensatz zu den tagesaktuellen Live-Exporten oben.
+
 ## Wann ein PDF erzeugt wird
 
 - Bei Freigabe einer Handbuch-Version (sofern Auto-PDF aktiviert) — siehe „Handbuch-Versionen".

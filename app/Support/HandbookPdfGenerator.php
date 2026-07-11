@@ -59,6 +59,29 @@ class HandbookPdfGenerator
             'pdf_generated_at' => now(),
         ])->save();
 
+        // Audit-/Governance-Bericht revisionssicher zum selben Versionsstand
+        // mitspeichern, sofern das BIA-/Governance-Modul aktiv ist.
+        if (config('features.bia')) {
+            $auditData = AuditReportData::forCompany($company);
+            $auditData['isPdf'] = true;
+
+            $auditPdf = Pdf::loadView('audit-report', $auditData)
+                ->setPaper($paper)
+                ->setOption(['isRemoteEnabled' => false, 'isHtml5ParserEnabled' => true, 'defaultMediaType' => 'print']);
+
+            $auditBinary = $auditPdf->output();
+            $auditPath = "{$company->id}/{$version->id}-audit.pdf";
+
+            Storage::disk(self::DISK)->put($auditPath, $auditBinary);
+
+            $version->forceFill([
+                'audit_pdf_path' => $auditPath,
+                'audit_pdf_hash' => hash('sha256', $auditBinary),
+                'audit_pdf_size' => strlen($auditBinary),
+                'audit_pdf_generated_at' => now(),
+            ])->save();
+        }
+
         return $version;
     }
 

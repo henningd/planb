@@ -41,6 +41,28 @@ test('release action generates a pdf and writes metadata to the version', functi
     expect(substr($stored, 0, 4))->toBe('%PDF');
 });
 
+test('the release also stores a revision-safe audit report pdf that is downloadable', function () {
+    $user = User::factory()->create();
+    $company = Company::factory()->for($user->currentTeam)->create();
+    $version = HandbookVersion::factory()->for($company)->create(['version' => '1.0', 'approved_at' => null]);
+
+    HandbookPdfGenerator::generate($version->refresh());
+    $version->refresh();
+
+    expect($version->hasAuditPdf())->toBeTrue()
+        ->and($version->audit_pdf_path)->toBe("{$company->id}/{$version->id}-audit.pdf")
+        ->and($version->audit_pdf_hash)->toMatch('/^[a-f0-9]{64}$/');
+    Storage::disk(HandbookPdfGenerator::DISK)->assertExists($version->audit_pdf_path);
+
+    $response = $this->actingAs($user->fresh())->get(route('handbook-versions.pdf', [
+        'current_team' => $user->currentTeam->slug,
+        'version' => $version->id,
+        'variant' => 'audit',
+    ]));
+    $response->assertOk();
+    expect($response->headers->get('content-type'))->toContain('application/pdf');
+});
+
 test('a released version cannot be released again (immutability)', function () {
     $user = User::factory()->create();
     $company = Company::factory()->for($user->currentTeam)->create();

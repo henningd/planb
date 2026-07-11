@@ -36,10 +36,12 @@
     </style>
 </head>
 <body>
-    <div class="toolbar no-print">
-        <a class="btn" href="{{ route('business-processes.index') }}">&larr; Zurück</a>
-        <button class="btn primary" onclick="window.print()">Als PDF speichern / Drucken</button>
-    </div>
+    @unless ($isPdf ?? false)
+        <div class="toolbar no-print">
+            <a class="btn" href="{{ route('business-processes.index') }}">&larr; Zurück</a>
+            <button class="btn primary" onclick="window.print()">Als PDF speichern / Drucken</button>
+        </div>
+    @endunless
 
     <div class="page">
         <h1>Audit-/Governance-Bericht</h1>

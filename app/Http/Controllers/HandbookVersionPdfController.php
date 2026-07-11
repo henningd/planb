@@ -21,18 +21,22 @@ class HandbookVersionPdfController extends Controller
     {
         $companyId = CurrentCompany::id();
         abort_unless($companyId !== null && $version->company_id === $companyId, 404);
-        abort_unless($version->hasPdf(), 404);
+
+        $isAudit = $request->query('variant') === 'audit';
+        $path = $isAudit ? $version->audit_pdf_path : $version->pdf_path;
+        abort_unless($path !== null, 404);
 
         $disk = Storage::disk(HandbookPdfGenerator::DISK);
-        abort_unless($disk->exists($version->pdf_path), 404);
+        abort_unless($disk->exists($path), 404);
 
         $filename = sprintf(
-            'notfallhandbuch-%s-v%s.pdf',
+            '%s-%s-v%s.pdf',
+            $isAudit ? 'audit-bericht' : 'notfallhandbuch',
             $version->company->team?->slug ?? 'firma',
             preg_replace('/[^A-Za-z0-9._-]/', '_', $version->version),
         );
 
-        return $disk->download($version->pdf_path, $filename, [
+        return $disk->download($path, $filename, [
             'Content-Type' => 'application/pdf',
         ]);
     }

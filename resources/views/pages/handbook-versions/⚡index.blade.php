@@ -321,6 +321,15 @@ new #[Title('Notfallhandbuch')] class extends Component {
                                 {{ __('Freigegebenes PDF') }}
                             </flux:button>
                         @endif
+                        @if ($this->currentVersion->hasAuditPdf())
+                            <flux:button
+                                variant="filled"
+                                icon="arrow-down-tray"
+                                :href="route('handbook-versions.pdf', ['current_team' => auth()->user()->currentTeam->slug, 'version' => $this->currentVersion->id, 'variant' => 'audit'])"
+                            >
+                                {{ __('Audit-Bericht (freigegeben)') }}
+                            </flux:button>
+                        @endif
                         <x-handbook-export-menu />
                     </div>
                 </div>
@@ -444,14 +453,26 @@ new #[Title('Notfallhandbuch')] class extends Component {
                                 <flux:text class="text-xs font-semibold text-emerald-700 dark:text-emerald-400">
                                     {{ __('PDF revisionssicher') }}
                                 </flux:text>
-                                <flux:button
-                                    size="sm"
-                                    variant="primary"
-                                    icon="arrow-down-tray"
-                                    :href="route('handbook-versions.pdf', ['current_team' => auth()->user()->currentTeam->slug, 'version' => $version->id])"
-                                >
-                                    {{ __('PDF herunterladen') }}
-                                </flux:button>
+                                <div class="flex items-center gap-2">
+                                    <flux:button
+                                        size="sm"
+                                        variant="primary"
+                                        icon="arrow-down-tray"
+                                        :href="route('handbook-versions.pdf', ['current_team' => auth()->user()->currentTeam->slug, 'version' => $version->id])"
+                                    >
+                                        {{ __('Handbuch-PDF') }}
+                                    </flux:button>
+                                    @if ($version->hasAuditPdf())
+                                        <flux:button
+                                            size="sm"
+                                            variant="filled"
+                                            icon="arrow-down-tray"
+                                            :href="route('handbook-versions.pdf', ['current_team' => auth()->user()->currentTeam->slug, 'version' => $version->id, 'variant' => 'audit'])"
+                                        >
+                                            {{ __('Audit-Bericht') }}
+                                        </flux:button>
+                                    @endif
+                                </div>
                             </div>
                             <div class="flex flex-wrap gap-x-3 gap-y-1">
                                 <span>{{ $version->pdf_generated_at?->format('d.m.Y H:i') }}</span>
