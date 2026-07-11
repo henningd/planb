@@ -62,7 +62,7 @@ class HandbookPdfGenerator
         // Audit-/Governance-Bericht revisionssicher zum selben Versionsstand
         // mitspeichern, sofern das BIA-/Governance-Modul aktiv ist.
         if (config('features.bia')) {
-            $auditData = AuditReportData::forCompany($company);
+            $auditData = AuditReportData::forCompany($company, null, $version);
             $auditData['isPdf'] = true;
 
             $auditPdf = Pdf::loadView('audit-report', $auditData)

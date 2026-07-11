@@ -7,6 +7,7 @@ use App\Models\AuthorityContact;
 use App\Models\BusinessProcess;
 use App\Models\Company;
 use App\Models\Employee;
+use App\Models\HandbookVersion;
 use App\Models\InsurancePolicy;
 use App\Models\LessonLearned;
 use App\Models\LessonLearnedActionItem;
@@ -76,6 +77,17 @@ test('the audit report renders processes with their linked governance items', fu
         ->assertSee('Break-Glass-Zugang ungetestet')
         ->assertSee('Anhang: Nicht zugeordnet')
         ->assertSee('Freistehendes Risiko');
+});
+
+test('the audit report shows the current handbook version', function () {
+    $user = User::factory()->create();
+    $company = Company::factory()->for($user->currentTeam)->create();
+    HandbookVersion::factory()->for($company)->create(['version' => '2.3']);
+
+    $this->actingAs($user->fresh())
+        ->get(route('audit-report.print'))
+        ->assertOk()
+        ->assertSee('Version 2.3');
 });
 
 test('the audit report requires a company', function () {

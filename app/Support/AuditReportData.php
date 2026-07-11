@@ -7,6 +7,7 @@ use App\Models\AuthorityContact;
 use App\Models\BusinessProcess;
 use App\Models\Company;
 use App\Models\HandbookTest;
+use App\Models\HandbookVersion;
 use App\Models\InsurancePolicy;
 use App\Models\LessonLearned;
 use App\Models\ManagementReview;
@@ -30,10 +31,17 @@ class AuditReportData
     /**
      * @return array<string, mixed>
      */
-    public static function forCompany(Company $company, ?Carbon $generatedAt = null): array
+    public static function forCompany(Company $company, ?Carbon $generatedAt = null, ?HandbookVersion $version = null): array
     {
         $now = $generatedAt ?? now();
         $periodStart = $now->copy()->subYear();
+
+        // Aktuelle Handbuch-Version (bzw. die beim Freigeben gespeicherte) — soll
+        // in jedem PDF stehen, damit der Bericht eindeutig einem Stand zuordenbar ist.
+        $version ??= $company->currentHandbookVersion();
+        $versionString = $version?->version
+            ?? $company->handbookVersions()->latest('created_at')->value('version')
+            ?? '1.0';
 
         $processes = BusinessProcess::with([
             'systems',
@@ -137,6 +145,7 @@ class AuditReportData
             'handbookTests' => $handbookTests,
             'governanceSnapshot' => $governanceSnapshot,
             'periodStart' => $periodStart,
+            'versionString' => $versionString,
             'generatedAt' => $now,
         ];
     }

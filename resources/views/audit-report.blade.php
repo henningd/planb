@@ -46,7 +46,7 @@
     <div class="page">
         <h1>Audit-/Governance-Bericht</h1>
         <p class="muted">{{ $company->name }} &mdash; Business-Impact-Analyse (BIA) mit verknüpften Risiken, Maßnahmen und Offenen Punkten.</p>
-        <p class="small muted">Stand: {{ $generatedAt->format('d.m.Y H:i') }} Uhr &middot; Umfang: {{ $processes->count() }} Geschäftsprozess(e). Dieser Bericht ergänzt das Ernstfall-Handbuch um die ausführliche Governance-Sicht (BSI 200-4, NIS2 Art. 21).</p>
+        <p class="small muted">Version {{ $versionString ?? '—' }} &middot; Stand: {{ $generatedAt->format('d.m.Y H:i') }} Uhr &middot; Umfang: {{ $processes->count() }} Geschäftsprozess(e). Dieser Bericht ergänzt das Ernstfall-Handbuch um die ausführliche Governance-Sicht (BSI 200-4, NIS2 Art. 21).</p>
 
         @if ($complianceReport)
             <h2>Reifegrad / Überblick</h2>
@@ -430,7 +430,7 @@
         @endif
 
         <div class="footer-note">
-            {{ $company->name }} &mdash; Audit-/Governance-Bericht &mdash; Stand {{ $generatedAt->format('d.m.Y H:i') }} Uhr. Erzeugt aus dem digitalen Notfallhandbuch (PlanB).
+            {{ $company->name }} &mdash; Audit-/Governance-Bericht &mdash; Version {{ $versionString ?? '—' }} &mdash; Stand {{ $generatedAt->format('d.m.Y H:i') }} Uhr. Erzeugt aus dem digitalen Notfallhandbuch (PlanB).
         </div>
     </div>
 
