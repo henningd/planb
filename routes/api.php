@@ -43,6 +43,9 @@ Route::prefix('mobile')
             Route::post('devices/unregister', [MobileDeviceController::class, 'unregister'])->name('api.mobile.devices.unregister');
             Route::post('incidents', [MobileIncidentController::class, 'store'])->middleware('throttle:20,1')->name('api.mobile.incidents.store');
             Route::post('runs/{run}/steps/{step}', [MobileRunController::class, 'toggleStep'])->middleware('throttle:120,1')->name('api.mobile.runs.steps.toggle');
+            Route::post('runs/{run}/steps/{step}/assign', [MobileRunController::class, 'assignStep'])->middleware('throttle:120,1')->name('api.mobile.runs.steps.assign');
+            Route::post('runs/{run}/messages', [MobileRunController::class, 'postMessage'])->middleware('throttle:120,1')->name('api.mobile.runs.messages');
+            Route::post('runs/{run}/heartbeat', [MobileRunController::class, 'heartbeat'])->middleware('throttle:240,1')->name('api.mobile.runs.heartbeat');
             Route::post('runs/{run}/ack', [MobileRunController::class, 'acknowledge'])->middleware('throttle:60,1')->name('api.mobile.runs.ack');
             Route::post('runs/{run}/close', [MobileRunController::class, 'close'])->middleware('throttle:20,1')->name('api.mobile.runs.close');
         });

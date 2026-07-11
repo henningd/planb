@@ -22,6 +22,7 @@ use App\Models\Scenario;
 use App\Models\ScenarioRun;
 use App\Models\ScenarioRunAcknowledgement;
 use App\Models\ScenarioRunMessage;
+use App\Models\ScenarioRunParticipant;
 use App\Models\ScenarioRunStep;
 use App\Models\ServiceProvider;
 use App\Models\System;
@@ -147,6 +148,8 @@ class MobileSyncBundle
                 'acknowledgements.user',
                 'messages' => fn ($q) => $q->orderBy('created_at'),
                 'messages.user',
+                'participants' => fn ($q) => $q->where('last_seen_at', '>=', now()->subSeconds(ScenarioRunParticipant::FRESH_SECONDS)),
+                'participants.user',
             ])
             ->orderByDesc('started_at')
             ->get()
@@ -207,6 +210,11 @@ class MobileSyncBundle
                     'author' => $m->author_name ?? $m->user?->name,
                     'body' => $m->body,
                     'created_at' => $m->created_at?->toIso8601String(),
+                ])->all(),
+                // Aktuell aktive Teilnehmer (Heartbeat-Presence) für die App.
+                'participants' => $run->participants->map(fn (ScenarioRunParticipant $p) => [
+                    'user_id' => (string) $p->user_id,
+                    'name' => $p->user?->name,
                 ])->all(),
             ])
             ->all();

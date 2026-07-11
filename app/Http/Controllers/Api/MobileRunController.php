@@ -2,14 +2,19 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Events\ScenarioRunMessagePosted;
+use App\Events\ScenarioRunStepAssigned;
 use App\Events\ScenarioRunStepCompleted;
 use App\Events\ScenarioRunStepReopened;
 use App\Http\Controllers\Controller;
 use App\Models\ApiToken;
 use App\Models\Company;
 use App\Models\CrisisLogEntry;
+use App\Models\Employee;
 use App\Models\ScenarioRun;
 use App\Models\ScenarioRunAcknowledgement;
+use App\Models\ScenarioRunMessage;
+use App\Models\ScenarioRunParticipant;
 use App\Models\User;
 use App\Scopes\CurrentCompanyScope;
 use App\Support\Push\PushNotifier;
@@ -205,5 +210,159 @@ class MobileRunController extends Controller
             'outcome' => $validated['outcome'],
             'active' => false,
         ]);
+    }
+
+    /**
+     * Koordinations-/Lagemeldung aus der App posten (Chat am laufenden Notfall).
+     */
+    public function postMessage(Request $request, string $run): JsonResponse
+    {
+        $token = $request->attributes->get('api_token');
+        abort_unless($token instanceof ApiToken, 401);
+        abort_if($token->created_by_user_id === null, 403, 'Kein Bearbeiter hinterlegt.');
+
+        $validated = $request->validate([
+            'body' => ['required', 'string', 'max:2000'],
+        ]);
+
+        $scenarioRun = ScenarioRun::query()
+            ->withoutGlobalScope(CurrentCompanyScope::class)
+            ->where('company_id', $token->company_id)
+            ->whereKey($run)
+            ->firstOrFail();
+
+        abort_unless($scenarioRun->isActive(), 409, 'Ablauf ist bereits abgeschlossen.');
+
+        $userName = User::query()
+            ->withoutGlobalScope(CurrentCompanyScope::class)
+            ->find($token->created_by_user_id)?->name ?? 'App';
+
+        $message = ScenarioRunMessage::create([
+            'company_id' => $scenarioRun->company_id,
+            'scenario_run_id' => $scenarioRun->id,
+            'user_id' => $token->created_by_user_id,
+            'author_name' => $userName,
+            'body' => trim($validated['body']),
+        ]);
+
+        try {
+            event(new ScenarioRunMessagePosted($message));
+        } catch (Throwable) {
+            // Broadcast optional – die Meldung ist bereits gespeichert.
+        }
+
+        $this->pushSync($token->company_id);
+
+        return response()->json([
+            'id' => $message->id,
+            'author' => $userName,
+            'body' => $message->body,
+            'created_at' => $message->created_at?->toIso8601String(),
+        ]);
+    }
+
+    /**
+     * Einen Schritt einer Person zuweisen bzw. Zuweisung entfernen (employee_id null).
+     */
+    public function assignStep(Request $request, string $run, string $step): JsonResponse
+    {
+        $token = $request->attributes->get('api_token');
+        abort_unless($token instanceof ApiToken, 401);
+        abort_if($token->created_by_user_id === null, 403, 'Kein Bearbeiter hinterlegt.');
+
+        $validated = $request->validate([
+            'employee_id' => ['nullable', 'string'],
+        ]);
+
+        $scenarioRun = ScenarioRun::query()
+            ->withoutGlobalScope(CurrentCompanyScope::class)
+            ->where('company_id', $token->company_id)
+            ->whereKey($run)
+            ->firstOrFail();
+
+        abort_unless($scenarioRun->isActive(), 409, 'Ablauf ist bereits abgeschlossen.');
+
+        $runStep = $scenarioRun->steps()->whereKey($step)->firstOrFail();
+
+        $employeeId = ($validated['employee_id'] ?? '') !== '' ? $validated['employee_id'] : null;
+        $employee = null;
+        if ($employeeId !== null) {
+            $employee = Employee::query()
+                ->withoutGlobalScope(CurrentCompanyScope::class)
+                ->where('company_id', $token->company_id)
+                ->whereKey($employeeId)
+                ->first();
+            abort_unless($employee !== null, 422, 'Unbekannter Mitarbeiter.');
+        }
+
+        $runStep->forceFill(['assigned_employee_id' => $employeeId])->save();
+        $runStep->refresh();
+
+        try {
+            event(new ScenarioRunStepAssigned($runStep, $employee?->fullName()));
+        } catch (Throwable) {
+            // Broadcast optional.
+        }
+
+        $this->pushSync($token->company_id);
+
+        return response()->json([
+            'run_id' => $scenarioRun->id,
+            'step_id' => $runStep->id,
+            'assigned_to' => $employee?->fullName(),
+        ]);
+    }
+
+    /**
+     * Präsenz-Heartbeat: markiert den Nutzer als aktiv an diesem Notfall und
+     * liefert die aktuell aktiven Teilnehmer zurück. Löst bewusst KEINEN
+     * Sync-Push aus (zu häufig).
+     */
+    public function heartbeat(Request $request, string $run): JsonResponse
+    {
+        $token = $request->attributes->get('api_token');
+        abort_unless($token instanceof ApiToken, 401);
+        abort_if($token->created_by_user_id === null, 403, 'Kein Bearbeiter hinterlegt.');
+
+        $scenarioRun = ScenarioRun::query()
+            ->withoutGlobalScope(CurrentCompanyScope::class)
+            ->where('company_id', $token->company_id)
+            ->whereKey($run)
+            ->firstOrFail();
+
+        ScenarioRunParticipant::updateOrCreate(
+            ['scenario_run_id' => $scenarioRun->id, 'user_id' => $token->created_by_user_id],
+            ['last_seen_at' => now()],
+        );
+
+        $fresh = now()->subSeconds(ScenarioRunParticipant::FRESH_SECONDS);
+        $participants = $scenarioRun->participants()
+            ->with('user')
+            ->where('last_seen_at', '>=', $fresh)
+            ->get()
+            ->map(fn (ScenarioRunParticipant $p) => [
+                'user_id' => (string) $p->user_id,
+                'name' => $p->user?->name,
+            ])
+            ->all();
+
+        return response()->json(['participants' => $participants]);
+    }
+
+    /**
+     * Übrige Geräte der Firma best-effort zum Neu-Sync anstoßen (geteilter Stand).
+     */
+    private function pushSync(string $companyId): void
+    {
+        try {
+            $company = Company::query()
+                ->withoutGlobalScope(CurrentCompanyScope::class)
+                ->find($companyId);
+            if ($company !== null) {
+                app(PushNotifier::class)->syncCompany($company);
+            }
+        } catch (Throwable) {
+            // best-effort
+        }
     }
 }

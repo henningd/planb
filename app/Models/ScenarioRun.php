@@ -86,6 +86,16 @@ class ScenarioRun extends Model
         return $this->hasMany(ScenarioRunMessage::class)->orderBy('created_at');
     }
 
+    /**
+     * Heartbeat-Präsenz: wer aktuell an diesem Notfall arbeitet.
+     *
+     * @return HasMany<ScenarioRunParticipant, $this>
+     */
+    public function participants(): HasMany
+    {
+        return $this->hasMany(ScenarioRunParticipant::class);
+    }
+
     public function isDrill(): bool
     {
         return $this->mode === ScenarioRunMode::Drill;
