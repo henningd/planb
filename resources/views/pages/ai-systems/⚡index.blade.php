@@ -46,6 +46,15 @@ new #[Title('KI-Governance')] class extends Component {
 
     public string $notes = '';
 
+    /** @var array<int, string> */
+    public array $selectedRisks = [];
+
+    /** @var array<int, string> */
+    public array $selectedProcesses = [];
+
+    /** @var array<int, string> */
+    public array $selectedScenarios = [];
+
     public string $filterRiskClass = '';
 
     public ?string $deletingId = null;
@@ -80,6 +89,37 @@ new #[Title('KI-Governance')] class extends Component {
         return Role::orderBy('name')->get();
     }
 
+    /**
+     * @return Collection<int, \App\Models\Risk>
+     */
+    #[Computed]
+    public function allRisks(): Collection
+    {
+        return config('features.risk_register')
+            ? \App\Models\Risk::query()->orderBy('title')->get()
+            : new Collection;
+    }
+
+    /**
+     * @return Collection<int, \App\Models\BusinessProcess>
+     */
+    #[Computed]
+    public function allProcesses(): Collection
+    {
+        return config('features.bia')
+            ? \App\Models\BusinessProcess::query()->orderBy('name')->get()
+            : new Collection;
+    }
+
+    /**
+     * @return Collection<int, \App\Models\Scenario>
+     */
+    #[Computed]
+    public function allScenarios(): Collection
+    {
+        return \App\Models\Scenario::query()->orderBy('name')->get();
+    }
+
     public function openCreate(): void
     {
         $this->resetForm();
@@ -106,6 +146,9 @@ new #[Title('KI-Governance')] class extends Component {
         $this->last_reviewed_at = $system->last_reviewed_at?->toDateString();
         $this->next_review_at = $system->next_review_at?->toDateString();
         $this->notes = (string) $system->notes;
+        $this->selectedRisks = $system->risks()->pluck('risks.id')->all();
+        $this->selectedProcesses = $system->businessProcesses()->pluck('business_processes.id')->all();
+        $this->selectedScenarios = $system->scenarios()->pluck('scenarios.id')->all();
 
         Flux::modal('ai-system-form')->show();
     }
@@ -138,11 +181,13 @@ new #[Title('KI-Governance')] class extends Component {
 
         $payload = collect($validated)->map(fn ($v) => $v === '' ? null : $v)->toArray();
 
-        if ($this->editingId) {
-            AiSystem::findOrFail($this->editingId)->update($payload);
-        } else {
-            AiSystem::create($payload);
-        }
+        $system = $this->editingId
+            ? tap(AiSystem::findOrFail($this->editingId))->update($payload)
+            : AiSystem::create($payload);
+
+        $system->risks()->sync($this->selectedRisks);
+        $system->businessProcesses()->sync($this->selectedProcesses);
+        $system->scenarios()->sync($this->selectedScenarios);
 
         Flux::modal('ai-system-form')->close();
         $this->resetForm();
@@ -174,6 +219,7 @@ new #[Title('KI-Governance')] class extends Component {
             'editingId', 'name', 'purpose', 'provider_name', 'annex_category', 'data_sources',
             'human_oversight', 'responsible_role_id', 'conformity_status', 'eu_db_registration',
             'transparency_measures', 'last_reviewed_at', 'next_review_at', 'notes',
+            'selectedRisks', 'selectedProcesses', 'selectedScenarios',
         ]);
         $this->role = 'deployer';
         $this->risk_class = 'unclassified';
@@ -331,6 +377,37 @@ new #[Title('KI-Governance')] class extends Component {
             </div>
 
             <flux:textarea wire:model="notes" :label="__('Notizen')" rows="2" />
+
+            @if ($this->allRisks->isNotEmpty() || $this->allProcesses->isNotEmpty() || $this->allScenarios->isNotEmpty())
+                <div class="space-y-4 rounded-lg border border-zinc-200 p-4 dark:border-zinc-700">
+                    <flux:heading size="sm">{{ __('Verknüpfungen') }}</flux:heading>
+                    <flux:subheading class="text-xs">{{ __('Bezug dieses KI-Systems zu Risiken, Geschäftsprozessen und Notfall-Szenarien.') }}</flux:subheading>
+
+                    @if ($this->allRisks->isNotEmpty())
+                        <flux:checkbox.group :label="__('Risiken')" class="grid gap-1 sm:grid-cols-2">
+                            @foreach ($this->allRisks as $risk)
+                                <flux:checkbox wire:model="selectedRisks" value="{{ $risk->id }}" :label="$risk->title" />
+                            @endforeach
+                        </flux:checkbox.group>
+                    @endif
+
+                    @if ($this->allProcesses->isNotEmpty())
+                        <flux:checkbox.group :label="__('Geschäftsprozesse')" class="grid gap-1 sm:grid-cols-2">
+                            @foreach ($this->allProcesses as $process)
+                                <flux:checkbox wire:model="selectedProcesses" value="{{ $process->id }}" :label="$process->name" />
+                            @endforeach
+                        </flux:checkbox.group>
+                    @endif
+
+                    @if ($this->allScenarios->isNotEmpty())
+                        <flux:checkbox.group :label="__('Notfall-Szenarien')" class="grid gap-1 sm:grid-cols-2">
+                            @foreach ($this->allScenarios as $scenario)
+                                <flux:checkbox wire:model="selectedScenarios" value="{{ $scenario->id }}" :label="$scenario->name" />
+                            @endforeach
+                        </flux:checkbox.group>
+                    @endif
+                </div>
+            @endif
 
             <div class="flex items-center justify-end gap-2 border-t border-zinc-100 pt-4 dark:border-zinc-800">
                 <flux:modal.close>

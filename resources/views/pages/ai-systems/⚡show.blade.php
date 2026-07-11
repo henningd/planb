@@ -20,11 +20,15 @@ new #[Title('KI-System')] class extends Component {
 
     public ?string $logOccurredAt = null;
 
+    public bool $logReportable = false;
+
+    public ?string $logReportedAt = null;
+
     public function mount(AiSystem $aiSystem): void
     {
         abort_if($aiSystem->company_id !== Auth::user()->currentCompany()?->id, 403);
 
-        $this->aiSystem = $aiSystem->load('responsibleRole');
+        $this->aiSystem = $aiSystem->load(['responsibleRole', 'risks', 'businessProcesses', 'scenarios']);
     }
 
     /**
@@ -42,6 +46,8 @@ new #[Title('KI-System')] class extends Component {
             'logType' => ['required', new Enum(AiSystemLogType::class)],
             'logSummary' => ['required', 'string', 'max:5000'],
             'logOccurredAt' => ['nullable', 'date'],
+            'logReportable' => ['boolean'],
+            'logReportedAt' => ['nullable', 'date'],
         ]);
 
         AiSystemLogEntry::create([
@@ -51,9 +57,11 @@ new #[Title('KI-System')] class extends Component {
             'type' => $validated['logType'],
             'summary' => $validated['logSummary'],
             'occurred_at' => $validated['logOccurredAt'] ?: now()->toDateString(),
+            'reportable' => $this->logReportable,
+            'reported_at' => $this->logReportable ? ($validated['logReportedAt'] ?: null) : null,
         ]);
 
-        $this->reset(['logSummary', 'logOccurredAt']);
+        $this->reset(['logSummary', 'logOccurredAt', 'logReportable', 'logReportedAt']);
         $this->logType = 'review';
         unset($this->logEntries);
 
@@ -119,13 +127,51 @@ new #[Title('KI-System')] class extends Component {
             </dl>
         </div>
 
+        @if ($aiSystem->risks->isNotEmpty() || $aiSystem->businessProcesses->isNotEmpty() || $aiSystem->scenarios->isNotEmpty())
+            <div class="rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
+                <flux:heading size="base" class="mb-3">{{ __('Verknüpfungen') }}</flux:heading>
+                <div class="space-y-3 text-sm">
+                    @if ($aiSystem->risks->isNotEmpty())
+                        <div>
+                            <div class="text-xs uppercase tracking-wide text-zinc-500 dark:text-zinc-400">{{ __('Risiken') }}</div>
+                            <div class="mt-1 flex flex-wrap gap-1">
+                                @foreach ($aiSystem->risks as $risk)
+                                    <flux:badge color="red" size="sm">{{ $risk->title }}</flux:badge>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endif
+                    @if ($aiSystem->businessProcesses->isNotEmpty())
+                        <div>
+                            <div class="text-xs uppercase tracking-wide text-zinc-500 dark:text-zinc-400">{{ __('Geschäftsprozesse') }}</div>
+                            <div class="mt-1 flex flex-wrap gap-1">
+                                @foreach ($aiSystem->businessProcesses as $process)
+                                    <flux:badge color="sky" size="sm">{{ $process->name }}</flux:badge>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endif
+                    @if ($aiSystem->scenarios->isNotEmpty())
+                        <div>
+                            <div class="text-xs uppercase tracking-wide text-zinc-500 dark:text-zinc-400">{{ __('Notfall-Szenarien') }}</div>
+                            <div class="mt-1 flex flex-wrap gap-1">
+                                @foreach ($aiSystem->scenarios as $scenario)
+                                    <flux:badge color="zinc" size="sm">{{ $scenario->name }}</flux:badge>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endif
+                </div>
+            </div>
+        @endif
+
         <div class="rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
             <flux:heading size="base">{{ __('Protokoll & Nachweise') }}</flux:heading>
             <flux:subheading class="mb-4">{{ __('Revisionssichere Nachweisführung: Prüfungen, Aufsichts-Eingriffe, Tests, Vorfälle, Änderungen, Schulungen. Änderungen an den Stammdaten werden zusätzlich automatisch im Audit-Log erfasst.') }}</flux:subheading>
 
             <form wire:submit="addLogEntry" class="mb-5 space-y-3 rounded-lg border border-zinc-100 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-950/40">
                 <div class="grid gap-3 sm:grid-cols-2">
-                    <flux:select wire:model="logType" :label="__('Art')" required>
+                    <flux:select wire:model.live="logType" :label="__('Art')" required>
                         @foreach (App\Enums\AiSystemLogType::options() as $option)
                             <flux:select.option value="{{ $option['value'] }}">{{ $option['label'] }}</flux:select.option>
                         @endforeach
@@ -133,6 +179,15 @@ new #[Title('KI-System')] class extends Component {
                     <flux:input wire:model="logOccurredAt" :label="__('Datum')" type="date" />
                 </div>
                 <flux:textarea wire:model="logSummary" :label="__('Was ist passiert / geprüft worden?')" rows="2" required placeholder="z. B. Halbjährliche Prüfung der menschlichen Aufsicht durchgeführt, keine Abweichungen." />
+                @if ($logType === \App\Enums\AiSystemLogType::Incident->value)
+                    <div class="rounded-lg border border-red-200 bg-red-50/60 p-3 dark:border-red-900 dark:bg-red-950/20">
+                        <flux:checkbox wire:model.live="logReportable" :label="__('Meldepflichtiger schwerwiegender Vorfall (Art. 73 EU-KI-VO)')" />
+                        @if ($logReportable)
+                            <flux:input wire:model="logReportedAt" :label="__('An Marktüberwachungsbehörde gemeldet am')" type="date" class="mt-2" />
+                            <flux:text class="mt-1 text-xs text-red-700 dark:text-red-300">{{ __('Anbieter/Betreiber von Hochrisiko-KI müssen schwerwiegende Vorfälle unverzüglich melden (Art. 73).') }}</flux:text>
+                        @endif
+                    </div>
+                @endif
                 <div class="flex justify-end">
                     <flux:button variant="primary" type="submit" icon="plus" size="sm">{{ __('Eintrag hinzufügen') }}</flux:button>
                 </div>
@@ -145,6 +200,11 @@ new #[Title('KI-System')] class extends Component {
                     </div>
                     <div class="min-w-0 flex-1">
                         <div class="text-sm text-zinc-800 dark:text-zinc-200 whitespace-pre-line">{{ $entry->summary }}</div>
+                        @if ($entry->reportable)
+                            <div class="mt-1">
+                                <flux:badge color="red" size="sm" icon="exclamation-triangle">{{ __('Art. 73 meldepflichtig') }}@if ($entry->reported_at) · {{ __('gemeldet') }} {{ $entry->reported_at->format('d.m.Y') }}@else · {{ __('noch nicht gemeldet') }}@endif</flux:badge>
+                            </div>
+                        @endif
                         <div class="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">
                             {{ $entry->occurred_at->format('d.m.Y') }}@if ($entry->user) · {{ $entry->user->name }}@endif
                         </div>

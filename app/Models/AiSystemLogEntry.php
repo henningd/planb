@@ -20,6 +20,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'user_id',
     'type',
     'summary',
+    'reportable',
+    'reported_at',
     'occurred_at',
 ])]
 class AiSystemLogEntry extends Model
@@ -50,6 +52,8 @@ class AiSystemLogEntry extends Model
         return [
             'type' => AiSystemLogType::class,
             'occurred_at' => 'date',
+            'reportable' => 'boolean',
+            'reported_at' => 'date',
         ];
     }
 }

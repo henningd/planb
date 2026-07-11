@@ -5,8 +5,12 @@ use App\Enums\AiSystemLogType;
 use App\Enums\AiSystemRole;
 use App\Models\AiSystem;
 use App\Models\AiSystemLogEntry;
+use App\Models\BusinessProcess;
 use App\Models\Company;
+use App\Models\Risk;
+use App\Models\Scenario;
 use App\Models\User;
+use App\Scopes\CurrentCompanyScope;
 use App\Support\Ai\AiRiskClassifier;
 use App\Support\Compliance\Catalog;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -110,6 +114,48 @@ test('the detail page shows the system and accepts protocol entries', function (
         ->and($entry->type)->toBe(AiSystemLogType::Oversight)
         ->and($entry->summary)->toBe('Manuelle Übersteuerung einer Ablehnung dokumentiert.')
         ->and($entry->user_id)->toBe($user->id);
+});
+
+test('an ai system can be linked to risks, processes and scenarios', function () {
+    [$user, $company] = aiActingUser();
+
+    $risk = Risk::factory()->create(['company_id' => $company->id, 'title' => 'Diskriminierendes Ranking']);
+    $process = BusinessProcess::factory()->create(['company_id' => $company->id, 'name' => 'Bewerbermanagement']);
+    $scenario = Scenario::withoutGlobalScope(CurrentCompanyScope::class)->create(['company_id' => $company->id, 'name' => 'KI-Ausfall']);
+
+    Livewire::actingAs($user)
+        ->test('pages::ai-systems.index')
+        ->set('name', 'Bewerber-Ranking')
+        ->set('role', AiSystemRole::Deployer->value)
+        ->set('risk_class', AiRiskClass::High->value)
+        ->set('selectedRisks', [$risk->id])
+        ->set('selectedProcesses', [$process->id])
+        ->set('selectedScenarios', [$scenario->id])
+        ->call('save')
+        ->assertHasNoErrors();
+
+    $system = AiSystem::firstWhere('name', 'Bewerber-Ranking');
+    expect($system->risks->pluck('id'))->toContain($risk->id)
+        ->and($system->businessProcesses->pluck('id'))->toContain($process->id)
+        ->and($system->scenarios->pluck('id'))->toContain($scenario->id);
+});
+
+test('a serious incident can be logged as reportable under article 73', function () {
+    [$user, $company] = aiActingUser();
+    $system = AiSystem::factory()->highRisk()->create(['company_id' => $company->id]);
+
+    Livewire::actingAs($user)
+        ->test('pages::ai-systems.show', ['aiSystem' => $system])
+        ->set('logType', AiSystemLogType::Incident->value)
+        ->set('logSummary', 'Fehlklassifikation mit Personenschaden.')
+        ->set('logReportable', true)
+        ->set('logReportedAt', '2026-07-02')
+        ->call('addLogEntry')
+        ->assertHasNoErrors();
+
+    $entry = AiSystemLogEntry::firstWhere('ai_system_id', $system->id);
+    expect($entry->reportable)->toBeTrue()
+        ->and($entry->reported_at?->toDateString())->toBe('2026-07-02');
 });
 
 test('the detail page blocks access for other tenants', function () {

@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
@@ -63,6 +64,36 @@ class AiSystem extends Model
     public function logEntries(): HasMany
     {
         return $this->hasMany(AiSystemLogEntry::class)->orderByDesc('occurred_at')->orderByDesc('created_at');
+    }
+
+    /**
+     * Risiken, die dieses KI-System verursacht/verstärkt (EU-KI-VO ↔ Risikomanagement).
+     *
+     * @return BelongsToMany<Risk, $this>
+     */
+    public function risks(): BelongsToMany
+    {
+        return $this->belongsToMany(Risk::class, 'ai_system_risk');
+    }
+
+    /**
+     * Geschäftsprozesse, in denen dieses KI-System eingesetzt wird.
+     *
+     * @return BelongsToMany<BusinessProcess, $this>
+     */
+    public function businessProcesses(): BelongsToMany
+    {
+        return $this->belongsToMany(BusinessProcess::class, 'ai_system_business_process');
+    }
+
+    /**
+     * Notfall-Szenarien mit Bezug zu diesem KI-System (z. B. Ausfall/Manipulation).
+     *
+     * @return BelongsToMany<Scenario, $this>
+     */
+    public function scenarios(): BelongsToMany
+    {
+        return $this->belongsToMany(Scenario::class, 'ai_system_scenario');
     }
 
     public function isProhibited(): bool

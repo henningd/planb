@@ -124,6 +124,7 @@ class AuditReportData
             'insurancePolicies' => InsurancePolicy::with(['responsibleRole', 'scenarios'])->where('company_id', $company->id)->orderBy('type')->orderBy('insurer')->get(),
             'aiSystems' => config('features.ai_governance')
                 ? AiSystem::with('responsibleRole')
+                    ->withCount(['logEntries as open_art73_count' => fn ($q) => $q->where('reportable', true)->whereNull('reported_at')])
                     ->where('company_id', $company->id)
                     ->orderByRaw("CASE risk_class WHEN 'prohibited' THEN 0 WHEN 'high' THEN 1 WHEN 'limited' THEN 2 WHEN 'minimal' THEN 3 ELSE 4 END")
                     ->orderBy('name')

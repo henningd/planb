@@ -168,7 +168,11 @@
 
         @if ($aiSystems->isNotEmpty())
             <h2>KI-Systeme (EU-KI-Verordnung)</h2>
-            <p class="small muted">Prüfpunkte: alle KI-Systeme erfasst und eingestuft? Keine verbotenen Praktiken? Menschliche Aufsicht dokumentiert? Konformität/Registrierung bei Hochrisiko? Prüftermine aktuell?</p>
+            <p class="small muted">Prüfpunkte: alle KI-Systeme erfasst und eingestuft? Keine verbotenen Praktiken? Menschliche Aufsicht dokumentiert? Konformität/Registrierung bei Hochrisiko? Prüftermine aktuell? Schwerwiegende Vorfälle nach Art. 73 gemeldet?</p>
+            @php($openArt73 = $aiSystems->sum('open_art73_count'))
+            @if ($openArt73 > 0)
+                <p class="small"><strong>Achtung:</strong> {{ $openArt73 }} als meldepflichtig (Art. 73) markierte(r) KI-Vorfall/-Vorfälle noch ohne dokumentierte Meldung an die Marktüberwachungsbehörde.</p>
+            @endif
             <table>
                 <thead>
                     <tr>
