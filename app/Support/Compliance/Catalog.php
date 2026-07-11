@@ -82,9 +82,12 @@ class Catalog
                     return Result::pass("Alle {$total} Behörden-/Meldestellen-Kontakte haben einen Kontaktweg.", action: $action);
                 }
 
+                // Erfasste (auch vorbefüllte) Stellen sind bereits ein Fortschritt gegenüber
+                // „nichts" — daher Sockel 60, plus bis zu 40 für die Erreichbarkeit. So zieht
+                // die branchenspezifische Startliste den Reifegrad nicht unter den Leer-Wert.
                 return Result::partial(
-                    (int) round($good / $total * 100),
-                    "{$withoutWay->count()} von {$total} Behörden-/Meldestellen-Kontakten fehlt der Kontaktweg (Telefon/E-Mail/Portal).",
+                    (int) round(60 + 40 * ($good / $total)),
+                    "{$withoutWay->count()} von {$total} Behörden-/Meldestellen-Kontakten fehlt noch der Kontaktweg (Telefon/E-Mail/Portal).",
                     $withoutWay->pluck('name')->take(5)->all(),
                     $action,
                 );
