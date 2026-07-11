@@ -38,6 +38,7 @@ class ManualCatalog
             ['category' => 'Stammdaten', 'slug' => 'ausfallrechner', 'title' => 'Ausfallrechner', 'summary' => 'Schadens-Schätzung bei Ausfall einzelner oder mehrerer Systeme — Stundenkosten × angenommene Dauer.'],
             ['category' => 'Stammdaten', 'slug' => 'versicherungen', 'title' => 'Versicherungen', 'summary' => 'Cyberversicherung, Hotline, Police, Selbstbehalt, Vertragsende.'],
             ['category' => 'Stammdaten', 'slug' => 'sofortmittel', 'title' => 'Sofortmittel', 'summary' => 'Notfall-Ressourcen wie USV, Notebooks, Bargeld, Schlüssel.'],
+            ['category' => 'Stammdaten', 'slug' => 'notfall-kategorien', 'title' => 'Notfall-Kategorien', 'summary' => 'Frei konfigurierbare, mandanteneigene Kategorien für Notfallressourcen (Sofortmittel) — Standardliste beim Start, jederzeit erweiter- und ausdünnbar.'],
             ['category' => 'Stammdaten', 'slug' => 'notfallbetrieb', 'title' => 'Notfallbetrieb', 'summary' => 'Ersatzprozesse für den Ausfall kritischer Systeme — Auslöser, Dauer, Übergabe an den Wiederanlauf.'],
             ['category' => 'Stammdaten', 'slug' => 'notfall-level', 'title' => 'Notfall-Level', 'summary' => 'Klassifizierung der Systeme nach Kritikalität und maximaler Ausfallzeit.'],
 
@@ -49,13 +50,16 @@ class ManualCatalog
             ['category' => 'Ernstfall', 'slug' => 'szenarien', 'title' => 'Szenarien', 'summary' => 'Vorgefertigte Playbooks für typische Notlagen — inklusive kommunaler Vorlagen für Verwaltungen.'],
             ['category' => 'Ernstfall', 'slug' => 'wiederanlauf', 'title' => 'Wiederanlauf', 'summary' => 'Reihenfolge der System-Wiederherstellung nach einem Ausfall.'],
             ['category' => 'Ernstfall', 'slug' => 'meldepflichten', 'title' => 'Vorfälle und Meldepflichten', 'summary' => 'Vorfall melden, Fristen einhalten (DSGVO 72h, NIS2, Versicherung, kommunale Meldewege).'],
+            ['category' => 'Ernstfall', 'slug' => 'behoerden', 'title' => 'Behörden & Meldestellen', 'summary' => 'Branchenspezifisch vorbefülltes Register externer Stellen (Aufsichtsbehörden, BSI, Polizei, Feuerwehr …) mit Anlass, Frist, Kontaktweg und passender Kommunikationsvorlage — im Ernstfall und im Handbuch-PDF griffbereit.'],
             ['category' => 'Ernstfall', 'slug' => 'protokolle-uebungen', 'title' => 'Protokolle und Übungen', 'summary' => 'Szenario-Läufe als Tabletop-Übung oder echte Lage starten — der War-Room.'],
             ['category' => 'Ernstfall', 'slug' => 'uebungsberichte', 'title' => 'Übungsberichte', 'summary' => 'Auswertung abgeschlossener Übungen mit Kennzahlen, Lücken-Hinweisen und PDF-Export — der Nachweis für Prüfer und Versicherer.'],
             ['category' => 'Ernstfall', 'slug' => 'lessons-learned', 'title' => 'Lessons Learned', 'summary' => 'Strukturierte After-Action-Auswertung mit Maßnahmen.'],
             ['category' => 'Ernstfall', 'slug' => 'risiken', 'title' => 'Risiko-Register', 'summary' => 'Risiken bewerten, behandeln, Restrisiko nachweisen.'],
+            ['category' => 'Ernstfall', 'slug' => 'geschaeftsprozesse', 'title' => 'Geschäftsprozesse / BIA', 'summary' => 'Business-Impact-Analyse: Geschäftsprozesse nach Kritikalität einstufen, Wiederanlaufziele (RTO/RPO/MTPD) und Ersatzprozesse festlegen, mit Risiken, Maßnahmen und Offenen Punkten verknüpfen (BSI 200-4, NIS2).'],
             ['category' => 'Ernstfall', 'slug' => 'offene-punkte', 'title' => 'Offene Punkte / Klärpunkte', 'summary' => 'Bekannte, aber noch nicht final entschiedene, geprüfte, dokumentierte oder getestete Themen — mit Verantwortlichem, Frist, Wiedervorlage und Überführung in Risiko/Maßnahme/Szenario/Test. Erscheint im Audit-Teil des Handbuch-PDFs.'],
             ['category' => 'Ernstfall', 'slug' => 'kommunikations-vorlagen', 'title' => 'Kommunikations-Vorlagen', 'summary' => 'Vorbereitete Texte für Mitarbeiter, Kunden, Behörden — versendbar via E-Mail, SMS, Slack, Teams.'],
             ['category' => 'Ernstfall', 'slug' => 'testplan', 'title' => 'Testplan', 'summary' => 'Geplante Notfall-Tests mit Verantwortlichen und Fälligkeiten.'],
+            ['category' => 'Ernstfall', 'slug' => 'schulungen', 'title' => 'Schulungen', 'summary' => 'Schulungs- und Awareness-Nachweise: geplante vs. durchgeführte Schulungen, verantwortliche Person, Wiederholungsintervall mit Fälligkeit — als prüffester Nachweis im Audit-Bericht und Handbuch-PDF (13.4).'],
 
             // Notfallhandbuch & Versionen
             ['category' => 'Notfallhandbuch', 'slug' => 'handbuch-erstellen', 'title' => 'Handbuch-Versionen', 'summary' => 'Versionen erstellen, freigeben, PDF erzeugen, Lesebestätigungen einholen — erreichbar über den Menüpunkt „Notfallhandbuch".'],
@@ -65,6 +69,9 @@ class ManualCatalog
             // Compliance & Audit
             ['category' => 'Compliance', 'slug' => 'compliance-dashboard', 'title' => 'Compliance-Dashboard', 'summary' => 'Reifegrad-Score nach BSI 200-4 / NIS2 mit 30-Tage-Trend.'],
             ['category' => 'Compliance', 'slug' => 'ki-governance', 'title' => 'KI-Governance (EU-KI-Verordnung)', 'summary' => 'KI-System-Register, Klassifizierungs-Assistent, Protokoll/Nachweise und Prüfung nach Verordnung (EU) 2024/1689.'],
+            ['category' => 'Compliance', 'slug' => 'management-review', 'title' => 'Management-Review', 'summary' => 'Dokumentierte BCMS-Bewertung durch die Geschäftsführung (ISO 22301 §9.3, BSI 200-4) mit konsolidiertem Governance-Kapitel im Audit-Bericht.'],
+            ['category' => 'Compliance', 'slug' => 'bcm-leitlinie', 'title' => 'BCM-Leitlinie', 'summary' => 'Grundsatzdokument des Business Continuity Managements: Geltungsbereich, Inhalt und Freigabe durch die Leitung (NIS2 Art. 20/21, BSI 200-4) mit Prüfzyklus.'],
+            ['category' => 'Compliance', 'slug' => 'lieferketten-risiko', 'title' => 'Lieferketten-Risiko', 'summary' => 'Kritische Dienstleister nach NIS2 Art. 21 bewerten — Kritikalität, Sicherheitsbewertung, turnusmäßige Wiederbewertung und Ausweich-Partner, aufbauend auf den Dienstleister-Stammdaten.'],
             ['category' => 'Compliance', 'slug' => 'audit-log', 'title' => 'Audit-Log', 'summary' => 'Lückenlose Änderungshistorie, Filter, CSV/PDF-Export.'],
             ['category' => 'Compliance', 'slug' => 'mandanten-export', 'title' => 'Mandanten-Archiv', 'summary' => 'Vollständiger ZIP-Export für DSGVO-Auskunft und Datenrückgabe.'],
 

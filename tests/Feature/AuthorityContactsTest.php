@@ -5,6 +5,7 @@ use App\Enums\Industry;
 use App\Models\AuthorityContact;
 use App\Models\Company;
 use App\Models\User;
+use App\Support\Compliance\Catalog;
 use App\Support\HandbookData;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
@@ -87,6 +88,21 @@ test('authority contacts are scoped to the current company', function () {
         ->get(route('authority-contacts.index', $user->currentTeam))
         ->assertOk()
         ->assertDontSee('Fremde Behörde XYZ');
+});
+
+test('the compliance catalog has an authority contacts check', function () {
+    [$user, $company] = authorityActingUser();
+    $this->actingAs($user);
+
+    $check = collect(Catalog::all())->firstWhere('key', 'authority.contacts');
+    expect($check)->not->toBeNull();
+
+    // Kontakt ohne jeden Kontaktweg → Teil-Erfüllung (< 100).
+    AuthorityContact::factory()->create([
+        'company_id' => $company->id,
+        'phone' => null, 'email' => null, 'contact_way' => null,
+    ]);
+    expect($check->evaluate($company->fresh())->score)->toBeLessThan(100);
 });
 
 test('the handbook data includes the authority contacts', function () {

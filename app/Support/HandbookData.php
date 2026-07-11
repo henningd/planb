@@ -82,7 +82,7 @@ class HandbookData
             ->orderBy('sort')
             ->orderBy('name');
 
-        $trainingRecordsQuery = TrainingRecord::with('employee')
+        $trainingRecordsQuery = TrainingRecord::with(['employee', 'responsible'])
             ->where('company_id', $company->id)
             ->orderByRaw('completed_at is null')
             ->orderBy('next_due_at')

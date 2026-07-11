@@ -46,6 +46,25 @@
         <p class="muted">{{ $company->name }} &mdash; Business-Impact-Analyse (BIA) mit verknüpften Risiken, Maßnahmen und Offenen Punkten.</p>
         <p class="small muted">Stand: {{ $generatedAt->format('d.m.Y H:i') }} Uhr &middot; Umfang: {{ $processes->count() }} Geschäftsprozess(e). Dieser Bericht ergänzt das Ernstfall-Handbuch um die ausführliche Governance-Sicht (BSI 200-4, NIS2 Art. 21).</p>
 
+        @if ($complianceReport)
+            <h2>Reifegrad / Überblick</h2>
+            <p class="small muted">Gewichteter Gesamt-Reifegrad des BCMS über alle Prüfpunkte (BSI 200-4 / NIS2). Details im Compliance-Dashboard.</p>
+            <table class="meta-table">
+                <tr>
+                    <th style="width: 40%;">Gesamt-Reifegrad</th>
+                    <td><strong>{{ $complianceReport->score() }} / 100</strong> &mdash; {{ $complianceReport->readinessLabel() }}</td>
+                </tr>
+                @foreach ($complianceReport->categories as $categoryReport)
+                    @if ($categoryReport->totalCounted() > 0)
+                        <tr>
+                            <th>{{ $categoryReport->category->label() }}</th>
+                            <td>{{ $categoryReport->score() }} / 100 &middot; {{ $categoryReport->passCount() }}/{{ $categoryReport->totalCounted() }} Prüfpunkte erfüllt</td>
+                        </tr>
+                    @endif
+                @endforeach
+            </table>
+        @endif
+
         <h2>Geschäftsprozesse</h2>
         @forelse ($processes as $process)
             <div class="process">
@@ -199,6 +218,35 @@
             </table>
         @endif
 
+        @if ($authorityContacts->isNotEmpty())
+            <h2>Behörden, Meldestellen und externe Stellen</h2>
+            <p class="small muted">Prüfpunkte: Sind die im Ernst-/Meldefall zuständigen Stellen erfasst — mit Anlass, Frist, Kontaktweg, zuständiger Rolle und passender Kommunikationsvorlage?</p>
+            <table>
+                <thead>
+                    <tr><th>Stelle</th><th>Anlass</th><th>Frist</th><th>Kontaktweg</th><th>Rolle / Vorlage</th></tr>
+                </thead>
+                <tbody>
+                    @foreach ($authorityContacts as $authority)
+                        <tr>
+                            <td><strong>{{ $authority->name }}</strong><div class="small">{{ $authority->type?->label() }}</div></td>
+                            <td>{{ $authority->occasion ?: '—' }}</td>
+                            <td>{{ $authority->deadline ?: '—' }}</td>
+                            <td class="small">
+                                @if ($authority->phone){{ $authority->phone }}@endif
+                                @if ($authority->email)@if ($authority->phone) &middot; @endif{{ $authority->email }}@endif
+                                @if ($authority->contact_way)@if ($authority->phone || $authority->email) &middot; @endif{{ $authority->contact_way }}@endif
+                                @if (! $authority->phone && ! $authority->email && ! $authority->contact_way)—@endif
+                            </td>
+                            <td class="small">
+                                {{ $authority->responsibleRole?->name ?? '—' }}
+                                @if ($authority->communicationTemplate)<br>Vorlage: {{ $authority->communicationTemplate->name }}@endif
+                            </td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        @endif
+
         @if ($trainingRecords->isNotEmpty())
             <h2>Schulungen und Awareness</h2>
             <p class="small muted">Prüfpunkte: Welche Schulungen sind geplant/durchgeführt? Wer wurde geschult? Wann ist die nächste Fälligkeit? Welche Nachweise liegen vor?</p>
@@ -210,7 +258,7 @@
                     @foreach ($trainingRecords as $training)
                         <tr>
                             <td><strong>{{ $training->topic }}</strong><div class="small">{{ $training->type?->label() }}</div></td>
-                            <td>{{ $training->employee?->fullName() ?? '—' }}</td>
+                            <td>{{ $training->employee?->fullName() ?? '—' }}@if ($training->responsible)<div class="small">verantw.: {{ $training->responsible->fullName() }}</div>@endif</td>
                             <td>{{ $training->completed_at ? 'durchgeführt am '.$training->completed_at->format('d.m.Y') : 'geplant' }}</td>
                             <td>{{ $training->next_due_at?->format('d.m.Y') ?? '—' }}@if ($training->isOverdue()) <strong>(überfällig)</strong>@endif</td>
                             <td class="small">{{ $training->notes ?: '—' }}</td>

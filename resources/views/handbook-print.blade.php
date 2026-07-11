@@ -1959,7 +1959,7 @@
                     @foreach ($trainingRecords as $training)
                         <tr>
                             <td><strong>{{ $training->topic }}</strong>@if ($training->type)<br><span class="small">{{ $training->type->label() }}</span>@endif</td>
-                            <td>{{ $training->employee?->fullName() ?? '—' }}</td>
+                            <td>{{ $training->employee?->fullName() ?? '—' }}@if ($training->responsible)<br><span class="small">verantw.: {{ $training->responsible->fullName() }}</span>@endif</td>
                             <td>{{ $training->completed_at?->format('d.m.Y') ?? 'geplant' }}</td>
                             <td>{{ $training->next_due_at?->format('d.m.Y') ?? '—' }}@if ($training->isOverdue()) &middot; <strong>überfällig</strong>@endif</td>
                         </tr>

@@ -8,6 +8,7 @@ use App\Enums\CrisisRole;
 use App\Enums\RiskStatus;
 use App\Enums\SystemOwnership;
 use App\Models\AiSystem;
+use App\Models\AuthorityContact;
 use App\Models\CommunicationTemplate;
 use App\Models\Company;
 use App\Models\EmergencyResource;
@@ -48,7 +49,47 @@ class Catalog
             self::risksHandled(),
             self::risksReviewed(),
             self::aiGovernance(),
+            self::authorityContacts(),
         ];
+    }
+
+    private static function authorityContacts(): Check
+    {
+        return new Check(
+            key: 'authority.contacts',
+            label: 'Behörden & Meldestellen erfasst',
+            description: 'Die im Ernst-/Meldefall zuständigen Behörden und Meldestellen sind erfasst und mit einem Kontaktweg (Telefon, E-Mail oder Meldeportal) hinterlegt.',
+            category: ComplianceCategory::Dokumentation,
+            weight: 4,
+            evaluator: function (Company $company): Result {
+                if (! config('features.authority_contacts')) {
+                    return Result::notApplicable('Behörden-/Meldestellen-Register deaktiviert.');
+                }
+                $action = ['label' => 'Behörden & Meldestellen öffnen', 'route' => 'authority-contacts.index'];
+                $contacts = AuthorityContact::query()->where('company_id', $company->id)->get();
+
+                if ($contacts->isEmpty()) {
+                    return Result::partial(40, 'Noch keine Behörden-/Meldestellen-Kontakte erfasst.', action: $action);
+                }
+
+                $withoutWay = $contacts->filter(
+                    fn (AuthorityContact $c) => blank($c->phone) && blank($c->email) && blank($c->contact_way)
+                );
+                $total = $contacts->count();
+                $good = $total - $withoutWay->count();
+
+                if ($withoutWay->isEmpty()) {
+                    return Result::pass("Alle {$total} Behörden-/Meldestellen-Kontakte haben einen Kontaktweg.", action: $action);
+                }
+
+                return Result::partial(
+                    (int) round($good / $total * 100),
+                    "{$withoutWay->count()} von {$total} Behörden-/Meldestellen-Kontakten fehlt der Kontaktweg (Telefon/E-Mail/Portal).",
+                    $withoutWay->pluck('name')->take(5)->all(),
+                    $action,
+                );
+            },
+        );
     }
 
     private static function aiGovernance(): Check

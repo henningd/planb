@@ -2,6 +2,18 @@
 
 Im Ernstfall sind oft die App, die Cloud, das Internet nicht erreichbar — gerade dann brauchen Sie das Handbuch. Das PDF ist die **offline-taugliche Variante**: gedruckt im Schrank, auf dem Laptop, am USB-Stick.
 
+## Drei Export-Typen
+
+Über den Knopf **„Exportieren"** auf der Seite [Handbuch-Versionen](handbuch-erstellen) erzeugen Sie das PDF live in drei fachlichen Zuschnitten — je nachdem, für wen es gedacht ist. Diese Exporte sind eine tagesaktuelle Momentaufnahme und werden nicht revisionssicher abgelegt.
+
+**Typ 1 — Ernstfall-Handbuch.** Die schlanke, rein operative Fassung für den Papierordner im Server-Raum und den Krisenstab. Sie enthält nur, was im Ernstfall zählt (Krisenstab, Kontakte, Systeme, Szenarien, Wiederanlauf, Kommunikations-Vorlagen, Sofortmittel) — **ohne Governance- und Audit-Kapitel**. Kein Ballast, den man in der Lage nicht liest.
+
+**Typ 2 — Audit-Bericht.** Der Nachweis-Teil für Geschäftsführung, Prüfung und Auditor: **Reifegrad, Risiken, Maßnahmen, Aufgaben, Tests, Schulungen, Lessons Learned, Management Review, BIA (Business Impact Analyse) und Versicherungsprüfung**. Genau die Kapitel, die im Ernstfall-Handbuch bewusst fehlen. Dieser Export ist nur verfügbar, wenn das BIA-/Audit-Modul aktiv ist.
+
+**Typ 3 — Vollständiger Export.** Handbuch und Audit-Bericht in **einem** Dokument, mit Seitenumbruch dazwischen. Gedacht für Archiv und Übergabe (z. B. an Nachfolger, Prüfer oder zur Ablage in der Compliance-Akte), wenn wirklich alles in einer Datei liegen soll.
+
+Davon unberührt bleibt das **revisionssichere, versionierte PDF**: Es wird weiterhin einmalig pro freigegebener Version erzeugt, mit SHA-256-Hash signiert und dauerhaft abgelegt (siehe unten). Die drei Export-Typen ersetzen es nicht, sondern ergänzen es um zweckgebundene, jederzeit neu erzeugbare Fassungen.
+
 ## Wann ein PDF erzeugt wird
 
 - Bei Freigabe einer Handbuch-Version (sofern Auto-PDF aktiviert) — siehe „Handbuch-Versionen".

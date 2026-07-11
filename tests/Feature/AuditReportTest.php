@@ -3,6 +3,7 @@
 use App\Enums\InsuranceType;
 use App\Enums\ProcessCriticality;
 use App\Models\AiSystem;
+use App\Models\AuthorityContact;
 use App\Models\BusinessProcess;
 use App\Models\Company;
 use App\Models\Employee;
@@ -107,6 +108,36 @@ test('the audit report includes an insurance review section', function () {
         ->assertSee('abgelaufen')
         ->assertSee('überfällig')
         ->assertSee('nicht getestet');
+});
+
+test('the audit report includes a maturity overview, authorities and the training organizer', function () {
+    $user = User::factory()->create();
+    $company = Company::factory()->for($user->currentTeam)->create();
+
+    $trained = Employee::factory()->create(['company_id' => $company->id, 'first_name' => 'Erika', 'last_name' => 'Musterfrau']);
+    $organizer = Employee::factory()->create(['company_id' => $company->id, 'first_name' => 'Olaf', 'last_name' => 'Organisator']);
+    TrainingRecord::factory()->create([
+        'company_id' => $company->id,
+        'employee_id' => $trained->id,
+        'responsible_employee_id' => $organizer->id,
+        'topic' => 'Brandschutzunterweisung',
+    ]);
+
+    AuthorityContact::factory()->create([
+        'company_id' => $company->id,
+        'name' => 'Landesumweltamt Musterland',
+        'occasion' => 'Umweltrelevanter Störfall',
+        'phone' => '0800 111222',
+    ]);
+
+    $this->actingAs($user->fresh())
+        ->get(route('audit-report.print'))
+        ->assertOk()
+        ->assertSee('Reifegrad / Überblick')
+        ->assertSee('Behörden, Meldestellen und externe Stellen')
+        ->assertSee('Landesumweltamt Musterland')
+        ->assertSee('Brandschutzunterweisung')
+        ->assertSee('Olaf Organisator');
 });
 
 test('the audit report includes training, tasks, lessons and management review', function () {

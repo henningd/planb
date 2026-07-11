@@ -19,6 +19,8 @@ new #[Title('Schulungen')] class extends Component {
 
     public string $employee_id = '';
 
+    public string $responsible_employee_id = '';
+
     public string $topic = '';
 
     public string $type = '';
@@ -90,6 +92,7 @@ new #[Title('Schulungen')] class extends Component {
 
         $this->editingId = $record->id;
         $this->employee_id = (string) $record->employee_id;
+        $this->responsible_employee_id = (string) ($record->responsible_employee_id ?? '');
         $this->topic = (string) $record->topic;
         $this->type = $record->type->value;
         $this->completed_at = $record->completed_at?->toDateString();
@@ -110,6 +113,7 @@ new #[Title('Schulungen')] class extends Component {
 
         $validated = $this->validate([
             'employee_id' => ['required', 'string', Rule::exists('employees', 'id')],
+            'responsible_employee_id' => ['nullable', 'string', Rule::exists('employees', 'id')],
             'topic' => ['required', 'string', 'max:255'],
             'type' => ['required', Rule::in(collect(TrainingType::cases())->pluck('value'))],
             'completed_at' => ['nullable', 'date'],
@@ -168,7 +172,7 @@ new #[Title('Schulungen')] class extends Component {
 
     protected function resetForm(): void
     {
-        $this->reset(['editingId', 'employee_id', 'topic', 'completed_at', 'interval', 'next_due_at', 'notes']);
+        $this->reset(['editingId', 'employee_id', 'responsible_employee_id', 'topic', 'completed_at', 'interval', 'next_due_at', 'notes']);
         $this->type = TrainingType::Bcm->value;
     }
 }; ?>
@@ -300,12 +304,20 @@ new #[Title('Schulungen')] class extends Component {
                 <flux:subheading>{{ __('Wer wurde wann zu welchem Thema geschult, und wann ist die nächste Schulung fällig?') }}</flux:subheading>
             </div>
 
-            <flux:select wire:model="employee_id" :label="__('Mitarbeiter')" required>
-                <flux:select.option value="">{{ __('Bitte wählen') }}</flux:select.option>
-                @foreach ($this->employees as $employee)
-                    <flux:select.option value="{{ $employee->id }}">{{ $employee->nameLastFirst() }}</flux:select.option>
-                @endforeach
-            </flux:select>
+            <div class="grid gap-4 sm:grid-cols-2">
+                <flux:select wire:model="employee_id" :label="__('Geschulte Person')" required>
+                    <flux:select.option value="">{{ __('Bitte wählen') }}</flux:select.option>
+                    @foreach ($this->employees as $employee)
+                        <flux:select.option value="{{ $employee->id }}">{{ $employee->nameLastFirst() }}</flux:select.option>
+                    @endforeach
+                </flux:select>
+                <flux:select wire:model="responsible_employee_id" :label="__('Verantwortlich (Organisator)')">
+                    <flux:select.option value="">{{ __('— optional —') }}</flux:select.option>
+                    @foreach ($this->employees as $employee)
+                        <flux:select.option value="{{ $employee->id }}">{{ $employee->nameLastFirst() }}</flux:select.option>
+                    @endforeach
+                </flux:select>
+            </div>
 
             <flux:input wire:model="topic" :label="__('Thema')" type="text" placeholder="z. B. Phishing-Awareness" required />
 

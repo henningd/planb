@@ -25,6 +25,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 #[Fillable([
     'company_id',
     'employee_id',
+    'responsible_employee_id',
     'topic',
     'type',
     'completed_at',
@@ -48,6 +49,16 @@ class TrainingRecord extends Model
     public function employee(): BelongsTo
     {
         return $this->belongsTo(Employee::class);
+    }
+
+    /**
+     * Für die Schulung verantwortliche Person (Organisator/Trainer), optional.
+     *
+     * @return BelongsTo<Employee, $this>
+     */
+    public function responsible(): BelongsTo
+    {
+        return $this->belongsTo(Employee::class, 'responsible_employee_id');
     }
 
     public function isOverdue(): bool

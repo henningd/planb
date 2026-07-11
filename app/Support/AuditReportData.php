@@ -3,6 +3,7 @@
 namespace App\Support;
 
 use App\Models\AiSystem;
+use App\Models\AuthorityContact;
 use App\Models\BusinessProcess;
 use App\Models\Company;
 use App\Models\HandbookTest;
@@ -14,6 +15,7 @@ use App\Models\PreventiveMeasure;
 use App\Models\Risk;
 use App\Models\SystemTask;
 use App\Models\TrainingRecord;
+use App\Support\Compliance\Evaluator;
 use Illuminate\Support\Carbon;
 
 /**
@@ -50,7 +52,7 @@ class AuditReportData
             ->get();
 
         $trainingRecords = config('features.training_records')
-            ? TrainingRecord::with('employee')
+            ? TrainingRecord::with(['employee', 'responsible'])
                 ->where('company_id', $company->id)
                 ->orderByRaw('completed_at is null')
                 ->orderBy('next_due_at')
@@ -108,6 +110,13 @@ class AuditReportData
 
         return [
             'company' => $company,
+            'complianceReport' => config('features.compliance') ? Evaluator::for($company) : null,
+            'authorityContacts' => config('features.authority_contacts')
+                ? AuthorityContact::with(['responsibleRole', 'communicationTemplate'])
+                    ->where('company_id', $company->id)
+                    ->orderBy('type')->orderBy('sort')->orderBy('name')
+                    ->get()
+                : collect(),
             'processes' => $processes,
             'unlinkedRisks' => Risk::where('company_id', $company->id)->whereNull('business_process_id')->orderBy('title')->get(),
             'unlinkedMeasures' => PreventiveMeasure::with(['responsible', 'responsibleRole'])->where('company_id', $company->id)->whereNull('business_process_id')->orderBy('title')->get(),
