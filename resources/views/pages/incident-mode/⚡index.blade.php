@@ -2,12 +2,14 @@
 
 use App\Concerns\SendsCommunicationTemplates;
 use App\Enums\CommunicationChannel;
+use App\Events\ScenarioRunMessagePosted;
 use App\Events\ScenarioRunStepCompleted;
 use App\Events\ScenarioRunStepReopened;
 use App\Models\Company;
 use App\Models\CrisisLogEntry;
 use App\Models\FordecDecision;
 use App\Models\ScenarioRun;
+use App\Models\ScenarioRunMessage;
 use App\Models\ScenarioRunStep;
 use App\Models\ServiceProvider as ServiceProviderModel;
 use App\Services\Sms\SmsGatewayContract;
@@ -37,6 +39,11 @@ new #[Title('Krisen-Cockpit')] class extends Component {
      * Freitext für einen neuen manuellen Logbuch-Eintrag.
      */
     public string $newLogMessage = '';
+
+    /**
+     * Freitext für eine neue Koordinations-/Lagemeldung (Chat, geteilt mit der App).
+     */
+    public string $newCoordinationMessage = '';
 
     // FORDEC-Entscheidungsmaske (Facts, Options, Risks & Benefits, Decision, Execution, Check).
     public string $fordecTitle = '';
@@ -377,6 +384,63 @@ new #[Title('Krisen-Cockpit')] class extends Component {
             'message' => $message,
             'occurred_at' => now(),
         ]);
+    }
+
+    /**
+     * Koordinations-Chat (freie Lagemeldungen) des aktiven Laufs — derselbe
+     * Strom wie in der App, chronologisch (älteste zuerst).
+     *
+     * @return Collection<int, ScenarioRunMessage>
+     */
+    #[Computed]
+    public function coordinationMessages(): Collection
+    {
+        $run = $this->cockpit?->activeRun;
+        if ($run === null) {
+            return collect();
+        }
+
+        return $run->messages()->with('user')->get();
+    }
+
+    /**
+     * Postet eine Koordinations-/Lagemeldung. Broadcastet via Reverb, sodass App
+     * und andere Browser sie sofort sehen; App-Meldungen laufen umgekehrt hier ein.
+     */
+    public function postCoordinationMessage(): void
+    {
+        $run = $this->cockpit?->activeRun;
+        if ($run === null) {
+            return;
+        }
+
+        $body = trim($this->newCoordinationMessage);
+        if ($body === '') {
+            return;
+        }
+
+        $message = ScenarioRunMessage::create([
+            'company_id' => $run->company_id,
+            'scenario_run_id' => $run->id,
+            'user_id' => Auth::id(),
+            'author_name' => Auth::user()->name,
+            'body' => mb_substr($body, 0, 2000),
+        ]);
+
+        $this->newCoordinationMessage = '';
+        unset($this->coordinationMessages);
+
+        rescue(fn () => event(new ScenarioRunMessagePosted($message)), report: false);
+    }
+
+    /**
+     * Live-Aktualisierung: eine neue Meldung (aus der App oder einem anderen
+     * Browser) verwirft den Cache, sodass sie sofort erscheint.
+     */
+    #[On('echo-private:scenario-run.{activeRunId},.message.posted')]
+    public function onCoordinationMessagePosted(): void
+    {
+        unset($this->coordinationMessages);
     }
 
     /**
@@ -1381,6 +1445,33 @@ new #[Title('Krisen-Cockpit')] class extends Component {
                             @endforeach
                         </ul>
                     @endif
+                </div>
+
+                {{-- Sektion 8: Koordination — freier Lagemeldungs-Chat, live via Reverb (derselbe Strom wie in der App). --}}
+                <div class="rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900" data-test="cockpit-coordination">
+                    <div class="mb-1 flex items-center gap-2">
+                        <flux:icon.chat-bubble-left-ellipsis class="h-5 w-5 text-zinc-500" />
+                        <flux:heading size="lg">{{ __('Koordination') }}</flux:heading>
+                    </div>
+                    <flux:subheading class="mb-4 text-xs">{{ __('Kurze Lagemeldungen für alle, die an diesem Notfall arbeiten — App und Cockpit sehen sich gegenseitig in Echtzeit (zusätzlich zum Krisen-Logbuch).') }}</flux:subheading>
+
+                    <div class="mb-4 max-h-72 space-y-2 overflow-y-auto" data-test="cockpit-coordination-messages">
+                        @forelse ($this->coordinationMessages as $message)
+                            <div wire:key="coord-{{ $message->id }}" class="rounded-lg bg-zinc-50 px-3 py-2 text-sm dark:bg-zinc-950/40">
+                                <div class="whitespace-pre-line text-zinc-800 dark:text-zinc-200">{{ $message->body }}</div>
+                                <div class="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">
+                                    {{ $message->author_name ?? $message->user?->name ?? __('System') }} · {{ $message->created_at?->isoFormat('DD.MM.YYYY HH:mm') }} {{ __('Uhr') }}
+                                </div>
+                            </div>
+                        @empty
+                            <flux:text class="text-sm text-zinc-500 dark:text-zinc-400">{{ __('Noch keine Lagemeldungen.') }}</flux:text>
+                        @endforelse
+                    </div>
+
+                    <form wire:submit="postCoordinationMessage" class="flex items-end gap-2">
+                        <flux:textarea wire:model="newCoordinationMessage" rows="1" class="flex-1" :placeholder="__('Lagemeldung schreiben… (z. B. „Feuerwehr eingetroffen“)')" data-test="cockpit-coordination-input" />
+                        <flux:button type="submit" variant="primary" icon="paper-airplane" data-test="cockpit-coordination-send">{{ __('Senden') }}</flux:button>
+                    </form>
                 </div>
             </div>
 
