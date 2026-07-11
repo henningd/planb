@@ -35,6 +35,29 @@ new #[Title("Durchlauf")] class extends Component {
         }
     }
 
+    /** Öffentlichen Live-Lage-Link aktivieren (für GF/externe ohne App-Zugang). */
+    public function shareLage(): void
+    {
+        $this->run->enableSharing();
+        $this->run->refresh();
+        Flux::toast(text: __("Live-Lage-Link aktiviert."));
+    }
+
+    /** Link deaktivieren / widerrufen. */
+    public function unshareLage(): void
+    {
+        $this->run->disableSharing();
+        $this->run->refresh();
+        Flux::toast(text: __("Live-Lage-Link deaktiviert."));
+    }
+
+    public function shareUrl(): ?string
+    {
+        return $this->run->share_token
+            ? route("incident.status", ["token" => $this->run->share_token])
+            : null;
+    }
+
     #[Computed]
     public function progress(): array
     {
@@ -243,6 +266,26 @@ new #[Title("Durchlauf")] class extends Component {
                     <flux:button type="button" variant="primary" icon="check" wire:click="complete">
                         {{ __('Durchlauf abschließen') }}
                     </flux:button>
+                </div>
+            @endif
+        </div>
+
+        <div class="mt-4 rounded-lg border border-zinc-200 bg-zinc-50 p-3 text-sm dark:border-zinc-700 dark:bg-zinc-950/40">
+            @if ($this->shareUrl())
+                <div class="flex flex-wrap items-center gap-2">
+                    <flux:icon.globe-alt class="h-4 w-4 shrink-0 text-emerald-600" />
+                    <span class="font-medium">{{ __('Live-Lage-Link aktiv') }}</span>
+                    <input type="text" readonly value="{{ $this->shareUrl() }}"
+                           class="min-w-0 flex-1 rounded border border-zinc-300 bg-white px-2 py-1 text-xs dark:border-zinc-600 dark:bg-zinc-900"
+                           onclick="this.select()" />
+                    <flux:button size="xs" variant="ghost" icon="arrow-top-right-on-square" :href="$this->shareUrl()" target="_blank">{{ __('Öffnen') }}</flux:button>
+                    <flux:button size="xs" variant="ghost" wire:click="unshareLage">{{ __('Deaktivieren') }}</flux:button>
+                </div>
+                <flux:text class="mt-1 text-xs text-zinc-500 dark:text-zinc-400">{{ __('Read-only Lagestatus (Phase, Fortschritt, offene Schritte) für Berechtigte ohne App-Zugang — aktualisiert sich selbst. Keine Kontaktdaten/Notizen.') }}</flux:text>
+            @else
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                    <flux:text class="text-xs text-zinc-600 dark:text-zinc-400">{{ __('Lagestatus für GF/externe Partner ohne App-Zugang teilen (read-only, tokengeschützt).') }}</flux:text>
+                    <flux:button size="xs" variant="filled" icon="share" wire:click="shareLage">{{ __('Live-Lage teilen') }}</flux:button>
                 </div>
             @endif
         </div>

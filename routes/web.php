@@ -19,6 +19,7 @@ use App\Models\HandbookShare;
 use App\Models\Location;
 use App\Models\Role;
 use App\Models\Scenario;
+use App\Models\ScenarioRun;
 use App\Models\System;
 use App\Scopes\CurrentCompanyScope;
 use App\Support\AuditReportData;
@@ -696,5 +697,24 @@ Route::get('shared-handbook/{token}', function (string $token) {
 
     return view('handbook-print', HandbookData::forCompany($company, $share));
 })->name('handbook.shared');
+
+// Öffentlicher, tokengeschützter Live-Lagestatus eines Notfalls — read-only,
+// für GF/externe Partner ohne App-Zugang. Bewusst nur Lage-/Fortschrittsdaten,
+// keine persönlichen Kontaktdaten oder Schritt-Notizen.
+Route::get('lage/{token}', function (string $token) {
+    $run = ScenarioRun::withoutGlobalScope(CurrentCompanyScope::class)
+        ->with(['scenario', 'steps', 'crisisLogEntries' => fn ($q) => $q->limit(12)])
+        ->where('share_token', $token)
+        ->first();
+
+    abort_unless($run, 404);
+
+    $company = Company::withoutGlobalScope(CurrentCompanyScope::class)->find($run->company_id);
+
+    return response()->view('incident-status', [
+        'run' => $run,
+        'company' => $company,
+    ]);
+})->where('token', '[A-Za-z0-9]+')->name('incident.status');
 
 require __DIR__.'/settings.php';
