@@ -21,6 +21,7 @@ use App\Models\Role;
 use App\Models\Scenario;
 use App\Models\ScenarioRun;
 use App\Models\ScenarioRunAcknowledgement;
+use App\Models\ScenarioRunMessage;
 use App\Models\ScenarioRunStep;
 use App\Models\ServiceProvider;
 use App\Models\System;
@@ -143,6 +144,8 @@ class MobileSyncBundle
                 'steps.checkedBy',
                 'crisisLogEntries.user',
                 'acknowledgements.user',
+                'messages' => fn ($q) => $q->orderBy('created_at'),
+                'messages.user',
             ])
             ->orderByDesc('started_at')
             ->get()
@@ -195,6 +198,13 @@ class MobileSyncBundle
                     'user_phone' => $entry->user?->phone,
                     'user_emergency' => $entry->user?->emergency_phone,
                     'occurred_at' => $entry->occurred_at?->toIso8601String(),
+                ])->all(),
+                // Koordinations-Chat (freie Lagemeldungen) für die App.
+                'messages' => $run->messages->take(200)->map(fn (ScenarioRunMessage $m) => [
+                    'id' => $m->id,
+                    'author' => $m->author_name ?? $m->user?->name,
+                    'body' => $m->body,
+                    'created_at' => $m->created_at?->toIso8601String(),
                 ])->all(),
             ])
             ->all();

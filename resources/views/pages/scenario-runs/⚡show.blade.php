@@ -1,9 +1,11 @@
 <?php
 
+use App\Events\ScenarioRunMessagePosted;
 use App\Events\ScenarioRunNoteUpdated;
 use App\Events\ScenarioRunStepCompleted;
 use App\Events\ScenarioRunStepReopened;
 use App\Models\ScenarioRun;
+use App\Models\ScenarioRunMessage;
 use App\Support\Scenarios\CloseScenarioRun;
 use Flux\Flux;
 use Illuminate\Support\Facades\Auth;
@@ -23,6 +25,8 @@ new #[Title("Durchlauf")] class extends Component {
 
     /** @var array<string, true> */
     public array $recentlyChanged = [];
+
+    public string $newMessage = "";
 
     public function mount(ScenarioRun $run): void
     {
@@ -113,6 +117,42 @@ new #[Title("Durchlauf")] class extends Component {
         rescue(fn () => event(new ScenarioRunNoteUpdated($step, Auth::user()->name, $note)), report: false);
 
         Flux::toast(text: __("Notiz gespeichert."));
+    }
+
+    /**
+     * @return \Illuminate\Support\Collection<int, ScenarioRunMessage>
+     */
+    #[Computed]
+    public function messages(): \Illuminate\Support\Collection
+    {
+        return $this->run->messages()->with("user")->get();
+    }
+
+    public function postMessage(): void
+    {
+        $body = trim($this->newMessage);
+        if ($body === "") {
+            return;
+        }
+
+        $message = ScenarioRunMessage::create([
+            "company_id" => $this->run->company_id,
+            "scenario_run_id" => $this->run->id,
+            "user_id" => Auth::id(),
+            "author_name" => Auth::user()->name,
+            "body" => mb_substr($body, 0, 2000),
+        ]);
+
+        $this->newMessage = "";
+        unset($this->messages);
+
+        rescue(fn () => event(new ScenarioRunMessagePosted($message)), report: false);
+    }
+
+    #[On("echo-private:scenario-run.{run.id},.message.posted")]
+    public function applyMessagePosted(): void
+    {
+        unset($this->messages);
     }
 
     public function complete(): void
@@ -363,6 +403,32 @@ new #[Title("Durchlauf")] class extends Component {
                 </div>
             </div>
         @endforeach
+    </div>
+
+    {{-- Koordination: freier Lagemeldungs-Stream unter den Bearbeitenden, live via Reverb. --}}
+    <div class="mt-6 rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
+        <flux:heading size="base" class="mb-1">{{ __('Koordination') }}</flux:heading>
+        <flux:subheading class="mb-3 text-xs">{{ __('Kurze Lagemeldungen für alle, die an diesem Notfall arbeiten (zusätzlich zum Ereignis-Log). Aktualisiert sich live.') }}</flux:subheading>
+
+        <div class="mb-3 max-h-72 space-y-2 overflow-y-auto">
+            @forelse ($this->messages as $message)
+                <div wire:key="msg-{{ $message->id }}" class="rounded-lg bg-zinc-50 px-3 py-2 text-sm dark:bg-zinc-950/40">
+                    <div class="text-zinc-800 dark:text-zinc-200 whitespace-pre-line">{{ $message->body }}</div>
+                    <div class="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">
+                        {{ $message->author_name ?? $message->user?->name ?? __('System') }} · {{ $message->created_at?->format('d.m.Y H:i') }} {{ __('Uhr') }}
+                    </div>
+                </div>
+            @empty
+                <flux:text class="text-sm text-zinc-500 dark:text-zinc-400">{{ __('Noch keine Lagemeldungen.') }}</flux:text>
+            @endforelse
+        </div>
+
+        @if ($run->isActive())
+            <form wire:submit="postMessage" class="flex items-end gap-2">
+                <flux:textarea wire:model="newMessage" rows="1" class="flex-1" :placeholder="__('Lagemeldung schreiben… (z. B. „Feuerwehr eingetroffen")')" />
+                <flux:button type="submit" variant="primary" icon="paper-airplane">{{ __('Senden') }}</flux:button>
+            </form>
+        @endif
     </div>
 
     @if ($run->ended_at || $run->aborted_at)

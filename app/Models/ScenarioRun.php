@@ -76,6 +76,16 @@ class ScenarioRun extends Model
         return $this->hasMany(ScenarioRunAcknowledgement::class)->orderBy('acknowledged_at');
     }
 
+    /**
+     * Freie Koordinations-/Lagemeldungen der Bearbeitenden (Chat).
+     *
+     * @return HasMany<ScenarioRunMessage, $this>
+     */
+    public function messages(): HasMany
+    {
+        return $this->hasMany(ScenarioRunMessage::class)->orderBy('created_at');
+    }
+
     public function isDrill(): bool
     {
         return $this->mode === ScenarioRunMode::Drill;
