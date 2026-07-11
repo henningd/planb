@@ -14,6 +14,8 @@ Knopf **„Neuer Nachweis"**. Pflichtangaben:
 
 - **Geschulte Person** — wer teilgenommen hat (aus der Liste, siehe [Mitarbeiter](mitarbeiter)).
 - **Verantwortlich (Organisator)** — optional: wer die Schulung organisiert/durchgeführt hat. Erscheint als Nachweis im Audit-Bericht und Handbuch-PDF.
+
+**Abgeleitete Maßnahmen:** Ergibt eine Schulung Handlungsbedarf (z. B. „Passwort-Richtlinie überarbeiten"), legen Sie dazu einen [Offenen Punkt / Klärpunkt](offene-punkte) an und verknüpfen ihn im Feld **„Aus Schulung entstanden"** mit dieser Schulung. Im Audit-Bericht erscheinen diese Maßnahmen dann direkt bei der Schulung — so ist belegt, dass aus Schulungen auch etwas folgt.
 - **Thema** — z. B. „Phishing-Awareness" oder „Evakuierung Standort Nord".
 - **Typ** — BCM-/Notfallschulung, IT-Sicherheit, Leitungsschulung oder Datenschutz.
 

@@ -116,11 +116,16 @@ test('the audit report includes a maturity overview, authorities and the trainin
 
     $trained = Employee::factory()->create(['company_id' => $company->id, 'first_name' => 'Erika', 'last_name' => 'Musterfrau']);
     $organizer = Employee::factory()->create(['company_id' => $company->id, 'first_name' => 'Olaf', 'last_name' => 'Organisator']);
-    TrainingRecord::factory()->create([
+    $training = TrainingRecord::factory()->create([
         'company_id' => $company->id,
         'employee_id' => $trained->id,
         'responsible_employee_id' => $organizer->id,
         'topic' => 'Brandschutzunterweisung',
+    ]);
+    OpenItem::factory()->create([
+        'company_id' => $company->id,
+        'training_record_id' => $training->id,
+        'title' => 'Fluchtwegplan aktualisieren',
     ]);
 
     AuthorityContact::factory()->create([
@@ -134,10 +139,12 @@ test('the audit report includes a maturity overview, authorities and the trainin
         ->get(route('audit-report.print'))
         ->assertOk()
         ->assertSee('Reifegrad / Überblick')
+        ->assertSee('Handlungsbedarf') // schwächste Prüfpunkte (leere Firma → offene Checks)
         ->assertSee('Behörden, Meldestellen und externe Stellen')
         ->assertSee('Landesumweltamt Musterland')
         ->assertSee('Brandschutzunterweisung')
-        ->assertSee('Olaf Organisator');
+        ->assertSee('Olaf Organisator')
+        ->assertSee('Fluchtwegplan aktualisieren'); // abgeleitete Maßnahme aus der Schulung
 });
 
 test('the audit report includes training, tasks, lessons and management review', function () {

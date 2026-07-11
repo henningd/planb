@@ -90,6 +90,29 @@ test('authority contacts are scoped to the current company', function () {
         ->assertDontSee('Fremde Behörde XYZ');
 });
 
+test('the detail page shows a contact and blocks foreign tenants', function () {
+    [$user, $company] = authorityActingUser();
+    $contact = AuthorityContact::factory()->create([
+        'company_id' => $company->id,
+        'name' => 'Kreisleitstelle Musterkreis',
+        'contact_way' => 'https://meldeportal.example/behoerde',
+    ]);
+
+    $this->actingAs($user)
+        ->get(route('authority-contacts.show', $contact))
+        ->assertOk()
+        ->assertSee('Kreisleitstelle Musterkreis')
+        ->assertSee('https://meldeportal.example/behoerde');
+
+    $otherUser = User::factory()->create();
+    $otherCompany = Company::factory()->for($otherUser->currentTeam)->create();
+    $foreign = AuthorityContact::factory()->create(['company_id' => $otherCompany->id]);
+
+    $this->actingAs($user)
+        ->get(route('authority-contacts.show', $foreign))
+        ->assertNotFound();
+});
+
 test('the compliance catalog has an authority contacts check', function () {
     [$user, $company] = authorityActingUser();
     $this->actingAs($user);

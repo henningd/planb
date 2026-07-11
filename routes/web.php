@@ -359,6 +359,9 @@ Route::prefix('{current_team}')
         }
         if (config('features.authority_contacts')) {
             Route::livewire('authority-contacts', 'pages::authority-contacts.index')->name('authority-contacts.index');
+            Route::livewire('authority-contacts/{authorityContact}', 'pages::authority-contacts.show')
+                ->where('authorityContact', '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}')
+                ->name('authority-contacts.show');
         }
         if (config('features.training_records')) {
             Route::livewire('schulungen', 'pages::training-records.index')->name('training-records.index');

@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * Schulungs-/Awareness-Nachweis: wer wurde wann zu welchem Thema geschult
@@ -59,6 +60,16 @@ class TrainingRecord extends Model
     public function responsible(): BelongsTo
     {
         return $this->belongsTo(Employee::class, 'responsible_employee_id');
+    }
+
+    /**
+     * Aus dieser Schulung abgeleitete Offene Punkte / Maßnahmen.
+     *
+     * @return HasMany<OpenItem, $this>
+     */
+    public function openItems(): HasMany
+    {
+        return $this->hasMany(OpenItem::class);
     }
 
     public function isOverdue(): bool

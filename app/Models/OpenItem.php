@@ -24,6 +24,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 #[Fillable([
     'company_id',
     'business_process_id',
+    'training_record_id',
     'title',
     'relevance',
     'risk_id',
@@ -61,6 +62,16 @@ class OpenItem extends Model
     public function businessProcess(): BelongsTo
     {
         return $this->belongsTo(BusinessProcess::class);
+    }
+
+    /**
+     * Schulung, aus der dieser offene Punkt / diese Maßnahme entstanden ist (optional).
+     *
+     * @return BelongsTo<TrainingRecord, $this>
+     */
+    public function trainingRecord(): BelongsTo
+    {
+        return $this->belongsTo(TrainingRecord::class);
     }
 
     /**

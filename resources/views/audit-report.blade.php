@@ -63,6 +63,24 @@
                     @endif
                 @endforeach
             </table>
+
+            @php($openChecks = collect($complianceReport->items)->filter(fn ($e) => $e['result']->isCounted() && $e['result']->score < 100)->sortBy(fn ($e) => $e['result']->score)->values())
+            @if ($openChecks->isNotEmpty())
+                <h3>Handlungsbedarf — schwächste Prüfpunkte</h3>
+                <p class="small muted">Prüfpunkte, die noch nicht voll erfüllt sind (schwächste zuerst). Diese Liste ist die Maßnahmenagenda für das nächste Management-Review.</p>
+                <table>
+                    <thead><tr><th style="width: 30%;">Prüfpunkt</th><th>Score</th><th>Befund / nächster Schritt</th></tr></thead>
+                    <tbody>
+                        @foreach ($openChecks as $entry)
+                            <tr>
+                                <td><strong>{{ $entry['check']->label }}</strong><div class="small">{{ $entry['check']->category->label() }}</div></td>
+                                <td>{{ $entry['result']->score }}/100</td>
+                                <td class="small">{{ $entry['result']->message }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            @endif
         @endif
 
         <h2>Geschäftsprozesse</h2>
@@ -252,7 +270,7 @@
             <p class="small muted">Prüfpunkte: Welche Schulungen sind geplant/durchgeführt? Wer wurde geschult? Wann ist die nächste Fälligkeit? Welche Nachweise liegen vor?</p>
             <table>
                 <thead>
-                    <tr><th>Thema</th><th>Person</th><th>Status</th><th>Nächste Fälligkeit</th><th>Nachweis / Notiz</th></tr>
+                    <tr><th>Thema</th><th>Person</th><th>Status</th><th>Nächste Fälligkeit</th><th>Nachweis & abgeleitete Maßnahmen</th></tr>
                 </thead>
                 <tbody>
                     @foreach ($trainingRecords as $training)
@@ -261,7 +279,16 @@
                             <td>{{ $training->employee?->fullName() ?? '—' }}@if ($training->responsible)<div class="small">verantw.: {{ $training->responsible->fullName() }}</div>@endif</td>
                             <td>{{ $training->completed_at ? 'durchgeführt am '.$training->completed_at->format('d.m.Y') : 'geplant' }}</td>
                             <td>{{ $training->next_due_at?->format('d.m.Y') ?? '—' }}@if ($training->isOverdue()) <strong>(überfällig)</strong>@endif</td>
-                            <td class="small">{{ $training->notes ?: '—' }}</td>
+                            <td class="small">
+                                {{ $training->notes ?: '—' }}
+                                @if ($training->openItems->isNotEmpty())
+                                    <div>Maßnahmen:
+                                        @foreach ($training->openItems as $item)
+                                            <div>&rarr; {{ $item->title }} ({{ $item->status->label() }})</div>
+                                        @endforeach
+                                    </div>
+                                @endif
+                            </td>
                         </tr>
                     @endforeach
                 </tbody>

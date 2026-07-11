@@ -216,7 +216,9 @@ new #[Title('Behörden & Meldestellen')] class extends Component {
             <div class="flex flex-col rounded-xl border border-zinc-200 bg-white p-5 transition hover:border-zinc-300 hover:shadow-sm dark:border-zinc-700 dark:bg-zinc-900 dark:hover:border-zinc-600">
                 <div class="flex items-start justify-between gap-2">
                     <div class="min-w-0 flex-1">
-                        <flux:heading size="base">{{ $contact->name }}</flux:heading>
+                        <flux:heading size="base">
+                            <a href="{{ route('authority-contacts.show', $contact) }}" wire:navigate class="hover:underline">{{ $contact->name }}</a>
+                        </flux:heading>
                         <div class="mt-1 flex flex-wrap items-center gap-1.5">
                             <flux:badge :color="$contact->type->color()" size="sm">{{ $contact->type->label() }}</flux:badge>
                             @if ($contact->deadline)

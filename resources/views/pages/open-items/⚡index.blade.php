@@ -26,6 +26,8 @@ new #[Title('Offene Punkte')] class extends Component {
 
     public string $business_process_id = '';
 
+    public string $training_record_id = '';
+
     public string $responsible_employee_id = '';
 
     public string $responsible_role_id = '';
@@ -102,6 +104,19 @@ new #[Title('Offene Punkte')] class extends Component {
         return \App\Models\BusinessProcess::query()->orderBy('name')->get();
     }
 
+    /**
+     * @return Collection<int, \App\Models\TrainingRecord>
+     */
+    #[Computed]
+    public function trainings(): Collection
+    {
+        if (! config('features.training_records')) {
+            return new Collection;
+        }
+
+        return \App\Models\TrainingRecord::query()->orderBy('topic')->get();
+    }
+
     public function openCreate(): void
     {
         $this->resetForm();
@@ -118,6 +133,7 @@ new #[Title('Offene Punkte')] class extends Component {
         $this->relevance = (string) $item->relevance;
         $this->risk_id = (string) ($item->risk_id ?? '');
         $this->business_process_id = (string) ($item->business_process_id ?? '');
+        $this->training_record_id = (string) ($item->training_record_id ?? '');
         $this->responsible_employee_id = (string) ($item->responsible_employee_id ?? '');
         $this->responsible_role_id = (string) ($item->responsible_role_id ?? '');
         $this->due_at = $item->due_at?->toDateString();
@@ -142,6 +158,7 @@ new #[Title('Offene Punkte')] class extends Component {
             'relevance' => ['nullable', 'string', 'max:5000'],
             'risk_id' => ['nullable', 'string', Rule::exists('risks', 'id')],
             'business_process_id' => ['nullable', 'string', Rule::exists('business_processes', 'id')],
+            'training_record_id' => ['nullable', 'string', Rule::exists('training_records', 'id')],
             'responsible_employee_id' => ['nullable', 'string', Rule::exists('employees', 'id')],
             'responsible_role_id' => ['nullable', 'string', Rule::exists('roles', 'id')],
             'due_at' => ['nullable', 'date'],
@@ -194,7 +211,7 @@ new #[Title('Offene Punkte')] class extends Component {
     protected function resetForm(): void
     {
         $this->reset([
-            'editingId', 'title', 'relevance', 'risk_id', 'business_process_id', 'responsible_employee_id',
+            'editingId', 'title', 'relevance', 'risk_id', 'business_process_id', 'training_record_id', 'responsible_employee_id',
             'responsible_role_id', 'due_at', 'review_at', 'conversion', 'resolution_note',
         ]);
         $this->status = 'open';
@@ -324,6 +341,15 @@ new #[Title('Offene Punkte')] class extends Component {
                     <flux:select.option value="{{ $process->id }}">{{ $process->name }}</flux:select.option>
                 @endforeach
             </flux:select>
+
+            @if ($this->trainings->isNotEmpty())
+                <flux:select wire:model="training_record_id" :label="__('Aus Schulung entstanden')">
+                    <flux:select.option value="">{{ __('Nicht aus einer Schulung') }}</flux:select.option>
+                    @foreach ($this->trainings as $training)
+                        <flux:select.option value="{{ $training->id }}">{{ $training->topic }}@if ($training->employee) — {{ $training->employee->fullName() }}@endif</flux:select.option>
+                    @endforeach
+                </flux:select>
+            @endif
 
             <div class="grid gap-4 sm:grid-cols-2">
                 <flux:select wire:model="responsible_employee_id" :label="__('Verantwortlich (Person)')">
