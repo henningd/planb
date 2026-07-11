@@ -3,6 +3,7 @@
 use App\Enums\CommunicationAudience;
 use App\Enums\CommunicationChannel;
 use App\Mail\CommunicationTemplateMail;
+use App\Models\AuthorityContact;
 use App\Models\CommunicationDispatch;
 use App\Models\CommunicationTemplate;
 use App\Models\Company;
@@ -66,6 +67,50 @@ it('sends an email template to selected employees and logs each recipient', func
     expect($recipients)->toHaveCount(2);
     expect($recipients->pluck('email')->all())->toContain('anna@example.com', 'ben@example.com');
     expect($recipients->pluck('status')->unique()->all())->toBe(['sent']);
+});
+
+it('also sends to the linked authority recipient', function () {
+    Mail::fake();
+
+    $user = User::factory()->create();
+    $company = Company::factory()->for($user->currentTeam)->create();
+
+    $authority = AuthorityContact::factory()->create([
+        'company_id' => $company->id,
+        'name' => 'Landesdatenschutzbehörde',
+        'email' => 'meldung@lda.example',
+    ]);
+
+    $template = CommunicationTemplate::create([
+        'company_id' => $company->id,
+        'name' => 'Meldung Datenschutzaufsicht',
+        'audience' => CommunicationAudience::Authorities->value,
+        'channel' => CommunicationChannel::Email->value,
+        'recipient_authority_contact_id' => $authority->id,
+        'subject' => 'Meldung einer Datenpanne',
+        'body' => 'Sehr geehrte Damen und Herren, wir melden einen Vorfall.',
+        'sort' => 1,
+    ]);
+
+    // Kein Mitarbeiter ausgewählt — nur die Behörde.
+    Livewire\Livewire::actingAs($user->fresh())
+        ->test('pages::communication-templates.index')
+        ->call('openEmailSend', $template->id)
+        ->set('emailRecipients', [])
+        ->assertSet('emailToAuthority', true)
+        ->call('confirmSendEmail')
+        ->call('sendEmail');
+
+    Mail::assertSent(CommunicationTemplateMail::class, 1);
+
+    $dispatch = CommunicationDispatch::first();
+    expect($dispatch->recipient_count)->toBe(1)
+        ->and($dispatch->success_count)->toBe(1);
+
+    $recipient = $dispatch->recipients->first();
+    expect($recipient->email)->toBe('meldung@lda.example')
+        ->and($recipient->name)->toBe('Landesdatenschutzbehörde')
+        ->and($recipient->employee_id)->toBeNull();
 });
 
 it('skips email send when no recipients are selected', function () {

@@ -67,6 +67,9 @@ new #[Title('Kommunikations-Vorlagen')] class extends Component {
      */
     public array $emailRecipients = [];
 
+    /** Zusätzlich an die in der Vorlage hinterlegte Behörde/Meldestelle senden. */
+    public bool $emailToAuthority = false;
+
     /**
      * @var list<array{to: string, name: string, success: bool, error: ?string}>
      */
@@ -437,12 +440,33 @@ new #[Title('Kommunikations-Vorlagen')] class extends Component {
             ->pluck('id')
             ->all();
 
+        // Hat die Vorlage eine hinterlegte Behörde/Meldestelle mit E-Mail,
+        // ist der Behörden-Versand standardmäßig vorausgewählt.
+        $this->emailToAuthority = filled($this->emailAuthority?->email);
+
         Flux::modal('template-email-send')->show();
+    }
+
+    /**
+     * Hinterlegte Behörde/Meldestelle der aktuellen Vorlage (nur mit E-Mail).
+     */
+    #[Computed]
+    public function emailAuthority(): ?\App\Models\AuthorityContact
+    {
+        if (! $this->emailTemplateId) {
+            return null;
+        }
+
+        return CommunicationTemplate::with('recipientAuthorityContact')
+            ->find($this->emailTemplateId)
+            ?->recipientAuthorityContact;
     }
 
     public function confirmSendEmail(): void
     {
-        if (empty($this->emailRecipients)) {
+        $authoritySelected = $this->emailToAuthority && filled($this->emailAuthority?->email);
+
+        if (empty($this->emailRecipients) && ! $authoritySelected) {
             Flux::toast(variant: 'warning', text: __('Keine Empfänger ausgewählt.'));
 
             return;
@@ -473,13 +497,21 @@ new #[Title('Kommunikations-Vorlagen')] class extends Component {
         $resolvedSubject = TemplatePlaceholders::resolve((string) $template->subject, $company);
         $resolvedBody = TemplatePlaceholders::resolve($template->body, $company);
 
-        $recipients = Employee::query()
+        // Empfänger vereinheitlichen: ausgewählte Mitarbeiter + optional die in der
+        // Vorlage hinterlegte Behörde/Meldestelle (ohne employee_id).
+        $targets = Employee::query()
             ->whereIn('id', $this->emailRecipients)
             ->whereNotNull('email')
             ->where('email', '!=', '')
-            ->get();
+            ->get()
+            ->map(fn (Employee $e) => ['employee_id' => $e->id, 'email' => $e->email, 'name' => $e->fullName()]);
 
-        if ($recipients->isEmpty()) {
+        $authority = $this->emailToAuthority ? $this->emailAuthority : null;
+        if ($authority && filled($authority->email)) {
+            $targets->push(['employee_id' => null, 'email' => $authority->email, 'name' => $authority->name]);
+        }
+
+        if ($targets->isEmpty()) {
             Flux::toast(variant: 'warning', text: __('Keine gültigen Empfänger ausgewählt.'));
 
             return;
@@ -491,7 +523,7 @@ new #[Title('Kommunikations-Vorlagen')] class extends Component {
             'channel' => CommunicationChannel::Email->value,
             'subject' => $resolvedSubject,
             'body' => $resolvedBody,
-            'recipient_count' => $recipients->count(),
+            'recipient_count' => $targets->count(),
             'success_count' => 0,
             'failed_count' => 0,
             'dispatched_at' => now(),
@@ -500,11 +532,11 @@ new #[Title('Kommunikations-Vorlagen')] class extends Component {
         $results = [];
         $okCount = 0;
         $failCount = 0;
-        foreach ($recipients as $employee) {
+        foreach ($targets as $target) {
             $success = true;
             $error = null;
             try {
-                Mail::to($employee->email, $employee->fullName())
+                Mail::to($target['email'], $target['name'])
                     ->send(new CommunicationTemplateMail($resolvedSubject, $resolvedBody, $company?->name ?? config('app.name')));
             } catch (\Throwable $e) {
                 $success = false;
@@ -513,9 +545,9 @@ new #[Title('Kommunikations-Vorlagen')] class extends Component {
 
             CommunicationDispatchRecipient::create([
                 'communication_dispatch_id' => $dispatch->id,
-                'employee_id' => $employee->id,
-                'email' => $employee->email,
-                'name' => $employee->fullName(),
+                'employee_id' => $target['employee_id'],
+                'email' => $target['email'],
+                'name' => $target['name'],
                 'status' => $success ? 'sent' : 'failed',
                 'error_message' => $error,
                 'sent_at' => $success ? now() : null,
@@ -523,8 +555,8 @@ new #[Title('Kommunikations-Vorlagen')] class extends Component {
             ]);
 
             $results[] = [
-                'to' => $employee->email,
-                'name' => $employee->fullName(),
+                'to' => $target['email'],
+                'name' => $target['name'],
                 'success' => $success,
                 'error' => $error,
             ];
@@ -1014,8 +1046,17 @@ new #[Title('Kommunikations-Vorlagen')] class extends Component {
                     <div class="mt-1 whitespace-pre-line text-zinc-700 dark:text-zinc-300">{{ $this->emailBodyPreview() }}</div>
                 </div>
 
+                @if ($this->emailAuthority && filled($this->emailAuthority->email))
+                    <div class="rounded-lg border border-indigo-200 bg-indigo-50/60 p-3 dark:border-indigo-900 dark:bg-indigo-950/20">
+                        <flux:checkbox
+                            wire:model.live="emailToAuthority"
+                            :label="__('An hinterlegte Meldestelle senden:').' '.$this->emailAuthority->name.' · '.$this->emailAuthority->email"
+                        />
+                    </div>
+                @endif
+
                 <div>
-                    <flux:label>{{ __('Empfänger') }} ({{ $this->emailCandidates->count() }} {{ __('mit E-Mail-Adresse') }})</flux:label>
+                    <flux:label>{{ __('Empfänger (Mitarbeiter)') }} ({{ $this->emailCandidates->count() }} {{ __('mit E-Mail-Adresse') }})</flux:label>
                     <div class="mt-2 max-h-64 space-y-1 overflow-y-auto rounded-lg border border-zinc-200 p-3 dark:border-zinc-700">
                         @foreach ($this->emailCandidates as $employee)
                             <flux:checkbox
@@ -1069,7 +1110,7 @@ new #[Title('Kommunikations-Vorlagen')] class extends Component {
                         <flux:button type="button" variant="filled">{{ __('Abbrechen') }}</flux:button>
                     </flux:modal.close>
                     <flux:button type="button" variant="primary" icon="check" wire:click="confirmSendEmail">
-                        {{ __('Senden vorbereiten') }} ({{ count($emailRecipients) }})
+                        {{ __('Senden vorbereiten') }} ({{ count($emailRecipients) + ($emailToAuthority && $this->emailAuthority && filled($this->emailAuthority->email) ? 1 : 0) }})
                     </flux:button>
                 @endif
             </div>
