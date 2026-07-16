@@ -4,6 +4,8 @@
     $contactPhone = (string) \App\Support\Settings\SystemSetting::get('platform_contact_phone');
     $companyName = 'Arento AI GmbH';
     $portalUrl = rtrim((string) config('services.portal.url'), '/');
+    // Apple App Store: „PlanB Notfallhandbuch" (Arento AI GmbH).
+    $appStoreUrl = 'https://apps.apple.com/de/app/planb-notfallhandbuch/id6787493918';
 
     $problems = [
         [
@@ -937,10 +939,35 @@
                             </div>
                         </li>
                     </ul>
-                    <div class="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3 text-sm text-slate-400">
+                    {{-- App Store: echter Store-Eintrag „PlanB Notfallhandbuch" --}}
+                    <div class="mt-8 flex flex-wrap items-center gap-4">
+                        <img
+                            src="{{ asset('images/app/app-icon.webp') }}"
+                            alt="App-Symbol {{ $productName }} Notfallhandbuch"
+                            width="256"
+                            height="256"
+                            loading="lazy"
+                            decoding="async"
+                            class="h-14 w-14 rounded-[13px] ring-1 ring-white/15 shadow-lg"
+                        >
+                        <a
+                            href="{{ $appStoreUrl }}"
+                            target="_blank"
+                            rel="noopener"
+                            class="inline-flex items-center gap-3 rounded-xl bg-white px-5 py-3 text-slate-900 shadow-lg transition hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
+                        >
+                            <svg class="h-7 w-7 shrink-0" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16.365 1.43c0 1.14-.42 2.2-1.12 3.01-.85.99-2.24 1.76-3.4 1.67-.14-1.1.42-2.26 1.08-3.02.75-.87 2.11-1.55 3.16-1.62.03.09.28.06.28-.04zM20.5 17.02c-.53 1.23-.78 1.78-1.46 2.87-.95 1.52-2.29 3.41-3.95 3.42-1.47.02-1.85-.96-3.85-.95-2 .01-2.42.97-3.9.95-1.66-.01-2.93-1.72-3.88-3.24C.79 15.83.5 10.9 2.15 8.36c1.17-1.8 3.02-2.86 4.76-2.86 1.77 0 2.88 1 4.34 1 1.42 0 2.29-1 4.34-1 1.55 0 3.19.85 4.36 2.31-3.83 2.1-3.21 7.58.55 9.21z"/></svg>
+                            <span class="text-left leading-tight">
+                                <span class="block text-[10px] font-medium uppercase tracking-wide text-slate-500">Laden im</span>
+                                <span class="block text-lg font-semibold">App Store</span>
+                            </span>
+                        </a>
+                    </div>
+
+                    <div class="mt-6 flex flex-wrap items-center gap-x-6 gap-y-3 text-sm text-slate-400">
                         <span class="flex items-center gap-2">
                             <svg class="w-4 h-4 text-indigo-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></svg>
-                            Für iPhone (iOS 17+) und Android
+                            Für iPhone, iPad (iOS 17+) und Android
                         </span>
                         <span class="flex items-center gap-2">
                             <svg class="w-4 h-4 text-indigo-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
@@ -949,22 +976,158 @@
                     </div>
                 </div>
 
-                {{-- Mockup: App im Alarmfall --}}
-                @include('partials.notfall-app-mockup', [
-                    'mockupPush' => 'Notfall gemeldet: Ransomware-Verdacht',
-                    'mockupTitle' => 'Ransomware-Verdacht',
-                    'mockupMeta' => 'Gestartet 03:12 · Hauptstandort',
-                    'mockupChips' => ['2× gesehen', 'S. Krause übernimmt'],
-                    'mockupSteps' => [
-                        ['Internet-Uplink trennen', 'done'],
-                        ['IT-Dienstleister anrufen (Notfallnummer)', 'done'],
-                        ['Krisenstab einberufen', 'pending'],
-                        ['Mitarbeitende über Sammelpunkt informieren', 'open'],
-                    ],
-                    'mockupCaption' => 'Beispielansicht der '.$productName.'-App im Alarmfall – offline, mit Quittierungen.',
-                ])
+                {{-- iPhone-Bereich: echte App-Store-Screenshots im Carousel --}}
+                <div>
+                    <div class="mb-5 flex items-center justify-center gap-2 text-sm font-semibold text-indigo-300">
+                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></svg>
+                        Auf dem iPhone
+                    </div>
+                    @include('partials.app-screenshot-carousel', [
+                        'carouselId' => 'app-carousel-iphone',
+                        'device' => 'iphone',
+                        'srLabel' => 'Screenshots der '.$productName.'-App auf dem iPhone',
+                        'shots' => [
+                            ['file' => 'iphone-01-home.webp', 'caption' => 'Home: aktiver Notfall, Sync-Status und Schnellzugriff'],
+                            ['file' => 'iphone-02-szenarien.webp', 'caption' => 'Szenarien: Checkliste für jede Lage – offline abhakbar'],
+                            ['file' => 'iphone-03-krisenstab.webp', 'caption' => 'Krisenstab: alle Kontakte, direkt anrufbar'],
+                            ['file' => 'iphone-04-wiederanlauf.webp', 'caption' => 'Wiederanlauf: Reihenfolge nach Abhängigkeiten, mit RTO'],
+                        ],
+                    ])
+                </div>
+            </div>
+
+            {{-- iPad-Bereich: eigene Screenshots im Querformat --}}
+            <div class="mt-20 lg:mt-24">
+                <div class="mx-auto max-w-3xl text-center">
+                    <div class="mb-3 flex items-center justify-center gap-2 text-sm font-semibold text-indigo-300">
+                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M11 18h2"/></svg>
+                        Auf dem iPad
+                    </div>
+                    <h3 class="text-2xl sm:text-3xl font-semibold tracking-tight">
+                        Im Lagezentrum wird aus dem Handbuch ein Cockpit.
+                    </h3>
+                    <p class="mt-3 text-slate-300 leading-relaxed">
+                        Auf dem iPad nutzt {{ $productName }} die volle Breite: Seitenleiste, Checkliste und Details
+                        nebeneinander – ideal für den Krisenstab-Tisch, auch komplett offline.
+                    </p>
+                </div>
+
+                <div class="mt-10">
+                    @include('partials.app-screenshot-carousel', [
+                        'carouselId' => 'app-carousel-ipad',
+                        'device' => 'ipad',
+                        'srLabel' => 'Screenshots der '.$productName.'-App auf dem iPad',
+                        'shots' => [
+                            ['file' => 'ipad-02-home-landscape.webp', 'caption' => 'Home auf dem iPad: Seitenleiste und aktive Lage im Blick'],
+                            ['file' => 'ipad-03-krisenstab.webp', 'caption' => 'Krisenstab: Rollen, Vertretungen, Dienstleister und Ressourcen'],
+                            ['file' => 'ipad-04-wiederanlauf-zeitplan.webp', 'caption' => 'Wiederanlauf-Zeitplan: RTO-Balken je System mit „Jetzt"-Linie'],
+                            ['file' => 'ipad-05-szenarien.webp', 'caption' => 'Szenarien: Übersicht und Checkliste nebeneinander'],
+                        ],
+                    ])
+                </div>
             </div>
         </div>
+
+        {{-- Screenshot-Carousels (iPhone/iPad). Vanilla JS – die öffentliche
+             Startseite lädt bewusst weder Alpine noch Livewire. --}}
+        <script>
+            (function () {
+                var carousels = document.querySelectorAll('[data-carousel]');
+                if (!carousels.length) { return; }
+
+                var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+                Array.prototype.forEach.call(carousels, function (root) {
+                    var slides = root.querySelectorAll('[data-carousel-slide]');
+                    var dots = root.querySelectorAll('[data-carousel-dot]');
+                    var caption = root.querySelector('[data-carousel-caption]');
+                    var viewport = root.querySelector('[data-carousel-viewport]');
+                    var prev = root.querySelector('[data-carousel-prev]');
+                    var next = root.querySelector('[data-carousel-next]');
+                    if (slides.length < 2) { return; }
+
+                    var current = 0;
+                    var timer = null;
+
+                    function show(index) {
+                        current = (index + slides.length) % slides.length;
+
+                        Array.prototype.forEach.call(slides, function (slide, i) {
+                            var active = i === current;
+                            slide.classList.toggle('opacity-100', active);
+                            slide.classList.toggle('opacity-0', !active);
+                            if (active) {
+                                slide.removeAttribute('aria-hidden');
+                            } else {
+                                slide.setAttribute('aria-hidden', 'true');
+                            }
+                        });
+
+                        Array.prototype.forEach.call(dots, function (dot, i) {
+                            var active = i === current;
+                            dot.classList.toggle('w-6', active);
+                            dot.classList.toggle('bg-indigo-400', active);
+                            dot.classList.toggle('w-2', !active);
+                            dot.classList.toggle('bg-slate-600', !active);
+                            if (active) {
+                                dot.setAttribute('aria-current', 'true');
+                            } else {
+                                dot.removeAttribute('aria-current');
+                            }
+                        });
+
+                        if (caption) {
+                            var img = slides[current].querySelector('img');
+                            caption.textContent = img ? img.getAttribute('alt') : '';
+                        }
+                    }
+
+                    function restart() {
+                        window.clearInterval(timer);
+                        if (reduceMotion) { return; }
+                        timer = window.setInterval(function () { show(current + 1); }, 6000);
+                    }
+
+                    function step(delta) {
+                        show(current + delta);
+                        restart();
+                    }
+
+                    if (prev) { prev.addEventListener('click', function () { step(-1); }); }
+                    if (next) { next.addEventListener('click', function () { step(1); }); }
+                    Array.prototype.forEach.call(dots, function (dot, i) {
+                        dot.addEventListener('click', function () { show(i); restart(); });
+                    });
+
+                    // Pausieren, solange jemand hinsieht oder bedient.
+                    root.addEventListener('mouseenter', function () { window.clearInterval(timer); });
+                    root.addEventListener('mouseleave', restart);
+                    root.addEventListener('focusin', function () { window.clearInterval(timer); });
+                    root.addEventListener('focusout', restart);
+
+                    if (viewport) {
+                        viewport.setAttribute('tabindex', '0');
+                        viewport.addEventListener('keydown', function (e) {
+                            if (e.key === 'ArrowLeft') { e.preventDefault(); step(-1); }
+                            if (e.key === 'ArrowRight') { e.preventDefault(); step(1); }
+                        });
+
+                        var startX = null;
+                        viewport.addEventListener('touchstart', function (e) {
+                            startX = e.changedTouches[0].clientX;
+                        }, { passive: true });
+                        viewport.addEventListener('touchend', function (e) {
+                            if (startX === null) { return; }
+                            var dx = e.changedTouches[0].clientX - startX;
+                            if (Math.abs(dx) > 40) { step(dx < 0 ? 1 : -1); }
+                            startX = null;
+                        }, { passive: true });
+                    }
+
+                    restart();
+                });
+            })();
+        </script>
     </section>
 
     {{-- ============ COMPLIANCE & AUDIT ============ --}}
